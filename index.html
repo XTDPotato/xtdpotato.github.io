@@ -1,0 +1,164 @@
+<!doctype html>
+<html class="mdui-theme-auto">
+
+</html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
+
+
+    <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+
+<!-- Filled -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<!-- Outlined -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<!-- Rounded -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<!-- Sharp -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+
+<!-- Two Tone -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+
+    <title>XTDPotato的中转站</title>
+  </head>
+
+
+
+<body>
+
+
+<mdui-navigation-drawer close-on-overlay-click style="margin:5px;" class="main-drawer">
+  <mdui-button>关闭侧边抽屉栏</mdui-button>
+  
+</mdui-navigation-drawer>
+
+
+<div style="position: relative">
+  <mdui-navigation-rail value="home" divider contained>
+  
+    <mdui-button-icon id="fab_menu" icon="menu" slot="top"></mdui-button-icon>
+    <mdui-fab lowered id ="main_fab" icon="add--outlined" slot="top"></mdui-fab>
+
+
+    <mdui-navigation-rail-item id="rail_item_home" value="home" icon="home--outlined">主页</mdui-navigation-rail-item>
+    <mdui-navigation-rail-item id="rail_item_resources" value="resources" icon="archive--outlined">资源</mdui-navigation-rail-item>
+    <mdui-navigation-rail-item id="rail_item_notes" value="notes" icon="notes--outlined">笔记</mdui-navigation-rail-item>
+    <mdui-navigation-rail-item id="rail_item_courses" value="courses" icon="tips_and_updates--outlined">教程</mdui-navigation-rail-item>
+    
+  </mdui-navigation-rail>
+
+
+  <mdui-tabs id="main_tabs" value="home" style="height: 800px;">
+  
+  <mdui-tab style="display:none;" value="home">主页</mdui-tab>
+  <mdui-tab style="display:none;" value="resources">资源</mdui-tab>
+  <mdui-tab style="display:none;" value="notes">笔记</mdui-tab>
+  <mdui-tab style="display:none;" value="courses">教程</mdui-tab>
+  
+  
+  <mdui-tab-panel style="margin:5px;" slot="panel" value="home">
+  <!-- 主页  内容 -->
+
+  
+  <iframe id="home_frame" src="home.html" style="border:0px" width="100%" height="100%"></iframe>
+  
+  
+  
+  
+  </mdui-tab-panel>
+  <mdui-tab-panel style="margin:5px;" slot="panel" value="resources">
+  <!-- 资源  内容 -->
+  
+  <iframe id="resources_item_frame" src="resources_item.html" style="border:0px" width="100%" height="100%"></iframe>
+  
+  
+  
+  
+  
+  
+  
+  
+  </mdui-tab-panel>
+  <mdui-tab-panel style="margin:5px;" slot="panel" value="notes">
+  <!-- 笔记  内容 -->
+  
+  
+  <iframe id="notes_item_frame" src="notes_item.html" style="border:0px" width="100%" height="600px"></iframe>
+  
+
+
+  </mdui-tab-panel>
+  <mdui-tab-panel style="margin:5px;" slot="panel" value="courses">
+  <!-- 教程  内容 -->
+  
+  
+  <iframe id="courses_frame" src="courses.html" style="border:0px" width="100%" height="600px"></iframe>
+  
+  
+
+  
+  
+ 
+  
+
+
+
+  </mdui-tab-panel>
+  
+  </mdui-tabs>
+    
+        
+    
+    
+
+</div>
+
+
+
+<!-- 添加笔记对话框 -->
+<mdui-dialog close-on-overlay-click class="add_note_dialog">
+  <span slot="headline">添加新的笔记</span>
+  
+<mdui-text-field maxlength="30" counter id="add_note_dialog_ct_content" label="键入要添加的笔记名称" helper="不是输入笔记内容哦~" helper-on-focus></mdui-text-field>
+
+  
+  <mdui-button slot="action" id="add_note_dialog_cancel" variant="text">取消</mdui-button>
+  <mdui-button slot="action" id="add_note_dialog_create" variant="tonal">创建</mdui-button>
+
+  </mdui-top-app-bar>
+  <div style="height: 100%"></div>
+</mdui-dialog>
+
+<!-- SnackBar -->
+<mdui-snackbar class="snackbar_no_action">提示</mdui-snackbar>
+
+<script type="text/javascript" src="js/index.js">
+
+ 
+</script>
+
+
+
+
+
+
+
+
+
+  
+</body>
+
+
+
+
+</html>

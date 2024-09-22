@@ -1,0 +1,142 @@
+<!doctype html>
+<html class="mdui-theme-auto">
+
+</html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
+
+
+    <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+
+<!-- Filled -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<!-- Outlined -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<!-- Rounded -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<!-- Sharp -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+
+<!-- Two Tone -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+
+    <title>教程</title>
+  </head>
+<body>
+<!--  内容 -->
+<mdui-list>
+  <mdui-list-subheader>教程</mdui-list-subheader>
+  
+ <mdui-card clickable variant="outlined" style="width: 100%;height: 150px" id="course1" class="course_item">
+ <div class="mdui-prose" style="padding:14px;">
+  <h4 style="font-weight:bold;">MC基岩版自定义界面UI</h4>
+  <mdui-divider insert></mdui-divider>
+  <p>关于如何给指定对话dialogue进行绑定视图以及ServerForm的显示自定义UI</p>
+  <table>
+
+  </table>
+</div>
+  </mdui-card>
+  
+
+  
+  
+</mdui-list>
+
+
+
+
+
+
+</body>
+
+<!-- SnackBar -->
+<mdui-snackbar class="snackbar_no_action">提示</mdui-snackbar>
+<!-- 教程对话框 -->
+	<mdui-dialog stacked-actions fullscreen id="course_dialog" class="course_dialog"
+	height="100%">
+		<iframe src="" id="course_frame" style="border:0px;display:none;"
+		width="100%" height="600px">
+		</iframe>
+
+		<mdui-circular-progress id="course_loading_progress"></mdui-circular-progress>
+		
+
+	</mdui-dialog>
+
+
+<script>
+var course_items = document.querySelectorAll(".course_item");
+var course_loading_progress = document.getElementById("course_loading_progress");
+var course_dialog = document.querySelector(".course_dialog");
+var course_frame = document.getElementById("course_frame");
+
+
+
+
+
+//教程项目点击事件
+// 遍历列表项，给每个列表项添加点击事件
+for (let course_item of course_items) {
+	course_item.addEventListener("click", () =>{
+		course_dialog.open = true;
+
+		//course_dialog.headline = course_item.textContent;
+
+		// 获取 <iframe> 元素
+		var course_frame = document.getElementById("course_frame");
+
+		//内容需要用其他方法展现
+		let course_id = "courses/" + course_item.id + ".html";
+		course_frame.src = course_id;
+
+		course_frame.style = "border:0px;display:none;";
+		course_loading_progress.style = "border:0px;display:block;";
+
+		// 定义要执行的函数
+		function frame_loaded() {
+
+			course_frame = document.getElementById("course_frame");
+			course_loading_progress = document.getElementById("course_loading_progress");
+
+			course_frame.style = "border:0px;display:block;";
+
+			course_loading_progress.style = "border:0px;display:none;";
+
+		}
+		// 使用 setTimeout 函数等待 500ms
+		setTimeout(frame_loaded, 500);
+
+	})
+}
+
+
+
+// 监听来自iframe的消息
+course_frame.onload = function() {
+window.addEventListener('message', function(event) {
+var course_frame = document.getElementById("course_frame");
+    // 确保消息来自预期的iframe
+    if (event.source !== course_frame.contentWindow) return;
+
+    // 确保消息是你期望的类型
+    if (event.data.type === 'courseOC') {
+        // 更新父页面中的文本
+        	course_dialog.open = false;
+    }
+}, false);
+};
+
+
+</script>
+
+</html>

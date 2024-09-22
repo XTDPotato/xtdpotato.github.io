@@ -1,0 +1,124 @@
+<!doctype html>
+<html class="mdui-theme-auto">
+
+</html>
+</html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
+
+
+    <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+
+<!-- Filled -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<!-- Outlined -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<!-- Rounded -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<!-- Sharp -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+
+<!-- Two Tone -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+
+    <title>MC基岩版自定义界面UI</title>
+  </head>
+<body>
+<!--  内容 -->
+
+<mdui-top-app-bar style="position: relative;">
+  <mdui-button-icon class="back_to_courses" icon="arrow_back"></mdui-button-icon>
+  <mdui-top-app-bar-title >MC基岩版自定义界面UI</mdui-top-app-bar-title>
+  <div style="flex-grow: 1"></div>
+  
+  <!-- 菜单 -->
+<mdui-dropdown>
+  <mdui-button-icon slot="trigger" icon="more_vert"></mdui-button-icon>
+  <mdui-menu>
+    <mdui-menu-item class="star_click" icon="star_border">收藏</mdui-menu-item>
+    <mdui-menu-item class="send_to_desktop_click" icon="near_me">发送到桌面</mdui-menu-item>
+  </mdui-menu>
+</mdui-dropdown>
+</mdui-top-app-bar>
+<p>这里是一个关于MC基岩版的自定义NPC对话框和Server form的界面UI的教程</p>
+<p>下载一个例子以继续下面操作</p>
+<mdui-button full-width href="https://www.123pan.com/s/RzbrVv-Ql3Kd.html" target="_blank">下载例子（123盘）</mdui-button>
+
+
+
+
+
+
+
+
+
+
+</body>
+
+<!-- SnackBar -->
+<mdui-snackbar placement="top-start" class="snackbar_no_action">提示</mdui-snackbar>
+
+
+
+<script>
+let back_to_courses = document.querySelector(".back_to_courses");
+let star_click = document.querySelector(".star_click")
+let snackbar_no_action = document.querySelector(".snackbar_no_action")
+
+star_testfor()
+
+
+//收藏按钮点击事件
+star_click.addEventListener("click", () =>{
+	snackbar_no_action.open = false
+	var course1_son_sv = localStorage.getItem('course1_son');
+	if(course1_son_sv == "true"){
+	localStorage.setItem('course1_son', 'false');
+	snackbar_no_action.textContent = "已取消收藏"
+	snackbar_no_action.open = true
+	}else{
+	localStorage.setItem('course1_son', 'true');
+	snackbar_no_action.textContent = "已收藏"
+	snackbar_no_action.open = true
+	}
+		star_testfor()
+	
+	
+})
+
+
+
+
+//返回按钮点击事件
+back_to_courses.addEventListener("click", () =>{
+   // 发送消息到父页面
+    parent.postMessage({ type: 'courseOC', text: '关闭了' }, '*');
+})
+
+
+
+async function star_testfor() {
+// 使用异步函数
+// 从 localStorage 中检索变量
+var course1_son_sv = localStorage.getItem('course1_son');
+if(course1_son_sv == "true"){
+star_click.icon = "star"
+
+}else{
+star_click.icon = "star_border"
+
+}
+}
+
+</script>
+
+</html>
