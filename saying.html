@@ -34,11 +34,28 @@
   </head>
 <body>
 
-<mdui-linear-progress></mdui-linear-progress>
+  <mdui-list-subheader>话说</mdui-list-subheader>
+  
+  
+  <mdui-slider class="ex-label-formatter" tickmarks value="50" min="0" max="100"></mdui-slider>
+
+<script>
+  const slider = document.querySelector(".ex-label-formatter");
+  slider.labelFormatter = (value) => `${value} 芝士！`;
+  
+  console.log(slider.value);
+  while(slider.value == 0){
+	console.log(slider.value);
+    slider.value=50;
+  }
+</script>
   <p>欢迎来到XTDPotato的中转站！</p>
+  
+  
   <p>这个页面还在施工中</p>
   <p>此页面使用的是<a target="_blank" href="https://mdui.org">MDUI.org</a></p>
   <p>在左边点击一个要抵达的标签进行查看对应的内容</p>
+  <p>slider藏有彩蛋</p>
 
 
   

@@ -37,20 +37,53 @@
 <body>
 
 
-<mdui-navigation-drawer close-on-overlay-click style="margin:5px;" class="main-drawer">
-  <mdui-button>关闭侧边抽屉栏</mdui-button>
+<mdui-navigation-drawer id="main_drawer" close-on-overlay-click style="margin:5px;" class="main-drawer">
+
+
+	<mdui-list>
+			<mdui-list-subheader>
+				抽屉
+			</mdui-list-subheader>
+			
+			<mdui-list-item active rounded class="drawer_btn1" id="drawer_btn1">
+				<mdui-icon slot="icon" name="home--outlined"></mdui-icon>主页
+			</mdui-list-item>
+
+			<mdui-list-item rounded class="drawer_btn2" id="drawer_btn2">
+				<mdui-icon slot="icon" name="bubble_chart--outline"></mdui-icon>帖子
+			</mdui-list-item>
+			
+			<mdui-list-item rounded class="drawer_btn3" id="drawer_btn3">
+				<mdui-icon slot="icon" name="account_circle--outline"></mdui-icon>我的
+			</mdui-list-item>
+			
+			
+		</mdui-list>
+	
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
 </mdui-navigation-drawer>
 
 
 <div style="position: relative">
-  <mdui-navigation-rail value="home" divider contained>
+  <mdui-navigation-rail value="saying" divider contained>
   
     <mdui-button-icon id="fab_menu" icon="menu" slot="top"></mdui-button-icon>
     <mdui-fab lowered id ="main_fab" icon="add--outlined" slot="top"></mdui-fab>
 
 
-    <mdui-navigation-rail-item id="rail_item_home" value="home" icon="home--outlined">主页</mdui-navigation-rail-item>
+    <mdui-navigation-rail-item id="rail_item_saying" value="saying" icon="message--outlined">话说</mdui-navigation-rail-item>
     <mdui-navigation-rail-item id="rail_item_resources" value="resources" icon="archive--outlined">资源</mdui-navigation-rail-item>
     <mdui-navigation-rail-item id="rail_item_notes" value="notes" icon="notes--outlined">笔记</mdui-navigation-rail-item>
     <mdui-navigation-rail-item id="rail_item_courses" value="courses" icon="tips_and_updates--outlined">教程</mdui-navigation-rail-item>
@@ -58,22 +91,18 @@
   </mdui-navigation-rail>
 
 
-  <mdui-tabs id="main_tabs" value="home" style="height: 800px;">
+  <mdui-tabs id="main_tabs" value="saying" style="height: 800px;">
   
-  <mdui-tab style="display:none;" value="home">主页</mdui-tab>
+  <mdui-tab style="display:none;" value="saying">话说</mdui-tab>
   <mdui-tab style="display:none;" value="resources">资源</mdui-tab>
   <mdui-tab style="display:none;" value="notes">笔记</mdui-tab>
   <mdui-tab style="display:none;" value="courses">教程</mdui-tab>
   
   
-  <mdui-tab-panel style="margin:5px;" slot="panel" value="home">
-  <!-- 主页  内容 -->
+  <mdui-tab-panel style="margin:5px;" slot="panel" value="saying">
+  <!-- 话说  内容 -->
 
-  
-  <iframe id="home_frame" src="home.html" style="border:0px" width="100%" height="100%"></iframe>
-  
-  
-  
+  <iframe id="saying_frame" src="saying.html" style="border:0px" width="100%" height="100%"></iframe>
   
   </mdui-tab-panel>
   <mdui-tab-panel style="margin:5px;" slot="panel" value="resources">
@@ -81,40 +110,19 @@
   
   <iframe id="resources_item_frame" src="resources_item.html" style="border:0px" width="100%" height="100%"></iframe>
   
-  
-  
-  
-  
-  
-  
-  
   </mdui-tab-panel>
   <mdui-tab-panel style="margin:5px;" slot="panel" value="notes">
   <!-- 笔记  内容 -->
   
-  
   <iframe id="notes_item_frame" src="notes_item.html" style="border:0px" width="100%" height="600px"></iframe>
   
-
-
   </mdui-tab-panel>
   <mdui-tab-panel style="margin:5px;" slot="panel" value="courses">
   <!-- 教程  内容 -->
   
-  
   <iframe id="courses_frame" src="courses.html" style="border:0px" width="100%" height="600px"></iframe>
   
-  
-
-  
-  
- 
-  
-
-
-
   </mdui-tab-panel>
-  
   </mdui-tabs>
     
         
