@@ -3,7 +3,7 @@
 let navigationDrawer = document.querySelector(".main-drawer"); // 使用 let 声明可变对象
 let openDrawerButton = document.getElementById("fab_menu");
 let main_drawer = document.querySelector(".main-drawer");
-let closeDrawerButton = navigationDrawer.querySelector("mdui-button");
+
 let drawer_btn1 = navigationDrawer.querySelector(".drawer_btn1");
 let drawer_btn2 = navigationDrawer.querySelector(".drawer_btn2");
 let drawer_btn3 = navigationDrawer.querySelector(".drawer_btn3");
