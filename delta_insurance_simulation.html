@@ -20,6 +20,7 @@
                         gold: '#FFD700',
                         red: '#F44336',
                         gray: '#808080',
+                        'safe-gray': '#D0D0D0', // 保险箱淡灰色
                     },
                     fontFamily: {
                         digital: ['Orbitron', 'sans-serif'],
@@ -118,7 +119,7 @@
             }
             .grid-cell {
                 aspect-ratio: 1/1;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-clip: padding-box;
                 transition: all 0.3s ease;
             }
             .unread-item {
@@ -132,7 +133,6 @@
             }
             .placeholder-item {
                 background-color: rgba(128, 128, 128, 0.3);
-                border: 1px dashed rgba(255, 255, 255, 0.3);
             }
             .magnifier-track {
                 position: absolute;
@@ -140,7 +140,7 @@
             }
             .magnifier {
                 position: absolute;
-                color: rgba(255, 255, 255, 0.7);
+                color: rgba(0, 0, 0, 0.7);
                 animation: magnifier-path 2s linear infinite;
                 pointer-events: none;
                 transform: translate(-50%, -50%);
@@ -180,26 +180,43 @@
                 box-shadow: 0 0 20px rgba(16, 253, 217, 1);
                 border-color: #10FDD9 !important;
             }
-            /* 中间位置字符高亮 */
             .center-char {
                 font-weight: bold !important;
                 transform: scale(1.1);
             }
-            /* 当前激活列高亮 */
             .active-column {
                 border-color: #10FDD9 !important;
                 box-shadow: 0 0 10px rgba(16, 253, 217, 0.7);
+            }
+            .record-item {
+                transition: all 0.3s ease;
+            }
+            .record-item:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+            .counter-badge {
+                min-width: 24px;
+                height: 24px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .item-gradient {
+                background-image: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%);
             }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4 font-digital text-white">
-    <!-- 主页面 -->
-    <div class="text-center mb-8">
+<body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
+    <!-- 主标题区域 -->
+    <div class="text-center mb-6 w-full max-w-4xl">
         <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
-        <p class="text-gray-300 text-lg mb-8">点击下方按钮开启您的保险</p>
-        
+        <p class="text-gray-300 text-lg mb-6">点击下方按钮开启您的保险</p>
+    </div>
+    
+    <!-- 保险箱区域（上方） -->
+    <div class="text-center w-full max-w-4xl mb-8">
         <!-- 保险盒子 -->
         <div id="insuranceBox" class="relative w-64 h-64 md:w-80 md:h-80 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
             <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
@@ -213,18 +230,38 @@
             <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
         </div>
     </div>
+    
+    <!-- 物品记录区域（下方） -->
+    <div class="w-full max-w-4xl bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up">
+        <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
+            <i class="fa fa-list-alt mr-2"></i> 物品获取记录
+        </h2>
+        
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+            <button id="clearRecordsBtn" class="text-sm bg-red/20 text-red border border-red/50 py-1 px-3 rounded hover:bg-red/30 transition-colors duration-300">
+                <i class="fa fa-trash mr-1"></i> 清空记录
+            </button>
+            <span class="text-sm text-gray-300" id="totalItemsCount">总计: 0 件</span>
+        </div>
+        
+        <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2">
+            <div class="text-gray-400 text-center py-4">
+                暂无物品记录
+            </div>
+        </div>
+    </div>
 
     <!-- 解锁弹窗 -->
     <div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
-        <div class="relative bg-primary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in">
+        <div class="relative bg-primary w-full max-w-2xl mx-4 rounded-lg shadow-2xl overflow-hidden fade-in">
             <!-- 解锁界面 -->
             <div id="unlockScreen" class="p-6">
                 <h2 class="text-2xl font-bold mb-6 text-center text-highlight">解锁保险</h2>
                 
                 <!-- 密码滚动区域 -->
                 <div class="flex justify-center gap-4 mb-6" id="scrollArea">
-                    <!-- 第一列 - 目标6，顺序：2、K、6、L、D循环 -->
+                    <!-- 第一列 - 目标6 -->
                     <div class="scroll-container relative bg-primary/80" data-target="6" data-next="1" data-chars="2,K,6,L,D">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
@@ -232,7 +269,7 @@
                             <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    <!-- 第二列 - 目标D，顺序：O、9、D、(、~循环 -->
+                    <!-- 第二列 - 目标D -->
                     <div class="scroll-container relative bg-primary/80" data-target="D" data-next="2" data-chars="O,9,D,(,~">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
@@ -240,7 +277,7 @@
                             <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    <!-- 第三列 - 目标F，顺序：+、4、F、^、&循环 -->
+                    <!-- 第三列 - 目标F -->
                     <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
@@ -248,7 +285,7 @@
                             <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    <!-- 第四列 - 目标U，顺序：&、M、U、=、2循环 -->
+                    <!-- 第四列 - 目标U -->
                     <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&,M,U,=,2">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
@@ -256,7 +293,7 @@
                             <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    <!-- 第五列 - 目标P，顺序：)、9、P、6、@循环 -->
+                    <!-- 第五列 - 目标P -->
                     <div class="scroll-container relative bg-primary/80" data-target="P" data-next="5" data-chars="),9,P,6,@">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
@@ -286,12 +323,12 @@
             <div id="rewardScreen" class="p-6 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center text-highlight">保险物品清单</h2>
                 
-                <!-- 4x4 格子容器 -->
-                <div id="gridContainer" class="grid grid-cols-4 gap-1 bg-secondary p-2 rounded-lg mb-6 relative">
-                    <!-- 格子将通过JS动态生成 -->
+                <!-- 保险格子容器 - 淡灰色背景，物品无间隔和边框 -->
+                <div id="gridContainer" class="w-full aspect-square bg-safe-gray relative mb-6">
+                    <!-- 不显示任何内部线条，完全空白背景 -->
                 </div>
                 
-                <button id="closeBtn" class="w-full bg-highlight text-primary font-bold py-2 px-4 rounded hover:bg-highlight/80 transition-colors duration-300">
+                <button id="closeBtn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500 transition-colors duration-300">
                     关闭
                 </button>
             </div>
@@ -311,6 +348,9 @@
         const selectButton = document.querySelector('.select-button');
         const scrollArea = document.getElementById('scrollArea');
         const buttonContainer = document.getElementById('buttonContainer');
+        const clearRecordsBtn = document.getElementById('clearRecordsBtn');
+        const recordsContainer = document.getElementById('recordsContainer');
+        const totalItemsCount = document.getElementById('totalItemsCount');
         
         // 滚动列元素
         const scrollCols = document.querySelectorAll('.scroll-container');
@@ -323,6 +363,10 @@
             document.getElementById('scroll3'),
             document.getElementById('scroll4')
         ];
+        
+        // 物品记录数据（使用localStorage持久化存储）
+        let itemRecords = JSON.parse(localStorage.getItem('deltaInsuranceRecords')) || {};
+        let currentRewardItems = []; // 当前奖励的物品
         
         // 当前激活的列索引
         let currentColIndex = 0;
@@ -430,7 +474,7 @@
         // 调整按钮位置以确保可点击
         function adjustButtonPosition() {
             const scrollWidth = scrollArea.offsetWidth;
-            const containerWidth = unlockModal.querySelector('.max-w-md').offsetWidth;
+            const containerWidth = unlockModal.querySelector('.max-w-2xl').offsetWidth;
             
             // 如果按钮在右侧会超出容器，则放到下方
             if (scrollWidth + 120 > containerWidth - 40) { 
@@ -550,9 +594,111 @@
             unlockScreen.classList.remove('hidden');
             rewardsShown = false;
             redItemCount = 0; // 重置红色物品计数
+            currentRewardItems = []; // 清空当前奖励物品
             // 重置按钮文字
             selectButton.querySelector('span').textContent = '选定密码';
         });
+        
+        // 清空记录按钮点击事件
+        clearRecordsBtn.addEventListener('click', function() {
+            if (Object.keys(itemRecords).length === 0) return;
+            
+            // 显示按钮点击动画
+            this.classList.add('button-click');
+            setTimeout(() => {
+                this.classList.remove('button-click');
+            }, 200);
+            
+            // 确认清空
+            if (confirm('确定要清空所有物品记录吗？')) {
+                // 清空记录数据
+                itemRecords = {};
+                
+                // 更新localStorage
+                localStorage.setItem('deltaInsuranceRecords', JSON.stringify(itemRecords));
+                
+                // 刷新物品记录显示
+                renderItemRecords();
+                
+                // 显示清空成功的视觉反馈
+                const successMsg = document.createElement('div');
+                successMsg.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green text-white px-4 py-2 rounded shadow-lg z-50 fade-in';
+                successMsg.textContent = '记录已清空';
+                document.body.appendChild(successMsg);
+                
+                // 3秒后移除提示
+                setTimeout(() => {
+                    successMsg.style.opacity = '0';
+                    successMsg.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => {
+                        document.body.removeChild(successMsg);
+                    }, 500);
+                }, 3000);
+            }
+        });
+        
+        // 渲染物品记录
+        function renderItemRecords() {
+            // 清空容器
+            recordsContainer.innerHTML = '';
+            
+            // 获取物品记录列表并按数量排序
+            const recordsList = Object.values(itemRecords)
+                .sort((a, b) => b.count - a.count);
+            
+            // 更新总计数
+            const totalCount = recordsList.reduce((sum, item) => sum + item.count, 0);
+            totalItemsCount.textContent = `总计: ${totalCount} 件`;
+            
+            if (recordsList.length === 0) {
+                // 没有记录
+                recordsContainer.innerHTML = `
+                    <div class="text-gray-400 text-center py-4">
+                        暂无物品记录
+                    </div>
+                `;
+                return;
+            }
+            
+            // 添加记录项
+            recordsList.forEach(item => {
+                const recordItem = document.createElement('div');
+                recordItem.className = 'record-item flex justify-between items-center p-2 rounded';
+                recordItem.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fa ${item.icon} mr-2 text-${item.color}"></i>
+                        <span class="truncate max-w-[200px] sm:max-w-[400px]">${item.name}</span>
+                    </div>
+                    <span class="counter-badge bg-${item.color}/30 text-white rounded-full text-xs font-bold">
+                        ${item.count}
+                    </span>
+                `;
+                recordsContainer.appendChild(recordItem);
+            });
+        }
+        
+        // 自动记录物品到记录列表
+        function autoRecordItems(items) {
+            items.forEach(item => {
+                // 使用物品名称作为唯一标识
+                const itemId = item.name;
+                
+                if (itemRecords[itemId]) {
+                    itemRecords[itemId].count++;
+                } else {
+                    itemRecords[itemId] = {
+                        ...item,
+                        count: 1
+                    };
+                }
+            });
+            
+            // 保存到localStorage
+            localStorage.setItem('deltaInsuranceRecords', JSON.stringify(itemRecords));
+            
+            // 刷新物品记录显示
+            renderItemRecords();
+        }
         
         // 为选定密码按钮添加点击事件
         selectButton.addEventListener('click', () => {
@@ -734,6 +880,7 @@
             randomOffsets = [];
             targetPositions = [];
             redItemCount = 0; // 重置红色物品计数
+            currentRewardItems = []; // 清空当前奖励物品
             updateProgressBar();
             
             // 重置所有滚动列
@@ -807,19 +954,10 @@
             }, 800);
         }
         
-        // 生成奖励 - 基于调整后的概率
+        // 生成奖励 - 所有物品都可识别
         function generateRewards() {
-            // 清空格子
+            // 清空格子内容
             gridContainer.innerHTML = '';
-            
-            // 创建16个正方形格子，全部先显示为未读取状态
-            for (let i = 0; i < 16; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell unread-item rounded-sm transition-all duration-300';
-                cell.dataset.row = Math.floor(i / 4);
-                cell.dataset.col = i % 4;
-                gridContainer.appendChild(cell);
-            }
             
             // 随机选择物品数量 (2-4个)
             let itemCount = Math.floor(Math.random() * 3) + 2;
@@ -839,7 +977,7 @@
                 }
             });
             
-            // 随机选择物品
+            // 随机选择物品（所有物品都可识别）
             for (let i = 0; i < itemCount; i++) {
                 let random = Math.random() * totalWeight;
                 let selectedIndex = -1;
@@ -864,7 +1002,7 @@
                 
                 if (selectedIndex !== -1) {
                     const selectedItem = items[selectedIndex];
-                    selectedItems.push(selectedItem);
+                    selectedItems.push({...selectedItem});
                     
                     // 如果选择了红色物品，增加计数以降低后续概率
                     if (selectedItem.color === 'red') {
@@ -872,6 +1010,12 @@
                     }
                 }
             }
+            
+            // 保存当前奖励物品
+            currentRewardItems = [...selectedItems];
+            
+            // 自动记录物品
+            autoRecordItems(currentRewardItems);
             
             // 先确定所有物品的位置并显示占位符
             const allItemCells = placeAllItemPlaceholders(selectedItems);
@@ -911,22 +1055,46 @@
                         // 记录占用的格子
                         cellsToOccupy.forEach(({r, c}) => occupiedCells.add(`${r},${c}`));
                         
-                        // 显示占位符
-                        cellsToOccupy.forEach(({r, c}) => {
-                            const index = r * 4 + c;
-                            const cell = gridContainer.children[index];
-                            cell.classList.remove('unread-item');
-                            cell.classList.add('placeholder-item');
+                        // 计算物品的边界
+                        const minRow = Math.min(...cellsToOccupy.map(c => c.r));
+                        const maxRow = Math.max(...cellsToOccupy.map(c => c.r));
+                        const minCol = Math.min(...cellsToOccupy.map(c => c.c));
+                        const maxCol = Math.max(...cellsToOccupy.map(c => c.c));
+                        
+                        // 显示占位符（物品无间隔）
+                        cellsToOccupy.forEach(({r, c}, cellIndex) => {
+                            const cell = document.createElement('div');
+                            cell.className = `grid-cell placeholder-item absolute transition-all duration-300`;
+                            
+                            // 计算位置和大小（第一格占满整个物品空间，其他格子透明）
+                            if (cellIndex === 0) {
+                                // 第一个格子设置为整个物品大小
+                                const cellWidth = (maxCol - minCol + 1) * 25;
+                                const cellHeight = (maxRow - minRow + 1) * 25;
+                                cell.style.width = `${cellWidth}%`;
+                                cell.style.height = `${cellHeight}%`;
+                                cell.style.left = `${minCol * 25}%`;
+                                cell.style.top = `${minRow * 25}%`;
+                            } else {
+                                // 其他格子透明，只用于占位
+                                cell.style.opacity = '0';
+                                cell.style.width = '25%';
+                                cell.style.height = '25%';
+                                cell.style.left = `${c * 25}%`;
+                                cell.style.top = `${r * 25}%`;
+                            }
+                            
+                            gridContainer.appendChild(cell);
                         });
                         
                         // 记录这个物品的位置信息
                         allItemCells.push({
                             item,
                             cells: cellsToOccupy,
-                            minRow: Math.min(...cellsToOccupy.map(c => c.r)),
-                            maxRow: Math.max(...cellsToOccupy.map(c => c.r)),
-                            minCol: Math.min(...cellsToOccupy.map(c => c.c)),
-                            maxCol: Math.max(...cellsToOccupy.map(c => c.c))
+                            minRow,
+                            maxRow,
+                            minCol,
+                            maxCol
                         });
                         
                         // 更新当前位置
@@ -947,7 +1115,7 @@
             return allItemCells;
         }
         
-        // 按顺序读取物品
+        // 按顺序读取物品 - 无边框无间隔
         function readItemsInOrder(items, allItemCells) {
             let totalDelay = 1000; // 延迟1秒开始读取，让用户看到所有占位符
             
@@ -956,10 +1124,10 @@
                 const delayBetweenItems = 1000; // 物品之间的延迟
                 
                 // 计算物品位置和大小
-                const itemWidth = (maxCol - minCol + 1) * (100 / 4) - 2;
-                const itemHeight = (maxRow - minRow + 1) * (100 / 4) - 2;
-                const itemLeft = minCol * (100 / 4);
-                const itemTop = minRow * (100 / 4);
+                const itemWidth = (maxCol - minCol + 1) * 25;
+                const itemHeight = (maxRow - minRow + 1) * 25;
+                const itemLeft = minCol * 25;
+                const itemTop = minRow * 25;
                 
                 // 安排读取这个物品
                 setTimeout(() => {
@@ -978,25 +1146,45 @@
                     magnifierContainer.appendChild(magnifier);
                     gridContainer.appendChild(magnifierContainer);
                     
-                    // 读取完成，显示物品
+                    // 读取完成，显示物品（无边框）
                     setTimeout(() => {
                         magnifierContainer.remove();
                         
-                        cells.forEach(({r, c}) => {
-                            const index = r * 4 + c;
-                            const cell = gridContainer.children[index];
-                            cell.classList.remove('placeholder-item');
-                            cell.classList.add(`bg-${item.color}`);
+                        // 移除所有占位符
+                        cells.forEach(({r, c}, cellIndex) => {
+                            // 找到对应的占位符元素
+                            const placeholders = Array.from(gridContainer.children).filter(child => 
+                                child.classList.contains('placeholder-item') &&
+                                Math.round(parseFloat(child.style.left)) === c * 25 &&
+                                Math.round(parseFloat(child.style.top)) === r * 25
+                            );
                             
-                            if (r === minRow && c === minCol) {
-                                cell.innerHTML = `
-                                    <div class="h-full w-full flex flex-col items-center justify-center p-1">
-                                        <i class="fa ${item.icon || 'fa-diamond'} text-white text-sm md:text-base mb-1"></i>
-                                        <span class="text-white text-xs truncate">${item.name}</span>
-                                    </div>
-                                `;
-                            }
+                            placeholders.forEach(placeholder => {
+                                gridContainer.removeChild(placeholder);
+                            });
                         });
+                        
+                        // 创建物品元素（合并为一个长方形，无任何边框和间隔）
+                        const itemElement = document.createElement('div');
+                        itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 flex items-center justify-center`;
+                        itemElement.innerHTML = `
+                            <div class="text-center p-1">
+                                <i class="fa ${item.icon} text-white text-lg mb-1"></i>
+                                <div class="text-white text-xs font-bold">${item.name}</div>
+                            </div>
+                        `;
+                        
+                        // 确保物品没有任何边框和间隔
+                        itemElement.style.width = `${itemWidth}%`;
+                        itemElement.style.height = `${itemHeight}%`;
+                        itemElement.style.left = `${itemLeft}%`;
+                        itemElement.style.top = `${itemTop}%`;
+                        itemElement.style.border = 'none';
+                        itemElement.style.boxShadow = 'none';
+                        itemElement.style.margin = '0';
+                        itemElement.style.padding = '0';
+                        
+                        gridContainer.appendChild(itemElement);
                     }, colorDelays[item.color] * 1000);
                 }, totalDelay);
                 
@@ -1007,7 +1195,11 @@
         
         // 初始化
         window.addEventListener('resize', adjustButtonPosition);
-        window.addEventListener('load', initScrollers);
+        window.addEventListener('load', () => {
+            initScrollers();
+            // 初始化时渲染物品记录
+            renderItemRecords();
+        });
     </script>
 </body>
 </html>
