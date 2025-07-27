@@ -21,6 +21,7 @@
                         red: '#F44336',
                         gray: '#808080',
                         'safe-gray': '#D0D0D0', // 保险箱淡灰色
+                        'item-border': '#FFFFFF', // 物品边框颜色
                     },
                     fontFamily: {
                         digital: ['Orbitron', 'sans-serif'],
@@ -133,6 +134,7 @@
             }
             .placeholder-item {
                 background-color: rgba(128, 128, 128, 0.3);
+                border: 1px dashed rgba(255, 255, 255, 0.3);
             }
             .magnifier-track {
                 position: absolute;
@@ -203,6 +205,38 @@
             }
             .item-gradient {
                 background-image: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%);
+            }
+            .skip-button {
+                transition: all 0.3s ease;
+            }
+            .skip-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            }
+            /* 物品大小标签样式 */
+            .size-label {
+                position: absolute;
+                bottom: 2px;
+                right: 2px;
+                font-size: 8px;
+                padding: 1px 3px;
+                border-radius: 2px;
+                background-color: rgba(0, 0, 0, 0.5);
+                color: white;
+                font-weight: bold;
+            }
+            /* 网格线样式 */
+            .grid-lines {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }
+            .grid-line {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.2);
             }
         }
     </style>
@@ -303,10 +337,13 @@
                     </div>
                 </div>
                 
-                <!-- 选定密码按钮 -->
-                <div class="flex justify-center mb-8" id="buttonContainer">
+                <!-- 按钮区域：包含选定密码和直接解锁按钮 -->
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8" id="buttonContainer">
                     <div class="select-button w-24 h-14 border-2 border-green/50 text-green hover:bg-green/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
                         <span class="font-bold">选定密码</span>
+                    </div>
+                    <div id="directUnlockBtn" class="skip-button w-24 h-14 border-2 border-highlight/70 text-highlight hover:bg-highlight/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
+                        <span class="font-bold">直接解锁</span>
                     </div>
                 </div>
                 
@@ -323,9 +360,13 @@
             <div id="rewardScreen" class="p-6 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-center text-highlight">保险物品清单</h2>
                 
-                <!-- 保险格子容器 - 淡灰色背景，物品无间隔和边框 -->
-                <div id="gridContainer" class="w-full aspect-square bg-safe-gray relative mb-6">
-                    <!-- 不显示任何内部线条，完全空白背景 -->
+                <!-- 保险格子容器 - 带网格线，物品无边框 -->
+                <div id="gridContainer" class="w-full aspect-square bg-safe-gray relative mb-6 p-4">
+                    <!-- 网格线容器 -->
+                    <div class="grid-lines" id="gridLines">
+                        <!-- 网格线将通过JS动态生成 -->
+                    </div>
+                    <!-- 物品将通过JS动态生成 -->
                 </div>
                 
                 <button id="closeBtn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500 transition-colors duration-300">
@@ -344,8 +385,10 @@
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const gridContainer = document.getElementById('gridContainer');
+        const gridLines = document.getElementById('gridLines');
         const closeBtn = document.getElementById('closeBtn');
         const selectButton = document.querySelector('.select-button');
+        const directUnlockBtn = document.getElementById('directUnlockBtn');
         const scrollArea = document.getElementById('scrollArea');
         const buttonContainer = document.getElementById('buttonContainer');
         const clearRecordsBtn = document.getElementById('clearRecordsBtn');
@@ -400,6 +443,10 @@
         let errorPauseTimer = null;
         // 已出现的红色物品数量
         let redItemCount = 0;
+        // 网格大小和间隔设置
+        const gridSize = 4; // 4x4网格
+        const cellPercentage = 100 / gridSize; // 每个格子的百分比宽度
+        const itemSpacing = 2; // 物品之间的间隔百分比
         
         // 初始化跑马灯内容和动画
         function initScrollers() {
@@ -471,20 +518,45 @@
             scrollCols[currentColIndex].classList.add('active-column');
         }
         
+        // 生成网格线
+        function generateGridLines() {
+            gridLines.innerHTML = '';
+            
+            // 添加水平线
+            for (let i = 1; i < gridSize; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line';
+                line.style.height = '1px';
+                line.style.width = '100%';
+                line.style.top = `${i * cellPercentage}%`;
+                gridLines.appendChild(line);
+            }
+            
+            // 添加垂直线
+            for (let i = 1; i < gridSize; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line';
+                line.style.width = '1px';
+                line.style.height = '100%';
+                line.style.left = `${i * cellPercentage}%`;
+                gridLines.appendChild(line);
+            }
+        }
+        
         // 调整按钮位置以确保可点击
         function adjustButtonPosition() {
             const scrollWidth = scrollArea.offsetWidth;
             const containerWidth = unlockModal.querySelector('.max-w-2xl').offsetWidth;
             
             // 如果按钮在右侧会超出容器，则放到下方
-            if (scrollWidth + 120 > containerWidth - 40) { 
-                buttonContainer.classList.remove('justify-center');
-                buttonContainer.classList.add('mt-2', 'flex', 'justify-center');
+            if (scrollWidth + 240 > containerWidth - 40) { // 增加了直接解锁按钮的宽度计算
+                buttonContainer.classList.remove('flex-row', 'justify-center');
+                buttonContainer.classList.add('flex-col', 'items-center');
                 scrollArea.classList.remove('mb-6');
                 scrollArea.classList.add('mb-2');
             } else {
-                buttonContainer.classList.add('justify-center');
-                buttonContainer.classList.remove('mt-2');
+                buttonContainer.classList.add('flex-row', 'justify-center');
+                buttonContainer.classList.remove('flex-col', 'items-center');
                 scrollArea.classList.add('mb-6');
                 scrollArea.classList.remove('mb-2');
             }
@@ -601,20 +673,37 @@
         
         // 清空记录按钮点击事件
         clearRecordsBtn.addEventListener('click', function() {
-            if (Object.keys(itemRecords).length === 0) return;
-            
             // 显示按钮点击动画
             this.classList.add('button-click');
             setTimeout(() => {
                 this.classList.remove('button-click');
             }, 200);
             
+            // 检查是否有记录可清空
+            if (Object.keys(itemRecords).length === 0) {
+                // 显示没有记录的提示
+                const infoMsg = document.createElement('div');
+                infoMsg.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-blue text-white px-4 py-2 rounded shadow-lg z-50 fade-in';
+                infoMsg.textContent = '没有记录可清空';
+                document.body.appendChild(infoMsg);
+                
+                setTimeout(() => {
+                    infoMsg.style.opacity = '0';
+                    infoMsg.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => {
+                        document.body.removeChild(infoMsg);
+                    }, 500);
+                }, 2000);
+                return;
+            }
+            
             // 确认清空
             if (confirm('确定要清空所有物品记录吗？')) {
                 // 清空记录数据
                 itemRecords = {};
                 
-                // 更新localStorage
+                // 强制更新localStorage
+                localStorage.removeItem('deltaInsuranceRecords');
                 localStorage.setItem('deltaInsuranceRecords', JSON.stringify(itemRecords));
                 
                 // 刷新物品记录显示
@@ -635,6 +724,33 @@
                     }, 500);
                 }, 3000);
             }
+        });
+        
+        // 直接解锁按钮点击事件
+        directUnlockBtn.addEventListener('click', function() {
+            // 按钮点击反馈动画
+            this.classList.add('button-click');
+            setTimeout(() => {
+                this.classList.remove('button-click');
+            }, 200);
+            
+            // 停止所有动画
+            stopAllAnimations();
+            
+            // 强制所有列显示正确密码
+            forceAllColumnsToTarget();
+            
+            // 立即完成进度
+            progress = 100;
+            updateProgressBar();
+            
+            // 更新按钮文字
+            selectButton.querySelector('span').textContent = '解锁完成';
+            
+            // 短暂延迟后显示奖励
+            setTimeout(() => {
+                showRewards();
+            }, 800);
         });
         
         // 渲染物品记录
@@ -946,6 +1062,9 @@
             if (rewardsShown) return;
             rewardsShown = true;
             
+            // 生成网格线
+            generateGridLines();
+            
             // 延迟一点时间再显示奖励
             setTimeout(() => {
                 unlockScreen.classList.add('hidden');
@@ -956,8 +1075,10 @@
         
         // 生成奖励 - 所有物品都可识别
         function generateRewards() {
-            // 清空格子内容
-            gridContainer.innerHTML = '';
+            // 清空格子内容（保留网格线）
+            while (gridContainer.children.length > 1) {
+                gridContainer.removeChild(gridContainer.lastChild);
+            }
             
             // 随机选择物品数量 (2-4个)
             let itemCount = Math.floor(Math.random() * 3) + 2;
@@ -1036,13 +1157,13 @@
                 let placed = false;
                 
                 // 尝试放置物品，如果当前位置不行则寻找下一个位置
-                while (!placed && currentRow <= 4 - height) {
+                while (!placed && currentRow <= gridSize - height) {
                     let canPlace = true;
                     const cellsToOccupy = [];
                     
                     for (let r = currentRow; r < currentRow + height; r++) {
                         for (let c = currentCol; c < currentCol + width; c++) {
-                            if (c >= 4 || occupiedCells.has(`${r},${c}`)) {
+                            if (c >= gridSize || occupiedCells.has(`${r},${c}`)) {
                                 canPlace = false;
                                 break;
                             }
@@ -1061,31 +1182,21 @@
                         const minCol = Math.min(...cellsToOccupy.map(c => c.c));
                         const maxCol = Math.max(...cellsToOccupy.map(c => c.c));
                         
-                        // 显示占位符（物品无间隔）
-                        cellsToOccupy.forEach(({r, c}, cellIndex) => {
-                            const cell = document.createElement('div');
-                            cell.className = `grid-cell placeholder-item absolute transition-all duration-300`;
-                            
-                            // 计算位置和大小（第一格占满整个物品空间，其他格子透明）
-                            if (cellIndex === 0) {
-                                // 第一个格子设置为整个物品大小
-                                const cellWidth = (maxCol - minCol + 1) * 25;
-                                const cellHeight = (maxRow - minRow + 1) * 25;
-                                cell.style.width = `${cellWidth}%`;
-                                cell.style.height = `${cellHeight}%`;
-                                cell.style.left = `${minCol * 25}%`;
-                                cell.style.top = `${minRow * 25}%`;
-                            } else {
-                                // 其他格子透明，只用于占位
-                                cell.style.opacity = '0';
-                                cell.style.width = '25%';
-                                cell.style.height = '25%';
-                                cell.style.left = `${c * 25}%`;
-                                cell.style.top = `${r * 25}%`;
-                            }
-                            
-                            gridContainer.appendChild(cell);
-                        });
+                        // 计算物品的实际尺寸和位置（考虑间隔）
+                        const itemWidth = (maxCol - minCol + 1) * cellPercentage - (itemSpacing * 2);
+                        const itemHeight = (maxRow - minRow + 1) * cellPercentage - (itemSpacing * 2);
+                        const itemLeft = minCol * cellPercentage + itemSpacing;
+                        const itemTop = minRow * cellPercentage + itemSpacing;
+                        
+                        // 创建一个占位符元素（单个元素表示整个物品）
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'placeholder-item absolute transition-all duration-300';
+                        placeholder.style.width = `${itemWidth}%`;
+                        placeholder.style.height = `${itemHeight}%`;
+                        placeholder.style.left = `${itemLeft}%`;
+                        placeholder.style.top = `${itemTop}%`;
+                        
+                        gridContainer.appendChild(placeholder);
                         
                         // 记录这个物品的位置信息
                         allItemCells.push({
@@ -1094,12 +1205,17 @@
                             minRow,
                             maxRow,
                             minCol,
-                            maxCol
+                            maxCol,
+                            width: itemWidth,
+                            height: itemHeight,
+                            left: itemLeft,
+                            top: itemTop,
+                            placeholder
                         });
                         
                         // 更新当前位置
                         currentCol += width;
-                        if (currentCol > 4 - 1) {
+                        if (currentCol > gridSize - 1) {
                             currentCol = 0;
                             currentRow++;
                         }
@@ -1115,29 +1231,32 @@
             return allItemCells;
         }
         
-        // 按顺序读取物品 - 无边框无间隔
+        // 按顺序读取物品 - 物品无外边框，显示在网格中
         function readItemsInOrder(items, allItemCells) {
             let totalDelay = 1000; // 延迟1秒开始读取，让用户看到所有占位符
             
             allItemCells.forEach((itemData, index) => {
-                const { item, cells, minRow, maxRow, minCol, maxCol } = itemData;
+                const { 
+                    item, 
+                    cells, 
+                    width, 
+                    height, 
+                    left, 
+                    top,
+                    placeholder
+                } = itemData;
                 const delayBetweenItems = 1000; // 物品之间的延迟
-                
-                // 计算物品位置和大小
-                const itemWidth = (maxCol - minCol + 1) * 25;
-                const itemHeight = (maxRow - minRow + 1) * 25;
-                const itemLeft = minCol * 25;
-                const itemTop = minRow * 25;
+                const [sizeWidth, sizeHeight] = item.size;
                 
                 // 安排读取这个物品
                 setTimeout(() => {
                     // 添加放大镜动画
                     const magnifierContainer = document.createElement('div');
                     magnifierContainer.className = 'magnifier-track';
-                    magnifierContainer.style.left = `${itemLeft}%`;
-                    magnifierContainer.style.top = `${itemTop}%`;
-                    magnifierContainer.style.width = `${itemWidth}%`;
-                    magnifierContainer.style.height = `${itemHeight}%`;
+                    magnifierContainer.style.left = `${left}%`;
+                    magnifierContainer.style.top = `${top}%`;
+                    magnifierContainer.style.width = `${width}%`;
+                    magnifierContainer.style.height = `${height}%`;
                     
                     const magnifier = document.createElement('i');
                     magnifier.className = 'magnifier fa fa-search';
@@ -1146,43 +1265,31 @@
                     magnifierContainer.appendChild(magnifier);
                     gridContainer.appendChild(magnifierContainer);
                     
-                    // 读取完成，显示物品（无边框）
+                    // 读取完成，显示物品（无外边框）
                     setTimeout(() => {
                         magnifierContainer.remove();
                         
-                        // 移除所有占位符
-                        cells.forEach(({r, c}, cellIndex) => {
-                            // 找到对应的占位符元素
-                            const placeholders = Array.from(gridContainer.children).filter(child => 
-                                child.classList.contains('placeholder-item') &&
-                                Math.round(parseFloat(child.style.left)) === c * 25 &&
-                                Math.round(parseFloat(child.style.top)) === r * 25
-                            );
-                            
-                            placeholders.forEach(placeholder => {
-                                gridContainer.removeChild(placeholder);
-                            });
-                        });
+                        // 移除占位符
+                        if (placeholder && placeholder.parentNode === gridContainer) {
+                            gridContainer.removeChild(placeholder);
+                        }
                         
-                        // 创建物品元素（合并为一个长方形，无任何边框和间隔）
+                        // 创建物品元素（无外边框）
                         const itemElement = document.createElement('div');
                         itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 flex items-center justify-center`;
                         itemElement.innerHTML = `
-                            <div class="text-center p-1">
+                            <div class="text-center p-1 w-full h-full flex flex-col justify-center">
                                 <i class="fa ${item.icon} text-white text-lg mb-1"></i>
-                                <div class="text-white text-xs font-bold">${item.name}</div>
+                                <div class="text-white text-xs font-bold truncate">${item.name}</div>
+                                <div class="size-label">${sizeWidth}x${sizeHeight}</div>
                             </div>
                         `;
                         
-                        // 确保物品没有任何边框和间隔
-                        itemElement.style.width = `${itemWidth}%`;
-                        itemElement.style.height = `${itemHeight}%`;
-                        itemElement.style.left = `${itemLeft}%`;
-                        itemElement.style.top = `${itemTop}%`;
-                        itemElement.style.border = 'none';
-                        itemElement.style.boxShadow = 'none';
-                        itemElement.style.margin = '0';
-                        itemElement.style.padding = '0';
+                        // 设置物品位置、大小和间隔
+                        itemElement.style.width = `${width}%`;
+                        itemElement.style.height = `${height}%`;
+                        itemElement.style.left = `${left}%`;
+                        itemElement.style.top = `${top}%`;
                         
                         gridContainer.appendChild(itemElement);
                     }, colorDelays[item.color] * 1000);
@@ -1203,4 +1310,3 @@
     </script>
 </body>
 </html>
-    
