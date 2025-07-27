@@ -121,6 +121,15 @@
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 transition: all 0.3s ease;
             }
+            .unread-item {
+                background-color: #000;
+                background-image: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
+                                  linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
+                                  linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.05) 75%),
+                                  linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.05) 75%);
+                background-size: 20px 20px;
+                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            }
             .magnifier-track {
                 position: absolute;
                 pointer-events: none;
@@ -171,6 +180,11 @@
             .center-char {
                 font-weight: bold !important;
                 transform: scale(1.1);
+            }
+            /* 当前激活列高亮 */
+            .active-column {
+                border-color: #10FDD9 !important;
+                box-shadow: 0 0 10px rgba(16, 253, 217, 0.7);
             }
         }
     </style>
@@ -264,9 +278,9 @@
                 </div>
             </div>
             
-            <!-- 奖励界面 (默认隐藏) -->
+            <!-- 奖励界面 -->
             <div id="rewardScreen" class="p-6 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">恭喜获得奖励</h2>
+                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">保险物品清单</h2>
                 
                 <!-- 4x4 格子容器 -->
                 <div id="gridContainer" class="grid grid-cols-4 gap-1 bg-secondary p-2 rounded-lg mb-6 relative">
@@ -332,8 +346,8 @@
         const middlePositionIndex = 2;
         // 字符高度（精确计算确保对齐）
         const charHeight = 32; // 160px容器高度 / 5个字符 = 32px每个
-        // 密码选择允许的误差范围（像素）- 调整为±25px
-        const selectionTolerance = 25;
+        // 密码选择允许的误差范围（像素）
+        const selectionTolerance = 35;
         // 错误停顿计时器
         let errorPauseTimer = null;
         // 已出现的红色物品数量
@@ -379,14 +393,14 @@
                 el.style.transform = `translateY(-${initialOffset}px)`;
                 el.style.transition = 'transform 0.3s ease-out';
                 
-                // 创建平滑循环动画
+                // 创建平滑循环动画 - 提高速度，从2000ms改为1000ms
                 const animation = el.animate(
                     [
                         { transform: `translateY(-${initialOffset}px)` },
                         { transform: `translateY(-${initialOffset + chars.length * charHeight}px)` }
                     ],
                     {
-                        duration: 3000, // 适中的滚动速度，便于观察
+                        duration: 1000, // 提高滚动速度1秒
                         iterations: Infinity,
                         easing: 'linear'
                     }
@@ -396,6 +410,17 @@
                 animation.play();
                 scrollAnimations[index] = animation;
             });
+            
+            // 高亮显示第一列作为初始激活列
+            highlightActiveColumn();
+        }
+        
+        // 高亮显示当前激活的列
+        function highlightActiveColumn() {
+            // 移除所有列的高亮
+            scrollCols.forEach(col => col.classList.remove('active-column'));
+            // 高亮当前列
+            scrollCols[currentColIndex].classList.add('active-column');
         }
         
         // 调整按钮位置以确保可点击
@@ -454,15 +479,14 @@
             // 金色1x2
             { name: '荷美尔陶俑', size: [1, 2], color: 'gold', icon: 'fa-female', weight: 3 },
             
-            // 金色1x3
-            { name: '珠宝头冠', size: [1, 3], color: 'gold', icon: 'fa-diamond', weight: 3 },
+            // 金色3x1
+            { name: '珠宝头冠', size: [3, 1], color: 'gold', icon: 'fa-diamond', weight: 3 },
             
             // 金色2x1
             { name: '金枝桂冠', size: [2, 1], color: 'gold', icon: 'fa-cogs', weight: 3 },
             
             // 金色2x2
             { name: '座钟', size: [2, 2], color: 'gold', icon: 'fa-clock-o', weight: 3 },
-            
             
             // 金色3x2
             { name: '本地特色首饰', size: [3, 2], color: 'gold', icon: 'fa-diamond', weight: 3 },
@@ -563,12 +587,17 @@
             const boxCharIndex = Math.floor(boxCharPosition / charHeight) % charCount;
             const boxChar = chars[boxCharIndex];
             
+            // 计算与目标位置的像素差
+            const targetPosition = targetPositions[currentColIndex] * charHeight;
+            const currentPosition = (boxCharIndex * charHeight) % (charCount * charHeight);
+            const pixelDiff = Math.abs((currentPosition - targetPosition + charCount * charHeight) % (charCount * charHeight));
+            
             // 暂停当前列动画
             animation.pause();
             isPaused = true;
             
-            // 检查方框中的字符是否是正确密码（带容错）
-            if (boxChar === targetChar) {
+            // 检查方框中的字符是否是正确密码（带±35px容错）
+            if (boxChar === targetChar || pixelDiff <= selectionTolerance) {
                 // 点击正确 - 按钮变为绿色并添加动画
                 selectButton.classList.add('complete-animation', 'bg-green/30');
                 
@@ -581,7 +610,7 @@
                     const charElements = scrollElements[currentColIndex].querySelectorAll('div');
                     charElements.forEach(el => el.classList.remove('char-scale'));
                     
-                    // 只给当前列的正确密码添加弹动动画
+                    // 只给当前列的正确密码添加弹动动画（第三格字符）
                     const targetCharIndex = chars.length + targetPositions[currentColIndex];
                     charElements[targetCharIndex].classList.add('char-scale', 'center-char');
                     
@@ -603,6 +632,7 @@
                     if (nextCol < 5) {
                         currentColIndex = nextCol;
                         isPaused = false;
+                        highlightActiveColumn(); // 高亮新的当前列
                     } else {
                         // 全部解锁成功 - 更新按钮文字
                         selectButton.querySelector('span').textContent = '解锁完成';
@@ -670,7 +700,7 @@
                     scrollAnimations[index].cancel();
                 }
                 
-                // 高亮方框中的字符
+                // 高亮方框中的字符（第三格）
                 const charElements = scrollElements[index].querySelectorAll('div');
                 const targetCharIndex = chars.length + targetPositions[index];
                 charElements[targetCharIndex].classList.add('center-char');
@@ -704,7 +734,7 @@
             
             // 重置所有滚动列
             scrollCols.forEach((col, index) => {
-                col.classList.remove('error-highlight', 'bg-gray-700/60', 'final-highlight');
+                col.classList.remove('error-highlight', 'bg-gray-700/60', 'final-highlight', 'active-column');
                 
                 // 重置动画
                 if (scrollAnimations[index]) {
@@ -778,10 +808,10 @@
             // 清空格子
             gridContainer.innerHTML = '';
             
-            // 创建16个正方形格子
+            // 创建16个正方形格子，全部先显示为未读取状态
             for (let i = 0; i < 16; i++) {
                 const cell = document.createElement('div');
-                cell.className = 'grid-cell bg-secondary rounded-sm transition-all duration-300';
+                cell.className = 'grid-cell unread-item rounded-sm transition-all duration-300';
                 cell.dataset.row = Math.floor(i / 4);
                 cell.dataset.col = i % 4;
                 gridContainer.appendChild(cell);
@@ -904,12 +934,15 @@
             const itemTop = minRow * (100 / 4);
             
             setTimeout(() => {
+                // 先显示灰色，代表正在读取
                 cells.forEach(({r, c}) => {
                     const index = r * 4 + c;
                     const cell = gridContainer.children[index];
+                    cell.classList.remove('unread-item');
                     cell.classList.add('bg-gray', 'slide-up');
                 });
                 
+                // 添加放大镜动画
                 const magnifierContainer = document.createElement('div');
                 magnifierContainer.className = 'magnifier-track';
                 magnifierContainer.style.left = `${itemLeft}%`;
@@ -924,6 +957,7 @@
                 magnifierContainer.appendChild(magnifier);
                 gridContainer.appendChild(magnifierContainer);
                 
+                // 读取完成，显示物品
                 setTimeout(() => {
                     magnifierContainer.remove();
                     
