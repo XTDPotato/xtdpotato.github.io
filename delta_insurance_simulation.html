@@ -1,0 +1,955 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角洲大免保</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#30525E',
+                        secondary: '#3E4348',
+                        highlight: '#10FDD9',
+                        default: '#FFFFFF',
+                        green: '#4CAF50',
+                        blue: '#2196F3',
+                        purple: '#9C27B0',
+                        gold: '#FFD700',
+                        red: '#F44336',
+                        gray: '#808080',
+                    },
+                    fontFamily: {
+                        digital: ['Orbitron', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 0 8px rgba(16, 253, 217, 0.8);
+            }
+            .glow {
+                box-shadow: 0 0 15px rgba(16, 253, 217, 0.8);
+            }
+            .scroll-container {
+                overflow: hidden;
+                position: relative;
+                height: 160px; /* 精确显示5个字符的高度 */
+                width: 64px; /* 正方形方框宽度 */
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 4px;
+            }
+            .target-line {
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background-color: #10FDD9;
+                top: 80px; /* 精确居中位置线 */
+                z-index: 10;
+            }
+            .target-box {
+                position: absolute;
+                left: 8px; /* 居中显示 */
+                right: 8px;
+                height: 32px; /* 正好容纳一个字符 */
+                top: 64px; /* 精确对准中间字符 */
+                z-index: 5;
+                border: 2px solid #10FDD9;
+                border-radius: 2px;
+                background-color: rgba(16, 253, 217, 0.1);
+                pointer-events: none;
+            }
+            .error-highlight {
+                animation: error 0.5s ease-out;
+            }
+            @keyframes error {
+                0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
+                50% { border-color: #ff4444; background-color: rgba(255, 68, 68, 0.2); }
+            }
+            .modal-backdrop {
+                backdrop-filter: blur(5px);
+            }
+            .progress-shine {
+                position: relative;
+                overflow: hidden;
+            }
+            .progress-shine::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 50%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                animation: shine 2s infinite;
+            }
+            @keyframes shine {
+                100% { left: 150%; }
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            .pulse {
+                animation: pulse 1.5s infinite;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            .slide-up {
+                animation: slideUp 0.5s ease-out forwards;
+            }
+            .grid-cell {
+                aspect-ratio: 1/1;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                transition: all 0.3s ease;
+            }
+            .magnifier-track {
+                position: absolute;
+                pointer-events: none;
+            }
+            .magnifier {
+                position: absolute;
+                color: rgba(255, 255, 255, 0.7);
+                animation: magnifier-path 2s linear infinite;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                font-size: 1.5rem !important;
+            }
+            @keyframes magnifier-path {
+                0% { transform: translate(-50%, -50%) translate(0, 0); }
+                25% { transform: translate(-50%, -50%) translate(100%, 0); }
+                50% { transform: translate(-50%, -50%) translate(100%, 100%); }
+                75% { transform: translate(-50%, -50%) translate(0, 100%); }
+                100% { transform: translate(-50%, -50%) translate(0, 0); }
+            }
+            @keyframes completePulse {
+                0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(76, 175, 80, 0.8); }
+                50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(76, 175, 80, 1); }
+            }
+            .complete-animation {
+                animation: completePulse 1s ease-in-out;
+            }
+            @keyframes charScale {
+                0%, 100% { transform: scale(1); }
+                25% { transform: scale(1.4); }
+                50% { transform: scale(1); }
+                75% { transform: scale(1.2); }
+            }
+            .char-scale {
+                animation: charScale 1s ease-out;
+            }
+            @keyframes buttonClick {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(0.9); }
+            }
+            .button-click {
+                animation: buttonClick 0.2s ease-out;
+            }
+            .final-highlight {
+                box-shadow: 0 0 20px rgba(16, 253, 217, 1);
+                border-color: #10FDD9 !important;
+            }
+            /* 中间位置字符高亮 */
+            .center-char {
+                font-weight: bold !important;
+                transform: scale(1.1);
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4 font-digital text-white">
+    <!-- 主页面 -->
+    <div class="text-center mb-8">
+        <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
+        <p class="text-gray-300 text-lg mb-8">点击下方按钮开启您的保险</p>
+        
+        <!-- 保险盒子 -->
+        <div id="insuranceBox" class="relative w-64 h-64 md:w-80 md:h-80 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+            <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
+                <i class="fa fa-shield text-6xl md:text-8xl text-highlight mb-4 pulse"></i>
+                <span class="text-xl md:text-2xl font-bold text-highlight">点击开启</span>
+            </div>
+            <!-- 装饰线条 -->
+            <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+            <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+            <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
+            <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
+        </div>
+    </div>
+
+    <!-- 解锁弹窗 -->
+    <div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
+        <div class="relative bg-primary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in">
+            <!-- 解锁界面 -->
+            <div id="unlockScreen" class="p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">解锁保险</h2>
+                
+                <!-- 密码滚动区域 -->
+                <div class="flex justify-center gap-4 mb-6" id="scrollArea">
+                    <!-- 第一列 - 目标6，顺序：2、K、6、L、D循环 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="6" data-next="1" data-chars="2,K,6,L,D">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll0">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <!-- 第二列 - 目标D，顺序：O、9、D、(、~循环 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="D" data-next="2" data-chars="O,9,D,(,~">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll1">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <!-- 第三列 - 目标F，顺序：+、4、F、^、&循环 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll2">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <!-- 第四列 - 目标U，顺序：&、M、U、=、2循环 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&,M,U,=,2">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll3">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <!-- 第五列 - 目标P，顺序：)、9、P、6、@循环 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="P" data-next="5" data-chars="),9,P,6,@">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll4">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 选定密码按钮 -->
+                <div class="flex justify-center mb-8" id="buttonContainer">
+                    <div class="select-button w-24 h-14 border-2 border-green/50 text-green hover:bg-green/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
+                        <span class="font-bold">选定密码</span>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="w-full bg-secondary/50 rounded-full h-4 mb-2">
+                    <div id="progressBar" class="progress-shine bg-highlight h-4 rounded-full w-0 transition-all duration-1000 ease-linear"></div>
+                </div>
+                <div class="text-right text-sm text-gray-300">
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <!-- 奖励界面 (默认隐藏) -->
+            <div id="rewardScreen" class="p-6 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">恭喜获得奖励</h2>
+                
+                <!-- 4x4 格子容器 -->
+                <div id="gridContainer" class="grid grid-cols-4 gap-1 bg-secondary p-2 rounded-lg mb-6 relative">
+                    <!-- 格子将通过JS动态生成 -->
+                </div>
+                
+                <button id="closeBtn" class="w-full bg-highlight text-primary font-bold py-2 px-4 rounded hover:bg-highlight/80 transition-colors duration-300">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const insuranceBox = document.getElementById('insuranceBox');
+        const unlockModal = document.getElementById('unlockModal');
+        const unlockScreen = document.getElementById('unlockScreen');
+        const rewardScreen = document.getElementById('rewardScreen');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const gridContainer = document.getElementById('gridContainer');
+        const closeBtn = document.getElementById('closeBtn');
+        const selectButton = document.querySelector('.select-button');
+        const scrollArea = document.getElementById('scrollArea');
+        const buttonContainer = document.getElementById('buttonContainer');
+        
+        // 滚动列元素
+        const scrollCols = document.querySelectorAll('.scroll-container');
+        
+        // 滚动动画元素
+        const scrollElements = [
+            document.getElementById('scroll0'),
+            document.getElementById('scroll1'),
+            document.getElementById('scroll2'),
+            document.getElementById('scroll3'),
+            document.getElementById('scroll4')
+        ];
+        
+        // 当前激活的列索引
+        let currentColIndex = 0;
+        // 进度条百分比
+        let progress = 0;
+        // 进度条定时器
+        let progressTimer;
+        // 已经解锁的列数
+        let unlockedCols = 0;
+        // 滚动是否暂停
+        let isPaused = false;
+        // 防止重复触发奖励显示的标志
+        let rewardsShown = false;
+        // 存储每个滚动列的动画状态
+        let scrollAnimations = [];
+        // 存储已锁定的列
+        let lockedColumns = [];
+        // 存储每列的随机起始位置
+        let randomOffsets = [];
+        // 存储每列的目标位置索引
+        let targetPositions = [];
+        // 可视区域内显示的字符数量（上下共5个）
+        const visibleCharsCount = 5;
+        // 中间位置索引（第三格，0开始计数）
+        const middlePositionIndex = 2;
+        // 字符高度（精确计算确保对齐）
+        const charHeight = 32; // 160px容器高度 / 5个字符 = 32px每个
+        // 密码选择允许的误差范围（像素）- 调整为±25px
+        const selectionTolerance = 25;
+        // 错误停顿计时器
+        let errorPauseTimer = null;
+        // 已出现的红色物品数量
+        let redItemCount = 0;
+        
+        // 初始化跑马灯内容和动画
+        function initScrollers() {
+            scrollElements.forEach((el, index) => {
+                const col = scrollCols[index];
+                const chars = col.dataset.chars.split(',');
+                const target = col.dataset.target;
+                
+                // 记录目标字符在字符数组中的位置
+                const targetPos = chars.indexOf(target);
+                targetPositions[index] = targetPos;
+                
+                // 为每列生成随机起始位置
+                const randomOffset = Math.floor(Math.random() * chars.length);
+                randomOffsets[index] = randomOffset;
+                
+                // 创建扩展字符数组，确保滚动连续性
+                const extendedChars = [...chars, ...chars, ...chars];
+                
+                // 构建HTML内容，精确控制每个字符高度
+                let html = '';
+                extendedChars.forEach((char, pos) => {
+                    // 计算在原始字符集中的位置
+                    const originalPos = pos % chars.length;
+                    const isTarget = originalPos === targetPos;
+                    
+                    // 为每个字符设置精确高度，确保对齐
+                    if (isTarget) {
+                        html += `<div class="text-highlight text-shadow h-[32px] flex items-center justify-center">${char}</div>`;
+                    } else {
+                        html += `<div class="h-[32px] flex items-center justify-center">${char}</div>`;
+                    }
+                });
+                
+                el.innerHTML = html;
+                
+                // 设置初始偏移，确保从随机位置开始且精确对齐
+                const initialOffset = randomOffset * charHeight;
+                el.style.transform = `translateY(-${initialOffset}px)`;
+                el.style.transition = 'transform 0.3s ease-out';
+                
+                // 创建平滑循环动画
+                const animation = el.animate(
+                    [
+                        { transform: `translateY(-${initialOffset}px)` },
+                        { transform: `translateY(-${initialOffset + chars.length * charHeight}px)` }
+                    ],
+                    {
+                        duration: 3000, // 适中的滚动速度，便于观察
+                        iterations: Infinity,
+                        easing: 'linear'
+                    }
+                );
+                
+                // 所有列初始都处于滚动状态
+                animation.play();
+                scrollAnimations[index] = animation;
+            });
+        }
+        
+        // 调整按钮位置以确保可点击
+        function adjustButtonPosition() {
+            const scrollWidth = scrollArea.offsetWidth;
+            const containerWidth = unlockModal.querySelector('.max-w-md').offsetWidth;
+            
+            // 如果按钮在右侧会超出容器，则放到下方
+            if (scrollWidth + 120 > containerWidth - 40) { 
+                buttonContainer.classList.remove('justify-center');
+                buttonContainer.classList.add('mt-2', 'flex', 'justify-center');
+                scrollArea.classList.remove('mb-6');
+                scrollArea.classList.add('mb-2');
+            } else {
+                buttonContainer.classList.add('justify-center');
+                buttonContainer.classList.remove('mt-2');
+                scrollArea.classList.add('mb-6');
+                scrollArea.classList.remove('mb-2');
+            }
+        }
+        
+        // 物品数据 - 按品质和大小分类
+        const items = [
+            // 蓝色1x1
+            { name: '古怪的海盗银币', size: [1, 1], color: 'blue', icon: 'fa-money', weight: 3 },
+            
+            // 蓝色1x2
+            { name: '初级子弹生产零件', size: [1, 2], color: 'blue', icon: 'fa-cogs', weight: 3 },
+            { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', icon: 'fa-search', weight: 3 },
+            
+            // 紫色1x1
+            { name: '海盗弯刀', size: [1, 1], color: 'purple', icon: 'fa-cutlery', weight: 3 },
+            { name: '后妃耳环', size: [1, 1], color: 'purple', icon: 'fa-diamond', weight: 3 },
+            { name: '图腾箭矢', size: [1, 1], color: 'purple', icon: 'fa-arrow', weight: 3 },
+            
+            // 紫色1x2
+            { name: '阿萨拉风情水壶', size: [1, 2], color: 'purple', icon: 'fa-flask', weight: 3 },
+            { name: '阿萨拉特色酒壶', size: [1, 2], color: 'purple', icon: 'fa-glass', weight: 3 },
+            { name: '黄金饰章', size: [1, 2], color: 'purple', icon: 'fa-certificate', weight: 3 },
+            
+            // 紫色2x1
+            { name: '犄角墙饰', size: [2, 1], color: 'purple', icon: 'fa-asterisk', weight: 3 },
+            
+            // 紫色2x3
+            { name: '马赛克灯台', size: [2, 3], color: 'purple', icon: 'fa-lightbulb-o', weight: 3 },
+            
+            // 紫色3x2
+            { name: '仪典匕首', size: [3, 2], color: 'purple', icon: 'fa-cutlery', weight: 3 },
+            
+            // 金色1x1
+            { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', icon: 'fa-glass', weight: 3 },
+            { name: '亮闪闪海盗金币', size: [1, 1], color: 'gold', icon: 'fa-coins', weight: 3 },
+            { name: '功绩勋章', size: [1, 1], color: 'gold', icon: 'fa-trophy', weight: 3 },
+            { name: '发条八音盒', size: [1, 1], color: 'gold', icon: 'fa-music', weight: 3 },
+            
+            // 金色1x2
+            { name: '荷美尔陶俑', size: [1, 2], color: 'gold', icon: 'fa-female', weight: 3 },
+            
+            // 金色1x3
+            { name: '珠宝头冠', size: [1, 3], color: 'gold', icon: 'fa-diamond', weight: 3 },
+            
+            // 金色2x1
+            { name: '金枝桂冠', size: [2, 1], color: 'gold', icon: 'fa-cogs', weight: 3 },
+            
+            // 金色2x2
+            { name: '座钟', size: [2, 2], color: 'gold', icon: 'fa-clock-o', weight: 3 },
+            
+            
+            // 金色3x2
+            { name: '本地特色首饰', size: [3, 2], color: 'gold', icon: 'fa-diamond', weight: 3 },
+            
+            // 红色1x1
+            { name: '名贵机械表', size: [1, 1], color: 'red', icon: 'fa-clock-o', weight: 1 },
+            { name: '塞伊德的怀表', size: [1, 1], color: 'red', icon: 'fa-clock-o', weight: 1 },
+            { name: '非洲之心', size: [1, 1], color: 'red', icon: 'fa-diamond', rarity: 'rare', weight: 0.2 },
+            { name: '“钻石”鱼子酱', size: [1, 1], color: 'red', icon: 'fa-cutlery', weight: 1 },
+            
+            // 红色1x2
+            { name: '万足金条', size: [1, 2], color: 'red', icon: 'fa-money', weight: 1 },
+            
+            // 红色2x1
+            { name: '棘龙爪化石', size: [2, 1], color: 'red', icon: 'fa-paw', weight: 1 },
+            
+            // 红色2x2
+            { name: '黄金瞪羚', size: [2, 2], color: 'red', icon: 'fa-horse', weight: 1 },
+            
+            // 红色2x3
+            { name: '克劳迪乌斯半身像', size: [2, 3], color: 'red', icon: 'fa-user', weight: 1 },
+            { name: '塞伊德的留声机', size: [2, 3], color: 'red', icon: 'fa-music', weight: 1 },
+            
+            // 红色3x2
+            { name: '步战车模型', size: [3, 2], color: 'red', icon: 'fa-truck', weight: 1 },
+            
+            // 红色3x3
+            { name: '主战坦克模型', size: [3, 3], color: 'red', icon: 'fa-shield', weight: 1 },
+            
+            // 红色4x1
+            { name: '滑膛枪展品', size: [4, 1], color: 'red', icon: 'fa-crosshairs', weight: 1 }
+        ];
+        
+        // 颜色读取延迟时间 (秒)
+        const colorDelays = {
+            'default': 0.5,
+            'green': 1,
+            'blue': 1.5,
+            'purple': 2,
+            'gold': 2.5,
+            'red': 3
+        };
+        
+        // 打开解锁弹窗
+        insuranceBox.addEventListener('click', () => {
+            unlockModal.classList.remove('hidden');
+            // 重置状态
+            resetUnlockState();
+            // 调整按钮位置
+            setTimeout(adjustButtonPosition, 100);
+        });
+        
+        // 关闭弹窗
+        closeBtn.addEventListener('click', () => {
+            unlockModal.classList.add('hidden');
+            rewardScreen.classList.add('hidden');
+            unlockScreen.classList.remove('hidden');
+            rewardsShown = false;
+            redItemCount = 0; // 重置红色物品计数
+            // 重置按钮文字
+            selectButton.querySelector('span').textContent = '选定密码';
+        });
+        
+        // 为选定密码按钮添加点击事件
+        selectButton.addEventListener('click', () => {
+            // 按钮点击反馈动画
+            selectButton.classList.add('button-click');
+            setTimeout(() => {
+                selectButton.classList.remove('button-click');
+            }, 200);
+            
+            // 检查是否已显示奖励
+            if (rewardsShown) return;
+            
+            // 如果正在错误停顿中，清除现有计时器并重新计时
+            if (isPaused) {
+                clearTimeout(errorPauseTimer);
+            }
+            
+            const currentCol = scrollCols[currentColIndex];
+            const targetChar = currentCol.dataset.target;
+            const chars = currentCol.dataset.chars.split(',');
+            const charCount = chars.length;
+            const randomOffset = randomOffsets[currentColIndex];
+            
+            // 获取当前动画进度
+            const animation = scrollAnimations[currentColIndex];
+            const progress = animation.currentTime / animation.effect.getTiming().duration;
+            
+            // 计算当前位置 - 精确到像素级别
+            const totalScrollDistance = charCount * charHeight;
+            const currentPixelPosition = (progress * totalScrollDistance + randomOffset * charHeight) % totalScrollDistance;
+            
+            // 计算当前显示在方框（中间位置）的字符索引
+            const visibleAreaStart = currentPixelPosition;
+            // 按照方框位置判断，不向下调整
+            const boxCharPosition = visibleAreaStart + middlePositionIndex * charHeight;
+            const boxCharIndex = Math.floor(boxCharPosition / charHeight) % charCount;
+            const boxChar = chars[boxCharIndex];
+            
+            // 暂停当前列动画
+            animation.pause();
+            isPaused = true;
+            
+            // 检查方框中的字符是否是正确密码（带容错）
+            if (boxChar === targetChar) {
+                // 点击正确 - 按钮变为绿色并添加动画
+                selectButton.classList.add('complete-animation', 'bg-green/30');
+                
+                setTimeout(() => {
+                    // 计算精确位置使目标字符显示在方框中
+                    const targetOffset = (targetPositions[currentColIndex] - randomOffset + charCount) % charCount * charHeight;
+                    scrollElements[currentColIndex].style.transform = `translateY(-${targetOffset}px)`;
+                    
+                    // 清除所有字符的动画效果
+                    const charElements = scrollElements[currentColIndex].querySelectorAll('div');
+                    charElements.forEach(el => el.classList.remove('char-scale'));
+                    
+                    // 只给当前列的正确密码添加弹动动画
+                    const targetCharIndex = chars.length + targetPositions[currentColIndex];
+                    charElements[targetCharIndex].classList.add('char-scale', 'center-char');
+                    
+                    // 已选中的列显示淡灰色背景并高亮边框
+                    currentCol.classList.add('bg-gray-700/60', 'final-highlight');
+                    
+                    // 停止当前列的动画
+                    animation.cancel();
+                    
+                    // 更新状态
+                    unlockedCols++;
+                    lockedColumns.push(currentColIndex);
+                    
+                    // 移除按钮动画
+                    selectButton.classList.remove('complete-animation', 'bg-green/30');
+                    
+                    // 激活下一列
+                    const nextCol = parseInt(currentCol.dataset.next);
+                    if (nextCol < 5) {
+                        currentColIndex = nextCol;
+                        isPaused = false;
+                    } else {
+                        // 全部解锁成功 - 更新按钮文字
+                        selectButton.querySelector('span').textContent = '解锁完成';
+                        
+                        // 停止所有动画
+                        stopAllAnimations();
+                        
+                        // 停顿1秒
+                        setTimeout(() => {
+                            completeProgress();
+                        }, 1000);
+                    }
+                }, 300);
+            } else {
+                // 点击错误 - 跑马灯泛红提示
+                currentCol.classList.add('error-highlight');
+                selectButton.classList.add('error-highlight');
+                
+                // 错误时停止1秒后继续滚动，如果再次点击则重新计时
+                errorPauseTimer = setTimeout(() => {
+                    // 移除错误样式
+                    currentCol.classList.remove('error-highlight');
+                    selectButton.classList.remove('error-highlight');
+                    
+                    // 重新开始当前列动画
+                    animation.play();
+                    isPaused = false;
+                }, 1000);
+            }
+        });
+        
+        // 停止所有动画
+        function stopAllAnimations() {
+            // 停止所有滚动列动画
+            scrollAnimations.forEach(animation => {
+                if (animation) {
+                    animation.cancel();
+                }
+            });
+            
+            // 停止进度条动画
+            clearInterval(progressTimer);
+            
+            // 停止其他可能的动画元素
+            document.querySelectorAll('.pulse, .progress-shine').forEach(el => {
+                el.style.animationPlayState = 'paused';
+            });
+        }
+        
+        // 强制所有列显示正确密码并停止在方框中
+        function forceAllColumnsToTarget() {
+            scrollCols.forEach((col, index) => {
+                if (lockedColumns.includes(index)) return; // 已锁定的列不需要处理
+                
+                const chars = col.dataset.chars.split(',');
+                const charCount = chars.length;
+                const randomOffset = randomOffsets[index];
+                
+                // 计算目标位置并停止在正确密码（显示在方框中）
+                const targetOffset = (targetPositions[index] - randomOffset + charCount) % charCount * charHeight;
+                scrollElements[index].style.transform = `translateY(-${targetOffset}px)`;
+                
+                // 停止动画
+                if (scrollAnimations[index]) {
+                    scrollAnimations[index].cancel();
+                }
+                
+                // 高亮方框中的字符
+                const charElements = scrollElements[index].querySelectorAll('div');
+                const targetCharIndex = chars.length + targetPositions[index];
+                charElements[targetCharIndex].classList.add('center-char');
+                
+                // 添加高亮效果
+                col.classList.add('bg-gray-700/60', 'final-highlight');
+            });
+        }
+        
+        // 更新进度条显示
+        function updateProgressBar() {
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+        
+        // 重置解锁状态
+        function resetUnlockState() {
+            // 清除任何可能的计时器
+            clearTimeout(errorPauseTimer);
+            
+            progress = 0;
+            currentColIndex = 0;
+            unlockedCols = 0;
+            isPaused = false;
+            rewardsShown = false;
+            lockedColumns = [];
+            randomOffsets = [];
+            targetPositions = [];
+            redItemCount = 0; // 重置红色物品计数
+            updateProgressBar();
+            
+            // 重置所有滚动列
+            scrollCols.forEach((col, index) => {
+                col.classList.remove('error-highlight', 'bg-gray-700/60', 'final-highlight');
+                
+                // 重置动画
+                if (scrollAnimations[index]) {
+                    scrollAnimations[index].cancel();
+                }
+                scrollElements[index].style.transform = 'translateY(0)';
+            });
+            
+            // 重新初始化滚动器，实现随机起始位置
+            initScrollers();
+            
+            // 重置选择按钮
+            selectButton.classList.remove('complete-animation', 'bg-green/30', 'error-highlight');
+            selectButton.querySelector('span').textContent = '选定密码';
+            
+            // 开始进度条
+            clearInterval(progressTimer);
+            progressTimer = setInterval(() => {
+                if (rewardsShown) return;
+                
+                progress++;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressTimer);
+                    
+                    // 强制所有列显示正确密码在方框中
+                    forceAllColumnsToTarget();
+                    
+                    // 停止所有动画
+                    stopAllAnimations();
+                    
+                    // 停顿1秒后显示解锁完成
+                    setTimeout(() => {
+                        selectButton.querySelector('span').textContent = '解锁完成';
+                        setTimeout(showRewards, 1000);
+                    }, 1000);
+                }
+                updateProgressBar();
+            }, 200);
+        }
+        
+        // 完成进度
+        function completeProgress() {
+            if (rewardsShown) return;
+            
+            clearInterval(progressTimer);
+            progress = 100;
+            updateProgressBar();
+            
+            // 确保所有列都显示正确密码在方框中
+            forceAllColumnsToTarget();
+            
+            showRewards();
+        }
+        
+        // 显示奖励
+        function showRewards() {
+            if (rewardsShown) return;
+            rewardsShown = true;
+            
+            // 延迟一点时间再显示奖励
+            setTimeout(() => {
+                unlockScreen.classList.add('hidden');
+                rewardScreen.classList.remove('hidden');
+                generateRewards();
+            }, 800);
+        }
+        
+        // 生成奖励 - 基于调整后的概率
+        function generateRewards() {
+            // 清空格子
+            gridContainer.innerHTML = '';
+            
+            // 创建16个正方形格子
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell bg-secondary rounded-sm transition-all duration-300';
+                cell.dataset.row = Math.floor(i / 4);
+                cell.dataset.col = i % 4;
+                gridContainer.appendChild(cell);
+            }
+            
+            // 随机选择物品数量 (2-4个)
+            let itemCount = Math.floor(Math.random() * 3) + 2;
+            
+            // 基于权重和红色物品递减概率选择物品
+            const selectedItems = [];
+            
+            // 计算总权重，考虑红色物品的递减概率
+            let totalWeight = 0;
+            items.forEach(item => {
+                if (item.color === 'red') {
+                    // 红色物品概率随出现次数降低
+                    const redProbabilityFactor = 1 / Math.pow(3, redItemCount);
+                    totalWeight += item.weight * redProbabilityFactor;
+                } else {
+                    totalWeight += item.weight;
+                }
+            });
+            
+            // 随机选择物品
+            for (let i = 0; i < itemCount; i++) {
+                let random = Math.random() * totalWeight;
+                let selectedIndex = -1;
+                
+                // 根据权重选择物品
+                for (let j = 0; j < items.length; j++) {
+                    const item = items[j];
+                    let itemWeight = item.weight;
+                    
+                    // 调整红色物品的权重
+                    if (item.color === 'red') {
+                        const redProbabilityFactor = 1 / Math.pow(3, redItemCount);
+                        itemWeight *= redProbabilityFactor;
+                    }
+                    
+                    random -= itemWeight;
+                    if (random <= 0) {
+                        selectedIndex = j;
+                        break;
+                    }
+                }
+                
+                if (selectedIndex !== -1) {
+                    const selectedItem = items[selectedIndex];
+                    selectedItems.push(selectedItem);
+                    
+                    // 如果选择了红色物品，增加计数以降低后续概率
+                    if (selectedItem.color === 'red') {
+                        redItemCount++;
+                    }
+                }
+            }
+            
+            placeItemsInOrder(selectedItems);
+        }
+        
+        // 按顺序放置物品
+        function placeItemsInOrder(items) {
+            const occupiedCells = new Set();
+            let currentRow = 0;
+            let currentCol = 0;
+            let totalDelay = 0;
+            
+            items.forEach(item => {
+                const [width, height] = item.size;
+                let placed = false;
+                
+                // 尝试放置物品，如果当前位置不行则寻找下一个位置
+                while (!placed && currentRow <= 4 - height) {
+                    let canPlace = true;
+                    const cellsToOccupy = [];
+                    
+                    for (let r = currentRow; r < currentRow + height; r++) {
+                        for (let c = currentCol; c < currentCol + width; c++) {
+                            if (c >= 4 || occupiedCells.has(`${r},${c}`)) {
+                                canPlace = false;
+                                break;
+                            }
+                            cellsToOccupy.push({r, c});
+                        }
+                        if (!canPlace) break;
+                    }
+                    
+                    if (canPlace) {
+                        cellsToOccupy.forEach(({r, c}) => occupiedCells.add(`${r},${c}`));
+                        placeItem(item, totalDelay, cellsToOccupy);
+                        totalDelay += colorDelays[item.color] * 1000;
+                        
+                        currentCol += width;
+                        if (currentCol > 4 - 1) {
+                            currentCol = 0;
+                            currentRow++;
+                        }
+                        
+                        placed = true;
+                    } else {
+                        currentRow++;
+                        currentCol = 0;
+                    }
+                }
+            });
+        }
+        
+        // 放置单个物品
+        function placeItem(item, delay, cells) {
+            const { color } = item;
+            
+            const minRow = Math.min(...cells.map(c => c.r));
+            const maxRow = Math.max(...cells.map(c => c.r));
+            const minCol = Math.min(...cells.map(c => c.c));
+            const maxCol = Math.max(...cells.map(c => c.c));
+            
+            const itemWidth = (maxCol - minCol + 1) * (100 / 4) - 2;
+            const itemHeight = (maxRow - minRow + 1) * (100 / 4) - 2;
+            const itemLeft = minCol * (100 / 4);
+            const itemTop = minRow * (100 / 4);
+            
+            setTimeout(() => {
+                cells.forEach(({r, c}) => {
+                    const index = r * 4 + c;
+                    const cell = gridContainer.children[index];
+                    cell.classList.add('bg-gray', 'slide-up');
+                });
+                
+                const magnifierContainer = document.createElement('div');
+                magnifierContainer.className = 'magnifier-track';
+                magnifierContainer.style.left = `${itemLeft}%`;
+                magnifierContainer.style.top = `${itemTop}%`;
+                magnifierContainer.style.width = `${itemWidth}%`;
+                magnifierContainer.style.height = `${itemHeight}%`;
+                
+                const magnifier = document.createElement('i');
+                magnifier.className = 'magnifier fa fa-search';
+                magnifier.style.left = '50%';
+                magnifier.style.top = '50%';
+                magnifierContainer.appendChild(magnifier);
+                gridContainer.appendChild(magnifierContainer);
+                
+                setTimeout(() => {
+                    magnifierContainer.remove();
+                    
+                    cells.forEach(({r, c}) => {
+                        const index = r * 4 + c;
+                        const cell = gridContainer.children[index];
+                        cell.classList.remove('bg-gray');
+                        cell.classList.add(`bg-${color}`);
+                        
+                        if (r === minRow && c === minCol) {
+                            cell.innerHTML = `
+                                <div class="h-full w-full flex flex-col items-center justify-center p-1">
+                                    <i class="fa ${item.icon || 'fa-diamond'} text-white text-sm md:text-base mb-1"></i>
+                                    <span class="text-white text-xs truncate">${item.name}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                }, colorDelays[color] * 1000);
+            }, delay);
+        }
+        
+        // 初始化
+        window.addEventListener('resize', adjustButtonPosition);
+        window.addEventListener('load', initScrollers);
+    </script>
+</body>
+</html>
+    
