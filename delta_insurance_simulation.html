@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三角洲大免保</title>
+    <title>三角洲免保模拟器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -271,6 +271,7 @@
             }
             .nav-item {
                 transition: all 0.3s ease;
+                cursor: pointer;
             }
             .nav-item.active {
                 color: #10FDD9;
@@ -281,6 +282,76 @@
                 color: #fff;
                 border-color: rgba(255, 255, 255, 0.7);
             }
+            .item-checkbox {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                z-index: 2;
+                width: 16px;
+                height: 16px;
+                opacity: 0;
+                cursor: pointer;
+            }
+            .item-checkbox + label {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                z-index: 1;
+                width: 16px;
+                height: 16px;
+                background-color: rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                border-radius: 2px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .item-checkbox:checked + label::after {
+                content: "✓";
+                position: absolute;
+                color: #10FDD9;
+                font-size: 12px;
+                top: 0;
+                left: 2px;
+            }
+            .batch-progress-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 100;
+                display: none;
+            }
+            .batch-progress-bar {
+                height: 100%;
+                background-color: #10FDD9;
+                width: 0%;
+                transition: width 0.3s ease;
+            }
+            .view-section {
+                display: none;
+                animation: fadeIn 0.5s ease-out;
+            }
+            .view-section.active {
+                display: block;
+            }
+            .toast {
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .toast.show {
+                opacity: 1;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -288,53 +359,114 @@
 <body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
     <div class="w-full max-w-2xl flex flex-col min-h-screen">
         <div class="text-center mb-6">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
-            <p class="text-gray-300 text-lg mb-6">点击下方按钮开启您的保险</p>
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲免保模拟</h1>
+           
         </div>
         
-        <div class="text-center mb-8">
-            <div class="flex flex-col md:flex-row justify-center gap-6">
-                <div id="insuranceBox" class="relative w-56 h-56 md:w-64 md:h-64 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                    <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
-                        <i class="fa fa-shield text-5xl md:text-7xl text-highlight mb-4 pulse"></i>
-                        <span class="text-xl md:text-2xl font-bold text-highlight">大免保</span>
-                        <span class="text-sm text-gray-300 mt-2">需解锁</span>
+        <!-- 主页视图 -->
+        <div id="mainView" class="view-section active">
+            <div class="text-center mb-8">
+                <div class="flex flex-col md:flex-row justify-center gap-6">
+                    <div id="insuranceBox" class="relative w-56 h-56 md:w-64 md:h-64 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
+                            <i class="fa fa-shield text-5xl md:text-7xl text-highlight mb-4 pulse"></i>
+                            <span class="text-xl md:text-2xl font-bold text-highlight">大免保</span>
+                            <span class="text-sm text-gray-300 mt-2">需解锁</span>
+                        </div>
+                        <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+                        <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+                        <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
+                        <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
                     </div>
-                    <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
-                    <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
+                    
+                    <div id="smallInsuranceBox" class="relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-secondary to-primary rounded-lg flex items-center justify-center">
+                        <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
+                            <i class="fa fa-lock text-4xl md:text-6xl text-highlight mb-4 pulse"></i>
+                            <span class="text-xl md:text-2xl font-bold text-highlight">小保险</span>
+                            <span class="text-sm text-gray-300 mt-2">直接打开</span>
+                        </div>
+                        <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+                        <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+                        <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
+                        <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 一键抽取视图 -->
+        <div id="batchView" class="view-section">
+            <div class="bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up">
+                <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
+                    <i class="fa fa-cogs mr-2"></i> 一键抽取设置
+                </h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-300 mb-1">保险类型</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="insuranceType" value="large" class="mr-2 accent-highlight" checked>
+                            <span>大免保</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="insuranceType" value="small" class="mr-2 accent-highlight">
+                            <span>小保险</span>
+                        </label>
+                    </div>
                 </div>
                 
-                <div id="smallInsuranceBox" class="relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-secondary to-primary rounded-lg flex items-center justify-center">
-                    <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
-                        <i class="fa fa-lock text-4xl md:text-6xl text-highlight mb-4 pulse"></i>
-                        <span class="text-xl md:text-2xl font-bold text-highlight">小保险</span>
-                        <span class="text-sm text-gray-300 mt-2">直接打开</span>
+                <div class="mb-4">
+                    <label for="drawCount" class="block text-sm text-gray-300 mb-1">抽取次数</label>
+                    <div class="flex">
+                        <input type="number" id="drawCount" min="1" max="10000" value="10" 
+                               class="bg-primary border border-gray-600 rounded-l px-3 py-2 w-full focus:outline-none focus:border-highlight">
+                        <button id="maxCountBtn" class="bg-gray-700 hover:bg-gray-600 px-3 rounded-r">
+                            最大
+                        </button>
                     </div>
-                    <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
-                    <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
+                    <p class="text-xs text-gray-400 mt-1">最多可输入10000次</p>
                 </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-300 mb-2">停止条件（可选）</label>
+                    <p class="text-xs text-gray-400 mb-2">选择抽中以下物品后自动停止</p>
+                    
+                    <div id="stopConditionContainer" class="max-h-[150px] overflow-y-auto pr-2 space-y-1 text-sm">
+                        <!-- 动态生成物品选择列表 -->
+                    </div>
+                    
+                    <div class="mt-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="stopOnAny" class="mr-2 accent-highlight">
+                            <span>抽中任何选中物品即停止</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button id="startBatchBtn" class="w-full bg-highlight text-primary font-bold py-2 px-4 rounded hover:bg-highlight/80 transition-colors duration-300 flex items-center justify-center">
+                    <i class="fa fa-play mr-2"></i> 开始一键抽取
+                </button>
             </div>
         </div>
         
-        <div class="bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up flex-grow">
-            <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
-                <i class="fa fa-list-alt mr-2"></i> 物品获取记录
-            </h2>
-            
-            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
-                <button id="clearRecordsBtn" class="text-sm bg-red/20 text-red border border-red/50 py-1 px-3 rounded hover:bg-red/30 transition-colors duration-300">
-                    <i class="fa fa-trash mr-1"></i> 清空记录
-                </button>
-                <span class="text-sm text-gray-300" id="totalItemsCount">总计: 0 件</span>
-            </div>
-            
-            <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2">
-                <div class="text-gray-400 text-center py-4">
-                    暂无物品记录
+        <!-- 记录视图 -->
+        <div id="recordsView" class="view-section">
+            <div class="bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up">
+                <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
+                    <i class="fa fa-list-alt mr-2"></i> 物品获取记录
+                </h2>
+                
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <button id="clearRecordsBtn" class="text-sm bg-red/20 text-red border border-red/50 py-1 px-3 rounded hover:bg-red/30 transition-colors duration-300">
+                        <i class="fa fa-trash mr-1"></i> 清空记录
+                    </button>
+                    <span class="text-sm text-gray-300" id="totalItemsCount">总计: 0 件</span>
+                </div>
+                
+                <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2">
+                    <div class="text-gray-400 text-center py-4">
+                        暂无物品记录
+                    </div>
                 </div>
             </div>
         </div>
@@ -429,21 +561,48 @@
             </div>
         </div>
 
-        <div class="w-full border-t border-gray-700 pt-3 pb-2">
+        <!-- 批量抽取结果弹窗 -->
+        <div id="batchResultModal" class="item-detail-modal fixed inset-0 flex items-center justify-center z-50">
+            <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
+            <div class="relative bg-secondary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in p-6 max-h-[90vh] flex flex-col">
+                <button id="closeBatchResultBtn" class="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors z-10">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+                <div class="text-center mb-4 mt-2">
+                    <h3 class="text-2xl font-bold mb-2 text-highlight">抽取结果</h3>
+                    <div class="text-sm text-gray-300 mb-4">
+                        <p>保险类型: <span id="resultInsuranceType">-</span></p>
+                        <p>总抽取次数: <span id="resultTotalDraws">-</span></p>
+                        <p id="resultStopReason" class="hidden">停止原因: <span id="resultStopReasonText">-</span></p>
+                        <p id="resultTargetItemCount" class="hidden">目标物品抽中次数: <span>-</span></p>
+                    </div>
+                </div>
+                <div class="bg-black/30 rounded-lg p-4 flex-grow overflow-y-auto">
+                    <h4 class="text-highlight font-bold mb-2">物品统计</h4>
+                    <div id="batchResultItems" class="space-y-2 text-sm">
+                        <!-- 动态生成结果列表 -->
+                    </div>
+                </div>
+                <button id="closeBatchBtn" class="w-full mt-4 bg-highlight text-primary font-bold py-2 px-4 rounded hover:bg-highlight/80 transition-colors duration-300">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 固定底部导航栏 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-900/90 border-t border-gray-700 py-2 px-4 z-40">
+        <div class="w-full max-w-2xl mx-auto">
             <div class="flex justify-around">
-                <div class="nav-item active flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
+                <div class="nav-item active flex flex-col items-center text-sm p-2 border-b-2 border-transparent" data-view="mainView">
                     <i class="fa fa-home mb-1"></i>
                     <span>主页</span>
                 </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-shield mb-1"></i>
-                    <span>大免保</span>
+                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent" data-view="batchView">
+                    <i class="fa fa-bolt mb-1"></i>
+                    <span>一键抽取</span>
                 </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-lock mb-1"></i>
-                    <span>小保险</span>
-                </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
+                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent" data-view="recordsView">
                     <i class="fa fa-list-alt mb-1"></i>
                     <span>记录</span>
                 </div>
@@ -451,7 +610,16 @@
         </div>
     </div>
 
+    <!-- 批量抽取进度条 -->
+    <div class="batch-progress-container" id="batchProgressContainer">
+        <div class="batch-progress-bar" id="batchProgressBar"></div>
+    </div>
+
+    <!-- 提示框 -->
+    <div id="toast" class="toast">提示信息</div>
+
     <script>
+        // 全局变量初始化
         const insuranceBox = document.getElementById('insuranceBox');
         const smallInsuranceBox = document.getElementById('smallInsuranceBox');
         const unlockModal = document.getElementById('unlockModal');
@@ -473,14 +641,34 @@
         const itemDetailModal = document.getElementById('itemDetailModal');
         const closeDetailBtn = document.getElementById('closeDetailBtn');
         const navItems = document.querySelectorAll('.nav-item');
+        const viewSections = document.querySelectorAll('.view-section');
+        
+        // 一键抽取相关元素
+        const batchSettingsPanel = document.getElementById('batchView');
+        const drawCountInput = document.getElementById('drawCount');
+        const maxCountBtn = document.getElementById('maxCountBtn');
+        const stopConditionContainer = document.getElementById('stopConditionContainer');
+        const stopOnAnyCheckbox = document.getElementById('stopOnAny');
+        const startBatchBtn = document.getElementById('startBatchBtn');
+        const batchProgressContainer = document.getElementById('batchProgressContainer');
+        const batchProgressBar = document.getElementById('batchProgressBar');
+        const batchResultModal = document.getElementById('batchResultModal');
+        const closeBatchResultBtn = document.getElementById('closeBatchResultBtn');
+        const closeBatchBtn = document.getElementById('closeBatchBtn');
+        const resultInsuranceType = document.getElementById('resultInsuranceType');
+        const resultTotalDraws = document.getElementById('resultTotalDraws');
+        const resultStopReason = document.getElementById('resultStopReason');
+        const resultStopReasonText = document.getElementById('resultStopReasonText');
+        const resultTargetItemCount = document.getElementById('resultTargetItemCount');
+        const batchResultItems = document.getElementById('batchResultItems');
         
         const detailIconContainer = document.getElementById('detailIconContainer');
         const detailName = document.getElementById('detailName');
         const detailSize = document.getElementById('detailSize');
         const detailDescription = document.getElementById('detailDescription');
+        const toast = document.getElementById('toast');
         
         const scrollCols = document.querySelectorAll('.scroll-container');
-        
         const scrollElements = [
             document.getElementById('scroll0'),
             document.getElementById('scroll1'),
@@ -492,6 +680,10 @@
         let itemRecords = JSON.parse(localStorage.getItem('deltaInsuranceRecords')) || {};
         let currentRewardItems = [];
         let currentInsuranceType = 'large';
+        let isBatchDrawing = false;
+        let selectedStopItems = new Set();
+        let isProcessingRewards = false;
+        let lastDrawItems = []; // 存储最后一次抽取的物品
         
         let currentColIndex = 0;
         let progress = 0;
@@ -513,75 +705,59 @@
         const cellPercentage = 100 / gridSize;
         const itemSpacing = 2;
         
+        // 物品数据 - 删除了数码相机，调整了概率
         const items = [
-            { name: '古怪的海盗银币', size: [1, 1], color: 'blue', icon: 'fa-coins', baseWeight: 8, description: '物品描述占位文本' },
-            { name: '初级子弹生产零件', size: [1, 2], color: 'blue', icon: 'fa-cogs', baseWeight: 5, description: '物品描述占位文本' },
-            { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', icon: 'fa-binoculars', baseWeight: 5, description: '物品描述占位文本' },
-            { name: '海盗弯刀', size: [1, 1], color: 'purple', icon: 'fa-cutlery', baseWeight: 7.6, description: '物品描述占位文本' },
-            { name: '后妃耳环', size: [1, 1], color: 'purple', icon: 'fa-diamond', baseWeight: 7.6, description: '物品描述占位文本' },
-            { name: '图腾箭矢', size: [1, 1], color: 'purple', icon: 'fa-arrow-right', baseWeight: 7.6, description: '物品描述占位文本' },
-            { name: '阿萨拉风情水壶', size: [1, 2], color: 'purple', icon: 'fa-flask', baseWeight: 4.75, description: '物品描述占位文本' },
-            { name: '阿萨拉特色酒壶', size: [1, 2], color: 'purple', icon: 'fa-glass', baseWeight: 4.75, description: '物品描述占位文本' },
-            { name: '黄金饰章', size: [1, 2], color: 'purple', icon: 'fa-id-card', baseWeight: 4.75, description: '物品描述占位文本' },
-            { name: '犄角墙饰', size: [2, 1], color: 'purple', icon: 'fa-asterisk', baseWeight: 4.75, description: '物品描述占位文本' },
-            { name: '马赛克灯台', size: [2, 3], color: 'purple', icon: 'fa-lightbulb-o', baseWeight: 3, description: '物品描述占位文本' },
-            { name: '仪典匕首', size: [3, 2], color: 'purple', icon: 'fa-knife', baseWeight: 3, description: '物品描述占位文本' },
-            { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', icon: 'fa-glass', baseWeight: 5.15, description: '物品描述占位文本' },
-            { name: '亮闪闪海盗金币', size: [1, 1], color: 'gold', icon: 'fa-diamond', baseWeight: 5.15, description: '物品描述占位文本' },
-            { name: '功绩勋章', size: [1, 1], color: 'gold', icon: 'fa-trophy', baseWeight: 5.15, description: '物品描述占位文本' },
-            { name: '发条八音盒', size: [1, 1], color: 'gold', icon: 'fa-music', baseWeight: 5.15, description: '物品描述占位文本' },
-            { name: '荷美尔陶俑', size: [1, 2], color: 'gold', icon: 'fa-female', baseWeight: 4.15, description: '物品描述占位文本' },
-            { name: '珠宝头冠', size: [3, 1], color: 'gold', icon: 'fa-star', baseWeight: 3.09, description: '物品描述占位文本' },
-            { name: '金枝桂冠', size: [2, 1], color: 'gold', icon: 'fa-leaf', baseWeight: 3.09, description: '物品描述占位文本' },
-            { name: '座钟', size: [2, 2], color: 'gold', icon: 'fa-clock-o', baseWeight: 3.09, description: '物品描述占位文本' },
-            { name: '本地特色首饰', size: [3, 2], color: 'gold', icon: 'fa-diamond', baseWeight: 1.545, description: '物品描述占位文本' },
-            { name: '名贵机械表', size: [1, 1], color: 'red', icon: 'fa-clock-o', baseWeight: 3.5, description: '物品描述占位文本' },
-            { name: '塞伊德的怀表', size: [1, 1], color: 'red', icon: 'fa-clock-o', baseWeight: 3.5, description: '物品描述占位文本' },
-            { name: '非洲之心', size: [1, 1], color: 'red', icon: 'fa-diamond', rarity: 'rare', baseWeight: 2.5, description: '物品描述占位文本' },
-            { name: '万足金条', size: [1, 2], color: 'red', icon: 'fa-bars', baseWeight: 2.5, description: '物品描述占位文本' },
-            { name: '棘龙爪化石', size: [2, 1], color: 'red', icon: 'fa-paw', baseWeight: 2.5, description: '物品描述占位文本' },
-            { name: '黄金瞪羚', size: [2, 2], color: 'red', icon: 'fa-horse', baseWeight: 2.0, description: '物品描述占位文本' },
-            { name: '克劳迪乌斯半身像', size: [2, 3], color: 'red', icon: 'fa-user-circle', baseWeight: 1.5, description: '物品描述占位文本' },
-            { name: '塞伊德的留声机', size: [2, 3], color: 'red', icon: 'fa-music', baseWeight: 1.5, description: '物品描述占位文本' },
-            { name: '步战车模型', size: [3, 2], color: 'red', icon: 'fa-car', baseWeight: 1.5, description: '物品描述占位文本' },
-            { name: '军用雷达', size: [3, 3], color: 'red', icon: 'fa-radar', baseWeight: 1.0, description: '物品描述占位文本' },
-            { name: '滑膛枪展品', size: [4, 1], color: 'red', icon: 'fa-crosshairs', baseWeight: 1.0, description: '物品描述占位文本' },
-            { name: '军用信息终端', size: [3, 2], color: 'red', icon: 'fa-tablet', baseWeight: 1.5, description: '物品描述占位文本' },
-            { name: '显卡', size: [2, 1], color: 'red', icon: 'fa-microchip', baseWeight: 2.5, description: '物品描述占位文本' },
-            { name: '藏秘筒', size: [1, 1], color: 'gold', icon: 'fa-key', baseWeight: 3.09, description: '物品描述占位文本' },
-            { name: '数码相机', size: [1, 1], color: 'gold', icon: 'fa-camera', baseWeight: 3.09, description: '物品描述占位文本' }
+            { name: '古怪的海盗银币', size: [1, 1], color: 'blue', icon: 'fa-coins', baseWeight: 1, description: '古老的海盗货币，具有收藏价值' },
+            { name: '初级子弹生产零件', size: [1, 2], color: 'blue', icon: 'fa-cogs', baseWeight: 1, description: '用于生产子弹的基础零件' },
+            { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', icon: 'fa-binoculars', baseWeight: 1, description: '海盗曾经使用的航海工具' },
+            { name: '海盗弯刀', size: [1, 1], color: 'purple', icon: 'fa-cutlery', baseWeight: 1, description: '海盗常用的近战武器' },
+            { name: '后妃耳环', size: [1, 1], color: 'purple', icon: 'fa-diamond', baseWeight: 1, description: '古代后妃佩戴的珍贵饰品' },
+            { name: '图腾箭矢', size: [1, 1], color: 'purple', icon: 'fa-arrow-right', baseWeight: 1, description: '带有部落图腾的特殊箭矢' },
+            { name: '阿萨拉风情水壶', size: [1, 2], color: 'purple', icon: 'fa-flask', baseWeight: 1, description: '具有阿萨拉地区特色的水壶' },
+            { name: '阿萨拉特色酒壶', size: [1, 2], color: 'purple', icon: 'fa-glass', baseWeight: 1, description: '阿萨拉地区传统工艺制作的酒壶' },
+            { name: '黄金饰章', size: [1, 2], color: 'purple', icon: 'fa-id-card', baseWeight: 1, description: '带有黄金装饰的身份标识' },
+            { name: '犄角墙饰', size: [2, 1], color: 'purple', icon: 'fa-asterisk', baseWeight: 1, description: '用动物犄角制作的墙饰' },
+            { name: '马赛克灯台', size: [2, 3], color: 'purple', icon: 'fa-lightbulb-o', baseWeight: 1, description: '带有马赛克装饰的灯台' },
+            { name: '仪典匕首', size: [3, 2], color: 'purple', icon: 'fa-knife', baseWeight: 1, description: '用于仪式的特殊匕首' },
+            { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', icon: 'fa-glass', baseWeight: 1, description: '阿萨拉地区制作的精美酒杯' },
+            { name: '亮闪闪海盗金币', size: [1, 1], color: 'gold', icon: 'fa-diamond', baseWeight: 1, description: '海盗藏匿的黄金货币' },
+            { name: '功绩勋章', size: [1, 1], color: 'gold', icon: 'fa-trophy', baseWeight: 1, description: '表彰杰出功绩的勋章' },
+            { name: '发条八音盒', size: [1, 1], color: 'gold', icon: 'fa-music', baseWeight: 1, description: '能演奏优美旋律的机械装置' },
+            { name: '荷美尔陶俑', size: [1, 2], color: 'gold', icon: 'fa-female', baseWeight: 1, description: '古代荷美尔文明的陶制人偶' },
+            { name: '珠宝头冠', size: [3, 1], color: 'gold', icon: 'fa-star', baseWeight: 1, description: '镶嵌宝石的华丽头冠' },
+            { name: '金枝桂冠', size: [2, 1], color: 'gold', icon: 'fa-leaf', baseWeight: 1, description: '黄金打造的象征荣誉的桂冠' },
+            { name: '座钟', size: [2, 2], color: 'gold', icon: 'fa-clock-o', baseWeight: 1, description: '制作精美的台式时钟' },
+            { name: '本地特色首饰', size: [3, 2], color: 'gold', icon: 'fa-diamond', baseWeight: 1, description: '当地工艺制作的精美首饰' },
+            { name: '名贵机械表', size: [1, 1], color: 'red', icon: 'fa-clock-o', baseWeight: 1, description: '价值不菲的精密机械手表' },
+            { name: '塞伊德的怀表', size: [1, 1], color: 'red', icon: 'fa-clock-o', baseWeight: 1, description: '历史名人塞伊德曾经拥有的怀表' },
+            { name: '非洲之心', size: [1, 1], color: 'red', icon: 'fa-diamond', rarity: 'rare', baseWeight: 1, description: '传说中的珍贵宝石，极为稀有' },
+            { name: '万足金条', size: [1, 2], color: 'red', icon: 'fa-bars', baseWeight: 1, description: '纯度极高的黄金条' },
+            { name: '棘龙爪化石', size: [2, 1], color: 'red', icon: 'fa-paw', baseWeight: 1, description: '远古棘龙的爪化石，极具研究价值' },
+            { name: '黄金瞪羚', size: [2, 2], color: 'red', icon: 'fa-horse', baseWeight: 1, description: '黄金打造的瞪羚雕像' },
+            { name: '克劳迪乌斯半身像', size: [2, 3], color: 'red', icon: 'fa-user-circle', baseWeight: 1, description: '古代名人克劳迪乌斯的半身雕像' },
+            { name: '塞伊德的留声机', size: [2, 3], color: 'red', icon: 'fa-music', baseWeight: 1, description: '塞伊德曾经使用的留声机' },
+            { name: '步战车模型', size: [3, 2], color: 'red', icon: 'fa-car', baseWeight: 1, description: '精细制作的步战车模型' },
+            { name: '军用雷达', size: [3, 3], color: 'red', icon: 'fa-radar', baseWeight: 1, description: '军用级别的雷达设备' },
+            { name: '滑膛枪展品', size: [4, 1], color: 'red', icon: 'fa-crosshairs', baseWeight: 1, description: '具有历史价值的滑膛枪展品' },
+            { name: '军用信息终端', size: [3, 2], color: 'red', icon: 'fa-tablet', baseWeight: 1, description: '军用规格的信息处理终端' },
+            { name: '显卡', size: [2, 1], color: 'red', icon: 'fa-microchip', baseWeight: 1, description: '高性能显示处理芯片' },
+            { name: '藏秘筒', size: [1, 1], color: 'gold', icon: 'fa-key', baseWeight: 1, description: '用于藏匿秘密信息的特殊容器' }
         ];
         
-        const smallInsuranceItems = [
-            { ...items.find(item => item.name === '仪典匕首') },
-            { ...items.find(item => item.name === '军用信息终端') },
-            { ...items.find(item => item.name === '军用雷达') },
-            { ...items.find(item => item.name === '步战车模型') },
-            { ...items.find(item => item.name === '万足金条') },
-            { ...items.find(item => item.name === '棘龙爪化石') },
-            { ...items.find(item => item.name === '名贵机械表') },
-            { ...items.find(item => item.name === '塞伊德的怀表') },
-            { ...items.find(item => item.name === '本地特色首饰') },
-            { ...items.find(item => item.name === '阿萨拉特色酒杯') },
-            { ...items.find(item => item.name === '亮闪闪海盗金币') },
-            { ...items.find(item => item.name === '功绩勋章') },
-            { ...items.find(item => item.name === '发条八音盒') },
-            { ...items.find(item => item.name === '荷美尔陶俑') },
-            { ...items.find(item => item.name === '金枝桂冠') },
-            { ...items.find(item => item.name === '海盗弯刀') },
-            { ...items.find(item => item.name === '后妃耳环') },
-            { ...items.find(item => item.name === '图腾箭矢') },
-            { ...items.find(item => item.name === '阿萨拉风情水壶') },
-            { ...items.find(item => item.name === '阿萨拉特色酒壶') },
-            { ...items.find(item => item.name === '黄金饰章') },
-            { ...items.find(item => item.name === '犄角墙饰') },
-            { ...items.find(item => item.name === '古怪的海盗银币') },
-            { ...items.find(item => item.name === '初级子弹生产零件') },
-            { ...items.find(item => item.name === '古老的海盗望远镜') },
-            { ...items.find(item => item.name === '非洲之心') }
-        ];
+        // 小保险物品列表
+        const smallInsuranceItems = items.filter(item => 
+            !['数码相机'].includes(item.name)
+        );
         
+        // 核心功能函数
         function getRandomItemCount() {
+            if (currentInsuranceType === 'small') {
+                const random = Math.random();
+                if (random < 0.4) return 1;
+                if (random < 0.8) return 2;
+                return 3;
+            }
+            
             const probabilityDistribution = [
                 { count: 1, probability: 0.30 },
                 { count: 2, probability: 0.30 },
@@ -701,6 +877,11 @@
         }
         
         function openUnlockModal(insuranceType) {
+            if (isProcessingRewards) {
+                showToast('请等待当前物品加载完成');
+                return;
+            }
+            
             currentInsuranceType = insuranceType;
             unlockModal.classList.remove('hidden');
             
@@ -714,6 +895,11 @@
         }
         
         function openSmallInsuranceDirectly() {
+            if (isProcessingRewards) {
+                showToast('请等待当前物品加载完成');
+                return;
+            }
+            
             currentInsuranceType = 'small';
             unlockModal.classList.remove('hidden');
             
@@ -729,17 +915,18 @@
             generateRewards();
         }
         
+        // 事件监听器
         insuranceBox.addEventListener('click', () => {
             openUnlockModal('large');
-            setActiveNavItem(1);
         });
         
         smallInsuranceBox.addEventListener('click', () => {
             openSmallInsuranceDirectly();
-            setActiveNavItem(2);
         });
         
         closeBtn.addEventListener('click', () => {
+            clearGridItems();
+            
             unlockModal.classList.add('hidden');
             rewardScreen.classList.add('hidden');
             unlockScreen.classList.remove('hidden');
@@ -747,6 +934,7 @@
             redItemCount = 0;
             currentRewardItems = [];
             selectButton.querySelector('span').textContent = '选定密码';
+            isProcessingRewards = false;
         });
         
         closeDetailBtn.addEventListener('click', () => {
@@ -764,18 +952,7 @@
             }, 200);
             
             if (Object.keys(itemRecords).length === 0) {
-                const infoMsg = document.createElement('div');
-                infoMsg.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-blue text-white px-4 py-2 rounded shadow-lg z-50 fade-in';
-                infoMsg.textContent = '没有记录可清空';
-                document.body.appendChild(infoMsg);
-                
-                setTimeout(() => {
-                    infoMsg.style.opacity = '0';
-                    infoMsg.style.transition = 'opacity 0.5s ease-out';
-                    setTimeout(() => {
-                        document.body.removeChild(infoMsg);
-                    }, 500);
-                }, 2000);
+                showToast('没有记录可清空');
                 return;
             }
             
@@ -786,19 +963,7 @@
                 localStorage.setItem('deltaInsuranceRecords', JSON.stringify(itemRecords));
                 
                 renderItemRecords();
-                
-                const successMsg = document.createElement('div');
-                successMsg.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green text-white px-4 py-2 rounded shadow-lg z-50 fade-in';
-                successMsg.textContent = '记录已清空';
-                document.body.appendChild(successMsg);
-                
-                setTimeout(() => {
-                    successMsg.style.opacity = '0';
-                    successMsg.style.transition = 'opacity 0.5s ease-out';
-                    setTimeout(() => {
-                        document.body.removeChild(successMsg);
-                    }, 500);
-                }, 3000);
+                showToast('记录已清空');
             }
         });
         
@@ -822,6 +987,7 @@
             }, 800);
         });
         
+        // 物品记录相关函数
         function renderItemRecords() {
             recordsContainer.innerHTML = '';
             
@@ -987,6 +1153,7 @@
             }
         });
         
+        // 辅助函数
         function stopAllAnimations() {
             scrollAnimations.forEach(animation => {
                 if (animation) {
@@ -1105,116 +1272,87 @@
             }, 800);
         }
         
+        // 清空网格中的所有物品
+        function clearGridItems() {
+            const items = gridContainer.querySelectorAll('.placeholder-item, [class*="bg-blue"], [class*="bg-purple"], [class*="bg-gold"], [class*="bg-red"], .magnifier-track');
+            items.forEach(item => {
+                if (item.parentNode === gridContainer) {
+                    gridContainer.removeChild(item);
+                }
+            });
+        }
+        
         function generateRewards() {
-            while (gridContainer.children.length > 1) {
-                gridContainer.removeChild(gridContainer.lastChild);
-            }
+            isProcessingRewards = true;
+            
+            clearGridItems();
             
             let selectedItems = [];
             
             if (currentInsuranceType === 'large') {
-                // 大保险：保持10%红色物品概率
                 let itemCount = getRandomItemCount();
                 
-                let totalWeight = 0;
-                items.forEach(item => {
-                    const [width, height] = item.size;
-                    const sizeFactor = 1 / (width * height);
-                    
-                    const qualityFactors = {
-                        'blue': 1,
-                        'purple': 0.7,
-                        'gold': 0.4,
-                        'red': 0.3  // 维持红色物品10%概率
-                    };
-                    const qualityFactor = qualityFactors[item.color] || 1;
-                    
-                    let redFactor = 1;
-                    if (item.color === 'red') {
-                        redFactor = 1 / Math.pow(2, redItemCount);
-                    }
-                    
-                    item.weight = item.baseWeight * sizeFactor * qualityFactor * redFactor;
-                    totalWeight += item.weight;
-                });
+                // 抽取非洲之心的特殊逻辑 (0.0001%概率)
+                const heartOfAfrica = items.find(item => item.name === '非洲之心');
+                if (Math.random() < 0.000001) {
+                    selectedItems.push({...heartOfAfrica});
+                    itemCount--;
+                }
                 
+                // 按品质抽取其他物品
                 for (let i = 0; i < itemCount; i++) {
-                    let random = Math.random() * totalWeight;
-                    let selectedIndex = -1;
+                    let selectedItem = null;
+                    const random = Math.random();
                     
-                    for (let j = 0; j < items.length; j++) {
-                        const item = items[j];
-                        random -= item.weight;
-                        if (random <= 0) {
-                            selectedIndex = j;
-                            break;
-                        }
+                    // 品质概率：30%蓝，30%紫，30%金，10%红
+                    if (random < 0.30) {
+                        // 蓝色物品
+                        const blueItems = items.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                        selectedItem = blueItems[Math.floor(Math.random() * blueItems.length)];
+                    } else if (random < 0.60) {
+                        // 紫色物品
+                        const purpleItems = items.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                        selectedItem = purpleItems[Math.floor(Math.random() * purpleItems.length)];
+                    } else if (random < 0.90) {
+                        // 金色物品
+                        const goldItems = items.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                        selectedItem = goldItems[Math.floor(Math.random() * goldItems.length)];
+                    } else {
+                        // 红色物品（不含非洲之心）
+                        const redItems = items.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                        selectedItem = redItems[Math.floor(Math.random() * redItems.length)];
                     }
                     
-                    if (selectedIndex !== -1) {
-                        const selectedItem = items[selectedIndex];
+                    if (selectedItem) {
                         selectedItems.push({...selectedItem});
-                        
-                        if (selectedItem.color === 'red') {
-                            redItemCount++;
-                        }
                     }
                 }
             } else {
-                // 小保险：大幅增加金色概率，降低非洲之心概率
-                const random = Math.random();
-                let selectedColor = '';
+                const itemCount = getRandomItemCount();
                 
-                // 调整后的小保险概率分布：
-                // 金色：55% (大幅提高)
-                // 紫色：25%
-                // 蓝色：12%
-                // 红色：7.9%
-                // 非洲之心：0.1% (大幅降低)
-                if (random < 0.55) {
-                    selectedColor = 'gold'; // 55% 金色（大幅增加）
-                } else if (random < 0.80) {
-                    selectedColor = 'purple'; // 25% 紫色
-                } else if (random < 0.92) {
-                    selectedColor = 'blue'; // 12% 蓝色
-                } else if (random < 0.999) {
-                    selectedColor = 'red'; // 7.9% 红色
-                } else {
-                    // 0.1% 非洲之心（大幅降低）
-                    const heartOfAfrica = smallInsuranceItems.find(item => item.name === '非洲之心');
-                    if (heartOfAfrica) {
-                        selectedItems.push({...heartOfAfrica});
-                    }
-                }
-                
-                if (selectedItems.length === 0 && selectedColor) {
-                    const colorItems = smallInsuranceItems.filter(item => item.color === selectedColor);
+                // 抽取非洲之心的特殊逻辑 (0.0001%概率)
+                const heartOfAfrica = smallInsuranceItems.find(item => item.name === '非洲之心');
+                if (Math.random() < 0.000001 && itemCount > 0) {
+                    selectedItems.push({...heartOfAfrica});
                     
-                    if (colorItems.length > 0) {
-                        let totalWeight = 0;
-                        colorItems.forEach(item => {
-                            const [width, height] = item.size;
-                            const sizeFactor = 1 / (width * height);
-                            item.weight = item.baseWeight * sizeFactor;
-                            totalWeight += item.weight;
-                        });
-                        
-                        let random = Math.random() * totalWeight;
-                        for (const item of colorItems) {
-                            random -= item.weight;
-                            if (random <= 0) {
-                                selectedItems.push({...item});
-                                break;
-                            }
+                    if (itemCount === 1) {
+                        // 只抽中非洲之心
+                    } else {
+                        // 继续抽取其他物品
+                        for (let i = 1; i < itemCount; i++) {
+                            selectedItems.push(drawSmallInsuranceItem());
                         }
                     }
-                }
-                
-                if (selectedItems.length === 0) {
-                    const randomIndex = Math.floor(Math.random() * smallInsuranceItems.length);
-                    selectedItems.push({...smallInsuranceItems[randomIndex]});
+                } else {
+                    // 正常抽取小保险物品
+                    for (let i = 0; i < itemCount; i++) {
+                        selectedItems.push(drawSmallInsuranceItem());
+                    }
                 }
             }
+            
+            // 保存最后一次抽取的物品
+            lastDrawItems = [...selectedItems];
             
             currentRewardItems = [...selectedItems];
             
@@ -1222,7 +1360,42 @@
             
             const allItemCells = placeAllItemPlaceholders(selectedItems);
             
+            // 计算总延迟时间
+            let totalDelay = 0;
+            selectedItems.forEach(item => {
+                totalDelay += colorDelays[item.color] * 1000;
+            });
+            
+            // 开始读取物品
             readItemsInOrder(selectedItems, allItemCells);
+            
+            // 设置处理完成状态
+            setTimeout(() => {
+                isProcessingRewards = false;
+            }, totalDelay + 1000);
+        }
+        
+        // 小保险物品抽取（按品质概率）
+        function drawSmallInsuranceItem() {
+            const random = Math.random();
+            
+            if (random < 0.30) {
+                // 蓝色物品
+                const blueItems = smallInsuranceItems.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
+            } else if (random < 0.60) {
+                // 紫色物品
+                const purpleItems = smallInsuranceItems.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
+            } else if (random < 0.90) {
+                // 金色物品
+                const goldItems = smallInsuranceItems.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
+            } else {
+                // 红色物品（不含非洲之心）
+                const redItems = smallInsuranceItems.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                return {...redItems[Math.floor(Math.random() * redItems.length)]};
+            }
         }
         
         function placeAllItemPlaceholders(items) {
@@ -1376,6 +1549,316 @@
             'red': 3
         };
         
+        // 一键抽取功能
+        function initBatchDrawSettings() {
+            // 生成停止条件物品列表
+            const uniqueItems = [...new Map(items.map(item => [item.name, item])).values()];
+            stopConditionContainer.innerHTML = '';
+            
+            uniqueItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex items-center p-2 rounded bg-primary/50 relative';
+                itemElement.innerHTML = `
+                    <div class="record-icon bg-${item.color}/30 text-white rounded-full mr-2">
+                        <i class="fa ${item.icon}"></i>
+                    </div>
+                    <span class="truncate">${item.name}</span>
+                    <input type="checkbox" class="item-checkbox" data-item="${item.name}">
+                    <label for="${item.name}"></label>
+                `;
+                
+                const checkbox = itemElement.querySelector('.item-checkbox');
+                checkbox.id = item.name;
+                
+                checkbox.addEventListener('change', (e) => {
+                    const itemName = e.target.dataset.item;
+                    if (e.target.checked) {
+                        selectedStopItems.add(itemName);
+                    } else {
+                        selectedStopItems.delete(itemName);
+                    }
+                });
+                
+                stopConditionContainer.appendChild(itemElement);
+            });
+            
+            // 最大次数按钮
+            maxCountBtn.addEventListener('click', () => {
+                drawCountInput.value = 10000;
+            });
+            
+            // 开始一键抽取
+            startBatchBtn.addEventListener('click', startBatchDraw);
+            
+            // 关闭结果弹窗
+            closeBatchResultBtn.addEventListener('click', () => {
+                batchResultModal.classList.remove('active');
+            });
+            
+            closeBatchBtn.addEventListener('click', () => {
+                batchResultModal.classList.remove('active');
+            });
+            
+            batchResultModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+                batchResultModal.classList.remove('active');
+            });
+        }
+        
+        function startBatchDraw() {
+            if (isBatchDrawing) return;
+            
+            const drawCount = parseInt(drawCountInput.value);
+            if (isNaN(drawCount) || drawCount < 1 || drawCount > 10000) {
+                showToast('请输入1-10000之间的数字');
+                return;
+            }
+            
+            const insuranceType = document.querySelector('input[name="insuranceType"]:checked').value;
+            isBatchDrawing = true;
+            startBatchBtn.disabled = true;
+            startBatchBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 抽取中...';
+            
+            // 显示进度条
+            batchProgressContainer.style.display = 'block';
+            batchProgressBar.style.width = '0%';
+            
+            // 执行批量抽取
+            performBatchDraw(insuranceType, drawCount);
+        }
+        
+        async function performBatchDraw(insuranceType, totalDraws) {
+            const results = {};
+            let stopReason = '达到指定次数';
+            let completedDraws = 0;
+            let foundTargetItems = [];
+            let targetItemTotalCount = 0;
+            lastDrawItems = []; // 重置最后一次抽取的物品
+            
+            // 初始化结果对象
+            items.forEach(item => {
+                results[item.name] = 0;
+            });
+            
+            try {
+                // 进行抽取
+                for (let i = 0; i < totalDraws; i++) {
+                    if (!isBatchDrawing) break;
+                    
+                    // 单次抽取
+                    const drawnItems = drawInsuranceItems(insuranceType);
+                    
+                    // 记录最后一次抽取的物品
+                    if (i === totalDraws - 1 || 
+                        (selectedStopItems.size > 0 && 
+                         ((stopOnAnyCheckbox.checked && drawnItems.some(item => selectedStopItems.has(item.name))) ||
+                          (!stopOnAnyCheckbox.checked && selectedStopItems.size > 0 && 
+                           Array.from(selectedStopItems).every(itemName => 
+                               results[itemName] > 0 || drawnItems.some(item => item.name === itemName)))))) {
+                        lastDrawItems = [...drawnItems];
+                    }
+                    
+                    // 记录结果
+                    drawnItems.forEach(item => {
+                        results[item.name]++;
+                        autoRecordItems([item]);
+                        
+                        // 检查是否满足停止条件
+                        if (selectedStopItems.size > 0 && selectedStopItems.has(item.name)) {
+                            foundTargetItems.push(item.name);
+                            targetItemTotalCount++;
+                        }
+                    });
+                    
+                    completedDraws++;
+                    
+                    // 更新进度
+                    const progress = Math.floor((completedDraws / totalDraws) * 100);
+                    batchProgressBar.style.width = `${progress}%`;
+                    
+                    // 检查是否需要提前停止
+                    if (selectedStopItems.size > 0) {
+                        if (stopOnAnyCheckbox.checked && foundTargetItems.length > 0) {
+                            stopReason = `抽中目标物品: ${foundTargetItems[0]}`;
+                            break;
+                        } else if (!stopOnAnyCheckbox.checked) {
+                            // 检查是否所有选中物品都已抽中
+                            let allFound = true;
+                            selectedStopItems.forEach(itemName => {
+                                if (results[itemName] === 0) {
+                                    allFound = false;
+                                }
+                            });
+                            
+                            if (allFound) {
+                                stopReason = '所有目标物品已抽中';
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // 每100次抽取暂停一下，避免UI冻结
+                    if (i % 100 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+            } catch (error) {
+                console.error('批量抽取出错:', error);
+                stopReason = '抽取过程出错';
+            } finally {
+                // 完成后处理
+                isBatchDrawing = false;
+                startBatchBtn.disabled = false;
+                startBatchBtn.innerHTML = '<i class="fa fa-play mr-2"></i> 开始一键抽取';
+                
+                // 隐藏进度条
+                batchProgressContainer.style.display = 'none';
+                
+                // 显示结果弹窗
+                showBatchResults(insuranceType, completedDraws, results, stopReason, targetItemTotalCount);
+                
+                // 显示最后一次抽取的保险物品
+                if (lastDrawItems.length > 0) {
+                    setTimeout(() => {
+                        // 先关闭结果弹窗
+                        batchResultModal.classList.remove('active');
+                        
+                        // 显示最后一次抽取的物品
+                        currentInsuranceType = insuranceType;
+                        unlockModal.classList.remove('hidden');
+                        
+                        rewardTitle.textContent = insuranceType === 'large' ? '大免保物品清单' : '小保险物品清单';
+                        gridSize = insuranceType === 'large' ? 4 : 3;
+                        
+                        generateGridLines();
+                        unlockScreen.classList.add('hidden');
+                        rewardScreen.classList.remove('hidden');
+                        
+                        // 直接显示最后一次抽取的物品
+                        currentRewardItems = [...lastDrawItems];
+                        const allItemCells = placeAllItemPlaceholders(lastDrawItems);
+                        readItemsInOrder(lastDrawItems, allItemCells);
+                        
+                        isProcessingRewards = false;
+                    }, 1000);
+                }
+            }
+        }
+        
+        function drawInsuranceItems(insuranceType) {
+            let selectedItems = [];
+            currentInsuranceType = insuranceType;
+            
+            // 抽取非洲之心的特殊逻辑 (0.0001%概率)
+            const heartOfAfrica = items.find(item => item.name === '非洲之心');
+            if (Math.random() < 0.000001) {
+                selectedItems.push({...heartOfAfrica});
+                return selectedItems;
+            }
+            
+            if (insuranceType === 'large') {
+                // 大保险抽取逻辑
+                let itemCount = getRandomItemCount();
+                
+                // 按品质抽取物品
+                for (let i = 0; i < itemCount; i++) {
+                    const random = Math.random();
+                    
+                    if (random < 0.30) {
+                        // 蓝色物品
+                        const blueItems = items.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                        selectedItems.push({...blueItems[Math.floor(Math.random() * blueItems.length)]});
+                    } else if (random < 0.60) {
+                        // 紫色物品
+                        const purpleItems = items.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                        selectedItems.push({...purpleItems[Math.floor(Math.random() * purpleItems.length)]});
+                    } else if (random < 0.90) {
+                        // 金色物品
+                        const goldItems = items.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                        selectedItems.push({...goldItems[Math.floor(Math.random() * goldItems.length)]});
+                    } else {
+                        // 红色物品（不含非洲之心）
+                        const redItems = items.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                        selectedItems.push({...redItems[Math.floor(Math.random() * redItems.length)]});
+                    }
+                }
+            } else {
+                // 小保险抽取逻辑
+                const itemCount = getRandomItemCount();
+                
+                // 按品质抽取物品
+                for (let i = 0; i < itemCount; i++) {
+                    selectedItems.push(drawSmallInsuranceItem());
+                }
+            }
+            
+            return selectedItems;
+        }
+        
+        function showBatchResults(insuranceType, totalDraws, results, stopReason, targetItemCount) {
+            if (!batchResultModal) {
+                console.error('批量结果弹窗元素不存在');
+                return;
+            }
+            
+            // 更新结果信息
+            resultInsuranceType.textContent = insuranceType === 'large' ? '大免保' : '小保险';
+            resultTotalDraws.textContent = totalDraws;
+            
+            // 显示停止原因
+            if (stopReason !== '达到指定次数') {
+                resultStopReason.classList.remove('hidden');
+                resultStopReasonText.textContent = stopReason;
+            } else {
+                resultStopReason.classList.add('hidden');
+            }
+            
+            // 显示目标物品抽中次数
+            if (selectedStopItems.size > 0 && targetItemCount > 0) {
+                resultTargetItemCount.classList.remove('hidden');
+                resultTargetItemCount.querySelector('span').textContent = targetItemCount;
+            } else {
+                resultTargetItemCount.classList.add('hidden');
+            }
+            
+            // 显示物品统计
+            batchResultItems.innerHTML = '';
+            
+            // 按数量排序
+            const sortedItems = Object.entries(results)
+                .filter(([name, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1]);
+            
+            if (sortedItems.length === 0) {
+                batchResultItems.innerHTML = '<div class="text-center text-gray-400 py-2">未抽中任何物品</div>';
+            } else {
+                sortedItems.forEach(([name, count]) => {
+                    const item = items.find(i => i.name === name);
+                    if (!item) return;
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex justify-between items-center p-2 rounded';
+                    itemElement.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="record-icon bg-${item.color}/30 text-white rounded-full mr-2">
+                                <i class="fa ${item.icon}"></i>
+                            </div>
+                            <span>${name}</span>
+                        </div>
+                        <span class="counter-badge bg-${item.color}/30 text-white rounded-full text-xs font-bold">
+                            ${count}
+                        </span>
+                    `;
+                    
+                    batchResultItems.appendChild(itemElement);
+                });
+            }
+            
+            // 显示弹窗
+            batchResultModal.classList.add('active');
+            batchResultModal.style.zIndex = '9999';
+        }
+        
+        // 导航功能 - 修复版本
         function setActiveNavItem(index) {
             navItems.forEach((item, i) => {
                 if (i === index) {
@@ -1386,36 +1869,89 @@
             });
         }
         
-        navItems.forEach((item, index) => {
+        navItems.forEach((item) => {
+            // 为整个导航项添加点击事件，确保可点击区域覆盖整个元素
             item.addEventListener('click', () => {
-                setActiveNavItem(index);
+                const viewId = item.dataset.view;
                 
-                switch(index) {
-                    case 0:
-                        unlockModal.classList.add('hidden');
-                        rewardScreen.classList.add('hidden');
-                        unlockScreen.classList.remove('hidden');
-                        break;
-                    case 1:
-                        openUnlockModal('large');
-                        break;
-                    case 2:
-                        openSmallInsuranceDirectly();
-                        break;
-                    case 3:
-                        unlockModal.classList.add('hidden');
-                        rewardScreen.classList.add('hidden');
-                        unlockScreen.classList.remove('hidden');
-                        recordsContainer.scrollIntoView({ behavior: 'smooth' });
-                        break;
+                // 隐藏所有视图
+                viewSections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // 显示对应视图
+                const targetView = document.getElementById(viewId);
+                if (targetView) {
+                    targetView.classList.add('active');
                 }
+                
+                // 更新导航状态
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
             });
+            
+            // 确保图标和文字区域也能触发点击
+            const icon = item.querySelector('i');
+            const text = item.querySelector('span');
+            
+            if (icon) {
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    item.click();
+                });
+            }
+            
+            if (text) {
+                text.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    item.click();
+                });
+            }
         });
         
+        // 显示提示信息
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
+        // 窗口事件
         window.addEventListener('resize', adjustButtonPosition);
         window.addEventListener('load', () => {
             initScrollers();
             renderItemRecords();
+            initBatchDrawSettings();
+            
+            // 初始化显示第一个视图
+            viewSections[0].classList.add('active');
+            navItems[0].classList.add('active');
+        });
+        
+        // 关闭模态框时的全局处理
+        unlockModal.addEventListener('click', (e) => {
+            // 点击背景关闭模态框
+            if (e.target === unlockModal) {
+                clearGridItems();
+                unlockModal.classList.add('hidden');
+                rewardScreen.classList.add('hidden');
+                unlockScreen.classList.remove('hidden');
+                rewardsShown = false;
+                isProcessingRewards = false;
+            }
+        });
+        
+        // 阻止批量抽取时的页面滚动
+        document.addEventListener('keydown', (e) => {
+            if (isBatchDrawing && (e.key === 'Escape')) {
+                if (confirm('确定要取消批量抽取吗？')) {
+                    isBatchDrawing = false;
+                }
+            }
         });
     </script>
 </body>
