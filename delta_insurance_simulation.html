@@ -11,8 +11,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1E293B', // 深蓝灰色，更适合夜间模式
-                        secondary: '#334155',
+                        primary: '#30525E',
+                        secondary: '#3E4348',
                         highlight: '#10FDD9',
                         default: '#FFFFFF',
                         green: '#4CAF50',
@@ -21,8 +21,8 @@
                         gold: '#FFD700',
                         red: '#F44336',
                         gray: '#808080',
-                        'safe-gray': '#1E293B', // 保险箱深色背景，适合夜间模式
-                        'item-border': '#FFFFFF',
+                        'safe-gray': '#D0D0D0', // 保险箱淡灰色
+                        'item-border': '#FFFFFF', // 物品边框颜色
                     },
                     fontFamily: {
                         digital: ['Orbitron', 'sans-serif'],
@@ -45,8 +45,8 @@
             .scroll-container {
                 overflow: hidden;
                 position: relative;
-                height: 160px;
-                width: 64px;
+                height: 160px; /* 精确显示5个字符的高度 */
+                width: 64px; /* 正方形方框宽度 */
                 border: 2px solid rgba(255, 255, 255, 0.3);
                 border-radius: 4px;
             }
@@ -56,15 +56,15 @@
                 right: 0;
                 height: 2px;
                 background-color: #10FDD9;
-                top: 80px;
+                top: 80px; /* 精确居中位置线 */
                 z-index: 10;
             }
             .target-box {
                 position: absolute;
-                left: 8px;
+                left: 8px; /* 居中显示 */
                 right: 8px;
-                height: 32px;
-                top: 64px;
+                height: 32px; /* 正好容纳一个字符 */
+                top: 64px; /* 精确对准中间字符 */
                 z-index: 5;
                 border: 2px solid #10FDD9;
                 border-radius: 2px;
@@ -216,21 +216,17 @@
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             }
-            /* 物品名称样式 - 底部显示，超出部分省略 */
-            .item-name {
+            /* 物品大小标签样式 */
+            .size-label {
                 position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: 2px 4px;
-                background-color: rgba(0, 0, 0, 0.7);
+                bottom: 2px;
+                right: 2px;
+                font-size: 8px;
+                padding: 1px 3px;
+                border-radius: 2px;
+                background-color: rgba(0, 0, 0, 0.5);
                 color: white;
-                font-size: 10px;
-                text-align: center;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                z-index: 1;
+                font-weight: bold;
             }
             /* 网格线样式 */
             .grid-lines {
@@ -243,7 +239,7 @@
             }
             .grid-line {
                 position: absolute;
-                background-color: rgba(255, 255, 255, 0.1); /* 夜间模式更淡的网格线 */
+                background-color: rgba(0, 0, 0, 0.2);
             }
             /* 物品详情弹窗 */
             .item-detail-modal {
@@ -259,231 +255,180 @@
             .fullsize-icon {
                 width: 100%;
                 height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                object-fit: contain;
                 padding: 4px;
-                font-size: 24px;
             }
-            /* 物品记录图标样式 */
-            .record-icon {
+            /* 图片预加载隐藏容器 */
+            .preload-container {
+                display: none !important;
+            }
+            /* 物品记录图片样式 */
+            .record-image {
                 width: 24px;
                 height: 24px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 16px;
-            }
-            /* 底部导航样式 */
-            .nav-item {
-                transition: all 0.3s ease;
-            }
-            .nav-item.active {
-                color: #10FDD9;
-                border-color: #10FDD9;
-                box-shadow: 0 0 8px rgba(16, 253, 217, 0.6);
-            }
-            .nav-item:hover:not(.active) {
-                color: #fff;
-                border-color: rgba(255, 255, 255, 0.7);
+                object-fit: contain;
+                display: inline-block;
             }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
-    <!-- 主页容器 - 限制最大宽度，使整体更紧凑 -->
-    <div class="w-full max-w-2xl flex flex-col min-h-screen">
-        <!-- 主标题区域 -->
-        <div class="text-center mb-6">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
-            <p class="text-gray-300 text-lg mb-6">点击下方按钮开启您的保险</p>
+    <!-- 图片预加载容器 - 隐藏状态 -->
+    <div class="preload-container" id="imagePreloader">
+        <!-- 图片将通过JS动态添加 -->
+    </div>
+    
+    <!-- 主标题区域 -->
+    <div class="text-center mb-6 w-full max-w-4xl">
+        <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
+        <p class="text-gray-300 text-lg mb-6">点击下方按钮开启您的保险</p>
+    </div>
+    
+    <!-- 保险箱区域（上方） -->
+    <div class="text-center w-full max-w-4xl mb-8">
+        <!-- 保险盒子 -->
+        <div id="insuranceBox" class="relative w-64 h-64 md:w-80 md:h-80 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+            <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
+                <i class="fa fa-shield text-6xl md:text-8xl text-highlight mb-4 pulse"></i>
+                <span class="text-xl md:text-2xl font-bold text-highlight">点击开启</span>
+            </div>
+            <!-- 装饰线条 -->
+            <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+            <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
+            <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
+            <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
+        </div>
+    </div>
+    
+    <!-- 物品记录区域（下方） -->
+    <div class="w-full max-w-4xl bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up">
+        <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
+            <i class="fa fa-list-alt mr-2"></i> 物品获取记录
+        </h2>
+        
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+            <button id="clearRecordsBtn" class="text-sm bg-red/20 text-red border border-red/50 py-1 px-3 rounded hover:bg-red/30 transition-colors duration-300">
+                <i class="fa fa-trash mr-1"></i> 清空记录
+            </button>
+            <span class="text-sm text-gray-300" id="totalItemsCount">总计: 0 件</span>
         </div>
         
-        <!-- 保险箱区域（上方） -->
-        <div class="text-center mb-8">
-            <div class="flex flex-col md:flex-row justify-center gap-6">
-                <!-- 大保险盒子 -->
-                <div id="insuranceBox" class="relative w-56 h-56 md:w-64 md:h-64 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                    <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
-                        <i class="fa fa-shield text-5xl md:text-7xl text-highlight mb-4 pulse"></i>
-                        <span class="text-xl md:text-2xl font-bold text-highlight">大免保</span>
-                        <span class="text-sm text-gray-300 mt-2">需解锁</span>
-                    </div>
-                    <!-- 装饰线条 -->
-                    <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
-                    <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
-                </div>
-                
-                <!-- 小保险盒子 -->
-                <div id="smallInsuranceBox" class="relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:glow bg-gradient-to-br from-secondary to-primary rounded-lg flex items-center justify-center">
-                    <div class="absolute inset-4 border-2 border-highlight rounded flex items-center justify-center flex-col">
-                        <i class="fa fa-lock text-4xl md:text-6xl text-highlight mb-4 pulse"></i>
-                        <span class="text-xl md:text-2xl font-bold text-highlight">小保险</span>
-                        <span class="text-sm text-gray-300 mt-2">直接打开</span>
-                    </div>
-                    <!-- 装饰线条 -->
-                    <div class="absolute top-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute bottom-1/4 left-0 w-full h-1 bg-highlight/30"></div>
-                    <div class="absolute top-0 left-1/4 w-1 h-full bg-highlight/30"></div>
-                    <div class="absolute top-0 right-1/4 w-1 h-full bg-highlight/30"></div>
-                </div>
+        <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2">
+            <div class="text-gray-400 text-center py-4">
+                暂无物品记录
             </div>
         </div>
-        
-        <!-- 物品记录区域（下方） -->
-        <div class="bg-secondary/30 rounded-lg p-4 mb-8 border border-gray-700 slide-up flex-grow">
-            <h2 class="text-xl font-bold mb-4 text-highlight flex items-center">
-                <i class="fa fa-list-alt mr-2"></i> 物品获取记录
-            </h2>
-            
-            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
-                <button id="clearRecordsBtn" class="text-sm bg-red/20 text-red border border-red/50 py-1 px-3 rounded hover:bg-red/30 transition-colors duration-300">
-                    <i class="fa fa-trash mr-1"></i> 清空记录
-                </button>
-                <span class="text-sm text-gray-300" id="totalItemsCount">总计: 0 件</span>
-            </div>
-            
-            <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2">
-                <div class="text-gray-400 text-center py-4">
-                    暂无物品记录
-                </div>
-            </div>
-        </div>
+    </div>
 
-        <!-- 解锁弹窗 -->
-        <div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-            <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
-            <div class="relative bg-primary w-full max-w-xl mx-4 rounded-lg shadow-2xl overflow-hidden fade-in">
-                <!-- 解锁界面 -->
-                <div id="unlockScreen" class="p-6">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-highlight">解锁大免保</h2>
-                    
-                    <!-- 密码滚动区域 -->
-                    <div class="flex justify-center gap-4 mb-6" id="scrollArea">
-                        <!-- 第一列 - 目标6 -->
-                        <div class="scroll-container relative bg-primary/80" data-target="6" data-next="1" data-chars="2,K,6,L,D">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll0">
-                                <!-- 内容将通过JS动态生成 -->
-                            </div>
-                        </div>
-                        <!-- 第二列 - 目标D -->
-                        <div class="scroll-container relative bg-primary/80" data-target="D" data-next="2" data-chars="O,9,D,(,~">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll1">
-                                <!-- 内容将通过JS动态生成 -->
-                            </div>
-                        </div>
-                        <!-- 第三列 - 目标F -->
-                        <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&amp;">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll2">
-                                <!-- 内容将通过JS动态生成 -->
-                            </div>
-                        </div>
-                        <!-- 第四列 - 目标U -->
-                        <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&amp;,M,U,=,2">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll3">
-                                <!-- 内容将通过JS动态生成 -->
-                            </div>
-                        </div>
-                        <!-- 第五列 - 目标P -->
-                        <div class="scroll-container relative bg-primary/80" data-target="P" data-next="5" data-chars="),9,P,6,@">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll4">
-                                <!-- 内容将通过JS动态生成 -->
-                            </div>
+    <!-- 解锁弹窗 -->
+    <div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
+        <div class="relative bg-primary w-full max-w-2xl mx-4 rounded-lg shadow-2xl overflow-hidden fade-in">
+            <!-- 解锁界面 -->
+            <div id="unlockScreen" class="p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">解锁保险</h2>
+                
+                <!-- 密码滚动区域 -->
+                <div class="flex justify-center gap-4 mb-6" id="scrollArea">
+                    <!-- 第一列 - 目标6 -->
+                    <div class="scroll-container relative bg-primary/80" data-target="6" data-next="1" data-chars="2,K,6,L,D">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll0">
+                            <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    
-                    <!-- 按钮区域：包含选定密码和直接解锁按钮 -->
-                    <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8" id="buttonContainer">
-                        <div class="select-button w-24 h-14 border-2 border-green/50 text-green hover:bg-green/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
-                            <span class="font-bold">选定密码</span>
-                        </div>
-                        <div id="directUnlockBtn" class="skip-button w-24 h-14 border-2 border-highlight/70 text-highlight hover:bg-highlight/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
-                            <span class="font-bold">直接解锁</span>
+                    <!-- 第二列 - 目标D -->
+                    <div class="scroll-container relative bg-primary/80" data-target="D" data-next="2" data-chars="O,9,D,(,~">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll1">
+                            <!-- 内容将通过JS动态生成 -->
                         </div>
                     </div>
-                    
-                    <!-- 进度条 -->
-                    <div class="w-full bg-secondary/50 rounded-full h-4 mb-2">
-                        <div id="progressBar" class="progress-shine bg-highlight h-4 rounded-full w-0 transition-all duration-1000 ease-linear"></div>
+                    <!-- 第三列 - 目标F -->
+                    <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&amp;">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll2">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
                     </div>
-                    <div class="text-right text-sm text-gray-300">
-                        <span id="progressText">0%</span>
+                    <!-- 第四列 - 目标U -->
+                    <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&amp;,M,U,=,2">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll3">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    <!-- 第五列 - 目标P -->
+                    <div class="scroll-container relative bg-primary/80" data-target="P" data-next="5" data-chars="),9,P,6,@">
+                        <div class="target-line"></div>
+                        <div class="target-box"></div>
+                        <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll4">
+                            <!-- 内容将通过JS动态生成 -->
+                        </div>
                     </div>
                 </div>
                 
-                <!-- 奖励界面 -->
-                <div id="rewardScreen" class="p-6 hidden">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-highlight" id="rewardTitle">保险物品清单</h2>
-                    
-                    <!-- 保险格子容器 - 带网格线，物品无边框 -->
-                    <div id="gridContainer" class="w-full aspect-square bg-safe-gray relative mb-6 p-4">
-                        <!-- 网格线容器 -->
-                        <div class="grid-lines" id="gridLines">
-                            <!-- 网格线将通过JS动态生成 -->
-                        </div>
-                        <!-- 物品将通过JS动态生成 -->
+                <!-- 按钮区域：包含选定密码和直接解锁按钮 -->
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8" id="buttonContainer">
+                    <div class="select-button w-24 h-14 border-2 border-green/50 text-green hover:bg-green/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
+                        <span class="font-bold">选定密码</span>
                     </div>
-                    
-                    <button id="closeBtn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500 transition-colors duration-300">
-                        关闭
-                    </button>
+                    <div id="directUnlockBtn" class="skip-button w-24 h-14 border-2 border-highlight/70 text-highlight hover:bg-highlight/20 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
+                        <span class="font-bold">直接解锁</span>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="w-full bg-secondary/50 rounded-full h-4 mb-2">
+                    <div id="progressBar" class="progress-shine bg-highlight h-4 rounded-full w-0 transition-all duration-1000 ease-linear"></div>
+                </div>
+                <div class="text-right text-sm text-gray-300">
+                    <span id="progressText">0%</span>
                 </div>
             </div>
-        </div>
-
-        <!-- 物品详情弹窗 -->
-        <div id="itemDetailModal" class="item-detail-modal fixed inset-0 flex items-center justify-center z-50">
-            <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
-            <div class="relative bg-secondary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in p-6">
-                <button id="closeDetailBtn" class="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors">
-                    <i class="fa fa-times text-xl"></i>
+            
+            <!-- 奖励界面 -->
+            <div id="rewardScreen" class="p-6 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-center text-highlight">保险物品清单</h2>
+                
+                <!-- 保险格子容器 - 带网格线，物品无边框 -->
+                <div id="gridContainer" class="w-full aspect-square bg-safe-gray relative mb-6 p-4">
+                    <!-- 网格线容器 -->
+                    <div class="grid-lines" id="gridLines">
+                        <!-- 网格线将通过JS动态生成 -->
+                    </div>
+                    <!-- 物品将通过JS动态生成 -->
+                </div>
+                
+                <button id="closeBtn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500 transition-colors duration-300">
+                    关闭
                 </button>
-                <div class="text-center mb-4">
-                    <div id="detailIconContainer" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center">
-                        <!-- 图标将通过JS动态生成 -->
-                    </div>
-                    <h3 id="detailName" class="text-2xl font-bold mb-2"></h3>
-                    <div id="detailSize" class="text-sm text-gray-300 mb-4"></div>
-                </div>
-                <div class="bg-black/30 rounded-lg p-4">
-                    <h4 class="text-highlight font-bold mb-2">物品描述</h4>
-                    <p id="detailDescription" class="text-gray-200"></p>
-                </div>
             </div>
         </div>
+    </div>
 
-        <!-- 底部导航栏 -->
-        <div class="w-full border-t border-gray-700 pt-3 pb-2">
-            <div class="flex justify-around">
-                <div class="nav-item active flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-home mb-1"></i>
-                    <span>主页</span>
+    <!-- 物品详情弹窗 -->
+    <div id="itemDetailModal" class="item-detail-modal fixed inset-0 flex items-center justify-center z-50">
+        <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
+        <div class="relative bg-secondary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in p-6">
+            <button id="closeDetailBtn" class="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+            <div class="text-center mb-4">
+                <div id="detailIconContainer" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center">
+                    <!-- 图标将通过JS动态生成 -->
                 </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-shield mb-1"></i>
-                    <span>大免保</span>
-                </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-lock mb-1"></i>
-                    <span>小保险</span>
-                </div>
-                <div class="nav-item flex flex-col items-center text-sm p-2 border-b-2 border-transparent">
-                    <i class="fa fa-list-alt mb-1"></i>
-                    <span>记录</span>
-                </div>
+                <h3 id="detailName" class="text-2xl font-bold mb-2"></h3>
+                <div id="detailSize" class="text-sm text-gray-300 mb-4"></div>
+            </div>
+            <div class="bg-black/30 rounded-lg p-4">
+                <h4 class="text-highlight font-bold mb-2">物品描述</h4>
+                <p id="detailDescription" class="text-gray-200"></p>
             </div>
         </div>
     </div>
@@ -491,11 +436,9 @@
     <script>
         // 获取DOM元素
         const insuranceBox = document.getElementById('insuranceBox');
-        const smallInsuranceBox = document.getElementById('smallInsuranceBox');
         const unlockModal = document.getElementById('unlockModal');
         const unlockScreen = document.getElementById('unlockScreen');
         const rewardScreen = document.getElementById('rewardScreen');
-        const rewardTitle = document.getElementById('rewardTitle');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const gridContainer = document.getElementById('gridContainer');
@@ -510,7 +453,7 @@
         const totalItemsCount = document.getElementById('totalItemsCount');
         const itemDetailModal = document.getElementById('itemDetailModal');
         const closeDetailBtn = document.getElementById('closeDetailBtn');
-        const navItems = document.querySelectorAll('.nav-item');
+        const imagePreloader = document.getElementById('imagePreloader');
         
         // 物品详情元素
         const detailIconContainer = document.getElementById('detailIconContainer');
@@ -533,7 +476,6 @@
         // 物品记录数据（使用localStorage持久化存储）
         let itemRecords = JSON.parse(localStorage.getItem('deltaInsuranceRecords')) || {};
         let currentRewardItems = []; // 当前奖励的物品
-        let currentInsuranceType = 'large'; // 当前保险类型：large 或 small
         
         // 当前激活的列索引
         let currentColIndex = 0;
@@ -568,20 +510,60 @@
         // 已出现的红色物品数量
         let redItemCount = 0;
         // 网格大小和间隔设置
-        let gridSize = 4; // 默认4x4网格（大保险），小保险为3x3
+        const gridSize = 4; // 4x4网格
         const cellPercentage = 100 / gridSize; // 每个格子的百分比宽度
         const itemSpacing = 2; // 物品之间的间隔百分比
         
-        // 物品数据 - 使用Font Awesome图标代替图片
+        // 物品数据 - 按品质和大小分类，包含完整描述
+        // 本地图片命名规则：
+        // 1.png - 古怪的海盗银币
+        // 2.png - 初级子弹生产零件
+        // 3.png - 古老的海盗望远镜
+        // 4.png - 海盗弯刀
+        // 5.png - 后妃耳环
+        // 6.png - 图腾箭矢
+        // 7.png - 阿萨拉风情水壶
+        // 8.png - 阿萨拉特色酒壶
+        // 9.png - 黄金饰章
+        // 10.png - 犄角墙饰
+        // 11.png - 马赛克灯台
+        // 12.png - 仪典匕首
+        // 13.png - 阿萨拉特色酒杯
+        // 14.png - 亮闪闪海盗金币
+        // 15.png - 功绩勋章
+        // 16.png - 发条八音盒
+        // 17.png - 荷美尔陶俑
+        // 18.png - 珠宝头冠
+        // 19.png - 金枝桂冠
+        // 20.png - 座钟
+        // 21.png - 本地特色首饰
+        // 22.png - 名贵机械表
+        // 23.png - 塞伊德的怀表
+        // 24.png - 非洲之心
+        // 25.png - “钻石”鱼子酱
+        // 26.png - 万足金条
+        // 27.png - 棘龙爪化石
+        // 28.png - 黄金瞪羚
+        // 29.png - 克劳迪乌斯半身像
+        // 30.png - 塞伊德的留声机
+        // 31.png - 步战车模型
+        // 32.png - 主战坦克模型
+        // 33.png - 滑膛枪展品
+        // 34.png - 军用信息终端
+        // 35.png - 显卡
+        // 36.png - 藏秘筒
+        // 37.png - 数码相机
+        // 38.png - 手机
+        
         const items = [
             // 蓝色1x1 - 基础权重较高
             { 
                 name: '古怪的海盗银币', 
                 size: [1, 1], 
                 color: 'blue', 
-                icon: 'fa-coins', 
+                icon: '1.png', 
                 baseWeight: 8,
-                description: '物品描述占位文本'
+                description: '一枚古老的海盗银币，上面刻有模糊的骷髅标志，边缘有些磨损，见证了无数次海上冒险。这枚银币可能是18世纪加勒比海盗常用的流通货币。'
             },
             
             // 蓝色1x2 - 基础权重中等
@@ -589,17 +571,17 @@
                 name: '初级子弹生产零件', 
                 size: [1, 2], 
                 color: 'blue', 
-                icon: 'fa-cogs', 
+                icon: '2.png', 
                 baseWeight: 5,
-                description: '物品描述占位文本'
+                description: '用于生产子弹的基础零件，由耐腐蚀金属制成，表面光滑，工艺精湛。这种零件广泛应用于小型武器制造厂，是弹药生产的关键组件。'
             },
             { 
                 name: '古老的海盗望远镜', 
                 size: [1, 2], 
                 color: 'blue', 
-                icon: 'fa-binoculars', 
+                icon: '3.png', 
                 baseWeight: 5,
-                description: '物品描述占位文本'
+                description: '黄铜材质的海盗望远镜，镜片有些模糊但仍能使用，伸缩部分刻有精致的花纹。17-18世纪的海盗常用这类望远镜来远距离发现目标船只。'
             },
             
             // 紫色1x1 - 基础权重中等
@@ -607,25 +589,25 @@
                 name: '海盗弯刀', 
                 size: [1, 1], 
                 color: 'purple', 
-                icon: 'fa-cutlery', 
-                baseWeight: 7.6,
-                description: '物品描述占位文本'
+                icon: '4.png', 
+                baseWeight: 5,
+                description: '造型独特的海盗弯刀，刀刃锋利，刀柄由象牙制成，上面镶嵌着小颗宝石。这种弯刀是海盗的标志性武器，便于在狭窄的船舱内使用。'
             },
             { 
                 name: '后妃耳环', 
                 size: [1, 1], 
                 color: 'purple', 
-                icon: 'fa-diamond', 
-                baseWeight: 7.6,
-                description: '物品描述占位文本'
+                icon: '5.png', 
+                baseWeight: 5,
+                description: '精致的黄金耳环，上面镶嵌着紫色宝石，可能属于某位皇室后妃，工艺极为考究。这类珠宝通常由宫廷工匠精心制作，象征着佩戴者的高贵身份。'
             },
             { 
                 name: '图腾箭矢', 
                 size: [1, 1], 
                 color: 'purple', 
-                icon: 'fa-arrow-right', 
-                baseWeight: 7.6,
-                description: '物品描述占位文本'
+                icon: '6.png', 
+                baseWeight: 5,
+                description: '带有部落图腾的箭矢，箭头由黑曜石制成，箭杆上刻有神秘符号，具有仪式意义。这类箭矢不仅用于狩猎，还在重要的部落仪式中使用。'
             },
             
             // 紫色1x2 - 基础权重较低
@@ -633,25 +615,25 @@
                 name: '阿萨拉风情水壶', 
                 size: [1, 2], 
                 color: 'purple', 
-                icon: 'fa-flask', 
-                baseWeight: 4.75,
-                description: '物品描述占位文本'
+                icon: '7.png', 
+                baseWeight: 3,
+                description: '阿萨拉地区特有的水壶，采用传统工艺制作，表面有精美的彩绘图案，展示当地风土人情。这种水壶具有良好的保温性能，是长途旅行者的理想选择。'
             },
             { 
                 name: '阿萨拉特色酒壶', 
                 size: [1, 2], 
                 color: 'purple', 
-                icon: 'fa-glass', 
-                baseWeight: 4.75,
-                description: '物品描述占位文本'
+                icon: '8.png', 
+                baseWeight: 3,
+                description: '用于盛装当地特色美酒的容器，壶身雕刻有葡萄藤图案，密封性能极佳。阿萨拉地区以生产优质葡萄酒闻名，这种酒壶是当地手工艺品的代表。'
             },
             { 
                 name: '黄金饰章', 
                 size: [1, 2], 
                 color: 'purple', 
-                icon: 'fa-id-card', 
-                baseWeight: 4.75,
-                description: '物品描述占位文本'
+                icon: '9.png', 
+                baseWeight: 3,
+                description: '由纯金打造的饰章，上面刻有家族徽章，可能是某位贵族的身份象征。在中世纪欧洲，这类饰章常用于标识贵族身份，也作为重要文件的封印使用。'
             },
             
             // 紫色2x1 - 基础权重较低
@@ -659,9 +641,9 @@
                 name: '犄角墙饰', 
                 size: [2, 1], 
                 color: 'purple', 
-                icon: 'fa-asterisk', 
-                baseWeight: 4.75,
-                description: '物品描述占位文本'
+                icon: '10.png', 
+                baseWeight: 3,
+                description: '由动物犄角制成的墙饰，经过特殊处理防止虫蛀，表面光滑，带有自然的曲线美感。这类装饰品在北欧风格的建筑中较为常见，象征着狩猎的成功。'
             },
             
             // 紫色2x3 - 基础权重低
@@ -669,19 +651,19 @@
                 name: '马赛克灯台', 
                 size: [2, 3], 
                 color: 'purple', 
-                icon: 'fa-lightbulb-o', 
-                baseWeight: 3,
-                description: '物品描述占位文本'
+                icon: '11.png', 
+                baseWeight: 2,
+                description: '由彩色玻璃马赛克拼贴而成的灯台，点亮时会投射出五彩斑斓的光影效果。这种工艺源自拜占庭帝国，后流传到世界各地，成为珍贵的手工艺品。'
             },
             
-            // 紫色3x2 - 基础权重低（用于小保险）
+            // 紫色3x2 - 基础权重低
             { 
                 name: '仪典匕首', 
                 size: [3, 2], 
                 color: 'purple', 
-                icon: 'fa-knife', 
-                baseWeight: 3,
-                description: '物品描述占位文本'
+                icon: '12.png', 
+                baseWeight: 2,
+                description: '用于宗教仪式的匕首，刀鞘由鲨鱼皮制成，刀柄镶嵌着宝石，具有重要的文化价值。许多古代文明都有使用特制匕首进行宗教仪式的传统。'
             },
             
             // 金色1x1 - 基础权重中等
@@ -689,33 +671,33 @@
                 name: '阿萨拉特色酒杯', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-glass', 
-                baseWeight: 5.15,
-                description: '物品描述占位文本'
+                icon: '13.png', 
+                baseWeight: 4,
+                description: '阿萨拉地区出产的精致酒杯，由水晶制成，杯身上有手工雕刻的花纹，薄如蝉翼。这种酒杯通常用于招待贵宾，是身份和地位的象征。'
             },
             { 
                 name: '亮闪闪海盗金币', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-diamond', 
-                baseWeight: 5.15,
-                description: '物品描述占位文本'
+                icon: '14.png', 
+                baseWeight: 4,
+                description: '纯度极高的海盗金币，表面光滑，刻有清晰的图案，在光线下闪闪发光。这枚金币可能来自被海盗劫掠的西班牙运金船队，具有很高的收藏价值。'
             },
             { 
                 name: '功绩勋章', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-trophy', 
-                baseWeight: 5.15,
-                description: '物品描述占位文本'
+                icon: '15.png', 
+                baseWeight: 4,
+                description: '授予有功之臣的勋章，由黄金和宝石制成，象征着荣誉和成就。这类勋章通常由国家最高领导人颁发，是对获得者杰出贡献的认可。'
             },
             { 
                 name: '发条八音盒', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-music', 
-                baseWeight: 5.15,
-                description: '物品描述占位文本'
+                icon: '16.png', 
+                baseWeight: 4,
+                description: '小巧精致的发条八音盒，打开后能演奏优美的旋律，内部机械结构精密。19世纪欧洲贵族常用这类八音盒作为高档礼品，也是精湛工艺的代表。'
             },
             
             // 金色1x2 - 基础权重较低
@@ -723,9 +705,9 @@
                 name: '荷美尔陶俑', 
                 size: [1, 2], 
                 color: 'gold', 
-                icon: 'fa-female', 
-                baseWeight: 4.15,
-                description: '物品描述占位文本'
+                icon: '17.png', 
+                baseWeight: 3,
+                description: '荷美尔文明的陶俑，造型独特，表面有金色涂层，展示了古代文明的艺术成就。荷美尔文明虽然已经消失，但其留下的艺术品仍让人惊叹于他们的工艺水平。'
             },
             
             // 金色3x1 - 基础权重低
@@ -733,9 +715,9 @@
                 name: '珠宝头冠', 
                 size: [3, 1], 
                 color: 'gold', 
-                icon: 'fa-star', 
-                baseWeight: 3.09,
-                description: '物品描述占位文本'
+                icon: '18.png', 
+                baseWeight: 2,
+                description: '由黄金打造并镶嵌多种宝石的头冠，工艺精湛，可能属于皇室成员。这类头冠通常在加冕仪式等重要场合佩戴，象征着至高无上的权力。'
             },
             
             // 金色2x1 - 基础权重低
@@ -743,9 +725,9 @@
                 name: '金枝桂冠', 
                 size: [2, 1], 
                 color: 'gold', 
-                icon: 'fa-leaf', 
-                baseWeight: 3.09,
-                description: '物品描述占位文本'
+                icon: '19.png', 
+                baseWeight: 2,
+                description: '模仿桂冠造型的金饰，由纯金打造，象征着胜利和荣誉。在古希腊和古罗马，桂冠是授予胜利者的最高荣誉，后来演变为各种形式的荣誉象征。'
             },
             
             // 金色2x2 - 基础权重低
@@ -753,46 +735,54 @@
                 name: '座钟', 
                 size: [2, 2], 
                 color: 'gold', 
-                icon: 'fa-clock-o', 
-                baseWeight: 3.09,
-                description: '物品描述占位文本'
+                icon: '20.png', 
+                baseWeight: 2,
+                description: '复古风格的座钟，外壳由黄铜制成，带有金色镀层，走时精准，敲击声清脆。这种座钟在18-19世纪的欧洲贵族家庭中非常常见，既是实用品也是装饰品。'
             },
             
-            // 金色3x2 - 基础权重低（用于小保险）
+            // 金色3x2 - 基础权重低
             { 
                 name: '本地特色首饰', 
                 size: [3, 2], 
                 color: 'gold', 
-                icon: 'fa-diamond', 
-                baseWeight: 1.545,
-                description: '物品描述占位文本'
+                icon: '21.png', 
+                baseWeight: 1,
+                description: '当地工匠制作的特色首饰套装，包含项链和耳环，采用传统工艺，具有独特的文化韵味。这类首饰通常使用本地特有的材料，体现了地域文化特色。'
             },
             
-            // 红色1x1 - 基础权重低（已提高至10%概率）
+            // 红色1x1 - 基础权重低
             { 
                 name: '名贵机械表', 
                 size: [1, 1], 
                 color: 'red', 
-                icon: 'fa-clock-o', 
-                baseWeight: 3.5,
-                description: '物品描述占位文本'
+                icon: '22.png', 
+                baseWeight: 2,
+                description: '瑞士制造的名贵机械表，表盘镶嵌钻石，内部机芯精密复杂，走时准确。瑞士钟表业以其精湛的工艺闻名于世，这类机械表往往价值不菲。'
             },
             { 
                 name: '塞伊德的怀表', 
                 size: [1, 1], 
                 color: 'red', 
-                icon: 'fa-clock-o', 
-                baseWeight: 3.5,
-                description: '物品描述占位文本'
+                icon: '23.png', 
+                baseWeight: 2,
+                description: '属于著名探险家塞伊德的怀表，表壳由纯金打造，背面刻有他的签名，具有重要的历史价值。塞伊德曾在19世纪进行过多次非洲探险，留下了许多珍贵文物。'
             },
             { 
                 name: '非洲之心', 
                 size: [1, 1], 
                 color: 'red', 
-                icon: 'fa-diamond', 
+                icon: '24.png', 
                 rarity: 'rare', 
-                baseWeight: 2.5,
-                description: '物品描述占位文本'
+                baseWeight: 1,
+                description: '巨大的红色钻石，被称为"非洲之心"，色泽纯正，切割完美，是稀世珍宝。红色钻石是自然界中最稀有的钻石品种之一，每克拉价值高达数百万美元。'
+            },
+            { 
+                name: '“钻石”鱼子酱', 
+                size: [1, 1], 
+                color: 'red', 
+                icon: '25.png', 
+                baseWeight: 2,
+                description: '顶级的黑色鱼子酱，因价格昂贵被称为"黑色钻石"，口感细腻，营养丰富。这种鱼子酱来自里海的白鲟，需要数十年才能成熟，因此极为珍贵。'
             },
             
             // 红色1x2 - 基础权重极低
@@ -800,9 +790,9 @@
                 name: '万足金条', 
                 size: [1, 2], 
                 color: 'red', 
-                icon: 'fa-bars', 
-                baseWeight: 2.5,
-                description: '物品描述占位文本'
+                icon: '26.png', 
+                baseWeight: 1,
+                description: '纯度高达99.99%的金条，表面刻有重量和纯度标记，是财富的象征。万足金是纯度最高的黄金制品，具有极高的保值和投资价值。'
             },
             
             // 红色2x1 - 基础权重极低
@@ -810,9 +800,9 @@
                 name: '棘龙爪化石', 
                 size: [2, 1], 
                 color: 'red', 
-                icon: 'fa-paw', 
-                baseWeight: 2.5,
-                description: '物品描述占位文本'
+                icon: '27.png', 
+                baseWeight: 1,
+                description: '保存完好的棘龙爪化石，距今已有数千万年历史，对于古生物研究具有重要价值。棘龙是一种大型肉食恐龙，其化石非常罕见，因此具有很高的科学价值。'
             },
             
             // 红色2x2 - 基础权重极低
@@ -820,9 +810,9 @@
                 name: '黄金瞪羚', 
                 size: [2, 2], 
                 color: 'red', 
-                icon: 'fa-horse', 
-                baseWeight: 2.0,
-                description: '物品描述占位文本'
+                icon: '28.png', 
+                baseWeight: 0.8,
+                description: '纯金打造的瞪羚雕像，造型栩栩如生，细节处理精细，可能是古代皇室的收藏品。瞪羚在许多文化中象征着敏捷和优雅，这类金雕像往往具有重要的文化意义。'
             },
             
             // 红色2x3 - 基础权重极低
@@ -830,37 +820,37 @@
                 name: '克劳迪乌斯半身像', 
                 size: [2, 3], 
                 color: 'red', 
-                icon: 'fa-user-circle', 
-                baseWeight: 1.5,
-                description: '物品描述占位文本'
+                icon: '29.png', 
+                baseWeight: 0.5,
+                description: '罗马皇帝克劳迪乌斯的大理石半身像，雕刻精美，是古罗马艺术的代表作之一。克劳迪乌斯是罗马帝国的第四位皇帝，统治时期为公元41-54年。'
             },
             { 
                 name: '塞伊德的留声机', 
                 size: [2, 3], 
                 color: 'red', 
-                icon: 'fa-music', 
-                baseWeight: 1.5,
-                description: '物品描述占位文本'
+                icon: '30.png', 
+                baseWeight: 0.5,
+                description: '探险家塞伊德使用过的留声机，保存完好，仍能播放古老的唱片，带有浓厚的历史气息。留声机是爱迪生的重要发明，彻底改变了人们记录和传播声音的方式。'
             },
             
-            // 红色3x2 - 基础权重极低（用于小保险）
+            // 红色3x2 - 基础权重极低
             { 
                 name: '步战车模型', 
                 size: [3, 2], 
                 color: 'red', 
-                icon: 'fa-car', 
-                baseWeight: 1.5,
-                description: '物品描述占位文本'
+                icon: '31.png', 
+                baseWeight: 0.5,
+                description: '按比例制作的步战车模型，细节逼真，由金属制成，可能是军事爱好者的珍藏。这种模型精确复制了真实步战车的各种细节，包括武器系统和防护装甲。'
             },
             
-            // 红色3x3 - 基础权重极低（用于小保险）
+            // 红色3x3 - 基础权重极低
             { 
-                name: '军用雷达', 
+                name: '主战坦克模型', 
                 size: [3, 3], 
                 color: 'red', 
-                icon: 'fa-radar', 
-                baseWeight: 1.0,
-                description: '物品描述占位文本'
+                icon: '32.png', 
+                baseWeight: 0.3,
+                description: '精细的主战坦克模型，由多种材料制成，可活动部件多，是罕见的收藏品。这类模型通常由专业工匠手工制作，比例精确，细节丰富，深受军事收藏家喜爱。'
             },
             
             // 红色4x1 - 基础权重极低
@@ -868,9 +858,9 @@
                 name: '滑膛枪展品', 
                 size: [4, 1], 
                 color: 'red', 
-                icon: 'fa-crosshairs', 
-                baseWeight: 1.0,
-                description: '物品描述占位文本'
+                icon: '33.png', 
+                baseWeight: 0.3,
+                description: '19世纪的滑膛枪，保存完好，带有精美雕刻，是火器发展史上的重要文物。滑膛枪在近代战争中发挥了重要作用，这种保存状态良好的古董枪支极为罕见。'
             },
             
             // 新增物品
@@ -878,80 +868,69 @@
                 name: '军用信息终端', 
                 size: [3, 2], 
                 color: 'red', 
-                icon: 'fa-tablet', 
-                baseWeight: 1.5,
-                description: '物品描述占位文本'
+                icon: '34.png', 
+                baseWeight: 0.5,
+                description: '军用级别的信息处理终端，具有抗干扰和加密通信功能，可在恶劣环境下稳定工作。常用于战场指挥和情报分析，具有极高的军事价值。'
             },
             { 
                 name: '显卡', 
                 size: [2, 1], 
                 color: 'red', 
-                icon: 'fa-microchip', 
-                baseWeight: 2.5,
-                description: '物品描述占位文本'
+                icon: '35.png', 
+                baseWeight: 1,
+                description: '高性能图形处理器，适用于复杂图形计算和人工智能训练，芯片采用先进制程工艺，散热设计精良，是高端计算机系统的核心组件。'
             },
             { 
                 name: '藏秘筒', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-key', 
-                baseWeight: 3.09,
-                description: '物品描述占位文本'
+                icon: '36.png', 
+                baseWeight: 3,
+                description: '用于存放机密文件的小型金属容器，具有防水防火功能，内置精密锁具，只有特定钥匙才能打开。常用于保存重要契约、遗嘱或秘密信息。'
             },
             { 
                 name: '数码相机', 
                 size: [1, 1], 
                 color: 'gold', 
-                icon: 'fa-camera', 
-                baseWeight: 3.09,
-                description: '物品描述占位文本'
+                icon: '37.png', 
+                baseWeight: 3,
+                description: '高像素数码摄影设备，配备专业镜头和大尺寸传感器，能捕捉细腻的图像细节，支持多种手动调节模式，是摄影爱好者的理想选择。'
+            },
+            { 
+                name: '手机', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '38.png', 
+                baseWeight: 3,
+                description: '最新款智能手机，配备高清屏幕和多核处理器，支持5G网络和无线充电，摄像头系统先进，能拍摄高质量照片和视频，是现代生活的必备工具。'
             }
         ];
         
-        // 小保险专属物品池
-        const smallInsuranceItems = [
-            // 紫色物品 - 40%概率
-            { ...items.find(item => item.name === '仪典匕首') },
-            
-            // 红色物品 - 10%概率（已调整）
-            { ...items.find(item => item.name === '军用信息终端') },
-            { ...items.find(item => item.name === '军用雷达') },
-            { ...items.find(item => item.name === '步战车模型') },
-            { ...items.find(item => item.name === '万足金条') },
-            { ...items.find(item => item.name === '棘龙爪化石') },
-            { ...items.find(item => item.name === '名贵机械表') },
-            { ...items.find(item => item.name === '塞伊德的怀表') },
-            
-            // 金色物品 - 25%概率
-            { ...items.find(item => item.name === '本地特色首饰') },
-            { ...items.find(item => item.name === '阿萨拉特色酒杯') },
-            { ...items.find(item => item.name === '亮闪闪海盗金币') },
-            { ...items.find(item => item.name === '功绩勋章') },
-            { ...items.find(item => item.name === '发条八音盒') },
-            { ...items.find(item => item.name === '荷美尔陶俑') },
-            { ...items.find(item => item.name === '金枝桂冠') },
-            
-            // 紫色小物品 - 包含在40%紫色概率中
-            { ...items.find(item => item.name === '海盗弯刀') },
-            { ...items.find(item => item.name === '后妃耳环') },
-            { ...items.find(item => item.name === '图腾箭矢') },
-            { ...items.find(item => item.name === '阿萨拉风情水壶') },
-            { ...items.find(item => item.name === '阿萨拉特色酒壶') },
-            { ...items.find(item => item.name === '黄金饰章') },
-            { ...items.find(item => item.name === '犄角墙饰') },
-            
-            // 蓝色物品 - 23%概率
-            { ...items.find(item => item.name === '古怪的海盗银币') },
-            { ...items.find(item => item.name === '初级子弹生产零件') },
-            { ...items.find(item => item.name === '古老的海盗望远镜') },
-            
-            // 非洲之心 - 2%概率
-            { ...items.find(item => item.name === '非洲之心') }
-        ];
+        // 预加载所有物品图片
+        function preloadAllImages() {
+            // 为每个物品创建一个隐藏的img标签进行预加载
+            items.forEach(item => {
+                const img = document.createElement('img');
+                img.src = item.icon;
+                img.alt = item.name;
+                img.className = 'preload-image';
+                imagePreloader.appendChild(img);
+            });
+        }
         
-        // 按照概率分布随机选择物品数量（仅适用于大保险）
+        // 颜色读取延迟时间 (秒)
+        const colorDelays = {
+            'default': 0.5,
+            'green': 1,
+            'blue': 1.5,
+            'purple': 2,
+            'gold': 2.5,
+            'red': 3
+        };
+        
+        // 按照新的概率分布随机选择物品数量
         function getRandomItemCount() {
-            // 定义概率分布: [数量, 概率]
+            // 定义新的概率分布: [数量, 概率]
             const probabilityDistribution = [
                 { count: 1, probability: 0.30 },  // 1个物品：30%概率
                 { count: 2, probability: 0.30 },  // 2个物品：30%概率
@@ -1058,7 +1037,7 @@
                 line.className = 'grid-line';
                 line.style.height = '1px';
                 line.style.width = '100%';
-                line.style.top = `${i * (100 / gridSize)}%`;
+                line.style.top = `${i * cellPercentage}%`;
                 gridLines.appendChild(line);
             }
             
@@ -1068,7 +1047,7 @@
                 line.className = 'grid-line';
                 line.style.width = '1px';
                 line.style.height = '100%';
-                line.style.left = `${i * (100 / gridSize)}%`;
+                line.style.left = `${i * cellPercentage}%`;
                 gridLines.appendChild(line);
             }
         }
@@ -1076,10 +1055,10 @@
         // 调整按钮位置以确保可点击
         function adjustButtonPosition() {
             const scrollWidth = scrollArea.offsetWidth;
-            const containerWidth = unlockModal.querySelector('.max-w-xl').offsetWidth;
+            const containerWidth = unlockModal.querySelector('.max-w-2xl').offsetWidth;
             
             // 如果按钮在右侧会超出容器，则放到下方
-            if (scrollWidth + 240 > containerWidth - 40) {
+            if (scrollWidth + 240 > containerWidth - 40) { // 增加了直接解锁按钮的宽度计算
                 buttonContainer.classList.remove('flex-row', 'justify-center');
                 buttonContainer.classList.add('flex-col', 'items-center');
                 scrollArea.classList.remove('mb-6');
@@ -1092,58 +1071,13 @@
             }
         }
         
-        // 打开解锁弹窗 - 增加保险类型参数
-        function openUnlockModal(insuranceType) {
-            currentInsuranceType = insuranceType;
+        // 打开解锁弹窗
+        insuranceBox.addEventListener('click', () => {
             unlockModal.classList.remove('hidden');
-            
-            // 设置标题
-            rewardTitle.textContent = insuranceType === 'large' ? '大免保物品清单' : '小保险物品清单';
-            
-            // 设置网格大小
-            gridSize = insuranceType === 'large' ? 4 : 3;
-            
             // 重置状态
             resetUnlockState();
-            
             // 调整按钮位置
             setTimeout(adjustButtonPosition, 100);
-        }
-        
-        // 直接打开小保险
-        function openSmallInsuranceDirectly() {
-            currentInsuranceType = 'small';
-            unlockModal.classList.remove('hidden');
-            
-            // 设置标题
-            rewardTitle.textContent = '小保险物品清单';
-            
-            // 设置网格大小
-            gridSize = 3;
-            
-            // 生成网格线
-            generateGridLines();
-            
-            // 隐藏解锁界面，直接显示奖励界面
-            unlockScreen.classList.add('hidden');
-            rewardScreen.classList.remove('hidden');
-            
-            // 生成小保险物品
-            generateRewards();
-        }
-        
-        // 大保险点击事件
-        insuranceBox.addEventListener('click', () => {
-            openUnlockModal('large');
-            // 更新导航选中状态
-            setActiveNavItem(1);
-        });
-        
-        // 小保险点击事件 - 修改为直接打开
-        smallInsuranceBox.addEventListener('click', () => {
-            openSmallInsuranceDirectly();
-            // 更新导航选中状态
-            setActiveNavItem(2);
         });
         
         // 关闭弹窗
@@ -1279,9 +1213,7 @@
                 recordItem.className = 'record-item flex justify-between items-center p-2 rounded';
                 recordItem.innerHTML = `
                     <div class="flex items-center">
-                        <div class="record-icon bg-${item.color}/30 text-white rounded-full mr-2">
-                            <i class="fa ${item.icon}"></i>
-                        </div>
+                        <img src="${item.icon}" alt="${item.name}" class="record-image mr-2">
                         <span class="truncate max-w-[200px] sm:max-w-[400px]">${item.name}</span>
                     </div>
                     <span class="counter-badge bg-${item.color}/30 text-white rounded-full text-xs font-bold">
@@ -1331,7 +1263,7 @@
             
             // 设置详情内容
             detailIconContainer.innerHTML = `
-                <i class="fa ${item.icon} text-4xl"></i>
+                <img src="${item.icon}" alt="${item.name}" class="w-full h-full object-contain p-2">
             `;
             detailIconContainer.className = `w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center bg-${item.color || 'gray'}/30`;
             detailName.textContent = item.name;
@@ -1600,125 +1532,69 @@
             }, 800);
         }
         
-        // 生成奖励 - 区分大保险和小保险
+        // 生成奖励
         function generateRewards() {
             // 清空格子内容（保留网格线）
             while (gridContainer.children.length > 1) {
                 gridContainer.removeChild(gridContainer.lastChild);
             }
             
-            let selectedItems = [];
+            // 使用新的概率分布选择物品数量
+            let itemCount = getRandomItemCount();
             
-            if (currentInsuranceType === 'large') {
-                // 大保险逻辑 - 多个物品
-                // 使用概率分布选择物品数量
-                let itemCount = getRandomItemCount();
+            // 基于权重、品质和大小选择物品
+            const selectedItems = [];
+            
+            // 计算总权重，考虑多个因素
+            let totalWeight = 0;
+            items.forEach(item => {
+                // 计算尺寸因子 - 尺寸越大，因子越小
+                const [width, height] = item.size;
+                const sizeFactor = 1 / (width * height);
                 
-                // 基于权重、品质和大小选择物品
-                // 计算总权重，考虑多个因素
-                let totalWeight = 0;
-                items.forEach(item => {
-                    // 计算尺寸因子 - 尺寸越大，因子越小
-                    const [width, height] = item.size;
-                    const sizeFactor = 1 / (width * height);
-                    
-                    // 计算品质因子 - 品质越高，因子越小
-                    const qualityFactors = {
-                        'blue': 1,
-                        'purple': 0.7,
-                        'gold': 0.4,
-                        'red': 0.3  // 提高红色物品概率
-                    };
-                    const qualityFactor = qualityFactors[item.color] || 1;
-                    
-                    // 计算红色物品递减因子
-                    let redFactor = 1;
-                    if (item.color === 'red') {
-                        redFactor = 1 / Math.pow(2, redItemCount); // 降低衰减速度，提高整体红色概率
-                    }
-                    
-                    // 计算最终权重
-                    item.weight = item.baseWeight * sizeFactor * qualityFactor * redFactor;
-                    totalWeight += item.weight;
-                });
+                // 计算品质因子 - 品质越高，因子越小
+                const qualityFactors = {
+                    'blue': 1,
+                    'purple': 0.7,
+                    'gold': 0.4,
+                    'red': 0.2
+                };
+                const qualityFactor = qualityFactors[item.color] || 1;
                 
-                // 随机选择物品
-                for (let i = 0; i < itemCount; i++) {
-                    let random = Math.random() * totalWeight;
-                    let selectedIndex = -1;
-                    
-                    // 根据权重选择物品
-                    for (let j = 0; j < items.length; j++) {
-                        const item = items[j];
-                        random -= item.weight;
-                        if (random <= 0) {
-                            selectedIndex = j;
-                            break;
-                        }
-                    }
-                    
-                    if (selectedIndex !== -1) {
-                        const selectedItem = items[selectedIndex];
-                        selectedItems.push({...selectedItem});
-                        
-                        // 如果选择了红色物品，增加计数以降低后续概率
-                        if (selectedItem.color === 'red') {
-                            redItemCount++;
-                        }
-                    }
+                // 计算红色物品递减因子
+                let redFactor = 1;
+                if (item.color === 'red') {
+                    redFactor = 1 / Math.pow(3, redItemCount);
                 }
-            } else {
-                // 小保险逻辑 - 只出一个物品，红色概率已调整为10%
-                const random = Math.random();
-                let selectedColor = '';
                 
-                if (random < 0.40) {
-                    selectedColor = 'purple'; // 40% 紫色
-                } else if (random < 0.63) {
-                    selectedColor = 'blue'; // 23% 蓝色
-                } else if (random < 0.88) {
-                    selectedColor = 'gold'; // 25% 金色
-                } else if (random < 0.98) {
-                    selectedColor = 'red'; // 10% 红色（已调整）
-                } else {
-                    // 2% 非洲之心
-                    const heartOfAfrica = smallInsuranceItems.find(item => item.name === '非洲之心');
-                    if (heartOfAfrica) {
-                        selectedItems.push({...heartOfAfrica});
+                // 计算最终权重
+                item.weight = item.baseWeight * sizeFactor * qualityFactor * redFactor;
+                totalWeight += item.weight;
+            });
+            
+            // 随机选择物品
+            for (let i = 0; i < itemCount; i++) {
+                let random = Math.random() * totalWeight;
+                let selectedIndex = -1;
+                
+                // 根据权重选择物品
+                for (let j = 0; j < items.length; j++) {
+                    const item = items[j];
+                    random -= item.weight;
+                    if (random <= 0) {
+                        selectedIndex = j;
+                        break;
                     }
                 }
                 
-                // 如果不是非洲之心，从对应颜色的物品中随机选择一个
-                if (selectedItems.length === 0 && selectedColor) {
-                    // 筛选出对应颜色的物品
-                    const colorItems = smallInsuranceItems.filter(item => item.color === selectedColor);
+                if (selectedIndex !== -1) {
+                    const selectedItem = items[selectedIndex];
+                    selectedItems.push({...selectedItem});
                     
-                    if (colorItems.length > 0) {
-                        // 考虑物品大小的概率权重
-                        let totalWeight = 0;
-                        colorItems.forEach(item => {
-                            const [width, height] = item.size;
-                            const sizeFactor = 1 / (width * height); // 尺寸越大，权重越低
-                            item.weight = item.baseWeight * sizeFactor;
-                            totalWeight += item.weight;
-                        });
-                        
-                        // 随机选择一个物品
-                        let random = Math.random() * totalWeight;
-                        for (const item of colorItems) {
-                            random -= item.weight;
-                            if (random <= 0) {
-                                selectedItems.push({...item});
-                                break;
-                            }
-                        }
+                    // 如果选择了红色物品，增加计数以降低后续概率
+                    if (selectedItem.color === 'red') {
+                        redItemCount++;
                     }
-                }
-                
-                // 保底逻辑，如果以上都没选到，随机选一个
-                if (selectedItems.length === 0) {
-                    const randomIndex = Math.floor(Math.random() * smallInsuranceItems.length);
-                    selectedItems.push({...smallInsuranceItems[randomIndex]});
                 }
             }
             
@@ -1731,7 +1607,7 @@
             // 先确定所有物品的位置并显示占位符
             const allItemCells = placeAllItemPlaceholders(selectedItems);
             
-            // 然后依次读取每个物品，无缝衔接
+            // 然后依次读取每个物品
             readItemsInOrder(selectedItems, allItemCells);
         }
         
@@ -1773,11 +1649,10 @@
                         const maxCol = Math.max(...cellsToOccupy.map(c => c.c));
                         
                         // 计算物品的实际尺寸和位置（考虑间隔）
-                        const cellPercent = 100 / gridSize;
-                        const itemWidth = (maxCol - minCol + 1) * cellPercent - (itemSpacing * 2);
-                        const itemHeight = (maxRow - minRow + 1) * cellPercent - (itemSpacing * 2);
-                        const itemLeft = minCol * cellPercent + itemSpacing;
-                        const itemTop = minRow * cellPercent + itemSpacing;
+                        const itemWidth = (maxCol - minCol + 1) * cellPercentage - (itemSpacing * 2);
+                        const itemHeight = (maxRow - minRow + 1) * cellPercentage - (itemSpacing * 2);
+                        const itemLeft = minCol * cellPercentage + itemSpacing;
+                        const itemTop = minRow * cellPercentage + itemSpacing;
                         
                         // 创建一个占位符元素（单个元素表示整个物品）
                         const placeholder = document.createElement('div');
@@ -1822,9 +1697,9 @@
             return allItemCells;
         }
         
-        // 按顺序读取物品 - 无缝衔接，无停顿
+        // 按顺序读取物品
         function readItemsInOrder(items, allItemCells) {
-            let totalDelay = 0; // 立即开始第一个物品的读取
+            let totalDelay = 1000; // 延迟1秒开始读取，让用户看到所有占位符
             
             allItemCells.forEach((itemData, index) => {
                 const { 
@@ -1836,6 +1711,7 @@
                     top,
                     placeholder
                 } = itemData;
+                const delayBetweenItems = 1000; // 物品之间的延迟
                 const [sizeWidth, sizeHeight] = item.size;
                 
                 // 安排读取这个物品
@@ -1864,17 +1740,15 @@
                             gridContainer.removeChild(placeholder);
                         }
                         
-                        // 创建物品元素 - 使用字体图标，居中填满格子，名称在底部
+                        // 创建物品元素
                         const itemElement = document.createElement('div');
-                        itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 cursor-pointer overflow-hidden`;
+                        itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 cursor-pointer`;
                         itemElement.innerHTML = `
-                            <div class="fullsize-icon text-white">
-                                <i class="fa ${item.icon}"></i>
-                            </div>
-                            <div class="item-name">${item.name}</div>
+                            <img src="${item.icon}" alt="${item.name}" class="fullsize-icon">
+                            <div class="size-label">${sizeWidth}x${sizeHeight}</div>
                         `;
                         
-                        // 设置物品位置和大小
+                        // 设置物品位置、大小和间隔
                         itemElement.style.width = `${width}%`;
                         itemElement.style.height = `${height}%`;
                         itemElement.style.left = `${left}%`;
@@ -1889,64 +1763,16 @@
                     }, colorDelays[item.color] * 1000);
                 }, totalDelay);
                 
-                // 计算下一个物品的开始时间 - 没有额外延迟，完成后立即开始下一个
-                totalDelay += colorDelays[item.color] * 1000;
+                // 计算下一个物品的开始时间
+                totalDelay += colorDelays[item.color] * 1000 + delayBetweenItems;
             });
         }
-        
-        // 颜色读取延迟时间 (秒)
-        const colorDelays = {
-            'default': 0.5,
-            'green': 1,
-            'blue': 1.5,
-            'purple': 2,
-            'gold': 2.5,
-            'red': 3
-        };
-        
-        // 设置导航项激活状态
-        function setActiveNavItem(index) {
-            navItems.forEach((item, i) => {
-                if (i === index) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
-            });
-        }
-        
-        // 导航项点击事件
-        navItems.forEach((item, index) => {
-            item.addEventListener('click', () => {
-                setActiveNavItem(index);
-                
-                // 根据导航项执行相应操作
-                switch(index) {
-                    case 0: // 主页
-                        unlockModal.classList.add('hidden');
-                        rewardScreen.classList.add('hidden');
-                        unlockScreen.classList.remove('hidden');
-                        break;
-                    case 1: // 大免保
-                        openUnlockModal('large');
-                        break;
-                    case 2: // 小保险
-                        openSmallInsuranceDirectly();
-                        break;
-                    case 3: // 记录
-                        unlockModal.classList.add('hidden');
-                        rewardScreen.classList.add('hidden');
-                        unlockScreen.classList.remove('hidden');
-                        // 滚动到记录区域
-                        recordsContainer.scrollIntoView({ behavior: 'smooth' });
-                        break;
-                }
-            });
-        });
         
         // 初始化
         window.addEventListener('resize', adjustButtonPosition);
         window.addEventListener('load', () => {
+            // 预加载所有物品图片
+            preloadAllImages();
             initScrollers();
             // 初始化时渲染物品记录
             renderItemRecords();
