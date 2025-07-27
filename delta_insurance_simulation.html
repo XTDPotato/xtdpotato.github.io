@@ -130,6 +130,10 @@
                 background-size: 20px 20px;
                 background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
             }
+            .placeholder-item {
+                background-color: rgba(128, 128, 128, 0.3);
+                border: 1px dashed rgba(255, 255, 255, 0.3);
+            }
             .magnifier-track {
                 position: absolute;
                 pointer-events: none;
@@ -393,14 +397,14 @@
                 el.style.transform = `translateY(-${initialOffset}px)`;
                 el.style.transition = 'transform 0.3s ease-out';
                 
-                // 创建平滑循环动画 - 提高速度，从2000ms改为1000ms
+                // 创建平滑循环动画
                 const animation = el.animate(
                     [
                         { transform: `translateY(-${initialOffset}px)` },
                         { transform: `translateY(-${initialOffset + chars.length * charHeight}px)` }
                     ],
                     {
-                        duration: 1000, // 提高滚动速度1秒
+                        duration: 1000, // 滚动速度1秒/圈
                         iterations: Infinity,
                         easing: 'linear'
                     }
@@ -869,15 +873,19 @@
                 }
             }
             
-            placeItemsInOrder(selectedItems);
+            // 先确定所有物品的位置并显示占位符
+            const allItemCells = placeAllItemPlaceholders(selectedItems);
+            
+            // 然后依次读取每个物品
+            readItemsInOrder(selectedItems, allItemCells);
         }
         
-        // 按顺序放置物品
-        function placeItemsInOrder(items) {
+        // 放置所有物品的占位符
+        function placeAllItemPlaceholders(items) {
             const occupiedCells = new Set();
             let currentRow = 0;
             let currentCol = 0;
-            let totalDelay = 0;
+            const allItemCells = [];
             
             items.forEach(item => {
                 const [width, height] = item.size;
@@ -900,10 +908,28 @@
                     }
                     
                     if (canPlace) {
+                        // 记录占用的格子
                         cellsToOccupy.forEach(({r, c}) => occupiedCells.add(`${r},${c}`));
-                        placeItem(item, totalDelay, cellsToOccupy);
-                        totalDelay += colorDelays[item.color] * 1000;
                         
+                        // 显示占位符
+                        cellsToOccupy.forEach(({r, c}) => {
+                            const index = r * 4 + c;
+                            const cell = gridContainer.children[index];
+                            cell.classList.remove('unread-item');
+                            cell.classList.add('placeholder-item');
+                        });
+                        
+                        // 记录这个物品的位置信息
+                        allItemCells.push({
+                            item,
+                            cells: cellsToOccupy,
+                            minRow: Math.min(...cellsToOccupy.map(c => c.r)),
+                            maxRow: Math.max(...cellsToOccupy.map(c => c.r)),
+                            minCol: Math.min(...cellsToOccupy.map(c => c.c)),
+                            maxCol: Math.max(...cellsToOccupy.map(c => c.c))
+                        });
+                        
+                        // 更新当前位置
                         currentCol += width;
                         if (currentCol > 4 - 1) {
                             currentCol = 0;
@@ -917,67 +943,66 @@
                     }
                 }
             });
+            
+            return allItemCells;
         }
         
-        // 放置单个物品
-        function placeItem(item, delay, cells) {
-            const { color } = item;
+        // 按顺序读取物品
+        function readItemsInOrder(items, allItemCells) {
+            let totalDelay = 1000; // 延迟1秒开始读取，让用户看到所有占位符
             
-            const minRow = Math.min(...cells.map(c => c.r));
-            const maxRow = Math.max(...cells.map(c => c.r));
-            const minCol = Math.min(...cells.map(c => c.c));
-            const maxCol = Math.max(...cells.map(c => c.c));
-            
-            const itemWidth = (maxCol - minCol + 1) * (100 / 4) - 2;
-            const itemHeight = (maxRow - minRow + 1) * (100 / 4) - 2;
-            const itemLeft = minCol * (100 / 4);
-            const itemTop = minRow * (100 / 4);
-            
-            setTimeout(() => {
-                // 先显示灰色，代表正在读取
-                cells.forEach(({r, c}) => {
-                    const index = r * 4 + c;
-                    const cell = gridContainer.children[index];
-                    cell.classList.remove('unread-item');
-                    cell.classList.add('bg-gray', 'slide-up');
-                });
+            allItemCells.forEach((itemData, index) => {
+                const { item, cells, minRow, maxRow, minCol, maxCol } = itemData;
+                const delayBetweenItems = 1000; // 物品之间的延迟
                 
-                // 添加放大镜动画
-                const magnifierContainer = document.createElement('div');
-                magnifierContainer.className = 'magnifier-track';
-                magnifierContainer.style.left = `${itemLeft}%`;
-                magnifierContainer.style.top = `${itemTop}%`;
-                magnifierContainer.style.width = `${itemWidth}%`;
-                magnifierContainer.style.height = `${itemHeight}%`;
+                // 计算物品位置和大小
+                const itemWidth = (maxCol - minCol + 1) * (100 / 4) - 2;
+                const itemHeight = (maxRow - minRow + 1) * (100 / 4) - 2;
+                const itemLeft = minCol * (100 / 4);
+                const itemTop = minRow * (100 / 4);
                 
-                const magnifier = document.createElement('i');
-                magnifier.className = 'magnifier fa fa-search';
-                magnifier.style.left = '50%';
-                magnifier.style.top = '50%';
-                magnifierContainer.appendChild(magnifier);
-                gridContainer.appendChild(magnifierContainer);
-                
-                // 读取完成，显示物品
+                // 安排读取这个物品
                 setTimeout(() => {
-                    magnifierContainer.remove();
+                    // 添加放大镜动画
+                    const magnifierContainer = document.createElement('div');
+                    magnifierContainer.className = 'magnifier-track';
+                    magnifierContainer.style.left = `${itemLeft}%`;
+                    magnifierContainer.style.top = `${itemTop}%`;
+                    magnifierContainer.style.width = `${itemWidth}%`;
+                    magnifierContainer.style.height = `${itemHeight}%`;
                     
-                    cells.forEach(({r, c}) => {
-                        const index = r * 4 + c;
-                        const cell = gridContainer.children[index];
-                        cell.classList.remove('bg-gray');
-                        cell.classList.add(`bg-${color}`);
+                    const magnifier = document.createElement('i');
+                    magnifier.className = 'magnifier fa fa-search';
+                    magnifier.style.left = '50%';
+                    magnifier.style.top = '50%';
+                    magnifierContainer.appendChild(magnifier);
+                    gridContainer.appendChild(magnifierContainer);
+                    
+                    // 读取完成，显示物品
+                    setTimeout(() => {
+                        magnifierContainer.remove();
                         
-                        if (r === minRow && c === minCol) {
-                            cell.innerHTML = `
-                                <div class="h-full w-full flex flex-col items-center justify-center p-1">
-                                    <i class="fa ${item.icon || 'fa-diamond'} text-white text-sm md:text-base mb-1"></i>
-                                    <span class="text-white text-xs truncate">${item.name}</span>
-                                </div>
-                            `;
-                        }
-                    });
-                }, colorDelays[color] * 1000);
-            }, delay);
+                        cells.forEach(({r, c}) => {
+                            const index = r * 4 + c;
+                            const cell = gridContainer.children[index];
+                            cell.classList.remove('placeholder-item');
+                            cell.classList.add(`bg-${item.color}`);
+                            
+                            if (r === minRow && c === minCol) {
+                                cell.innerHTML = `
+                                    <div class="h-full w-full flex flex-col items-center justify-center p-1">
+                                        <i class="fa ${item.icon || 'fa-diamond'} text-white text-sm md:text-base mb-1"></i>
+                                        <span class="text-white text-xs truncate">${item.name}</span>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }, colorDelays[item.color] * 1000);
+                }, totalDelay);
+                
+                // 计算下一个物品的开始时间
+                totalDelay += colorDelays[item.color] * 1000 + delayBetweenItems;
+            });
         }
         
         // 初始化
