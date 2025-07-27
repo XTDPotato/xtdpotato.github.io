@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -150,9 +151,9 @@
             }
             @keyframes magnifier-path {
                 0% { transform: translate(-50%, -50%) translate(0, 0); }
-                25% { transform: translate(-50%, -50%) translate(100%, 0); }
-                50% { transform: translate(-50%, -50%) translate(100%, 100%); }
-                75% { transform: translate(-50%, -50%) translate(0, 100%); }
+                25% { transform: translate(-50%, -50%) translate(50%, -50%); }
+                50% { transform: translate(-50%, -50%) translate(50%, 50%); }
+                75% { transform: translate(-50%, -50%) translate(-50%, 50%); }
                 100% { transform: translate(-50%, -50%) translate(0, 0); }
             }
             @keyframes completePulse {
@@ -195,6 +196,8 @@
             }
             .record-item:hover {
                 background-color: rgba(255, 255, 255, 0.1);
+                transform: translateX(3px);
+                cursor: pointer;
             }
             .counter-badge {
                 min-width: 24px;
@@ -238,11 +241,44 @@
                 position: absolute;
                 background-color: rgba(0, 0, 0, 0.2);
             }
+            /* 物品详情弹窗 */
+            .item-detail-modal {
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            .item-detail-modal.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            /* 确保图标占满整个格子 */
+            .fullsize-icon {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                padding: 4px;
+            }
+            /* 图片预加载隐藏容器 */
+            .preload-container {
+                display: none !important;
+            }
+            /* 物品记录图片样式 */
+            .record-image {
+                width: 24px;
+                height: 24px;
+                object-fit: contain;
+                display: inline-block;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
+    <!-- 图片预加载容器 - 隐藏状态 -->
+    <div class="preload-container" id="imagePreloader">
+        <!-- 图片将通过JS动态添加 -->
+    </div>
+    
     <!-- 主标题区域 -->
     <div class="text-center mb-6 w-full max-w-4xl">
         <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
@@ -312,7 +348,7 @@
                         </div>
                     </div>
                     <!-- 第三列 - 目标F -->
-                    <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&">
+                    <div class="scroll-container relative bg-primary/80" data-target="F" data-next="3" data-chars="+,4,F,^,&amp;">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
                         <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll2">
@@ -320,7 +356,7 @@
                         </div>
                     </div>
                     <!-- 第四列 - 目标U -->
-                    <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&,M,U,=,2">
+                    <div class="scroll-container relative bg-primary/80" data-target="U" data-next="4" data-chars="&amp;,M,U,=,2">
                         <div class="target-line"></div>
                         <div class="target-box"></div>
                         <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll3">
@@ -376,6 +412,27 @@
         </div>
     </div>
 
+    <!-- 物品详情弹窗 -->
+    <div id="itemDetailModal" class="item-detail-modal fixed inset-0 flex items-center justify-center z-50">
+        <div class="modal-backdrop absolute inset-0 bg-black/70"></div>
+        <div class="relative bg-secondary w-full max-w-md mx-4 rounded-lg shadow-2xl overflow-hidden fade-in p-6">
+            <button id="closeDetailBtn" class="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+            <div class="text-center mb-4">
+                <div id="detailIconContainer" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center">
+                    <!-- 图标将通过JS动态生成 -->
+                </div>
+                <h3 id="detailName" class="text-2xl font-bold mb-2"></h3>
+                <div id="detailSize" class="text-sm text-gray-300 mb-4"></div>
+            </div>
+            <div class="bg-black/30 rounded-lg p-4">
+                <h4 class="text-highlight font-bold mb-2">物品描述</h4>
+                <p id="detailDescription" class="text-gray-200"></p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 获取DOM元素
         const insuranceBox = document.getElementById('insuranceBox');
@@ -394,6 +451,15 @@
         const clearRecordsBtn = document.getElementById('clearRecordsBtn');
         const recordsContainer = document.getElementById('recordsContainer');
         const totalItemsCount = document.getElementById('totalItemsCount');
+        const itemDetailModal = document.getElementById('itemDetailModal');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const imagePreloader = document.getElementById('imagePreloader');
+        
+        // 物品详情元素
+        const detailIconContainer = document.getElementById('detailIconContainer');
+        const detailName = document.getElementById('detailName');
+        const detailSize = document.getElementById('detailSize');
+        const detailDescription = document.getElementById('detailDescription');
         
         // 滚动列元素
         const scrollCols = document.querySelectorAll('.scroll-container');
@@ -447,6 +513,449 @@
         const gridSize = 4; // 4x4网格
         const cellPercentage = 100 / gridSize; // 每个格子的百分比宽度
         const itemSpacing = 2; // 物品之间的间隔百分比
+        
+        // 物品数据 - 按品质和大小分类，包含完整描述
+        // 本地图片命名规则：
+        // 1.png - 古怪的海盗银币
+        // 2.png - 初级子弹生产零件
+        // 3.png - 古老的海盗望远镜
+        // 4.png - 海盗弯刀
+        // 5.png - 后妃耳环
+        // 6.png - 图腾箭矢
+        // 7.png - 阿萨拉风情水壶
+        // 8.png - 阿萨拉特色酒壶
+        // 9.png - 黄金饰章
+        // 10.png - 犄角墙饰
+        // 11.png - 马赛克灯台
+        // 12.png - 仪典匕首
+        // 13.png - 阿萨拉特色酒杯
+        // 14.png - 亮闪闪海盗金币
+        // 15.png - 功绩勋章
+        // 16.png - 发条八音盒
+        // 17.png - 荷美尔陶俑
+        // 18.png - 珠宝头冠
+        // 19.png - 金枝桂冠
+        // 20.png - 座钟
+        // 21.png - 本地特色首饰
+        // 22.png - 名贵机械表
+        // 23.png - 塞伊德的怀表
+        // 24.png - 非洲之心
+        // 25.png - “钻石”鱼子酱
+        // 26.png - 万足金条
+        // 27.png - 棘龙爪化石
+        // 28.png - 黄金瞪羚
+        // 29.png - 克劳迪乌斯半身像
+        // 30.png - 塞伊德的留声机
+        // 31.png - 步战车模型
+        // 32.png - 主战坦克模型
+        // 33.png - 滑膛枪展品
+        // 34.png - 军用信息终端
+        // 35.png - 显卡
+        // 36.png - 藏秘筒
+        // 37.png - 数码相机
+        // 38.png - 手机
+        
+        const items = [
+            // 蓝色1x1 - 基础权重较高
+            { 
+                name: '古怪的海盗银币', 
+                size: [1, 1], 
+                color: 'blue', 
+                icon: '1.png', 
+                baseWeight: 8,
+                description: '一枚古老的海盗银币，上面刻有模糊的骷髅标志，边缘有些磨损，见证了无数次海上冒险。这枚银币可能是18世纪加勒比海盗常用的流通货币。'
+            },
+            
+            // 蓝色1x2 - 基础权重中等
+            { 
+                name: '初级子弹生产零件', 
+                size: [1, 2], 
+                color: 'blue', 
+                icon: '2.png', 
+                baseWeight: 5,
+                description: '用于生产子弹的基础零件，由耐腐蚀金属制成，表面光滑，工艺精湛。这种零件广泛应用于小型武器制造厂，是弹药生产的关键组件。'
+            },
+            { 
+                name: '古老的海盗望远镜', 
+                size: [1, 2], 
+                color: 'blue', 
+                icon: '3.png', 
+                baseWeight: 5,
+                description: '黄铜材质的海盗望远镜，镜片有些模糊但仍能使用，伸缩部分刻有精致的花纹。17-18世纪的海盗常用这类望远镜来远距离发现目标船只。'
+            },
+            
+            // 紫色1x1 - 基础权重中等
+            { 
+                name: '海盗弯刀', 
+                size: [1, 1], 
+                color: 'purple', 
+                icon: '4.png', 
+                baseWeight: 5,
+                description: '造型独特的海盗弯刀，刀刃锋利，刀柄由象牙制成，上面镶嵌着小颗宝石。这种弯刀是海盗的标志性武器，便于在狭窄的船舱内使用。'
+            },
+            { 
+                name: '后妃耳环', 
+                size: [1, 1], 
+                color: 'purple', 
+                icon: '5.png', 
+                baseWeight: 5,
+                description: '精致的黄金耳环，上面镶嵌着紫色宝石，可能属于某位皇室后妃，工艺极为考究。这类珠宝通常由宫廷工匠精心制作，象征着佩戴者的高贵身份。'
+            },
+            { 
+                name: '图腾箭矢', 
+                size: [1, 1], 
+                color: 'purple', 
+                icon: '6.png', 
+                baseWeight: 5,
+                description: '带有部落图腾的箭矢，箭头由黑曜石制成，箭杆上刻有神秘符号，具有仪式意义。这类箭矢不仅用于狩猎，还在重要的部落仪式中使用。'
+            },
+            
+            // 紫色1x2 - 基础权重较低
+            { 
+                name: '阿萨拉风情水壶', 
+                size: [1, 2], 
+                color: 'purple', 
+                icon: '7.png', 
+                baseWeight: 3,
+                description: '阿萨拉地区特有的水壶，采用传统工艺制作，表面有精美的彩绘图案，展示当地风土人情。这种水壶具有良好的保温性能，是长途旅行者的理想选择。'
+            },
+            { 
+                name: '阿萨拉特色酒壶', 
+                size: [1, 2], 
+                color: 'purple', 
+                icon: '8.png', 
+                baseWeight: 3,
+                description: '用于盛装当地特色美酒的容器，壶身雕刻有葡萄藤图案，密封性能极佳。阿萨拉地区以生产优质葡萄酒闻名，这种酒壶是当地手工艺品的代表。'
+            },
+            { 
+                name: '黄金饰章', 
+                size: [1, 2], 
+                color: 'purple', 
+                icon: '9.png', 
+                baseWeight: 3,
+                description: '由纯金打造的饰章，上面刻有家族徽章，可能是某位贵族的身份象征。在中世纪欧洲，这类饰章常用于标识贵族身份，也作为重要文件的封印使用。'
+            },
+            
+            // 紫色2x1 - 基础权重较低
+            { 
+                name: '犄角墙饰', 
+                size: [2, 1], 
+                color: 'purple', 
+                icon: '10.png', 
+                baseWeight: 3,
+                description: '由动物犄角制成的墙饰，经过特殊处理防止虫蛀，表面光滑，带有自然的曲线美感。这类装饰品在北欧风格的建筑中较为常见，象征着狩猎的成功。'
+            },
+            
+            // 紫色2x3 - 基础权重低
+            { 
+                name: '马赛克灯台', 
+                size: [2, 3], 
+                color: 'purple', 
+                icon: '11.png', 
+                baseWeight: 2,
+                description: '由彩色玻璃马赛克拼贴而成的灯台，点亮时会投射出五彩斑斓的光影效果。这种工艺源自拜占庭帝国，后流传到世界各地，成为珍贵的手工艺品。'
+            },
+            
+            // 紫色3x2 - 基础权重低
+            { 
+                name: '仪典匕首', 
+                size: [3, 2], 
+                color: 'purple', 
+                icon: '12.png', 
+                baseWeight: 2,
+                description: '用于宗教仪式的匕首，刀鞘由鲨鱼皮制成，刀柄镶嵌着宝石，具有重要的文化价值。许多古代文明都有使用特制匕首进行宗教仪式的传统。'
+            },
+            
+            // 金色1x1 - 基础权重中等
+            { 
+                name: '阿萨拉特色酒杯', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '13.png', 
+                baseWeight: 4,
+                description: '阿萨拉地区出产的精致酒杯，由水晶制成，杯身上有手工雕刻的花纹，薄如蝉翼。这种酒杯通常用于招待贵宾，是身份和地位的象征。'
+            },
+            { 
+                name: '亮闪闪海盗金币', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '14.png', 
+                baseWeight: 4,
+                description: '纯度极高的海盗金币，表面光滑，刻有清晰的图案，在光线下闪闪发光。这枚金币可能来自被海盗劫掠的西班牙运金船队，具有很高的收藏价值。'
+            },
+            { 
+                name: '功绩勋章', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '15.png', 
+                baseWeight: 4,
+                description: '授予有功之臣的勋章，由黄金和宝石制成，象征着荣誉和成就。这类勋章通常由国家最高领导人颁发，是对获得者杰出贡献的认可。'
+            },
+            { 
+                name: '发条八音盒', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '16.png', 
+                baseWeight: 4,
+                description: '小巧精致的发条八音盒，打开后能演奏优美的旋律，内部机械结构精密。19世纪欧洲贵族常用这类八音盒作为高档礼品，也是精湛工艺的代表。'
+            },
+            
+            // 金色1x2 - 基础权重较低
+            { 
+                name: '荷美尔陶俑', 
+                size: [1, 2], 
+                color: 'gold', 
+                icon: '17.png', 
+                baseWeight: 3,
+                description: '荷美尔文明的陶俑，造型独特，表面有金色涂层，展示了古代文明的艺术成就。荷美尔文明虽然已经消失，但其留下的艺术品仍让人惊叹于他们的工艺水平。'
+            },
+            
+            // 金色3x1 - 基础权重低
+            { 
+                name: '珠宝头冠', 
+                size: [3, 1], 
+                color: 'gold', 
+                icon: '18.png', 
+                baseWeight: 2,
+                description: '由黄金打造并镶嵌多种宝石的头冠，工艺精湛，可能属于皇室成员。这类头冠通常在加冕仪式等重要场合佩戴，象征着至高无上的权力。'
+            },
+            
+            // 金色2x1 - 基础权重低
+            { 
+                name: '金枝桂冠', 
+                size: [2, 1], 
+                color: 'gold', 
+                icon: '19.png', 
+                baseWeight: 2,
+                description: '模仿桂冠造型的金饰，由纯金打造，象征着胜利和荣誉。在古希腊和古罗马，桂冠是授予胜利者的最高荣誉，后来演变为各种形式的荣誉象征。'
+            },
+            
+            // 金色2x2 - 基础权重低
+            { 
+                name: '座钟', 
+                size: [2, 2], 
+                color: 'gold', 
+                icon: '20.png', 
+                baseWeight: 2,
+                description: '复古风格的座钟，外壳由黄铜制成，带有金色镀层，走时精准，敲击声清脆。这种座钟在18-19世纪的欧洲贵族家庭中非常常见，既是实用品也是装饰品。'
+            },
+            
+            // 金色3x2 - 基础权重低
+            { 
+                name: '本地特色首饰', 
+                size: [3, 2], 
+                color: 'gold', 
+                icon: '21.png', 
+                baseWeight: 1,
+                description: '当地工匠制作的特色首饰套装，包含项链和耳环，采用传统工艺，具有独特的文化韵味。这类首饰通常使用本地特有的材料，体现了地域文化特色。'
+            },
+            
+            // 红色1x1 - 基础权重低
+            { 
+                name: '名贵机械表', 
+                size: [1, 1], 
+                color: 'red', 
+                icon: '22.png', 
+                baseWeight: 2,
+                description: '瑞士制造的名贵机械表，表盘镶嵌钻石，内部机芯精密复杂，走时准确。瑞士钟表业以其精湛的工艺闻名于世，这类机械表往往价值不菲。'
+            },
+            { 
+                name: '塞伊德的怀表', 
+                size: [1, 1], 
+                color: 'red', 
+                icon: '23.png', 
+                baseWeight: 2,
+                description: '属于著名探险家塞伊德的怀表，表壳由纯金打造，背面刻有他的签名，具有重要的历史价值。塞伊德曾在19世纪进行过多次非洲探险，留下了许多珍贵文物。'
+            },
+            { 
+                name: '非洲之心', 
+                size: [1, 1], 
+                color: 'red', 
+                icon: '24.png', 
+                rarity: 'rare', 
+                baseWeight: 1,
+                description: '巨大的红色钻石，被称为"非洲之心"，色泽纯正，切割完美，是稀世珍宝。红色钻石是自然界中最稀有的钻石品种之一，每克拉价值高达数百万美元。'
+            },
+            { 
+                name: '“钻石”鱼子酱', 
+                size: [1, 1], 
+                color: 'red', 
+                icon: '25.png', 
+                baseWeight: 2,
+                description: '顶级的黑色鱼子酱，因价格昂贵被称为"黑色钻石"，口感细腻，营养丰富。这种鱼子酱来自里海的白鲟，需要数十年才能成熟，因此极为珍贵。'
+            },
+            
+            // 红色1x2 - 基础权重极低
+            { 
+                name: '万足金条', 
+                size: [1, 2], 
+                color: 'red', 
+                icon: '26.png', 
+                baseWeight: 1,
+                description: '纯度高达99.99%的金条，表面刻有重量和纯度标记，是财富的象征。万足金是纯度最高的黄金制品，具有极高的保值和投资价值。'
+            },
+            
+            // 红色2x1 - 基础权重极低
+            { 
+                name: '棘龙爪化石', 
+                size: [2, 1], 
+                color: 'red', 
+                icon: '27.png', 
+                baseWeight: 1,
+                description: '保存完好的棘龙爪化石，距今已有数千万年历史，对于古生物研究具有重要价值。棘龙是一种大型肉食恐龙，其化石非常罕见，因此具有很高的科学价值。'
+            },
+            
+            // 红色2x2 - 基础权重极低
+            { 
+                name: '黄金瞪羚', 
+                size: [2, 2], 
+                color: 'red', 
+                icon: '28.png', 
+                baseWeight: 0.8,
+                description: '纯金打造的瞪羚雕像，造型栩栩如生，细节处理精细，可能是古代皇室的收藏品。瞪羚在许多文化中象征着敏捷和优雅，这类金雕像往往具有重要的文化意义。'
+            },
+            
+            // 红色2x3 - 基础权重极低
+            { 
+                name: '克劳迪乌斯半身像', 
+                size: [2, 3], 
+                color: 'red', 
+                icon: '29.png', 
+                baseWeight: 0.5,
+                description: '罗马皇帝克劳迪乌斯的大理石半身像，雕刻精美，是古罗马艺术的代表作之一。克劳迪乌斯是罗马帝国的第四位皇帝，统治时期为公元41-54年。'
+            },
+            { 
+                name: '塞伊德的留声机', 
+                size: [2, 3], 
+                color: 'red', 
+                icon: '30.png', 
+                baseWeight: 0.5,
+                description: '探险家塞伊德使用过的留声机，保存完好，仍能播放古老的唱片，带有浓厚的历史气息。留声机是爱迪生的重要发明，彻底改变了人们记录和传播声音的方式。'
+            },
+            
+            // 红色3x2 - 基础权重极低
+            { 
+                name: '步战车模型', 
+                size: [3, 2], 
+                color: 'red', 
+                icon: '31.png', 
+                baseWeight: 0.5,
+                description: '按比例制作的步战车模型，细节逼真，由金属制成，可能是军事爱好者的珍藏。这种模型精确复制了真实步战车的各种细节，包括武器系统和防护装甲。'
+            },
+            
+            // 红色3x3 - 基础权重极低
+            { 
+                name: '主战坦克模型', 
+                size: [3, 3], 
+                color: 'red', 
+                icon: '32.png', 
+                baseWeight: 0.3,
+                description: '精细的主战坦克模型，由多种材料制成，可活动部件多，是罕见的收藏品。这类模型通常由专业工匠手工制作，比例精确，细节丰富，深受军事收藏家喜爱。'
+            },
+            
+            // 红色4x1 - 基础权重极低
+            { 
+                name: '滑膛枪展品', 
+                size: [4, 1], 
+                color: 'red', 
+                icon: '33.png', 
+                baseWeight: 0.3,
+                description: '19世纪的滑膛枪，保存完好，带有精美雕刻，是火器发展史上的重要文物。滑膛枪在近代战争中发挥了重要作用，这种保存状态良好的古董枪支极为罕见。'
+            },
+            
+            // 新增物品
+            { 
+                name: '军用信息终端', 
+                size: [3, 2], 
+                color: 'red', 
+                icon: '34.png', 
+                baseWeight: 0.5,
+                description: '军用级别的信息处理终端，具有抗干扰和加密通信功能，可在恶劣环境下稳定工作。常用于战场指挥和情报分析，具有极高的军事价值。'
+            },
+            { 
+                name: '显卡', 
+                size: [2, 1], 
+                color: 'red', 
+                icon: '35.png', 
+                baseWeight: 1,
+                description: '高性能图形处理器，适用于复杂图形计算和人工智能训练，芯片采用先进制程工艺，散热设计精良，是高端计算机系统的核心组件。'
+            },
+            { 
+                name: '藏秘筒', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '36.png', 
+                baseWeight: 3,
+                description: '用于存放机密文件的小型金属容器，具有防水防火功能，内置精密锁具，只有特定钥匙才能打开。常用于保存重要契约、遗嘱或秘密信息。'
+            },
+            { 
+                name: '数码相机', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '37.png', 
+                baseWeight: 3,
+                description: '高像素数码摄影设备，配备专业镜头和大尺寸传感器，能捕捉细腻的图像细节，支持多种手动调节模式，是摄影爱好者的理想选择。'
+            },
+            { 
+                name: '手机', 
+                size: [1, 1], 
+                color: 'gold', 
+                icon: '38.png', 
+                baseWeight: 3,
+                description: '最新款智能手机，配备高清屏幕和多核处理器，支持5G网络和无线充电，摄像头系统先进，能拍摄高质量照片和视频，是现代生活的必备工具。'
+            }
+        ];
+        
+        // 预加载所有物品图片
+        function preloadAllImages() {
+            // 为每个物品创建一个隐藏的img标签进行预加载
+            items.forEach(item => {
+                const img = document.createElement('img');
+                img.src = item.icon;
+                img.alt = item.name;
+                img.className = 'preload-image';
+                imagePreloader.appendChild(img);
+            });
+        }
+        
+        // 颜色读取延迟时间 (秒)
+        const colorDelays = {
+            'default': 0.5,
+            'green': 1,
+            'blue': 1.5,
+            'purple': 2,
+            'gold': 2.5,
+            'red': 3
+        };
+        
+        // 按照新的概率分布随机选择物品数量
+        function getRandomItemCount() {
+            // 定义新的概率分布: [数量, 概率]
+            const probabilityDistribution = [
+                { count: 1, probability: 0.30 },  // 1个物品：30%概率
+                { count: 2, probability: 0.30 },  // 2个物品：30%概率
+                { count: 3, probability: 0.25 },  // 3个物品：25%概率
+                { count: 4, probability: 0.10 },  // 4个物品：10%概率
+                { count: 5, probability: 0.03 },  // 5个物品：3%概率
+                { count: 6, probability: 0.015 }, // 6个物品：1.5%概率
+                { count: 7, probability: 0.005 }  // 7个物品：0.5%概率
+            ];
+            
+            // 随机生成一个0-1之间的数
+            const random = Math.random();
+            let cumulativeProbability = 0;
+            
+            // 根据概率分布选择数量
+            for (const dist of probabilityDistribution) {
+                cumulativeProbability += dist.probability;
+                if (random <= cumulativeProbability) {
+                    return dist.count;
+                }
+            }
+            
+            // 保底返回1个
+            return 1;
+        }
         
         // 初始化跑马灯内容和动画
         function initScrollers() {
@@ -562,94 +1071,6 @@
             }
         }
         
-        // 物品数据 - 按品质和大小分类
-        const items = [
-            // 蓝色1x1
-            { name: '古怪的海盗银币', size: [1, 1], color: 'blue', icon: 'fa-money', weight: 3 },
-            
-            // 蓝色1x2
-            { name: '初级子弹生产零件', size: [1, 2], color: 'blue', icon: 'fa-cogs', weight: 3 },
-            { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', icon: 'fa-search', weight: 3 },
-            
-            // 紫色1x1
-            { name: '海盗弯刀', size: [1, 1], color: 'purple', icon: 'fa-cutlery', weight: 3 },
-            { name: '后妃耳环', size: [1, 1], color: 'purple', icon: 'fa-diamond', weight: 3 },
-            { name: '图腾箭矢', size: [1, 1], color: 'purple', icon: 'fa-arrow', weight: 3 },
-            
-            // 紫色1x2
-            { name: '阿萨拉风情水壶', size: [1, 2], color: 'purple', icon: 'fa-flask', weight: 3 },
-            { name: '阿萨拉特色酒壶', size: [1, 2], color: 'purple', icon: 'fa-glass', weight: 3 },
-            { name: '黄金饰章', size: [1, 2], color: 'purple', icon: 'fa-certificate', weight: 3 },
-            
-            // 紫色2x1
-            { name: '犄角墙饰', size: [2, 1], color: 'purple', icon: 'fa-asterisk', weight: 3 },
-            
-            // 紫色2x3
-            { name: '马赛克灯台', size: [2, 3], color: 'purple', icon: 'fa-lightbulb-o', weight: 3 },
-            
-            // 紫色3x2
-            { name: '仪典匕首', size: [3, 2], color: 'purple', icon: 'fa-cutlery', weight: 3 },
-            
-            // 金色1x1
-            { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', icon: 'fa-glass', weight: 3 },
-            { name: '亮闪闪海盗金币', size: [1, 1], color: 'gold', icon: 'fa-coins', weight: 3 },
-            { name: '功绩勋章', size: [1, 1], color: 'gold', icon: 'fa-trophy', weight: 3 },
-            { name: '发条八音盒', size: [1, 1], color: 'gold', icon: 'fa-music', weight: 3 },
-            
-            // 金色1x2
-            { name: '荷美尔陶俑', size: [1, 2], color: 'gold', icon: 'fa-female', weight: 3 },
-            
-            // 金色3x1
-            { name: '珠宝头冠', size: [3, 1], color: 'gold', icon: 'fa-diamond', weight: 3 },
-            
-            // 金色2x1
-            { name: '金枝桂冠', size: [2, 1], color: 'gold', icon: 'fa-cogs', weight: 3 },
-            
-            // 金色2x2
-            { name: '座钟', size: [2, 2], color: 'gold', icon: 'fa-clock-o', weight: 3 },
-            
-            // 金色3x2
-            { name: '本地特色首饰', size: [3, 2], color: 'gold', icon: 'fa-diamond', weight: 3 },
-            
-            // 红色1x1
-            { name: '名贵机械表', size: [1, 1], color: 'red', icon: 'fa-clock-o', weight: 1 },
-            { name: '塞伊德的怀表', size: [1, 1], color: 'red', icon: 'fa-clock-o', weight: 1 },
-            { name: '非洲之心', size: [1, 1], color: 'red', icon: 'fa-diamond', rarity: 'rare', weight: 0.2 },
-            { name: '“钻石”鱼子酱', size: [1, 1], color: 'red', icon: 'fa-cutlery', weight: 1 },
-            
-            // 红色1x2
-            { name: '万足金条', size: [1, 2], color: 'red', icon: 'fa-money', weight: 1 },
-            
-            // 红色2x1
-            { name: '棘龙爪化石', size: [2, 1], color: 'red', icon: 'fa-paw', weight: 1 },
-            
-            // 红色2x2
-            { name: '黄金瞪羚', size: [2, 2], color: 'red', icon: 'fa-horse', weight: 1 },
-            
-            // 红色2x3
-            { name: '克劳迪乌斯半身像', size: [2, 3], color: 'red', icon: 'fa-user', weight: 1 },
-            { name: '塞伊德的留声机', size: [2, 3], color: 'red', icon: 'fa-music', weight: 1 },
-            
-            // 红色3x2
-            { name: '步战车模型', size: [3, 2], color: 'red', icon: 'fa-truck', weight: 1 },
-            
-            // 红色3x3
-            { name: '主战坦克模型', size: [3, 3], color: 'red', icon: 'fa-shield', weight: 1 },
-            
-            // 红色4x1
-            { name: '滑膛枪展品', size: [4, 1], color: 'red', icon: 'fa-crosshairs', weight: 1 }
-        ];
-        
-        // 颜色读取延迟时间 (秒)
-        const colorDelays = {
-            'default': 0.25,
-            'green': 0.75,
-            'blue': 1.25,
-            'purple': 1.75,
-            'gold': 2.25,
-            'red': 2.75
-        };
-        
         // 打开解锁弹窗
         insuranceBox.addEventListener('click', () => {
             unlockModal.classList.remove('hidden');
@@ -669,6 +1090,16 @@
             currentRewardItems = []; // 清空当前奖励物品
             // 重置按钮文字
             selectButton.querySelector('span').textContent = '选定密码';
+        });
+        
+        // 关闭物品详情弹窗
+        closeDetailBtn.addEventListener('click', () => {
+            itemDetailModal.classList.remove('active');
+        });
+        
+        // 点击详情弹窗背景关闭
+        itemDetailModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+            itemDetailModal.classList.remove('active');
         });
         
         // 清空记录按钮点击事件
@@ -753,7 +1184,7 @@
             }, 800);
         });
         
-        // 渲染物品记录
+        // 渲染物品记录 - 确保物品可点击
         function renderItemRecords() {
             // 清空容器
             recordsContainer.innerHTML = '';
@@ -776,19 +1207,25 @@
                 return;
             }
             
-            // 添加记录项
+            // 添加记录项 - 确保每个物品都可点击查看详情
             recordsList.forEach(item => {
                 const recordItem = document.createElement('div');
                 recordItem.className = 'record-item flex justify-between items-center p-2 rounded';
                 recordItem.innerHTML = `
                     <div class="flex items-center">
-                        <i class="fa ${item.icon} mr-2 text-${item.color}"></i>
+                        <img src="${item.icon}" alt="${item.name}" class="record-image mr-2">
                         <span class="truncate max-w-[200px] sm:max-w-[400px]">${item.name}</span>
                     </div>
                     <span class="counter-badge bg-${item.color}/30 text-white rounded-full text-xs font-bold">
                         ${item.count}
                     </span>
                 `;
+                
+                // 为每个记录项添加点击事件，显示物品详情
+                recordItem.addEventListener('click', () => {
+                    showItemDetail(item);
+                });
+                
                 recordsContainer.appendChild(recordItem);
             });
         }
@@ -814,6 +1251,28 @@
             
             // 刷新物品记录显示
             renderItemRecords();
+        }
+        
+        // 显示物品详情
+        function showItemDetail(item) {
+            // 验证物品数据是否完整
+            if (!item || !item.name || !item.icon || !item.description) {
+                console.error('物品数据不完整', item);
+                return;
+            }
+            
+            // 设置详情内容
+            detailIconContainer.innerHTML = `
+                <img src="${item.icon}" alt="${item.name}" class="w-full h-full object-contain p-2">
+            `;
+            detailIconContainer.className = `w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center bg-${item.color || 'gray'}/30`;
+            detailName.textContent = item.name;
+            detailName.className = `text-2xl font-bold mb-2 text-${item.color || 'white'}`;
+            detailSize.textContent = `尺寸: ${item.size ? `${item.size[0]}x${item.size[1]}` : '未知'}`;
+            detailDescription.textContent = item.description;
+            
+            // 显示弹窗
+            itemDetailModal.classList.add('active');
         }
         
         // 为选定密码按钮添加点击事件
@@ -853,10 +1312,10 @@
             const boxCharIndex = Math.floor(boxCharPosition / charHeight) % charCount;
             const boxChar = chars[boxCharIndex];
             
-            // 计算与目标位置的像素差
-            const targetPosition = targetPositions[currentColIndex] * charHeight;
-            const currentPosition = (boxCharIndex * charHeight) % (charCount * charHeight);
-            const pixelDiff = Math.abs((currentPosition - targetPosition + charCount * charHeight) % (charCount * charHeight));
+            // 计算当前位置与目标位置的像素差
+            const targetPixelPosition = (targetPositions[currentColIndex] * charHeight) % totalScrollDistance;
+            let pixelDiff = Math.abs(currentPixelPosition - targetPixelPosition);
+            pixelDiff = Math.min(pixelDiff, totalScrollDistance - pixelDiff); // 取最短距离
             
             // 暂停当前列动画
             animation.pause();
@@ -1073,32 +1532,47 @@
             }, 800);
         }
         
-        // 生成奖励 - 所有物品都可识别
+        // 生成奖励
         function generateRewards() {
             // 清空格子内容（保留网格线）
             while (gridContainer.children.length > 1) {
                 gridContainer.removeChild(gridContainer.lastChild);
             }
             
-            // 随机选择物品数量 (2-4个)
-            let itemCount = Math.floor(Math.random() * 3) + 2;
+            // 使用新的概率分布选择物品数量
+            let itemCount = getRandomItemCount();
             
-            // 基于权重和红色物品递减概率选择物品
+            // 基于权重、品质和大小选择物品
             const selectedItems = [];
             
-            // 计算总权重，考虑红色物品的递减概率
+            // 计算总权重，考虑多个因素
             let totalWeight = 0;
             items.forEach(item => {
+                // 计算尺寸因子 - 尺寸越大，因子越小
+                const [width, height] = item.size;
+                const sizeFactor = 1 / (width * height);
+                
+                // 计算品质因子 - 品质越高，因子越小
+                const qualityFactors = {
+                    'blue': 1,
+                    'purple': 0.7,
+                    'gold': 0.4,
+                    'red': 0.2
+                };
+                const qualityFactor = qualityFactors[item.color] || 1;
+                
+                // 计算红色物品递减因子
+                let redFactor = 1;
                 if (item.color === 'red') {
-                    // 红色物品概率随出现次数降低
-                    const redProbabilityFactor = 1 / Math.pow(3, redItemCount);
-                    totalWeight += item.weight * redProbabilityFactor;
-                } else {
-                    totalWeight += item.weight;
+                    redFactor = 1 / Math.pow(3, redItemCount);
                 }
+                
+                // 计算最终权重
+                item.weight = item.baseWeight * sizeFactor * qualityFactor * redFactor;
+                totalWeight += item.weight;
             });
             
-            // 随机选择物品（所有物品都可识别）
+            // 随机选择物品
             for (let i = 0; i < itemCount; i++) {
                 let random = Math.random() * totalWeight;
                 let selectedIndex = -1;
@@ -1106,15 +1580,7 @@
                 // 根据权重选择物品
                 for (let j = 0; j < items.length; j++) {
                     const item = items[j];
-                    let itemWeight = item.weight;
-                    
-                    // 调整红色物品的权重
-                    if (item.color === 'red') {
-                        const redProbabilityFactor = 1 / Math.pow(3, redItemCount);
-                        itemWeight *= redProbabilityFactor;
-                    }
-                    
-                    random -= itemWeight;
+                    random -= item.weight;
                     if (random <= 0) {
                         selectedIndex = j;
                         break;
@@ -1231,7 +1697,7 @@
             return allItemCells;
         }
         
-        // 按顺序读取物品 - 物品无外边框，显示在网格中
+        // 按顺序读取物品
         function readItemsInOrder(items, allItemCells) {
             let totalDelay = 1000; // 延迟1秒开始读取，让用户看到所有占位符
             
@@ -1250,7 +1716,7 @@
                 
                 // 安排读取这个物品
                 setTimeout(() => {
-                    // 添加放大镜动画
+                    // 添加放大镜动画 - 以物品中心为轨迹中心
                     const magnifierContainer = document.createElement('div');
                     magnifierContainer.className = 'magnifier-track';
                     magnifierContainer.style.left = `${left}%`;
@@ -1265,7 +1731,7 @@
                     magnifierContainer.appendChild(magnifier);
                     gridContainer.appendChild(magnifierContainer);
                     
-                    // 读取完成，显示物品（无外边框）
+                    // 读取完成，显示物品
                     setTimeout(() => {
                         magnifierContainer.remove();
                         
@@ -1274,15 +1740,12 @@
                             gridContainer.removeChild(placeholder);
                         }
                         
-                        // 创建物品元素（无外边框）
+                        // 创建物品元素
                         const itemElement = document.createElement('div');
-                        itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 flex items-center justify-center`;
+                        itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 cursor-pointer`;
                         itemElement.innerHTML = `
-                            <div class="text-center p-1 w-full h-full flex flex-col justify-center">
-                                <i class="fa ${item.icon} text-white text-lg mb-1"></i>
-                                <div class="text-white text-xs font-bold truncate">${item.name}</div>
-                                <div class="size-label">${sizeWidth}x${sizeHeight}</div>
-                            </div>
+                            <img src="${item.icon}" alt="${item.name}" class="fullsize-icon">
+                            <div class="size-label">${sizeWidth}x${sizeHeight}</div>
                         `;
                         
                         // 设置物品位置、大小和间隔
@@ -1290,6 +1753,11 @@
                         itemElement.style.height = `${height}%`;
                         itemElement.style.left = `${left}%`;
                         itemElement.style.top = `${top}%`;
+                        
+                        // 添加点击事件显示详情
+                        itemElement.addEventListener('click', () => {
+                            showItemDetail(item);
+                        });
                         
                         gridContainer.appendChild(itemElement);
                     }, colorDelays[item.color] * 1000);
@@ -1303,6 +1771,8 @@
         // 初始化
         window.addEventListener('resize', adjustButtonPosition);
         window.addEventListener('load', () => {
+            // 预加载所有物品图片
+            preloadAllImages();
             initScrollers();
             // 初始化时渲染物品记录
             renderItemRecords();
@@ -1310,3 +1780,4 @@
     </script>
 </body>
 </html>
+    
