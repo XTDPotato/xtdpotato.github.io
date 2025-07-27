@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三角洲免保模拟器</title>
+    <title>三角洲大免保</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -359,8 +359,7 @@
 <body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
     <div class="w-full max-w-2xl flex flex-col min-h-screen">
         <div class="text-center mb-6">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲免保模拟</h1>
-           
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲大免保</h1>
         </div>
         
         <!-- 主页视图 -->
@@ -705,7 +704,7 @@
         const cellPercentage = 100 / gridSize;
         const itemSpacing = 2;
         
-        // 物品数据 - 删除了数码相机，调整了概率
+        // 物品数据 - 删除了显卡，大保险不含军用雷达和军用信息终端
         const items = [
             { name: '古怪的海盗银币', size: [1, 1], color: 'blue', icon: 'fa-coins', baseWeight: 1, description: '古老的海盗货币，具有收藏价值' },
             { name: '初级子弹生产零件', size: [1, 2], color: 'blue', icon: 'fa-cogs', baseWeight: 1, description: '用于生产子弹的基础零件' },
@@ -740,13 +739,17 @@
             { name: '军用雷达', size: [3, 3], color: 'red', icon: 'fa-radar', baseWeight: 1, description: '军用级别的雷达设备' },
             { name: '滑膛枪展品', size: [4, 1], color: 'red', icon: 'fa-crosshairs', baseWeight: 1, description: '具有历史价值的滑膛枪展品' },
             { name: '军用信息终端', size: [3, 2], color: 'red', icon: 'fa-tablet', baseWeight: 1, description: '军用规格的信息处理终端' },
-            { name: '显卡', size: [2, 1], color: 'red', icon: 'fa-microchip', baseWeight: 1, description: '高性能显示处理芯片' },
             { name: '藏秘筒', size: [1, 1], color: 'gold', icon: 'fa-key', baseWeight: 1, description: '用于藏匿秘密信息的特殊容器' }
         ];
         
         // 小保险物品列表
         const smallInsuranceItems = items.filter(item => 
-            !['数码相机'].includes(item.name)
+            !['显卡'].includes(item.name)
+        );
+        
+        // 大保险物品列表 - 不含军用雷达和军用信息终端
+        const largeInsuranceItems = items.filter(item => 
+            !['显卡', '军用雷达', '军用信息终端'].includes(item.name)
         );
         
         // 核心功能函数
@@ -1292,9 +1295,9 @@
             if (currentInsuranceType === 'large') {
                 let itemCount = getRandomItemCount();
                 
-                // 抽取非洲之心的特殊逻辑 (0.0001%概率)
-                const heartOfAfrica = items.find(item => item.name === '非洲之心');
-                if (Math.random() < 0.000001) {
+                // 抽取非洲之心的特殊逻辑 (0.01%概率)
+                const heartOfAfrica = largeInsuranceItems.find(item => item.name === '非洲之心');
+                if (Math.random() < 0.01) {
                     selectedItems.push({...heartOfAfrica});
                     itemCount--;
                 }
@@ -1307,19 +1310,19 @@
                     // 品质概率：30%蓝，30%紫，30%金，10%红
                     if (random < 0.30) {
                         // 蓝色物品
-                        const blueItems = items.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                        const blueItems = largeInsuranceItems.filter(item => item.color === 'blue' && item.name !== '非洲之心');
                         selectedItem = blueItems[Math.floor(Math.random() * blueItems.length)];
                     } else if (random < 0.60) {
                         // 紫色物品
-                        const purpleItems = items.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                        const purpleItems = largeInsuranceItems.filter(item => item.color === 'purple' && item.name !== '非洲之心');
                         selectedItem = purpleItems[Math.floor(Math.random() * purpleItems.length)];
                     } else if (random < 0.90) {
                         // 金色物品
-                        const goldItems = items.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                        const goldItems = largeInsuranceItems.filter(item => item.color === 'gold' && item.name !== '非洲之心');
                         selectedItem = goldItems[Math.floor(Math.random() * goldItems.length)];
                     } else {
                         // 红色物品（不含非洲之心）
-                        const redItems = items.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                        const redItems = largeInsuranceItems.filter(item => item.color === 'red' && item.name !== '非洲之心');
                         selectedItem = redItems[Math.floor(Math.random() * redItems.length)];
                     }
                     
@@ -1330,9 +1333,9 @@
             } else {
                 const itemCount = getRandomItemCount();
                 
-                // 抽取非洲之心的特殊逻辑 (0.0001%概率)
+                // 抽取非洲之心的特殊逻辑 (0.001%概率)
                 const heartOfAfrica = smallInsuranceItems.find(item => item.name === '非洲之心');
-                if (Math.random() < 0.000001 && itemCount > 0) {
+                if (Math.random() < 0.00001 && itemCount > 0) {
                     selectedItems.push({...heartOfAfrica});
                     
                     if (itemCount === 1) {
@@ -1748,9 +1751,12 @@
             let selectedItems = [];
             currentInsuranceType = insuranceType;
             
-            // 抽取非洲之心的特殊逻辑 (0.0001%概率)
-            const heartOfAfrica = items.find(item => item.name === '非洲之心');
-            if (Math.random() < 0.000001) {
+            // 选择正确的物品池
+            const itemPool = insuranceType === 'large' ? largeInsuranceItems : smallInsuranceItems;
+            
+            // 抽取非洲之心的特殊逻辑 (0.001%概率)
+            const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+            if (Math.random() < 0.00001) {
                 selectedItems.push({...heartOfAfrica});
                 return selectedItems;
             }
@@ -1765,19 +1771,19 @@
                     
                     if (random < 0.30) {
                         // 蓝色物品
-                        const blueItems = items.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                        const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
                         selectedItems.push({...blueItems[Math.floor(Math.random() * blueItems.length)]});
                     } else if (random < 0.60) {
                         // 紫色物品
-                        const purpleItems = items.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                        const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
                         selectedItems.push({...purpleItems[Math.floor(Math.random() * purpleItems.length)]});
                     } else if (random < 0.90) {
                         // 金色物品
-                        const goldItems = items.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                        const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
                         selectedItems.push({...goldItems[Math.floor(Math.random() * goldItems.length)]});
                     } else {
                         // 红色物品（不含非洲之心）
-                        const redItems = items.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                        const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '非洲之心');
                         selectedItems.push({...redItems[Math.floor(Math.random() * redItems.length)]});
                     }
                 }
@@ -1858,7 +1864,7 @@
             batchResultModal.style.zIndex = '9999';
         }
         
-        // 导航功能 - 修复版本
+        // 导航功能
         function setActiveNavItem(index) {
             navItems.forEach((item, i) => {
                 if (i === index) {
