@@ -465,7 +465,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-900 min-h-screen flex flex-col items-center p-4 font-digital text-white">
-    <div class="w-full max-w-2xl flex flex-col min-h-screen">
+    <div class="w-full max-w-2xl flex flex-col min-h-screen content-with-footer">
         <div class="text-center mb-6">
             <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-highlight text-shadow">三角洲容器模拟</h1>
         </div>
@@ -734,7 +734,7 @@
     </div>
 
     <!-- 固定底部导航栏 -->
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-900/90 border-t border-gray-700 py-2 px-4 z-40">
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-900/90 border-t border-gray-700 py-2 px-4 z-40 transition-all duration-300">
         <div class="w-full max-w-2xl mx-auto">
             <div class="flex justify-around">
                 <div class="nav-item active flex flex-col items-center text-sm p-2 border-b-2 border-transparent" data-view="mainView">
@@ -763,6 +763,11 @@
 
     <!-- 引入外部JS文件 -->
     <script src="delta/app.js"></script>
+    
+    <!-- 版权声明 -->
+    <div class="mt-auto pt-6 pb-24 text-center text-xs text-gray-500">
+        网站所使用的游戏图片、素材，版权归腾讯公司所有，仅用于非商业展示和游戏资料参考。
+    </div>
 </body>
 </html>
     
