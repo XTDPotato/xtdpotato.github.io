@@ -88,7 +88,7 @@ const charHeight = 32;
 const selectionTolerance = 35;
 let errorPauseTimer = null;
 let redItemCount = 0;
-let gridSize = 4;
+let gridSize = 4; // 默认4x4
 const cellPercentage = 100 / gridSize;
 const itemSpacing = 2;
 
@@ -109,7 +109,7 @@ const items = [
     { name: '马赛克灯台', size: [2, 3], color: 'purple', image: 'delta/马赛克灯台.png', baseWeight: 1, description: '带有马赛克装饰的灯台' },
     { name: '仪典匕首', size: [3, 2], color: 'purple', image: 'delta/仪典匕首.png', baseWeight: 1, description: '用于仪式的特殊匕首' },
     { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', image: 'delta/阿萨拉特色酒杯.png', baseWeight: 1, description: '阿萨拉地区制作的精美酒杯' },
-    { name: '亮闪闪海盗金币', size: [1, 1], color: 'gold', image: 'delta/亮闪闪海盗金币.png', baseWeight: 1, description: '海盗藏匿的黄金货币' },
+    { name: '亮闪闪的海盗金币', size: [1, 1], color: 'gold', image: 'delta/亮闪闪的海盗金币.png', baseWeight: 1, description: '海盗藏匿的黄金货币' },
     { name: '功绩勋章', size: [1, 1], color: 'gold', image: 'delta/功绩勋章.png', baseWeight: 1, description: '表彰杰出功绩的勋章' },
     { name: '发条八音盒', size: [1, 1], color: 'gold', image: 'delta/发条八音盒.png', baseWeight: 1, description: '能演奏优美旋律的机械装置' },
     { name: '荷美尔陶俑', size: [1, 2], color: 'gold', image: 'delta/荷美尔陶俑.png', baseWeight: 1, description: '古代荷美尔文明的陶制人偶' },
@@ -283,7 +283,7 @@ function openUnlockModal(containerType) {
     
     rewardTitle.textContent = containerType === 'large' ? '大保险容器物品清单' : '小保险容器物品清单';
     
-    gridSize = containerType === 'large' ? 5 : 4; // 大保险5x5，小保险4x4
+    gridSize = 4; // 大保险和小保险均为4x4
     
     resetUnlockState();
     
@@ -1203,7 +1203,7 @@ async function performBatchDraw(containerType, totalDraws) {
                 unlockModal.classList.remove('hidden');
                 
                 rewardTitle.textContent = containerType === 'large' ? '大保险容器物品清单' : '小保险容器物品清单';
-                gridSize = containerType === 'large' ? 5 : 4;
+                gridSize = 4; // 大保险和小保险均为4x4
                 
                 generateGridLines();
                 unlockScreen.classList.add('hidden');
