@@ -788,7 +788,7 @@ function drawSmallContainerItem() {
         // 紫色物品
         const purpleItems = smallContainerItems.filter(item => item.color === 'purple' && item.name !== '非洲之心');
         return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
-    } else if (random < 0.90) {
+    } else if (random < 0.95) {
         // 金色物品
         const goldItems = smallContainerItems.filter(item => item.color === 'gold' && item.name !== '非洲之心');
         return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
