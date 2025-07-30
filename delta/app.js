@@ -94,6 +94,7 @@ const itemSpacing = 2;
 
 // 物品数据 - 使用图片路径代替图标
 const items = [
+    // 原有物品
     { name: '古怪的海盗银币', size: [1, 1], color: 'blue', image: 'delta/古怪的海盗银币.png', baseWeight: 1, description: '古老的阿萨拉海盗的银币，带有古怪气息。' },
     { name: '初级子弹生产零件', size: [1, 2], color: 'blue', image: 'delta/初级子弹生产零件.png', baseWeight: 1, description: '工具材料，一套精密的组件，用于制造可靠而高效的初级弹药。' },
     { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', image: 'delta/古老的海盗望远镜.png', baseWeight: 1, description: '颇具年代感的望远镜。根据阿萨拉地方志记载，这种望远镜曾被阿萨拉卫队的祖先广泛使用。' },
@@ -129,7 +130,98 @@ const items = [
     { name: '军用雷达', size: [3, 3], color: 'red', image: 'delta/军用雷达.png', baseWeight: 1, description: '军用级别的雷达设备' },
     { name: '滑膛枪展品', size: [4, 1], color: 'red', image: 'delta/滑膛枪展品.png', baseWeight: 1, description: '滑膛枪展品' },
     { name: '军用信息终端', size: [3, 2], color: 'red', image: 'delta/军用信息终端.png', baseWeight: 1, description: '军用规格的信息处理终端' },
-    { name: '藏秘筒', size: [1, 1], color: 'gold', image: 'delta/藏秘筒.png', baseWeight: 1, description: '用于藏匿秘密信息的特殊容器' }
+    { name: '藏秘筒', size: [1, 1], color: 'gold', image: 'delta/藏秘筒.png', baseWeight: 1, description: '用于藏匿秘密信息的特殊容器' },
+    
+    // 鳄鱼巢穴新增物品
+    // 红色物品
+    { name: "复苏呼吸机", size: [3, 3], color: "red", image: "delta/复苏呼吸机.png", rarity: "legendary", description: "高级生命支持设备，可在紧急情况下维持患者呼吸功能" },
+    { name: "主战坦克模型", size: [3, 3], color: "red", image: "delta/主战坦克模型.png", description: "精细制作的主战坦克比例模型，具有收藏价值" },
+    { name: "步战车模型", size: [3, 2], color: "red", image: "delta/步战车模型.png", description: "步战车的精致模型，细节还原度高" },
+    { name: "量子存储", size: [1, 1], color: "red", image: "delta/量子存储.png", description: "采用量子技术的先进存储设备，容量巨大" },
+    { name: "塞伊德的怀表", size: [1, 1], color: "red", image: "delta/塞伊德的怀表.png", description: "塞伊德的个人怀表，具有历史价值" },
+    { name: "名贵机械表", size: [1, 1], color: "red", image: "delta/名贵机械表.png", description: "高端机械表，工艺精湛，价值不菲" },
+    { name: "\"钻石\"鱼子酱", size: [1, 1], color: "red", image: "delta/\"钻石\"鱼子酱.png", description: "被称为\"钻石\"的顶级鱼子酱，极其稀有昂贵" },
+    { name: "奥莉薇娅香槟", size: [1, 2], color: "red", image: "delta/奥莉薇娅香槟.png", description: "顶级奥莉薇娅品牌香槟，口感醇厚" },
+
+    // 金色物品
+    { name: "资料：设计图纸", size: [1, 1], color: "gold", image: "delta/资料：设计图纸.png", description: "包含重要设计信息的资料图纸" },
+    { name: "纯金打火机", size: [1, 1], color: "gold", image: "delta/纯金打火机.png", description: "纯金打造的打火机，工艺精美" },
+    { name: "阿萨拉特色酒杯", size: [1, 1], color: "gold", image: "delta/阿萨拉特色酒杯.png", description: "阿萨拉地区特色工艺酒杯" },
+    { name: "体内除颤器", size: [1, 1], color: "gold", image: "delta/体内除颤器.png", description: "植入式体内除颤设备，可挽救心脏骤停患者" },
+    { name: "燃料电池", size: [1, 1], color: "gold", image: "delta/燃料电池.png", description: "高效燃料电池，提供持久电力" },
+    { name: "血氧仪", size: [1, 1], color: "gold", image: "delta/血氧仪.png", description: "检测血氧饱和度的便携式设备" },
+    { name: "海盗金币", size: [1, 1], color: "gold", image: "delta/海盗金币.png", description: "古代海盗遗留的金币，具有收藏价值" },
+    { name: "手机", size: [1, 1], color: "gold", image: "delta/手机.png", description: "智能手机，功能齐全" },
+    { name: "卫星电话", size: [1, 1], color: "gold", image: "delta/卫星电话.png", description: "可在全球范围内通讯的卫星电话" },
+    { name: "高速固态硬盘", size: [1, 1], color: "gold", image: "delta/高速固态硬盘.png", description: "高速读写的固态硬盘" },
+    { name: "数码相机", size: [1, 1], color: "gold", image: "delta/数码相机.png", description: "高像素数码相机，拍摄效果出色" },
+    { name: "CPU", size: [1, 1], color: "gold", image: "delta/CPU.png", description: "高性能中央处理器" },
+    { name: "可编程处理器", size: [1, 1], color: "gold", image: "delta/可编程处理器.png", description: "可灵活编程的处理器，适用于多种场景" },
+    { name: "咖啡", size: [1, 1], color: "gold", image: "delta/咖啡.png", description: "高品质咖啡豆，口感浓郁" },
+    { name: "\"蓝宝石\"龙舌兰", size: [2, 1], color: "gold", image: "delta/\"蓝宝石\"龙舌兰.png", description: "名为\"蓝宝石\"的顶级龙舌兰酒" },
+    { name: "心脏支架", size: [2, 1], color: "gold", image: "delta/心脏支架.png", description: "用于心脏手术的医疗支架" },
+    { name: "军用望远镜", size: [2, 2], color: "gold", image: "delta/军用望远镜.png", description: "高倍率军用望远镜，视野清晰" },
+    { name: "军用炸药", size: [2, 2], color: "gold", image: "delta/军用炸药.png", description: "军用级炸药，威力巨大" },
+
+    // 紫色物品
+    { name: "能量凝胶", size: [1, 1], color: "purple", image: "delta/能量凝胶.png", description: "提供快速能量补充的凝胶" },
+    { name: "信号棒", size: [1, 1], color: "purple", image: "delta/信号棒.png", description: "发出强光信号的应急设备" },
+    { name: "间谍笔", size: [1, 1], color: "purple", image: "delta/间谍笔.png", description: "伪装成钢笔的间谍设备" },
+    { name: "GS5手柄", size: [1, 1], color: "purple", image: "delta/GS5手柄.png", description: "GS5游戏机专用手柄" },
+    { name: "电子干扰器", size: [1, 1], color: "purple", image: "delta/电子干扰器.png", description: "便携式电子信号干扰设备" },
+    { name: "柠檬茶", size: [1, 1], color: "purple", image: "delta/柠檬茶.png", description: "清爽的柠檬茶饮料" },
+    { name: "资料：军事情报", size: [1, 1], color: "purple", image: "delta/资料：军事情报.png", description: "包含军事情报的机密资料" },
+    { name: "植物样本", size: [1, 1], color: "purple", image: "delta/植物样本.png", description: "未知植物的样本，具有研究价值" },
+    { name: "鳄鱼蛋", size: [1, 1], color: "purple", image: "delta/鳄鱼蛋.png", description: "新鲜的鳄鱼蛋，外壳坚硬" },
+    { name: "鳄鱼血样", size: [1, 1], color: "purple", image: "delta/鳄鱼血样.png", description: "鳄鱼血液样本，用于研究" },
+    { name: "后妃耳环", size: [1, 1], color: "purple", image: "delta/后妃耳环.png", description: "古代后妃佩戴的珍贵耳环" },
+    { name: "固态硬盘", size: [1, 1], color: "purple", image: "delta/固态硬盘.png", description: "存储数据的固态存储设备" },
+    { name: "内存条", size: [1, 1], color: "purple", image: "delta/内存条.png", description: "计算机内存模块" },
+    { name: "海盗弯刀", size: [1, 1], color: "purple", image: "delta/海盗弯刀.png", description: "海盗使用的弯刀" },
+    { name: "人工膝关节", size: [1, 2], color: "purple", image: "delta/人工膝关节.png", description: "用于替换手术的人工膝关节" },
+    { name: "燃气喷灯", size: [1, 2], color: "purple", image: "delta/燃气喷灯.png", description: "用于加热或焊接的燃气喷灯" },
+    { name: "粉碎钳", size: [1, 2], color: "purple", image: "delta/粉碎钳.png", description: "用于破拆的重型钳子" },
+    { name: "阿萨拉卫队机密档案", size: [1, 2], color: "purple", image: "delta/阿萨拉卫队机密档案.png", description: "阿萨拉卫队的机密文件" },
+    { name: "便携生存套件", size: [1, 2], color: "purple", image: "delta/便携生存套件.png", description: "包含多种生存工具的便携套件" },
+    { name: "HIFI声卡", size: [2, 1], color: "purple", image: "delta/HIFI声卡.png", description: "高保真音频处理卡" },
+    { name: "广角镜头", size: [2, 1], color: "purple", image: "delta/广角镜头.png", description: "相机用广角镜头" },
+    { name: "专业声卡", size: [2, 1], color: "purple", image: "delta/专业声卡.png", description: "专业级音频处理设备" },
+    { name: "收音机", size: [2, 1], color: "purple", image: "delta/收音机.png", description: "接收广播信号的设备" },
+    { name: "军用露营灯", size: [1, 3], color: "purple", image: "delta/军用露营灯.png", description: "军用级别的露营照明设备" },
+
+    // 蓝色物品
+    { name: "继电器", size: [1, 1], color: "blue", image: "delta/继电器.png", description: "用于电路控制的继电器" },
+    { name: "摄像头", size: [1, 1], color: "blue", image: "delta/摄像头.png", description: "用于拍摄的视频设备" },
+    { name: "军用电源", size: [1, 1], color: "blue", image: "delta/军用电源.png", description: "军用规格的电源设备" },
+    { name: "音频播放器", size: [1, 1], color: "blue", image: "delta/音频播放器.png", description: "播放音频文件的设备" },
+    { name: "多用途电池", size: [1, 1], color: "blue", image: "delta/多用途电池.png", description: "可用于多种设备的电池" },
+    { name: "高精数卡尺", size: [1, 1], color: "blue", image: "delta/高精数卡尺.png", description: "高精度测量工具" },
+    { name: "维生素腾片", size: [1, 1], color: "blue", image: "delta/维生素腾片.png", description: "补充维生素的泡腾片" },
+    { name: "蛋白粉包", size: [1, 1], color: "blue", image: "delta/蛋白粉包.png", description: "便携装蛋白质补充粉" },
+    { name: "糖三角", size: [1, 1], color: "blue", image: "delta/糖三角.png", description: "传统面食，内有糖馅" },
+    { name: "狩猎火柴", size: [1, 1], color: "blue", image: "delta/狩猎火柴.png", description: "防风防水的户外火柴" },
+    { name: "低级燃料", size: [1, 1], color: "blue", image: "delta/低级燃料.png", description: "品质较低的燃料" },
+    { name: "英式袋泡茶", size: [1, 1], color: "blue", image: "delta/英式袋泡茶.png", description: "英国风格的袋泡茶" },
+    { name: "存储卡", size: [1, 1], color: "blue", image: "delta/存储卡.png", description: "用于存储数据的存储卡" },
+    { name: "炒面", size: [1, 1], color: "blue", image: "delta/炒面.png", description: "速食炒面" },
+    { name: "可乐", size: [1, 1], color: "blue", image: "delta/可乐.png", description: "碳酸饮料" },
+    { name: "转换插座", size: [1, 1], color: "blue", image: "delta/转换插座.png", description: "多功能电源转换插座" },
+    { name: "额温枪", size: [1, 1], color: "blue", image: "delta/额温枪.png", description: "测量体温的红外设备" },
+    { name: "U盘", size: [1, 1], color: "blue", image: "delta/U盘.png", description: "便携式存储设备" },
+    { name: "摩卡咖啡壶", size: [1, 2], color: "blue", image: "delta/摩卡咖啡壶.png", description: "制作摩卡咖啡的器具" },
+    { name: "火药", size: [1, 2], color: "blue", image: "delta/火药.png", description: "用于爆炸物的化学物质" },
+    { name: "情报文件", size: [1, 2], color: "blue", image: "delta/情报文件.png", description: "包含情报信息的文件" },
+    { name: "军情录音", size: [1, 3], color: "blue", image: "delta/军情录音.png", description: "记录军事信息的录音" },
+    { name: "电子显微镜", size: [1, 3], color: "blue", image: "delta/电子显微镜.png", description: "用于微观观察的电子设备" },
+    { name: "骨锯", size: [3, 1], color: "blue", image: "delta/骨锯.png", description: "用于切割骨骼的医疗工具" },
+    { name: "无线电钻", size: [2, 1], color: "blue", image: "delta/无线电钻.png", description: "充电式电钻工具" },
+    { name: "木雕烟斗", size: [2, 1], color: "blue", image: "delta/木雕烟斗.png", description: "木质雕刻的烟斗" },
+    { name: "芳纶纤维", size: [2, 1], color: "blue", image: "delta/芳纶纤维.png", description: "高强度合成纤维材料" },
+    { name: "听诊器", size: [2, 1], color: "blue", image: "delta/听诊器.png", description: "医疗诊断用听诊设备" },
+    { name: "电子温度计", size: [2, 2], color: "blue", image: "delta/电子温度计.png", description: "电子温度测量设备" },
+    { name: "医疗无人机", size: [2, 2], color: "blue", image: "delta/医疗无人机.png", description: "用于医疗用途的无人机" },
+    { name: "轻型户外炉具", size: [2, 2], color: "blue", image: "delta/轻型户外炉具.png", description: "便携的户外烹饪设备" },
+    { name: "燃气罐", size: [2, 2], color: "blue", image: "delta/燃气罐.png", description: "储存燃气的容器" }
 ];
 
 // 小保险容器物品列表
@@ -142,8 +234,23 @@ const largeContainerItems = items.filter(item =>
     !['显卡', '军用雷达', '军用信息终端'].includes(item.name)
 );
 
-// 鳄鱼窝容器物品列表（开发中）
-const crocodileNestItems = [];
+// 鳄鱼巢穴容器物品列表
+const crocodileNestItems = items.filter(item => 
+    // 筛选出鳄鱼巢穴特有的物品
+    ['复苏呼吸机', '主战坦克模型', '克劳迪乌斯半身像', '步战车模型', '量子存储', 
+     '"钻石"鱼子酱', '奥莉薇娅香槟', '资料：设计图纸', '纯金打火机', '体内除颤器',
+     '燃料电池', '血氧仪', '卫星电话', '高速固态硬盘', '可编程处理器', 
+     '"蓝宝石"龙舌兰', '心脏支架', '军用望远镜', '军用炸药', '能量凝胶', 
+     '信号棒', '间谍笔', 'GS5手柄', '电子干扰器', '柠檬茶', '资料：军事情报',
+     '植物样本', '鳄鱼蛋', '鳄鱼血样', '固态硬盘', '内存条', '人工膝关节',
+     '燃气喷灯', '粉碎钳', '阿萨拉卫队机密档案', '便携生存套件', 'HIFI声卡',
+     '广角镜头', '专业声卡', '收音机', '军用露营灯', '继电器', '摄像头',
+     '军用电源', '音频播放器', '多用途电池', '高精数卡尺', '维生素腾片',
+     '蛋白粉包', '糖三角', '狩猎火柴', '低级燃料', '英式袋泡茶', '存储卡',
+     '炒面', '可乐', '转换插座', '额温枪', 'U盘', '摩卡咖啡壶', '火药',
+     '情报文件', '军情录音', '电子显微镜', '骨锯', '无线电钻', '木雕烟斗',
+     '芳纶纤维', '听诊器', '电子温度计', '医疗无人机', '轻型户外炉具', '燃气罐'].includes(item.name)
+);
 
 // 核心功能函数
 function getRandomItemCount() {
@@ -152,8 +259,17 @@ function getRandomItemCount() {
         if (random < 0.4) return 1;
         if (random < 0.8) return 2;
         return 3;
+    } else if (currentContainerType === 'crocodile') {
+        // 鳄鱼巢穴物品数量概率分布
+        const random = Math.random();
+        if (random < 0.2) return 1;
+        if (random < 0.5) return 2;
+        if (random < 0.8) return 3;
+        if (random < 0.95) return 4;
+        return 5;
     }
     
+    // 大容器默认分布
     const probabilityDistribution = [
         { count: 1, probability: 0.30 },
         { count: 2, probability: 0.30 },
@@ -281,9 +397,21 @@ function openUnlockModal(containerType) {
     currentContainerType = containerType;
     unlockModal.classList.remove('hidden');
     
-    rewardTitle.textContent = containerType === 'large' ? '大保险容器物品清单' : '小保险容器物品清单';
+    // 根据容器类型设置标题
+    if (containerType === 'large') {
+        rewardTitle.textContent = '大保险容器物品清单';
+    } else if (containerType === 'small') {
+        rewardTitle.textContent = '小保险容器物品清单';
+    } else if (containerType === 'crocodile') {
+        rewardTitle.textContent = '鳄鱼巢穴物品清单';
+    }
     
-    gridSize = 4; // 大保险和小保险均为4x4
+    // 设置网格大小
+    if (containerType === 'crocodile') {
+        gridSize = 5; // 鳄鱼巢穴使用5x5网格
+    } else {
+        gridSize = 4; // 大保险和小保险均为4x4
+    }
     
     resetUnlockState();
     
@@ -320,9 +448,9 @@ smallContainer.addEventListener('click', () => {
     openSmallContainerDirectly();
 });
 
-// 鳄鱼窝容器点击事件（开发中）
+// 鳄鱼巢穴容器点击事件
 crocodileNest.addEventListener('click', () => {
-    showToast('鳄鱼窝容器正在开发中，敬请期待');
+    openUnlockModal('crocodile');
 });
 
 closeBtn.addEventListener('click', () => {
@@ -689,13 +817,41 @@ function generateRewards() {
     clearGridItems();
     
     let selectedItems = [];
+    const itemPool = getCurrentContainerItemPool();
     
-    if (currentContainerType === 'large') {
+    if (!itemPool || itemPool.length === 0) {
+        console.error('未找到对应的物品池');
+        isProcessingRewards = false;
+        return;
+    }
+    
+    // 根据容器类型生成不同的物品
+    if (currentContainerType === 'crocodile') {
+        // 鳄鱼巢穴物品生成逻辑
+        const itemCount = getRandomItemCount();
+        
+        // 复苏呼吸机特殊概率逻辑（与非洲之心相同）
+        const resuscitationVentilator = itemPool.find(item => item.name === '复苏呼吸机');
+        if (resuscitationVentilator && Math.random() < 0.001) {
+            selectedItems.push({...resuscitationVentilator});
+            
+            // 如果需要更多物品，继续抽取
+            for (let i = 1; i < itemCount; i++) {
+                selectedItems.push(drawCrocodileNestItem(itemPool));
+            }
+        } else {
+            // 正常抽取鳄鱼巢穴物品
+            for (let i = 0; i < itemCount; i++) {
+                selectedItems.push(drawCrocodileNestItem(itemPool));
+            }
+        }
+    } else if (currentContainerType === 'large') {
+        // 大容器物品生成逻辑
         let itemCount = getRandomItemCount();
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
-        const heartOfAfrica = largeContainerItems.find(item => item.name === '非洲之心');
-        if (Math.random() < 0.001) {
+        const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        if (heartOfAfrica && Math.random() < 0.001) {
             selectedItems.push({...heartOfAfrica});
             itemCount--;
         }
@@ -708,19 +864,19 @@ function generateRewards() {
             // 品质概率：30%蓝，30%紫，30%金，10%红
             if (random < 0.30) {
                 // 蓝色物品
-                const blueItems = largeContainerItems.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+                const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
                 selectedItem = blueItems[Math.floor(Math.random() * blueItems.length)];
             } else if (random < 0.60) {
                 // 紫色物品
-                const purpleItems = largeContainerItems.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+                const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
                 selectedItem = purpleItems[Math.floor(Math.random() * purpleItems.length)];
             } else if (random < 0.90) {
                 // 金色物品
-                const goldItems = largeContainerItems.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+                const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
                 selectedItem = goldItems[Math.floor(Math.random() * goldItems.length)];
             } else {
                 // 红色物品（不含非洲之心）
-                const redItems = largeContainerItems.filter(item => item.color === 'red' && item.name !== '非洲之心');
+                const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '非洲之心');
                 selectedItem = redItems[Math.floor(Math.random() * redItems.length)];
             }
             
@@ -729,11 +885,12 @@ function generateRewards() {
             }
         }
     } else {
+        // 小容器物品生成逻辑
         const itemCount = getRandomItemCount();
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
-        const heartOfAfrica = smallContainerItems.find(item => item.name === '非洲之心');
-        if (Math.random() < 0.001 && itemCount > 0) {
+        const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        if (heartOfAfrica && Math.random() < 0.001 && itemCount > 0) {
             selectedItems.push({...heartOfAfrica});
             
             if (itemCount === 1) {
@@ -741,13 +898,13 @@ function generateRewards() {
             } else {
                 // 继续抽取其他物品
                 for (let i = 1; i < itemCount; i++) {
-                    selectedItems.push(drawSmallContainerItem());
+                    selectedItems.push(drawSmallContainerItem(itemPool));
                 }
             }
         } else {
             // 正常抽取小保险物品
             for (let i = 0; i < itemCount; i++) {
-                selectedItems.push(drawSmallContainerItem());
+                selectedItems.push(drawSmallContainerItem(itemPool));
             }
         }
     }
@@ -776,25 +933,63 @@ function generateRewards() {
     }, totalDelay + 1000);
 }
 
+// 获取当前容器类型对应的物品池
+function getCurrentContainerItemPool() {
+    switch(currentContainerType) {
+        case 'large':
+            return largeContainerItems;
+        case 'small':
+            return smallContainerItems;
+        case 'crocodile':
+            return crocodileNestItems;
+        default:
+            return largeContainerItems;
+    }
+}
+
+// 鳄鱼巢穴物品抽取（按品质概率）
+function drawCrocodileNestItem(itemPool) {
+    const random = Math.random();
+    
+    // 鳄鱼巢穴的概率分布：40%蓝，30%紫，20%金，10%红
+    if (random < 0.40) {
+        // 蓝色物品
+        const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '复苏呼吸机');
+        return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
+    } else if (random < 0.70) {
+        // 紫色物品
+        const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '复苏呼吸机');
+        return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
+    } else if (random < 0.90) {
+        // 金色物品
+        const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '复苏呼吸机');
+        return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
+    } else {
+        // 红色物品（不含复苏呼吸机，它有单独的抽取逻辑）
+        const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '复苏呼吸机');
+        return {...redItems[Math.floor(Math.random() * redItems.length)]};
+    }
+}
+
 // 小保险容器物品抽取（按品质概率）
-function drawSmallContainerItem() {
+function drawSmallContainerItem(itemPool) {
     const random = Math.random();
     
     if (random < 0.30) {
         // 蓝色物品
-        const blueItems = smallContainerItems.filter(item => item.color === 'blue' && item.name !== '非洲之心');
+        const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
         return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
     } else if (random < 0.60) {
         // 紫色物品
-        const purpleItems = smallContainerItems.filter(item => item.color === 'purple' && item.name !== '非洲之心');
+        const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
         return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
     } else if (random < 0.95) {
         // 金色物品
-        const goldItems = smallContainerItems.filter(item => item.color === 'gold' && item.name !== '非洲之心');
+        const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
         return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
     } else {
         // 红色物品（不含非洲之心）
-        const redItems = smallContainerItems.filter(item => item.color === 'red' && item.name !== '非洲之心');
+        const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '非洲之心');
         return {...redItems[Math.floor(Math.random() * redItems.length)]};
     }
 }
@@ -1202,8 +1397,17 @@ async function performBatchDraw(containerType, totalDraws) {
                 currentContainerType = containerType;
                 unlockModal.classList.remove('hidden');
                 
-                rewardTitle.textContent = containerType === 'large' ? '大保险容器物品清单' : '小保险容器物品清单';
-                gridSize = 4; // 大保险和小保险均为4x4
+                // 设置标题和网格大小
+                if (containerType === 'large') {
+                    rewardTitle.textContent = '大保险容器物品清单';
+                    gridSize = 4;
+                } else if (containerType === 'small') {
+                    rewardTitle.textContent = '小保险容器物品清单';
+                    gridSize = 4;
+                } else if (containerType === 'crocodile') {
+                    rewardTitle.textContent = '鳄鱼巢穴物品清单';
+                    gridSize = 5;
+                }
                 
                 generateGridLines();
                 unlockScreen.classList.add('hidden');
@@ -1222,21 +1426,35 @@ async function performBatchDraw(containerType, totalDraws) {
 
 function drawContainerItems(containerType) {
     let selectedItems = [];
-    currentContainerType = containerType;
+    const itemPool = containerType === 'large' ? largeContainerItems : 
+                    containerType === 'small' ? smallContainerItems : 
+                    crocodileNestItems;
     
-    // 选择正确的物品池
-    const itemPool = containerType === 'large' ? largeContainerItems : smallContainerItems;
-    
-    // 抽取非洲之心的特殊逻辑 (0.1%概率)
-    const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
-    if (Math.random() < 0.001) {
-        selectedItems.push({...heartOfAfrica});
-        return selectedItems;
-    }
-    
-    if (containerType === 'large') {
+    if (containerType === 'crocodile') {
+        // 鳄鱼巢穴抽取逻辑
+        const itemCount = getRandomItemCount();
+        
+        // 复苏呼吸机特殊概率逻辑（与非洲之心相同，0.1%）
+        const resuscitationVentilator = itemPool.find(item => item.name === '复苏呼吸机');
+        if (resuscitationVentilator && Math.random() < 0.001) {
+            selectedItems.push({...resuscitationVentilator});
+            return selectedItems;
+        }
+        
+        // 按品质抽取物品
+        for (let i = 0; i < itemCount; i++) {
+            selectedItems.push(drawCrocodileNestItem(itemPool));
+        }
+    } else if (containerType === 'large') {
         // 大保险抽取逻辑
         let itemCount = getRandomItemCount();
+        
+        // 抽取非洲之心的特殊逻辑 (0.1%概率)
+        const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        if (heartOfAfrica && Math.random() < 0.001) {
+            selectedItems.push({...heartOfAfrica});
+            return selectedItems;
+        }
         
         // 按品质抽取物品
         for (let i = 0; i < itemCount; i++) {
@@ -1264,9 +1482,16 @@ function drawContainerItems(containerType) {
         // 小保险抽取逻辑
         const itemCount = getRandomItemCount();
         
+        // 抽取非洲之心的特殊逻辑 (0.1%概率)
+        const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        if (heartOfAfrica && Math.random() < 0.001) {
+            selectedItems.push({...heartOfAfrica});
+            return selectedItems;
+        }
+        
         // 按品质抽取物品
         for (let i = 0; i < itemCount; i++) {
-            selectedItems.push(drawSmallContainerItem());
+            selectedItems.push(drawSmallContainerItem(itemPool));
         }
     }
     
@@ -1280,7 +1505,12 @@ function showBatchResults(containerType, totalDraws, results, stopReason, target
     }
     
     // 更新结果信息
-    resultInsuranceType.textContent = containerType === 'large' ? '大保险' : '小保险';
+    let containerName = '未知容器';
+    if (containerType === 'large') containerName = '大保险';
+    else if (containerType === 'small') containerName = '小保险';
+    else if (containerType === 'crocodile') containerName = '鳄鱼巢穴';
+    
+    resultInsuranceType.textContent = containerName;
     resultTotalDraws.textContent = totalDraws;
     
     // 显示停止原因
@@ -1432,4 +1662,3 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
-    
