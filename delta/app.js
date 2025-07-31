@@ -262,10 +262,10 @@ function getRandomItemCount() {
     } else if (currentContainerType === 'crocodile') {
         // 鳄鱼巢穴物品数量概率分布
         const random = Math.random();
-        if (random < 0.2) return 1;
-        if (random < 0.5) return 2;
-        if (random < 0.8) return 3;
-        if (random < 0.95) return 4;
+        if (random < 0.1) return 1;
+        if (random < 0.2) return 2;
+        if (random < 0.4) return 3;
+        if (random < 0.6) return 4;
         return 5;
     }
     
@@ -439,6 +439,28 @@ function openSmallContainerDirectly() {
     generateRewards();
 }
 
+// 新增：直接打开鳄鱼巢穴的函数
+function openCrocodileNestDirectly() {
+    if (isProcessingRewards) {
+        showToast('请等待当前物品加载完成');
+        return;
+    }
+    
+    currentContainerType = 'crocodile';
+    unlockModal.classList.remove('hidden');
+    
+    rewardTitle.textContent = '鳄鱼巢穴物品清单';
+    
+    gridSize = 5; // 鳄鱼巢穴使用5x5网格
+    
+    generateGridLines();
+    
+    unlockScreen.classList.add('hidden');
+    rewardScreen.classList.remove('hidden');
+    
+    generateRewards();
+}
+
 // 事件监听器
 largeContainer.addEventListener('click', () => {
     openUnlockModal('large');
@@ -448,9 +470,9 @@ smallContainer.addEventListener('click', () => {
     openSmallContainerDirectly();
 });
 
-// 鳄鱼巢穴容器点击事件
+// 鳄鱼巢穴容器点击事件 - 修改为直接打开
 crocodileNest.addEventListener('click', () => {
-    openUnlockModal('crocodile');
+    openCrocodileNestDirectly();
 });
 
 closeBtn.addEventListener('click', () => {
