@@ -117,25 +117,40 @@ const colorDelays = {
 };
 
 // 初始化函数 - 从不同JSON加载各容器数据
+// 修改initApp函数中的数据加载部分
 async function initApp() {
     showLoading();
     try {
-        // 并行加载所有容器的物品数据
-        const [largeData, smallData, crocodileData] = await Promise.all([
-            fetch('data/large-safe-items.json'),
-            fetch('data/small-safe-items.json'),
-            fetch('data/crocodile-nest-items.json')
-        ]);
-        
-        // 验证响应
-        if (!largeData.ok) throw new Error('大保险箱物品数据加载失败');
-        if (!smallData.ok) throw new Error('小保险箱物品数据加载失败');
-        if (!crocodileData.ok) throw new Error('鳄鱼巢穴物品数据加载失败');
-        
-        // 解析JSON数据
-        appState.largeContainerItems = await largeData.json();
-        appState.smallContainerItems = await smallData.json();
-        appState.crocodileNestItems = await crocodileData.json();
+        // 先检查本地是否有测试数据，用于开发调试
+        // 生产环境可以移除这部分
+        if (window.testData) {
+            appState.largeContainerItems = window.testData.large || [];
+            appState.smallContainerItems = window.testData.small || [];
+            appState.crocodileNestItems = window.testData.crocodile || [];
+        } else {
+            // 并行加载所有容器的物品数据
+            // 使用相对路径或完整URL
+            const [largeData, smallData, crocodileData] = await Promise.all([
+                fetch('data/large-safe-items.json').catch(err => {
+                    console.error('大保险箱数据加载失败:', err);
+                    // 提供备用数据
+                    return {ok: true, json: () => []};
+                }),
+                fetch('data/small-safe-items.json').catch(err => {
+                    console.error('小保险箱数据加载失败:', err);
+                    return {ok: true, json: () => []};
+                }),
+                fetch('data/crocodile-nest-items.json').catch(err => {
+                    console.error('鳄鱼巢穴数据加载失败:', err);
+                    return {ok: true, json: () => []};
+                })
+            ]);
+            
+            // 验证响应并解析JSON数据
+            appState.largeContainerItems = largeData.ok ? await largeData.json() : [];
+            appState.smallContainerItems = smallData.ok ? await smallData.json() : [];
+            appState.crocodileNestItems = crocodileData.ok ? await crocodileData.json() : [];
+        }
         
         // 合并所有物品用于记录和筛选功能
         appState.allItems = [
@@ -144,13 +159,13 @@ async function initApp() {
             ...appState.crocodileNestItems
         ];
         
-        // 去重处理（如果有重复物品）
+        // 去重处理
         appState.allItems = [...new Map(appState.allItems.map(item => [item.name, item])).values()];
         
         // 更新加载状态
-        appState.dataLoaded.large = true;
-        appState.dataLoaded.small = true;
-        appState.dataLoaded.crocodile = true;
+        appState.dataLoaded.large = appState.largeContainerItems.length > 0;
+        appState.dataLoaded.small = appState.smallContainerItems.length > 0;
+        appState.dataLoaded.crocodile = appState.crocodileNestItems.length > 0;
         
         // 完成初始化
         initScrollers();
@@ -166,10 +181,26 @@ async function initApp() {
     } catch (error) {
         console.error('初始化失败:', error);
         showToast(`初始化失败: ${error.message}`);
+        // 即使出错也确保隐藏加载状态
         hideLoading();
+        
+        // 提供基本的降级体验
+        initScrollers();
+        renderItemRecords();
+        initBatchDrawSettings();
     }
 }
 
+// 添加一个辅助函数，检查数据文件是否存在
+async function checkDataFileExists(url) {
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
+    
 // 核心功能函数
 function getRandomItemCount() {
     if (appState.currentContainerType === 'small') {
