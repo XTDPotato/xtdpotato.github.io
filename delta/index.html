@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>容器物品抽取系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="app-container">
+        <!-- 导航栏 -->
+        <nav class="main-nav">
+            <div class="nav-item active" data-view="draw-view">
+                <i class="fa fa-gift"></i>
+                <span>物品抽取</span>
+            </div>
+            <div class="nav-item" data-view="records-view">
+                <i class="fa fa-history"></i>
+                <span>抽取记录</span>
+            </div>
+            <div class="nav-item" data-view="batch-view">
+                <i class="fa fa-repeat"></i>
+                <span>一键抽取</span>
+            </div>
+        </nav>
+
+        <!-- 视图区域 -->
+        <div class="view-container">
+            <!-- 物品抽取视图 -->
+            <div id="draw-view" class="view-section active">
+                <h2 class="section-title">选择容器类型</h2>
+                <div class="container-list">
+                    <div id="smallContainer" class="container-item" data-type="small">
+                        <div class="container-icon">
+                            <i class="fa fa-lock"></i>
+                        </div>
+                        <div class="container-name">小保险容器</div>
+                    </div>
+                    <div id="largeContainer" class="container-item" data-type="large">
+                        <div class="container-icon">
+                            <i class="fa fa-shield"></i>
+                        </div>
+                        <div class="container-name">大保险容器</div>
+                    </div>
+                    <div id="crocodileNest" class="container-item" data-type="crocodile">
+                        <div class="container-icon">
+                            <i class="fa fa-paw"></i>
+                        </div>
+                        <div class="container-name">鳄鱼巢穴</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 抽取记录视图 -->
+            <div id="records-view" class="view-section hidden">
+                <h2 class="section-title">物品抽取记录</h2>
+                <div class="records-header">
+                    <div class="total-items">
+                        总物品数: <span id="totalItemsCount">0</span>
+                    </div>
+                    <button id="clearRecordsBtn" class="clear-records-btn">
+                        <i class="fa fa-trash-o"></i> 清空记录
+                    </button>
+                </div>
+                <div id="recordsContainer" class="records-container">
+                    <!-- 记录将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 一键抽取视图 -->
+            <div id="batch-view" class="view-section hidden">
+                <h2 class="section-title">一键批量抽取</h2>
+                <div class="batch-settings">
+                    <div class="setting-group">
+                        <label class="setting-label">选择容器类型:</label>
+                        <div id="containerTypeList" class="container-type-list">
+                            <div class="container-item active" data-type="large">
+                                <div class="container-icon small-icon">
+                                    <i class="fa fa-shield"></i>
+                                </div>
+                                <div class="container-name small-name">大保险容器</div>
+                            </div>
+                            <div class="container-item" data-type="small">
+                                <div class="container-icon small-icon">
+                                    <i class="fa fa-lock"></i>
+                                </div>
+                                <div class="container-name small-name">小保险容器</div>
+                            </div>
+                            <div class="container-item" data-type="crocodile">
+                                <div class="container-icon small-icon">
+                                    <i class="fa fa-paw"></i>
+                                </div>
+                                <div class="container-name small-name">鳄鱼巢穴</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">抽取次数:</label>
+                        <div class="draw-count-control">
+                            <input type="number" id="drawCount" min="1" max="10000" value="100">
+                            <button id="maxCountBtn" class="max-count-btn">最大</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">停止条件:</label>
+                        <div class="stop-condition">
+                            <div class="search-box">
+                                <i class="fa fa-search"></i>
+                                <input type="text" id="stopConditionSearch" placeholder="搜索物品...">
+                            </div>
+                            <div class="stop-options">
+                                <label class="option-label">
+                                    <input type="checkbox" id="stopOnAny"> 抽中任何选中物品即停止
+                                </label>
+                                <label class="option-label">
+                                    <input type="checkbox" id="slideSelectToggle"> 启用滑动多选
+                                </label>
+                            </div>
+                            <div class="button-group">
+                                <button id="deselectAllBtn" class="deselect-btn">取消全选</button>
+                            </div>
+                            <div id="stopConditionContainer" class="stop-condition-items">
+                                <!-- 物品列表将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="startBatchBtn" class="start-batch-btn">
+                        <i class="fa fa-play mr-2"></i> 开始一键抽取
+                    </button>
+
+                    <div id="batchProgressContainer" class="batch-progress hidden">
+                        <div class="progress-label">抽取进度:</div>
+                        <div class="progress-bar-container">
+                            <div id="batchProgressBar" class="batch-progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 解锁模态框 -->
+    <div id="unlockModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content max-w-xl mx-auto bg-dark-800 rounded-lg shadow-xl overflow-hidden">
+            <div class="modal-header">
+                <h3 id="rewardTitle" class="modal-title">容器物品清单</h3>
+                <button id="closeBtn" class="close-btn">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 解锁界面 -->
+                <div id="unlockScreen" class="unlock-screen">
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <div id="progressText" class="progress-text">0%</div>
+                        </div>
+                        <div class="progress-bar-outer">
+                            <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="scrollArea" class="scroll-area">
+                        <div class="scroll-cols">
+                            <div class="scroll-col" data-col="0" data-chars="0,1,2,3,4,5,6,7,8,9" data-target="3" data-next="1">
+                                <div id="scroll0" class="scroll-element"></div>
+                            </div>
+                            <div class="scroll-col" data-col="1" data-chars="A,B,C,D,E,F,G,H,J,K" data-target="D" data-next="2">
+                                <div id="scroll1" class="scroll-element"></div>
+                            </div>
+                            <div class="scroll-col" data-col="2" data-chars="A,B,C,D,E,F,G,H,J,K" data-target="F" data-next="3">
+                                <div id="scroll2" class="scroll-element"></div>
+                            </div>
+                            <div class="scroll-col" data-col="3" data-chars="0,1,2,3,4,5,6,7,8,9" data-target="7" data-next="4">
+                                <div id="scroll3" class="scroll-element"></div>
+                            </div>
+                            <div class="scroll-col" data-col="4" data-chars="X,Y,Z,P,W,Q,R,S,T,V" data-target="Z" data-next="5">
+                                <div id="scroll4" class="scroll-element"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="buttonContainer" class="button-container flex justify-center gap-4">
+                        <button class="select-button">
+                            <span>选定密码</span>
+                        </button>
+                        <button id="directUnlockBtn" class="direct-unlock-btn">
+                            <span>直接解锁</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 奖励展示界面 -->
+                <div id="rewardScreen" class="reward-screen hidden">
+                    <div id="gridContainer" class="grid-container relative">
+                        <!-- 物品将通过JavaScript动态生成 -->
+                        <div id="gridLines" class="grid-lines absolute inset-0 pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 物品详情模态框 -->
+    <div id="itemDetailModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content max-w-md mx-auto bg-dark-800 rounded-lg shadow-xl overflow-hidden">
+            <div class="modal-header">
+                <h3 class="modal-title">物品详情</h3>
+                <button id="closeDetailBtn" class="close-btn">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="item-detail">
+                    <div id="detailIconContainer" class="item-icon-large"></div>
+                    <h4 id="detailName" class="item-name-large"></h4>
+                    <div id="detailSize" class="item-size"></div>
+                    <div id="detailDescription" class="item-description"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量抽取结果模态框 -->
+    <div id="batchResultModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content max-w-2xl mx-auto bg-dark-800 rounded-lg shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="modal-header">
+                <h3 class="modal-title">批量抽取结果</h3>
+                <button id="closeBatchResultBtn" class="close-btn">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body flex-grow overflow-y-auto">
+                <div class="result-summary">
+                    <div class="result-item">
+                        <span class="label">容器类型:</span>
+                        <span id="resultInsuranceType" class="value">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">总抽取次数:</span>
+                        <span id="resultTotalDraws" class="value">-</span>
+                    </div>
+                    <div id="resultStopReason" class="result-item hidden">
+                        <span class="label">停止原因:</span>
+                        <span id="resultStopReasonText" class="value">-</span>
+                    </div>
+                    <div id="resultTargetItemCount" class="result-item hidden">
+                        <span class="label">目标物品抽中次数:</span>
+                        <span class="value"><span>-</span></span>
+                    </div>
+                </div>
+                
+                <div class="result-items-title">物品统计:</div>
+                <div id="batchResultItems" class="batch-result-items">
+                    <!-- 结果将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeBatchBtn" class="modal-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 加载指示器 -->
+    <div id="loadingIndicator" class="loading-indicator hidden">
+        <div class="spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+    
