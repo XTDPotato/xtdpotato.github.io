@@ -52,8 +52,9 @@ const detailName = document.getElementById('detailName');
 const detailSize = document.getElementById('detailSize');
 const detailDescription = document.getElementById('detailDescription');
 const toast = document.getElementById('toast');
+const loadingIndicator = document.getElementById('loadingIndicator');
 
-const scrollCols = document.querySelectorAll('.scroll-container');
+const scrollCols = document.querySelectorAll('.scroll-col');;
 const scrollElements = [
     document.getElementById('scroll0'),
     document.getElementById('scroll1'),
@@ -62,218 +63,158 @@ const scrollElements = [
     document.getElementById('scroll4')
 ];
 
-let itemRecords = JSON.parse(localStorage.getItem('deltaContainerRecords')) || {};
-let currentRewardItems = [];
-let currentContainerType = 'large';
-let isBatchDrawing = false;
-let selectedStopItems = new Set();
-let isProcessingRewards = false;
-let lastDrawItems = []; // 存储最后一次抽取的物品
-let isSlideSelecting = false;
-let lastSelectedItem = null;
+// 状态管理变量
+let appState = {
+    itemRecords: JSON.parse(localStorage.getItem('deltaContainerRecords')) || {},
+    currentRewardItems: [],
+    currentContainerType: 'large',
+    isBatchDrawing: false,
+    selectedStopItems: new Set(),
+    isProcessingRewards: false,
+    lastDrawItems: [],
+    isSlideSelecting: false,
+    lastSelectedItem: null,
+    currentColIndex: 0,
+    progress: 0,
+    progressTimer: null,
+    unlockedCols: 0,
+    isPaused: false,
+    rewardsShown: false,
+    scrollAnimations: [],
+    lockedColumns: [],
+    randomOffsets: [],
+    targetPositions: [],
+    visibleCharsCount: 5,
+    middlePositionIndex: 2,
+    charHeight: 32,
+    selectionTolerance: 35,
+    errorPauseTimer: null,
+    redItemCount: 0,
+    gridSize: 4, // 默认4x4
+    cellPercentage: 100 / 4,
+    itemSpacing: 2,
+    // 物品数据存储 - 按容器类型分离
+    largeContainerItems: [],
+    smallContainerItems: [],
+    crocodileNestItems: [],
+    // 所有物品的集合（用于记录和筛选）
+    allItems: [],
+    dataLoaded: {
+        large: false,
+        small: false,
+        crocodile: false
+    }
+};
 
-let currentColIndex = 0;
-let progress = 0;
-let progressTimer;
-let unlockedCols = 0;
-let isPaused = false;
-let rewardsShown = false;
-let scrollAnimations = [];
-let lockedColumns = [];
-let randomOffsets = [];
-let targetPositions = [];
-const visibleCharsCount = 5;
-const middlePositionIndex = 2;
-const charHeight = 32;
-const selectionTolerance = 35;
-let errorPauseTimer = null;
-let redItemCount = 0;
-let gridSize = 4; // 默认4x4
-const cellPercentage = 100 / gridSize;
-const itemSpacing = 2;
+// 颜色延迟配置
+const colorDelays = {
+    'default': 0.5,
+    'green': 1,
+    'blue': 1.5,
+    'purple': 2,
+    'gold': 2.5,
+    'red': 3
+};
 
-// 物品数据 - 使用图片路径代替图标
-const items = [
-    // 原有物品
-    { name: '古怪的海盗银币', size: [1, 1], color: 'blue', image: 'delta/古怪的海盗银币.png', baseWeight: 1, description: '古老的阿萨拉海盗的银币，带有古怪气息。' },
-    { name: '初级子弹生产零件', size: [1, 2], color: 'blue', image: 'delta/初级子弹生产零件.png', baseWeight: 1, description: '工具材料，一套精密的组件，用于制造可靠而高效的初级弹药。' },
-    { name: '古老的海盗望远镜', size: [1, 2], color: 'blue', image: 'delta/古老的海盗望远镜.png', baseWeight: 1, description: '颇具年代感的望远镜。根据阿萨拉地方志记载，这种望远镜曾被阿萨拉卫队的祖先广泛使用。' },
-    { name: '“起舞的女郎”挂饰', size: [1, 2], color: 'blue', image: 'delta/“起舞的女郎”挂饰.png', baseWeight: 1, description: '精致迷人的饰品，以优雅的舞姿和别致的设计捕捉人们的目光，为佩戴者带来独特的魅力与气质。' },
-    { name: '海盗弯刀', size: [1, 1], color: 'purple', image: 'delta/海盗弯刀.png', baseWeight: 1, description: '海盗常用的近战武器' },
-    { name: '后妃耳环', size: [1, 1], color: 'purple', image: 'delta/后妃耳环.png', baseWeight: 1, description: '古代后妃佩戴的珍贵饰品' },
-    { name: '图腾箭矢', size: [1, 1], color: 'purple', image: 'delta/图腾箭矢.png', baseWeight: 1, description: '带有部落图腾的特殊箭矢' },
-    { name: '阿萨拉风情水壶', size: [1, 2], color: 'purple', image: 'delta/阿萨拉风情水壶.png', baseWeight: 1, description: '具有阿萨拉地区特色的水壶' },
-    { name: '阿萨拉特色酒壶', size: [1, 2], color: 'purple', image: 'delta/阿萨拉特色酒壶.png', baseWeight: 1, description: '阿萨拉地区传统工艺制作的酒壶' },
-    { name: '阿萨拉特色提灯', size: [1, 2], color: 'purple', image: 'delta/阿萨拉特色提灯.png', baseWeight: 1, description: '阿萨拉地区传统工艺制作的提灯' },
-    { name: '黄金饰章', size: [1, 2], color: 'purple', image: 'delta/黄金饰章.png', baseWeight: 1, description: '带有黄金装饰的身份标识' },
-    { name: '犄角墙饰', size: [2, 1], color: 'purple', image: 'delta/犄角墙饰.png', baseWeight: 1, description: '用动物犄角制作的墙饰' },
-    { name: '马赛克灯台', size: [2, 3], color: 'purple', image: 'delta/马赛克灯台.png', baseWeight: 1, description: '带有马赛克装饰的灯台' },
-    { name: '仪典匕首', size: [3, 2], color: 'purple', image: 'delta/仪典匕首.png', baseWeight: 1, description: '用于仪式的特殊匕首' },
-    { name: '阿萨拉特色酒杯', size: [1, 1], color: 'gold', image: 'delta/阿萨拉特色酒杯.png', baseWeight: 1, description: '阿萨拉地区制作的精美酒杯' },
-    { name: '亮闪闪的海盗金币', size: [1, 1], color: 'gold', image: 'delta/亮闪闪的海盗金币.png', baseWeight: 1, description: '海盗藏匿的黄金货币' },
-    { name: '功绩勋章', size: [1, 1], color: 'gold', image: 'delta/功绩勋章.png', baseWeight: 1, description: '表彰杰出功绩的勋章' },
-    { name: '发条八音盒', size: [1, 1], color: 'gold', image: 'delta/发条八音盒.png', baseWeight: 1, description: '能演奏优美旋律的机械装置' },
-    { name: '荷美尔陶俑', size: [1, 2], color: 'gold', image: 'delta/荷美尔陶俑.png', baseWeight: 1, description: '古代荷美尔文明的陶制人偶' },
-    { name: '珠宝头冠', size: [3, 1], color: 'gold', image: 'delta/珠宝头冠.png', baseWeight: 1, description: '镶嵌宝石的华丽头冠' },
-    { name: '金枝桂冠', size: [2, 1], color: 'gold', image: 'delta/金枝桂冠.png', baseWeight: 1, description: '黄金打造的象征荣誉的桂冠' },
-    { name: '座钟', size: [2, 2], color: 'gold', image: 'delta/座钟.png', baseWeight: 1, description: '制作精美的台式时钟' },
-    { name: '本地特色首饰', size: [3, 2], color: 'gold', image: 'delta/本地特色首饰.png', baseWeight: 1, description: '当地工艺制作的精美首饰' },
-    { name: '名贵机械表', size: [1, 1], color: 'red', image: 'delta/名贵机械表.png', baseWeight: 1, description: '价值不菲的精密机械手表' },
-    { name: '塞伊德的怀表', size: [1, 1], color: 'red', image: 'delta/塞伊德的怀表.png', baseWeight: 1, description: '塞伊德曾经拥有的怀表' },
-    { name: '非洲之心', size: [1, 1], color: 'red', image: 'delta/非洲之心.png', rarity: 'rare', baseWeight: 1, description: '极其稀有的非洲之心' },
-    { name: '万足金条', size: [1, 2], color: 'red', image: 'delta/万足金条.png', baseWeight: 1, description: '纯度极高的黄金条' },
-    { name: '棘龙爪化石', size: [2, 1], color: 'red', image: 'delta/棘龙爪化石.png', baseWeight: 1, description: '远古棘龙的爪化石，极具研究价值' },
-    { name: '黄金瞪羚', size: [2, 2], color: 'red', image: 'delta/黄金瞪羚.png', baseWeight: 1, description: '黄金打造的瞪羚雕像' },
-    { name: '克劳迪乌斯半身像', size: [2, 3], color: 'red', image: 'delta/克劳迪乌斯半身像.png', baseWeight: 1, description: '克劳迪乌斯的半身雕像' },
-    { name: '雷斯的留声机', size: [2, 3], color: 'red', image: 'delta/雷斯的留声机.png', baseWeight: 1, description: '雷斯曾经使用的留声机' },
-    { name: '步战车模型', size: [3, 2], color: 'red', image: 'delta/步战车模型.png', baseWeight: 1, description: '精细制作的步战车模型' },
-    { name: '军用雷达', size: [3, 3], color: 'red', image: 'delta/军用雷达.png', baseWeight: 1, description: '军用级别的雷达设备' },
-    { name: '滑膛枪展品', size: [4, 1], color: 'red', image: 'delta/滑膛枪展品.png', baseWeight: 1, description: '滑膛枪展品' },
-    { name: '军用信息终端', size: [3, 2], color: 'red', image: 'delta/军用信息终端.png', baseWeight: 1, description: '军用规格的信息处理终端' },
-    { name: '藏秘筒', size: [1, 1], color: 'gold', image: 'delta/藏秘筒.png', baseWeight: 1, description: '用于藏匿秘密信息的特殊容器' },
+// 初始化函数 - 从不同JSON加载各容器数据
+// 修改initApp函数中的数据加载部分
+async function initApp() {
+    showLoading();
+    try {
+        // 先检查本地是否有测试数据，用于开发调试
+        // 生产环境可以移除这部分
+        if (window.testData) {
+            appState.largeContainerItems = window.testData.large || [];
+            appState.smallContainerItems = window.testData.small || [];
+            appState.crocodileNestItems = window.testData.crocodile || [];
+        } else {
+            // 并行加载所有容器的物品数据
+            // 使用相对路径或完整URL
+            const [largeData, smallData, crocodileData] = await Promise.all([
+                fetch('data/large-safe-items.json').catch(err => {
+                    console.error('大保险箱数据加载失败:', err);
+                    // 提供备用数据
+                    return {ok: true, json: () => []};
+                }),
+                fetch('data/small-safe-items.json').catch(err => {
+                    console.error('小保险箱数据加载失败:', err);
+                    return {ok: true, json: () => []};
+                }),
+                fetch('data/crocodile-nest-items.json').catch(err => {
+                    console.error('鳄鱼巢穴数据加载失败:', err);
+                    return {ok: true, json: () => []};
+                })
+            ]);
+            
+            // 验证响应并解析JSON数据
+            appState.largeContainerItems = largeData.ok ? await largeData.json() : [];
+            appState.smallContainerItems = smallData.ok ? await smallData.json() : [];
+            appState.crocodileNestItems = crocodileData.ok ? await crocodileData.json() : [];
+        }
+        
+        // 合并所有物品用于记录和筛选功能
+        appState.allItems = [
+            ...appState.largeContainerItems,
+            ...appState.smallContainerItems,
+            ...appState.crocodileNestItems
+        ];
+        
+        // 去重处理
+        appState.allItems = [...new Map(appState.allItems.map(item => [item.name, item])).values()];
+        
+        // 更新加载状态
+        appState.dataLoaded.large = appState.largeContainerItems.length > 0;
+        appState.dataLoaded.small = appState.smallContainerItems.length > 0;
+        appState.dataLoaded.crocodile = appState.crocodileNestItems.length > 0;
+        
+        // 完成初始化
+        initScrollers();
+        renderItemRecords();
+        initBatchDrawSettings();
+        
+        // 初始化显示第一个视图
+        viewSections[0].classList.add('active');
+        navItems[0].classList.add('active');
+        
+        hideLoading();
+        showToast('数据加载完成');
+    } catch (error) {
+        console.error('初始化失败:', error);
+        showToast(`初始化失败: ${error.message}`);
+        // 即使出错也确保隐藏加载状态
+        hideLoading();
+        
+        // 提供基本的降级体验
+        initScrollers();
+        renderItemRecords();
+        initBatchDrawSettings();
+    }
+}
+
+// 添加一个辅助函数，检查数据文件是否存在
+async function checkDataFileExists(url) {
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
     
-    // 鳄鱼巢穴新增物品
-    // 红色物品
-    { name: "复苏呼吸机", size: [3, 3], color: "red", image: "delta/复苏呼吸机.png", rarity: "legendary", description: "高级生命支持设备，可在紧急情况下维持患者呼吸功能" },
-    { name: "主战坦克模型", size: [3, 3], color: "red", image: "delta/主战坦克模型.png", description: "精细制作的主战坦克比例模型，具有收藏价值" },
-    { name: "步战车模型", size: [3, 2], color: "red", image: "delta/步战车模型.png", description: "步战车的精致模型，细节还原度高" },
-    { name: "量子存储", size: [1, 1], color: "red", image: "delta/量子存储.png", description: "采用量子技术的先进存储设备，容量巨大" },
-    { name: "塞伊德的怀表", size: [1, 1], color: "red", image: "delta/塞伊德的怀表.png", description: "塞伊德的个人怀表，具有历史价值" },
-    { name: "名贵机械表", size: [1, 1], color: "red", image: "delta/名贵机械表.png", description: "高端机械表，工艺精湛，价值不菲" },
-    { name: "\"钻石\"鱼子酱", size: [1, 1], color: "red", image: "delta/\"钻石\"鱼子酱.png", description: "被称为\"钻石\"的顶级鱼子酱，极其稀有昂贵" },
-    { name: "奥莉薇娅香槟", size: [1, 2], color: "red", image: "delta/奥莉薇娅香槟.png", description: "顶级奥莉薇娅品牌香槟，口感醇厚" },
-
-    // 金色物品
-    { name: "资料：设计图纸", size: [1, 1], color: "gold", image: "delta/资料：设计图纸.png", description: "包含重要设计信息的资料图纸" },
-    { name: "纯金打火机", size: [1, 1], color: "gold", image: "delta/纯金打火机.png", description: "纯金打造的打火机，工艺精美" },
-    { name: "阿萨拉特色酒杯", size: [1, 1], color: "gold", image: "delta/阿萨拉特色酒杯.png", description: "阿萨拉地区特色工艺酒杯" },
-    { name: "体内除颤器", size: [1, 1], color: "gold", image: "delta/体内除颤器.png", description: "植入式体内除颤设备，可挽救心脏骤停患者" },
-    { name: "燃料电池", size: [2, 4], color: "gold", image: "delta/燃料电池.png", description: "高效燃料电池，提供持久电力" },
-    { name: "血氧仪", size: [1, 1], color: "gold", image: "delta/血氧仪.png", description: "检测血氧饱和度的便携式设备" },
-    { name: "海盗金币", size: [1, 1], color: "gold", image: "delta/海盗金币.png", description: "古代海盗遗留的金币，具有收藏价值" },
-    { name: "手机", size: [1, 1], color: "gold", image: "delta/手机.png", description: "智能手机，功能齐全" },
-    { name: "卫星电话", size: [1, 2], color: "gold", image: "delta/卫星电话.png", description: "可在全球范围内通讯的卫星电话" },
-    { name: "高速固态硬盘", size: [1, 1], color: "gold", image: "delta/高速固态硬盘.png", description: "高速读写的固态硬盘" },
-    { name: "数码相机", size: [1, 1], color: "gold", image: "delta/数码相机.png", description: "高像素数码相机，拍摄效果出色" },
-    { name: "CPU", size: [1, 1], color: "gold", image: "delta/CPU.png", description: "高性能中央处理器" },
-    { name: "可编程处理器", size: [1, 1], color: "gold", image: "delta/可编程处理器.png", description: "可灵活编程的处理器，适用于多种场景" },
-    { name: "咖啡", size: [1, 2], color: "gold", image: "delta/咖啡.png", description: "高品质咖啡豆，口感浓郁" },
-    { name: "\"蓝宝石\"龙舌兰", size: [1, 2], color: "gold", image: "delta/\"蓝宝石\"龙舌兰.png", description: "名为\"蓝宝石\"的顶级龙舌兰酒" },
-    { name: "心脏支架", size: [1, 2], color: "gold", image: "delta/心脏支架.png", description: "用于心脏手术的医疗支架" },
-    { name: "军用望远镜", size: [2, 2], color: "gold", image: "delta/军用望远镜.png", description: "高倍率军用望远镜，视野清晰" },
-    { name: "军用炸药", size: [2, 2], color: "gold", image: "delta/军用炸药.png", description: "军用级炸药，威力巨大" },
-
-    // 紫色物品
-    { name: "能量凝胶", size: [1, 1], color: "purple", image: "delta/能量凝胶.png", description: "提供快速能量补充的凝胶" },
-    { name: "信号棒", size: [1, 1], color: "purple", image: "delta/信号棒.png", description: "发出强光信号的应急设备" },
-    { name: "间谍笔", size: [1, 1], color: "purple", image: "delta/间谍笔.png", description: "伪装成钢笔的间谍设备" },
-    { name: "GS5手柄", size: [1, 1], color: "purple", image: "delta/GS5手柄.png", description: "GS5游戏机专用手柄" },
-    { name: "电子干扰器", size: [1, 1], color: "purple", image: "delta/电子干扰器.png", description: "便携式电子信号干扰设备" },
-    { name: "柠檬茶", size: [1, 1], color: "purple", image: "delta/柠檬茶.png", description: "清爽的柠檬茶饮料" },
-    { name: "资料：军事情报", size: [1, 1], color: "purple", image: "delta/资料：军事情报.png", description: "包含军事情报的机密资料" },
-    { name: "植物样本", size: [1, 1], color: "purple", image: "delta/植物样本.png", description: "未知植物的样本，具有研究价值" },
-    { name: "鳄鱼蛋", size: [1, 1], color: "purple", image: "delta/鳄鱼蛋.png", description: "新鲜的鳄鱼蛋，外壳坚硬" },
-    { name: "鳄鱼血样", size: [1, 1], color: "purple", image: "delta/鳄鱼血样.png", description: "鳄鱼血液样本，用于研究" },
-    { name: "后妃耳环", size: [1, 1], color: "purple", image: "delta/后妃耳环.png", description: "古代后妃佩戴的珍贵耳环" },
-    { name: "固态硬盘", size: [1, 1], color: "purple", image: "delta/固态硬盘.png", description: "存储数据的固态存储设备" },
-    { name: "内存条", size: [1, 1], color: "purple", image: "delta/内存条.png", description: "计算机内存模块" },
-    { name: "海盗弯刀", size: [1, 1], color: "purple", image: "delta/海盗弯刀.png", description: "海盗使用的弯刀" },
-    { name: "人工膝关节", size: [1, 2], color: "purple", image: "delta/人工膝关节.png", description: "用于替换手术的人工膝关节" },
-    { name: "燃气喷灯", size: [1, 2], color: "purple", image: "delta/燃气喷灯.png", description: "用于加热或焊接的燃气喷灯" },
-    { name: "粉碎钳", size: [1, 2], color: "purple", image: "delta/粉碎钳.png", description: "用于破拆的重型钳子" },
-    { name: "阿萨拉卫队机密档案", size: [1, 2], color: "purple", image: "delta/阿萨拉卫队机密档案.png", description: "阿萨拉卫队的机密文件" },
-    { name: "便携生存套件", size: [1, 2], color: "purple", image: "delta/便携生存套件.png", description: "包含多种生存工具的便携套件" },
-    { name: "HIFI声卡", size: [2, 1], color: "purple", image: "delta/HIFI声卡.png", description: "高保真音频处理卡" },
-    { name: "广角镜头", size: [2, 1], color: "purple", image: "delta/广角镜头.png", description: "相机用广角镜头" },
-    { name: "专业声卡", size: [2, 1], color: "purple", image: "delta/专业声卡.png", description: "专业级音频处理设备" },
-    { name: "收音机", size: [2, 1], color: "purple", image: "delta/收音机.png", description: "接收广播信号的设备" },
-    { name: "军用露营灯", size: [1, 3], color: "purple", image: "delta/军用露营灯.png", description: "军用级别的露营照明设备" },
-
-    // 蓝色物品
-    { name: "继电器", size: [1, 1], color: "blue", image: "delta/继电器.png", description: "用于电路控制的继电器" },
-    { name: "摄像头", size: [1, 1], color: "blue", image: "delta/摄像头.png", description: "用于拍摄的视频设备" },
-    { name: "军用电源", size: [1, 1], color: "blue", image: "delta/军用电源.png", description: "军用规格的电源设备" },
-    { name: "音频播放器", size: [1, 1], color: "blue", image: "delta/音频播放器.png", description: "播放音频文件的设备" },
-    { name: "多用途电池", size: [1, 1], color: "blue", image: "delta/多用途电池.png", description: "可用于多种设备的电池" },
-    { name: "高精数卡尺", size: [1, 1], color: "blue", image: "delta/高精数卡尺.png", description: "高精度测量工具" },
-    { name: "维生素腾片", size: [1, 1], color: "blue", image: "delta/维生素腾片.png", description: "补充维生素的泡腾片" },
-    { name: "蛋白粉包", size: [1, 1], color: "blue", image: "delta/蛋白粉包.png", description: "便携装蛋白质补充粉" },
-    { name: "糖三角", size: [1, 1], color: "blue", image: "delta/糖三角.png", description: "传统面食，内有糖馅" },
-    { name: "狩猎火柴", size: [1, 1], color: "blue", image: "delta/狩猎火柴.png", description: "防风防水的户外火柴" },
-    { name: "低级燃料", size: [1, 1], color: "blue", image: "delta/低级燃料.png", description: "品质较低的燃料" },
-    { name: "英式袋泡茶", size: [1, 1], color: "blue", image: "delta/英式袋泡茶.png", description: "英国风格的袋泡茶" },
-    { name: "存储卡", size: [1, 1], color: "blue", image: "delta/存储卡.png", description: "用于存储数据的存储卡" },
-    { name: "炒面", size: [1, 1], color: "blue", image: "delta/炒面.png", description: "速食炒面" },
-    { name: "可乐", size: [1, 1], color: "blue", image: "delta/可乐.png", description: "碳酸饮料" },
-    { name: "转换插座", size: [1, 1], color: "blue", image: "delta/转换插座.png", description: "多功能电源转换插座" },
-    { name: "额温枪", size: [1, 1], color: "blue", image: "delta/额温枪.png", description: "测量体温的红外设备" },
-    { name: "U盘", size: [1, 1], color: "blue", image: "delta/U盘.png", description: "便携式存储设备" },
-    { name: "摩卡咖啡壶", size: [1, 2], color: "blue", image: "delta/摩卡咖啡壶.png", description: "制作摩卡咖啡的器具" },
-    { name: "火药", size: [1, 2], color: "blue", image: "delta/火药.png", description: "用于爆炸物的化学物质" },
-    { name: "情报文件", size: [1, 2], color: "blue", image: "delta/情报文件.png", description: "包含情报信息的文件" },
-    { name: "军情录音", size: [1, 3], color: "blue", image: "delta/军情录音.png", description: "记录军事信息的录音" },
-    { name: "电子显微镜", size: [1, 3], color: "blue", image: "delta/电子显微镜.png", description: "用于微观观察的电子设备" },
-    { name: "骨锯", size: [3, 1], color: "blue", image: "delta/骨锯.png", description: "用于切割骨骼的医疗工具" },
-    { name: "无线电钻", size: [2, 1], color: "blue", image: "delta/无线电钻.png", description: "充电式电钻工具" },
-    { name: "木雕烟斗", size: [2, 1], color: "blue", image: "delta/木雕烟斗.png", description: "木质雕刻的烟斗" },
-    { name: "芳纶纤维", size: [2, 1], color: "blue", image: "delta/芳纶纤维.png", description: "高强度合成纤维材料" },
-    { name: "听诊器", size: [1, 2], color: "blue", image: "delta/听诊器.png", description: "医疗诊断用听诊设备" },
-    { name: "电子温度计", size: [2, 2], color: "blue", image: "delta/电子温度计.png", description: "电子温度测量设备" },
-    { name: "医疗无人机", size: [2, 2], color: "blue", image: "delta/医疗无人机.png", description: "用于医疗用途的无人机" },
-    { name: "轻型户外炉具", size: [2, 2], color: "blue", image: "delta/轻型户外炉具.png", description: "便携的户外烹饪设备" },
-    { name: "燃气罐", size: [2, 2], color: "blue", image: "delta/燃气罐.png", description: "储存燃气的容器" }
-];
-
-// 定义鳄鱼巢穴特有的物品列表
-const crocodileExclusiveItems = [
-    '复苏呼吸机', '主战坦克模型', '克劳迪乌斯半身像', '步战车模型', '量子存储', 
-    '"钻石"鱼子酱', '奥莉薇娅香槟', '资料：设计图纸', '纯金打火机', '体内除颤器',
-    '燃料电池', '血氧仪', '卫星电话', '高速固态硬盘', '可编程处理器', 
-    '"蓝宝石"龙舌兰', '心脏支架', '军用望远镜', '军用炸药', '能量凝胶', 
-    '信号棒', '间谍笔', 'GS5手柄', '电子干扰器', '柠檬茶', '资料：军事情报',
-    '植物样本', '鳄鱼蛋', '鳄鱼血样', '固态硬盘', '内存条', '人工膝关节',
-    '燃气喷灯', '粉碎钳', '阿萨拉卫队机密档案', '便携生存套件', 'HIFI声卡',
-    '广角镜头', '专业声卡', '收音机', '军用露营灯', '继电器', '摄像头',
-    '军用电源', '音频播放器', '多用途电池', '高精数卡尺', '维生素腾片',
-    '蛋白粉包', '糖三角', '狩猎火柴', '低级燃料', '英式袋泡茶', '存储卡',
-    '炒面', '可乐', '转换插座', '额温枪', 'U盘', '摩卡咖啡壶', '火药',
-    '情报文件', '军情录音', '电子显微镜', '骨锯', '无线电钻', '木雕烟斗',
-    '芳纶纤维', '听诊器', '电子温度计', '医疗无人机', '轻型户外炉具', '燃气罐'
-];
-
-// 小保险容器物品列表
-// 不包含显卡和鳄鱼巢穴特有的物品
-const smallContainerItems = items.filter(item => 
-    !['显卡', ...crocodileExclusiveItems].includes(item.name)
-);
-
-// 大保险容器物品列表
-// 不含军用雷达、军用信息终端和鳄鱼巢穴特有的物品
-const largeContainerItems = items.filter(item => 
-    !['显卡', '军用雷达', '军用信息终端', ...crocodileExclusiveItems].includes(item.name)
-);
-
-// 鳄鱼巢穴容器物品列表
-// 只包含鳄鱼巢穴特有的物品
-const crocodileNestItems = items.filter(item => 
-    crocodileExclusiveItems.includes(item.name)
-);
-    
-
 // 核心功能函数
 function getRandomItemCount() {
-    if (currentContainerType === 'small') {
+    if (appState.currentContainerType === 'small') {
         const random = Math.random();
         if (random < 0.4) return 1;
         if (random < 0.8) return 2;
         return 3;
-    } else if (currentContainerType === 'crocodile') {
+    } else if (appState.currentContainerType === 'crocodile') {
         // 鳄鱼巢穴物品数量概率分布
         const random = Math.random();
-        if (random < 0.1) return 1;
-        if (random < 0.2) return 2;
-        if (random < 0.4) return 3;
-        if (random < 0.6) return 4;
+        if (random < 0.2) return 1;
+        if (random < 0.5) return 2;
+        if (random < 0.8) return 3;
+        if (random < 0.95) return 4;
         return 5;
     }
     
@@ -302,16 +243,17 @@ function getRandomItemCount() {
 }
 
 function initScrollers() {
+    appState.scrollAnimations = [];
     scrollElements.forEach((el, index) => {
         const col = scrollCols[index];
         const chars = col.dataset.chars.split(',');
         const target = col.dataset.target;
         
         const targetPos = chars.indexOf(target);
-        targetPositions[index] = targetPos;
+        appState.targetPositions[index] = targetPos;
         
         const randomOffset = Math.floor(Math.random() * chars.length);
-        randomOffsets[index] = randomOffset;
+        appState.randomOffsets[index] = randomOffset;
         
         const extendedChars = [...chars, ...chars, ...chars];
         
@@ -329,14 +271,14 @@ function initScrollers() {
         
         el.innerHTML = html;
         
-        const initialOffset = randomOffset * charHeight;
+        const initialOffset = randomOffset * appState.charHeight;
         el.style.transform = `translateY(-${initialOffset}px)`;
         el.style.transition = 'transform 0.3s ease-out';
         
         const animation = el.animate(
             [
                 { transform: `translateY(-${initialOffset}px)` },
-                { transform: `translateY(-${initialOffset + chars.length * charHeight}px)` }
+                { transform: `translateY(-${initialOffset + chars.length * appState.charHeight}px)` }
             ],
             {
                 duration: 1000,
@@ -346,7 +288,7 @@ function initScrollers() {
         );
         
         animation.play();
-        scrollAnimations[index] = animation;
+        appState.scrollAnimations[index] = animation;
     });
     
     highlightActiveColumn();
@@ -354,27 +296,27 @@ function initScrollers() {
 
 function highlightActiveColumn() {
     scrollCols.forEach(col => col.classList.remove('active-column'));
-    scrollCols[currentColIndex].classList.add('active-column');
+    scrollCols[appState.currentColIndex].classList.add('active-column');
 }
 
 function generateGridLines() {
     gridLines.innerHTML = '';
     
-    for (let i = 1; i < gridSize; i++) {
+    for (let i = 1; i < appState.gridSize; i++) {
         const line = document.createElement('div');
         line.className = 'grid-line';
         line.style.height = '1px';
         line.style.width = '100%';
-        line.style.top = `${i * (100 / gridSize)}%`;
+        line.style.top = `${i * (100 / appState.gridSize)}%`;
         gridLines.appendChild(line);
     }
     
-    for (let i = 1; i < gridSize; i++) {
+    for (let i = 1; i < appState.gridSize; i++) {
         const line = document.createElement('div');
         line.className = 'grid-line';
         line.style.width = '1px';
         line.style.height = '100%';
-        line.style.left = `${i * (100 / gridSize)}%`;
+        line.style.left = `${i * (100 / appState.gridSize)}%`;
         gridLines.appendChild(line);
     }
 }
@@ -397,12 +339,18 @@ function adjustButtonPosition() {
 }
 
 function openUnlockModal(containerType) {
-    if (isProcessingRewards) {
+    // 检查对应容器的数据是否已加载
+    if (!appState.dataLoaded[containerType]) {
+        showToast('该容器数据加载中，请稍后');
+        return;
+    }
+    
+    if (appState.isProcessingRewards) {
         showToast('请等待当前物品加载完成');
         return;
     }
     
-    currentContainerType = containerType;
+    appState.currentContainerType = containerType;
     unlockModal.classList.remove('hidden');
     
     // 根据容器类型设置标题
@@ -416,10 +364,11 @@ function openUnlockModal(containerType) {
     
     // 设置网格大小
     if (containerType === 'crocodile') {
-        gridSize = 5; // 鳄鱼巢穴使用5x5网格
+        appState.gridSize = 5; // 鳄鱼巢穴使用5x5网格
     } else {
-        gridSize = 4; // 大保险和小保险均为4x4
+        appState.gridSize = 4; // 大保险和小保险均为4x4
     }
+    appState.cellPercentage = 100 / appState.gridSize;
     
     resetUnlockState();
     
@@ -427,39 +376,24 @@ function openUnlockModal(containerType) {
 }
 
 function openSmallContainerDirectly() {
-    if (isProcessingRewards) {
+    // 检查小容器数据是否已加载
+    if (!appState.dataLoaded.small) {
+        showToast('小容器数据加载中，请稍后');
+        return;
+    }
+    
+    if (appState.isProcessingRewards) {
         showToast('请等待当前物品加载完成');
         return;
     }
     
-    currentContainerType = 'small';
+    appState.currentContainerType = 'small';
     unlockModal.classList.remove('hidden');
     
     rewardTitle.textContent = '小保险容器物品清单';
     
-    gridSize = 4; // 小保险4x4
-    
-    generateGridLines();
-    
-    unlockScreen.classList.add('hidden');
-    rewardScreen.classList.remove('hidden');
-    
-    generateRewards();
-}
-
-// 新增：直接打开鳄鱼巢穴的函数
-function openCrocodileNestDirectly() {
-    if (isProcessingRewards) {
-        showToast('请等待当前物品加载完成');
-        return;
-    }
-    
-    currentContainerType = 'crocodile';
-    unlockModal.classList.remove('hidden');
-    
-    rewardTitle.textContent = '鳄鱼巢穴物品清单';
-    
-    gridSize = 5; // 鳄鱼巢穴使用5x5网格
+    appState.gridSize = 4; // 小保险4x4
+    appState.cellPercentage = 100 / appState.gridSize;
     
     generateGridLines();
     
@@ -478,9 +412,9 @@ smallContainer.addEventListener('click', () => {
     openSmallContainerDirectly();
 });
 
-// 鳄鱼巢穴容器点击事件 - 修改为直接打开
+// 鳄鱼巢穴容器点击事件
 crocodileNest.addEventListener('click', () => {
-    openCrocodileNestDirectly();
+    openUnlockModal('crocodile');
 });
 
 closeBtn.addEventListener('click', () => {
@@ -489,11 +423,11 @@ closeBtn.addEventListener('click', () => {
     unlockModal.classList.add('hidden');
     rewardScreen.classList.add('hidden');
     unlockScreen.classList.remove('hidden');
-    rewardsShown = false;
-    redItemCount = 0;
-    currentRewardItems = [];
+    appState.rewardsShown = false;
+    appState.redItemCount = 0;
+    appState.currentRewardItems = [];
     selectButton.querySelector('span').textContent = '选定密码';
-    isProcessingRewards = false;
+    appState.isProcessingRewards = false;
 });
 
 closeDetailBtn.addEventListener('click', () => {
@@ -510,16 +444,16 @@ clearRecordsBtn.addEventListener('click', function() {
         this.classList.remove('button-click');
     }, 200);
     
-    if (Object.keys(itemRecords).length === 0) {
+    if (Object.keys(appState.itemRecords).length === 0) {
         showToast('没有记录可清空');
         return;
     }
     
     if (confirm('确定要清空所有物品记录吗？')) {
-        itemRecords = {};
+        appState.itemRecords = {};
         
         localStorage.removeItem('deltaContainerRecords');
-        localStorage.setItem('deltaContainerRecords', JSON.stringify(itemRecords));
+        localStorage.setItem('deltaContainerRecords', JSON.stringify(appState.itemRecords));
         
         renderItemRecords();
         showToast('记录已清空');
@@ -536,7 +470,7 @@ directUnlockBtn.addEventListener('click', function() {
     
     forceAllColumnsToTarget();
     
-    progress = 100;
+    appState.progress = 100;
     updateProgressBar();
     
     selectButton.querySelector('span').textContent = '解锁完成';
@@ -550,7 +484,7 @@ directUnlockBtn.addEventListener('click', function() {
 function renderItemRecords() {
     recordsContainer.innerHTML = '';
     
-    const recordsList = Object.values(itemRecords)
+    const recordsList = Object.values(appState.itemRecords)
         .sort((a, b) => b.count - a.count);
     
     const totalCount = recordsList.reduce((sum, item) => sum + item.count, 0);
@@ -592,17 +526,17 @@ function autoRecordItems(items) {
     items.forEach(item => {
         const itemId = item.name;
         
-        if (itemRecords[itemId]) {
-            itemRecords[itemId].count++;
+        if (appState.itemRecords[itemId]) {
+            appState.itemRecords[itemId].count++;
         } else {
-            itemRecords[itemId] = {
+            appState.itemRecords[itemId] = {
                 ...item,
                 count: 1
             };
         }
     });
     
-    localStorage.setItem('deltaContainerRecords', JSON.stringify(itemRecords));
+    localStorage.setItem('deltaContainerRecords', JSON.stringify(appState.itemRecords));
     
     renderItemRecords();
 }
@@ -631,62 +565,62 @@ selectButton.addEventListener('click', () => {
         selectButton.classList.remove('button-click');
     }, 200);
     
-    if (rewardsShown) return;
+    if (appState.rewardsShown) return;
     
-    if (isPaused) {
-        clearTimeout(errorPauseTimer);
+    if (appState.isPaused) {
+        clearTimeout(appState.errorPauseTimer);
     }
     
-    const currentCol = scrollCols[currentColIndex];
+    const currentCol = scrollCols[appState.currentColIndex];
     const targetChar = currentCol.dataset.target;
     const chars = currentCol.dataset.chars.split(',');
     const charCount = chars.length;
-    const randomOffset = randomOffsets[currentColIndex];
+    const randomOffset = appState.randomOffsets[appState.currentColIndex];
     
-    const animation = scrollAnimations[currentColIndex];
+    const animation = appState.scrollAnimations[appState.currentColIndex];
     const progress = animation.currentTime / animation.effect.getTiming().duration;
     
-    const totalScrollDistance = charCount * charHeight;
-    const currentPixelPosition = (progress * totalScrollDistance + randomOffset * charHeight) % totalScrollDistance;
+    const totalScrollDistance = charCount * appState.charHeight;
+    const currentPixelPosition = (progress * totalScrollDistance + randomOffset * appState.charHeight) % totalScrollDistance;
     
     const visibleAreaStart = currentPixelPosition;
-    const boxCharPosition = visibleAreaStart + middlePositionIndex * charHeight;
-    const boxCharIndex = Math.floor(boxCharPosition / charHeight) % charCount;
+    const boxCharPosition = visibleAreaStart + appState.middlePositionIndex * appState.charHeight;
+    const boxCharIndex = Math.floor(boxCharPosition / appState.charHeight) % charCount;
     const boxChar = chars[boxCharIndex];
     
-    const targetPixelPosition = (targetPositions[currentColIndex] * charHeight) % totalScrollDistance;
+    const targetPixelPosition = (appState.targetPositions[appState.currentColIndex] * appState.charHeight) % totalScrollDistance;
     let pixelDiff = Math.abs(currentPixelPosition - targetPixelPosition);
     pixelDiff = Math.min(pixelDiff, totalScrollDistance - pixelDiff);
     
     animation.pause();
-    isPaused = true;
+    appState.isPaused = true;
     
-    if (boxChar === targetChar || pixelDiff <= selectionTolerance) {
+    if (boxChar === targetChar || pixelDiff <= appState.selectionTolerance) {
         selectButton.classList.add('complete-animation', 'bg-green/30');
         
         setTimeout(() => {
-            const targetOffset = (targetPositions[currentColIndex] - randomOffset + charCount) % charCount * charHeight;
-            scrollElements[currentColIndex].style.transform = `translateY(-${targetOffset}px)`;
+            const targetOffset = (appState.targetPositions[appState.currentColIndex] - randomOffset + charCount) % charCount * appState.charHeight;
+            scrollElements[appState.currentColIndex].style.transform = `translateY(-${targetOffset}px)`;
             
-            const charElements = scrollElements[currentColIndex].querySelectorAll('div');
+            const charElements = scrollElements[appState.currentColIndex].querySelectorAll('div');
             charElements.forEach(el => el.classList.remove('char-scale'));
             
-            const targetCharIndex = chars.length + targetPositions[currentColIndex];
+            const targetCharIndex = chars.length + appState.targetPositions[appState.currentColIndex];
             charElements[targetCharIndex].classList.add('char-scale', 'center-char');
             
             currentCol.classList.add('bg-gray-700/60', 'final-highlight');
             
             animation.cancel();
             
-            unlockedCols++;
-            lockedColumns.push(currentColIndex);
+            appState.unlockedCols++;
+            appState.lockedColumns.push(appState.currentColIndex);
             
             selectButton.classList.remove('complete-animation', 'bg-green/30');
             
             const nextCol = parseInt(currentCol.dataset.next);
             if (nextCol < 5) {
-                currentColIndex = nextCol;
-                isPaused = false;
+                appState.currentColIndex = nextCol;
+                appState.isPaused = false;
                 highlightActiveColumn();
             } else {
                 selectButton.querySelector('span').textContent = '解锁完成';
@@ -702,25 +636,25 @@ selectButton.addEventListener('click', () => {
         currentCol.classList.add('error-highlight');
         selectButton.classList.add('error-highlight');
         
-        errorPauseTimer = setTimeout(() => {
+        appState.errorPauseTimer = setTimeout(() => {
             currentCol.classList.remove('error-highlight');
             selectButton.classList.remove('error-highlight');
             
             animation.play();
-            isPaused = false;
+            appState.isPaused = false;
         }, 1000);
     }
 });
 
 // 辅助函数
 function stopAllAnimations() {
-    scrollAnimations.forEach(animation => {
+    appState.scrollAnimations.forEach(animation => {
         if (animation) {
             animation.cancel();
         }
     });
     
-    clearInterval(progressTimer);
+    clearInterval(appState.progressTimer);
     
     document.querySelectorAll('.pulse, .progress-shine').forEach(el => {
         el.style.animationPlayState = 'paused';
@@ -729,21 +663,21 @@ function stopAllAnimations() {
 
 function forceAllColumnsToTarget() {
     scrollCols.forEach((col, index) => {
-        if (lockedColumns.includes(index)) return;
+        if (appState.lockedColumns.includes(index)) return;
         
         const chars = col.dataset.chars.split(',');
         const charCount = chars.length;
-        const randomOffset = randomOffsets[index];
+        const randomOffset = appState.randomOffsets[index];
         
-        const targetOffset = (targetPositions[index] - randomOffset + charCount) % charCount * charHeight;
+        const targetOffset = (appState.targetPositions[index] - randomOffset + charCount) % charCount * appState.charHeight;
         scrollElements[index].style.transform = `translateY(-${targetOffset}px)`;
         
-        if (scrollAnimations[index]) {
-            scrollAnimations[index].cancel();
+        if (appState.scrollAnimations[index]) {
+            appState.scrollAnimations[index].cancel();
         }
         
         const charElements = scrollElements[index].querySelectorAll('div');
-        const targetCharIndex = chars.length + targetPositions[index];
+        const targetCharIndex = chars.length + appState.targetPositions[index];
         charElements[targetCharIndex].classList.add('center-char');
         
         col.classList.add('bg-gray-700/60', 'final-highlight');
@@ -751,30 +685,30 @@ function forceAllColumnsToTarget() {
 }
 
 function updateProgressBar() {
-    progressBar.style.width = `${progress}%`;
-    progressText.textContent = `${progress}%`;
+    progressBar.style.width = `${appState.progress}%`;
+    progressText.textContent = `${appState.progress}%`;
 }
 
 function resetUnlockState() {
-    clearTimeout(errorPauseTimer);
+    clearTimeout(appState.errorPauseTimer);
     
-    progress = 0;
-    currentColIndex = 0;
-    unlockedCols = 0;
-    isPaused = false;
-    rewardsShown = false;
-    lockedColumns = [];
-    randomOffsets = [];
-    targetPositions = [];
-    redItemCount = 0;
-    currentRewardItems = [];
+    appState.progress = 0;
+    appState.currentColIndex = 0;
+    appState.unlockedCols = 0;
+    appState.isPaused = false;
+    appState.rewardsShown = false;
+    appState.lockedColumns = [];
+    appState.randomOffsets = [];
+    appState.targetPositions = [];
+    appState.redItemCount = 0;
+    appState.currentRewardItems = [];
     updateProgressBar();
     
     scrollCols.forEach((col, index) => {
         col.classList.remove('error-highlight', 'bg-gray-700/60', 'final-highlight', 'active-column');
         
-        if (scrollAnimations[index]) {
-            scrollAnimations[index].cancel();
+        if (appState.scrollAnimations[index]) {
+            appState.scrollAnimations[index].cancel();
         }
         scrollElements[index].style.transform = 'translateY(0)';
     });
@@ -784,14 +718,14 @@ function resetUnlockState() {
     selectButton.classList.remove('complete-animation', 'bg-green/30', 'error-highlight');
     selectButton.querySelector('span').textContent = '选定密码';
     
-    clearInterval(progressTimer);
-    progressTimer = setInterval(() => {
-        if (rewardsShown) return;
+    clearInterval(appState.progressTimer);
+    appState.progressTimer = setInterval(() => {
+        if (appState.rewardsShown) return;
         
-        progress++;
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(progressTimer);
+        appState.progress++;
+        if (appState.progress >= 100) {
+            appState.progress = 100;
+            clearInterval(appState.progressTimer);
             
             forceAllColumnsToTarget();
             
@@ -807,10 +741,10 @@ function resetUnlockState() {
 }
 
 function completeProgress() {
-    if (rewardsShown) return;
+    if (appState.rewardsShown) return;
     
-    clearInterval(progressTimer);
-    progress = 100;
+    clearInterval(appState.progressTimer);
+    appState.progress = 100;
     updateProgressBar();
     
     forceAllColumnsToTarget();
@@ -819,8 +753,8 @@ function completeProgress() {
 }
 
 function showRewards() {
-    if (rewardsShown) return;
-    rewardsShown = true;
+    if (appState.rewardsShown) return;
+    appState.rewardsShown = true;
     
     generateGridLines();
     
@@ -842,7 +776,7 @@ function clearGridItems() {
 }
 
 function generateRewards() {
-    isProcessingRewards = true;
+    appState.isProcessingRewards = true;
     
     clearGridItems();
     
@@ -850,17 +784,17 @@ function generateRewards() {
     const itemPool = getCurrentContainerItemPool();
     
     if (!itemPool || itemPool.length === 0) {
-        console.error('未找到对应的物品池');
-        isProcessingRewards = false;
+        console.error(`未找到${appState.currentContainerType}容器的物品池`);
+        appState.isProcessingRewards = false;
         return;
     }
     
     // 根据容器类型生成不同的物品
-    if (currentContainerType === 'crocodile') {
+    if (appState.currentContainerType === 'crocodile') {
         // 鳄鱼巢穴物品生成逻辑
         const itemCount = getRandomItemCount();
         
-        // 复苏呼吸机特殊概率逻辑（与非洲之心相同）
+        // 复苏呼吸机特殊概率逻辑
         const resuscitationVentilator = itemPool.find(item => item.name === '复苏呼吸机');
         if (resuscitationVentilator && Math.random() < 0.001) {
             selectedItems.push({...resuscitationVentilator});
@@ -875,19 +809,29 @@ function generateRewards() {
                 selectedItems.push(drawCrocodileNestItem(itemPool));
             }
         }
-    } else if (currentContainerType === 'large') {
+    } else if (appState.currentContainerType === 'large') {
         // 大容器物品生成逻辑
         let itemCount = getRandomItemCount();
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
         const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        let hasHeartOfAfrica = false;
+        
         if (heartOfAfrica && Math.random() < 0.001) {
-            selectedItems.push({...heartOfAfrica});
-            itemCount--;
+            hasHeartOfAfrica = true;
+            // 决定非洲之心出现的位置
+            const heartPosition = Math.floor(Math.random() * itemCount);
         }
         
         // 按品质抽取其他物品
         for (let i = 0; i < itemCount; i++) {
+            // 如果需要放置非洲之心且当前位置是随机确定的位置
+            if (hasHeartOfAfrica && Math.random() < 0.3) { // 30%概率在当前位置放置非洲之心
+                selectedItems.push({...heartOfAfrica});
+                hasHeartOfAfrica = false; // 确保只放置一次
+                continue;
+            }
+            
             let selectedItem = null;
             const random = Math.random();
             
@@ -914,21 +858,33 @@ function generateRewards() {
                 selectedItems.push({...selectedItem});
             }
         }
+        
+        // 如果还没放置非洲之心，放在最后
+        if (hasHeartOfAfrica) {
+            selectedItems.push({...heartOfAfrica});
+        }
     } else {
         // 小容器物品生成逻辑
         const itemCount = getRandomItemCount();
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
         const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
-        if (heartOfAfrica && Math.random() < 0.001 && itemCount > 0) {
-            selectedItems.push({...heartOfAfrica});
-            
-            if (itemCount === 1) {
-                // 只抽中非洲之心
+        
+        if (heartOfAfrica && Math.random() < 0.001) {
+            // 小容器中非洲之心有70%概率单独出现，30%概率与其他物品一起出现
+            if (Math.random() < 0.7) {
+                // 单独出现
+                selectedItems.push({...heartOfAfrica});
             } else {
-                // 继续抽取其他物品
-                for (let i = 1; i < itemCount; i++) {
-                    selectedItems.push(drawSmallContainerItem(itemPool));
+                // 与其他物品一起出现，随机位置
+                const heartPosition = Math.floor(Math.random() * itemCount);
+                
+                for (let i = 0; i < itemCount; i++) {
+                    if (i === heartPosition) {
+                        selectedItems.push({...heartOfAfrica});
+                    } else {
+                        selectedItems.push(drawSmallContainerItem(itemPool));
+                    }
                 }
             }
         } else {
@@ -940,11 +896,11 @@ function generateRewards() {
     }
     
     // 保存最后一次抽取的物品
-    lastDrawItems = [...selectedItems];
+    appState.lastDrawItems = [...selectedItems];
     
-    currentRewardItems = [...selectedItems];
+    appState.currentRewardItems = [...selectedItems];
     
-    autoRecordItems(currentRewardItems);
+    autoRecordItems(appState.currentRewardItems);
     
     const allItemCells = placeAllItemPlaceholders(selectedItems);
     
@@ -959,21 +915,21 @@ function generateRewards() {
     
     // 设置处理完成状态
     setTimeout(() => {
-        isProcessingRewards = false;
+        appState.isProcessingRewards = false;
     }, totalDelay + 1000);
 }
 
-// 获取当前容器类型对应的物品池
+// 获取当前容器类型对应的物品池（直接使用对应JSON加载的数据）
 function getCurrentContainerItemPool() {
-    switch(currentContainerType) {
+    switch(appState.currentContainerType) {
         case 'large':
-            return largeContainerItems;
+            return appState.largeContainerItems;
         case 'small':
-            return smallContainerItems;
+            return appState.smallContainerItems;
         case 'crocodile':
-            return crocodileNestItems;
+            return appState.crocodileNestItems;
         default:
-            return largeContainerItems;
+            return [];
     }
 }
 
@@ -985,19 +941,19 @@ function drawCrocodileNestItem(itemPool) {
     if (random < 0.40) {
         // 蓝色物品
         const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '复苏呼吸机');
-        return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
+        return blueItems.length > 0 ? {...blueItems[Math.floor(Math.random() * blueItems.length)]} : null;
     } else if (random < 0.70) {
         // 紫色物品
         const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '复苏呼吸机');
-        return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
+        return purpleItems.length > 0 ? {...purpleItems[Math.floor(Math.random() * purpleItems.length)]} : null;
     } else if (random < 0.90) {
         // 金色物品
         const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '复苏呼吸机');
-        return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
+        return goldItems.length > 0 ? {...goldItems[Math.floor(Math.random() * goldItems.length)]} : null;
     } else {
-        // 红色物品（不含复苏呼吸机，它有单独的抽取逻辑）
+        // 红色物品（不含复苏呼吸机）
         const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '复苏呼吸机');
-        return {...redItems[Math.floor(Math.random() * redItems.length)]};
+        return redItems.length > 0 ? {...redItems[Math.floor(Math.random() * redItems.length)]} : null;
     }
 }
 
@@ -1008,19 +964,19 @@ function drawSmallContainerItem(itemPool) {
     if (random < 0.30) {
         // 蓝色物品
         const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
-        return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
+        return blueItems.length > 0 ? {...blueItems[Math.floor(Math.random() * blueItems.length)]} : null;
     } else if (random < 0.60) {
         // 紫色物品
         const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
-        return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
+        return purpleItems.length > 0 ? {...purpleItems[Math.floor(Math.random() * purpleItems.length)]} : null;
     } else if (random < 0.95) {
         // 金色物品
         const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
-        return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
+        return goldItems.length > 0 ? {...goldItems[Math.floor(Math.random() * goldItems.length)]} : null;
     } else {
         // 红色物品（不含非洲之心）
         const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '非洲之心');
-        return {...redItems[Math.floor(Math.random() * redItems.length)]};
+        return redItems.length > 0 ? {...redItems[Math.floor(Math.random() * redItems.length)]} : null;
     }
 }
 
@@ -1031,16 +987,18 @@ function placeAllItemPlaceholders(items) {
     const allItemCells = [];
     
     items.forEach(item => {
+        if (!item) return; // 跳过空物品
+        
         const [width, height] = item.size;
         let placed = false;
         
-        while (!placed && currentRow <= gridSize - height) {
+        while (!placed && currentRow <= appState.gridSize - height) {
             let canPlace = true;
             const cellsToOccupy = [];
             
             for (let r = currentRow; r < currentRow + height; r++) {
                 for (let c = currentCol; c < currentCol + width; c++) {
-                    if (c >= gridSize || occupiedCells.has(`${r},${c}`)) {
+                    if (c >= appState.gridSize || occupiedCells.has(`${r},${c}`)) {
                         canPlace = false;
                         break;
                     }
@@ -1057,11 +1015,11 @@ function placeAllItemPlaceholders(items) {
                 const minCol = Math.min(...cellsToOccupy.map(c => c.c));
                 const maxCol = Math.max(...cellsToOccupy.map(c => c.c));
                 
-                const cellPercent = 100 / gridSize;
-                const itemWidth = (maxCol - minCol + 1) * cellPercent - (itemSpacing * 2);
-                const itemHeight = (maxRow - minRow + 1) * cellPercent - (itemSpacing * 2);
-                const itemLeft = minCol * cellPercent + itemSpacing;
-                const itemTop = minRow * cellPercent + itemSpacing;
+                const cellPercent = 100 / appState.gridSize;
+                const itemWidth = (maxCol - minCol + 1) * cellPercent - (appState.itemSpacing * 2);
+                const itemHeight = (maxRow - minRow + 1) * cellPercent - (appState.itemSpacing * 2);
+                const itemLeft = minCol * cellPercent + appState.itemSpacing;
+                const itemTop = minRow * cellPercent + appState.itemSpacing;
                 
                 const placeholder = document.createElement('div');
                 placeholder.className = 'placeholder-item absolute transition-all duration-300';
@@ -1087,7 +1045,7 @@ function placeAllItemPlaceholders(items) {
                 });
                 
                 currentCol += width;
-                if (currentCol > gridSize - 1) {
+                if (currentCol > appState.gridSize - 1) {
                     currentCol = 0;
                     currentRow++;
                 }
@@ -1116,6 +1074,8 @@ function readItemsInOrder(items, allItemCells) {
             top,
             placeholder
         } = itemData;
+        if (!item) return;
+        
         const [sizeWidth, sizeHeight] = item.size;
         
         setTimeout(() => {
@@ -1141,7 +1101,8 @@ function readItemsInOrder(items, allItemCells) {
                 }
                 
                 const itemElement = document.createElement('div');
-                itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 cursor-pointer overflow-hidden`;
+                // 添加跳动动画类名：item-pop-in
+                itemElement.className = `absolute bg-${item.color} item-gradient rounded-sm transition-all duration-500 cursor-pointer overflow-hidden item-pop-in`;
                 itemElement.innerHTML = `
                     <img src="${item.image}" alt="${item.name}" class="item-image">
                     <div class="item-name">${item.name}</div>
@@ -1152,11 +1113,22 @@ function readItemsInOrder(items, allItemCells) {
                 itemElement.style.left = `${left}%`;
                 itemElement.style.top = `${top}%`;
                 
+                // 非洲之心添加特殊闪烁效果
+                if (item.name === '非洲之心') {
+                    itemElement.classList.add('special-item-pulse');
+                }
+                
                 itemElement.addEventListener('click', () => {
                     showItemDetail(item);
                 });
                 
                 gridContainer.appendChild(itemElement);
+                
+                // 触发跳动动画
+                setTimeout(() => {
+                    itemElement.style.transform = 'scale(1)';
+                }, 50);
+                
             }, colorDelays[item.color] * 1000);
         }, totalDelay);
         
@@ -1164,21 +1136,8 @@ function readItemsInOrder(items, allItemCells) {
     });
 }
 
-const colorDelays = {
-    'default': 0.5,
-    'green': 1,
-    'blue': 1.5,
-    'purple': 2,
-    'gold': 2.5,
-    'red': 3
-};
-
 // 一键抽取功能
 function initBatchDrawSettings() {
-    // 生成停止条件物品列表
-    const uniqueItems = [...new Map(items.map(item => [item.name, item])).values()];
-    renderStopConditionItems(uniqueItems);
-    
     // 容器类型选择
     containerTypeList.addEventListener('click', (e) => {
         const containerItem = e.target.closest('.container-item:not(.disabled)');
@@ -1186,21 +1145,30 @@ function initBatchDrawSettings() {
         
         containerItems.forEach(item => item.classList.remove('active'));
         containerItem.classList.add('active');
-        currentContainerType = containerItem.dataset.type;
+        appState.currentContainerType = containerItem.dataset.type;
     });
+    
+    // 默认选中大容器
+    const defaultContainer = containerTypeList.querySelector('[data-type="large"]');
+    if (defaultContainer) {
+        defaultContainer.classList.add('active');
+    }
     
     // 搜索功能
     stopConditionSearch.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        const filteredItems = items.filter(item => 
+        const filteredItems = appState.allItems.filter(item => 
             item.name.toLowerCase().includes(searchTerm)
         );
         renderStopConditionItems(filteredItems);
     });
     
+    // 初始渲染所有物品
+    renderStopConditionItems(appState.allItems);
+    
     // 取消全选
     deselectAllBtn.addEventListener('click', () => {
-        selectedStopItems.clear();
+        appState.selectedStopItems.clear();
         const checkboxes = stopConditionContainer.querySelectorAll('.item-checkbox');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
@@ -1209,7 +1177,7 @@ function initBatchDrawSettings() {
     
     // 滑动多选开关
     slideSelectToggle.addEventListener('change', (e) => {
-        isSlideSelecting = e.target.checked;
+        appState.isSlideSelecting = e.target.checked;
     });
     
     // 最大次数按钮
@@ -1240,13 +1208,13 @@ function renderStopConditionItems(itemsList) {
     
     itemsList.forEach(item => {
         const itemElement = document.createElement('div');
-        itemElement.className = `flex items-center p-2 rounded bg-primary/50 relative ${selectedStopItems.has(item.name) ? 'bg-highlight/20' : ''}`;
+        itemElement.className = `flex items-center p-2 rounded bg-primary/50 relative ${appState.selectedStopItems.has(item.name) ? 'bg-highlight/20' : ''}`;
         itemElement.innerHTML = `
             <div class="record-icon bg-${item.color}/30 text-white rounded-full mr-2 overflow-hidden">
                 <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain">
             </div>
             <span class="truncate">${item.name}</span>
-            <input type="checkbox" class="item-checkbox" data-item="${item.name}" ${selectedStopItems.has(item.name) ? 'checked' : ''}>
+            <input type="checkbox" class="item-checkbox" data-item="${item.name}" ${appState.selectedStopItems.has(item.name) ? 'checked' : ''}>
             <label for="${item.name}"></label>
         `;
         
@@ -1261,12 +1229,12 @@ function renderStopConditionItems(itemsList) {
             toggleStopItemSelection(item.name, checkbox.checked);
             
             // 滑动多选逻辑
-            if (isSlideSelecting) {
-                if (lastSelectedItem !== null) {
+            if (appState.isSlideSelecting) {
+                if (appState.lastSelectedItem !== null) {
                     // 实现滑动多选逻辑
                     const allItems = Array.from(stopConditionContainer.querySelectorAll('.item-checkbox'));
                     const currentIndex = allItems.findIndex(el => el.dataset.item === item.name);
-                    const lastIndex = allItems.findIndex(el => el.dataset.item === lastSelectedItem);
+                    const lastIndex = allItems.findIndex(el => el.dataset.item === appState.lastSelectedItem);
                     
                     if (currentIndex !== -1 && lastIndex !== -1) {
                         const start = Math.min(currentIndex, lastIndex);
@@ -1279,9 +1247,9 @@ function renderStopConditionItems(itemsList) {
                         }
                     }
                 }
-                lastSelectedItem = item.name;
+                appState.lastSelectedItem = item.name;
             } else {
-                lastSelectedItem = null;
+                appState.lastSelectedItem = null;
             }
         });
         
@@ -1296,18 +1264,24 @@ function renderStopConditionItems(itemsList) {
 // 切换停止条件物品选择状态
 function toggleStopItemSelection(itemName, isSelected) {
     if (isSelected) {
-        selectedStopItems.add(itemName);
+        appState.selectedStopItems.add(itemName);
         const itemElement = stopConditionContainer.querySelector(`[data-item="${itemName}"]`).closest('div');
         if (itemElement) itemElement.classList.add('bg-highlight/20');
     } else {
-        selectedStopItems.delete(itemName);
+        appState.selectedStopItems.delete(itemName);
         const itemElement = stopConditionContainer.querySelector(`[data-item="${itemName}"]`).closest('div');
         if (itemElement) itemElement.classList.remove('bg-highlight/20');
     }
 }
 
 function startBatchDraw() {
-    if (isBatchDrawing) return;
+    if (appState.isBatchDrawing) return;
+    
+    // 检查当前容器数据是否已加载
+    if (!appState.dataLoaded[appState.currentContainerType]) {
+        showToast('容器数据加载中，请稍后');
+        return;
+    }
     
     const drawCount = parseInt(drawCountInput.value);
     if (isNaN(drawCount) || drawCount < 1 || drawCount > 10000) {
@@ -1315,7 +1289,7 @@ function startBatchDraw() {
         return;
     }
     
-    isBatchDrawing = true;
+    appState.isBatchDrawing = true;
     startBatchBtn.disabled = true;
     startBatchBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 抽取中...';
     
@@ -1324,7 +1298,7 @@ function startBatchDraw() {
     batchProgressBar.style.width = '0%';
     
     // 执行批量抽取
-    performBatchDraw(currentContainerType, drawCount);
+    performBatchDraw(appState.currentContainerType, drawCount);
 }
 
 async function performBatchDraw(containerType, totalDraws) {
@@ -1333,38 +1307,51 @@ async function performBatchDraw(containerType, totalDraws) {
     let completedDraws = 0;
     let foundTargetItems = [];
     let targetItemTotalCount = 0;
-    lastDrawItems = []; // 重置最后一次抽取的物品
+    appState.lastDrawItems = []; // 重置最后一次抽取的物品
+    
+    // 获取当前容器的物品池
+    const itemPool = getCurrentContainerItemPool();
+    if (!itemPool || itemPool.length === 0) {
+        showToast('无法获取容器物品数据');
+        appState.isBatchDrawing = false;
+        startBatchBtn.disabled = false;
+        startBatchBtn.innerHTML = '<i class="fa fa-play mr-2"></i> 开始一键抽取';
+        batchProgressContainer.style.display = 'none';
+        return;
+    }
     
     // 初始化结果对象
-    items.forEach(item => {
+    itemPool.forEach(item => {
         results[item.name] = 0;
     });
     
     try {
         // 进行抽取
         for (let i = 0; i < totalDraws; i++) {
-            if (!isBatchDrawing) break;
+            if (!appState.isBatchDrawing) break;
             
             // 单次抽取
             const drawnItems = drawContainerItems(containerType);
             
             // 记录最后一次抽取的物品
             if (i === totalDraws - 1 || 
-                (selectedStopItems.size > 0 && 
-                 ((stopOnAnyCheckbox.checked && drawnItems.some(item => selectedStopItems.has(item.name))) ||
-                  (!stopOnAnyCheckbox.checked && selectedStopItems.size > 0 && 
-                   Array.from(selectedStopItems).every(itemName => 
+                (appState.selectedStopItems.size > 0 && 
+                 ((stopOnAnyCheckbox.checked && drawnItems.some(item => appState.selectedStopItems.has(item.name))) ||
+                  (!stopOnAnyCheckbox.checked && appState.selectedStopItems.size > 0 && 
+                   Array.from(appState.selectedStopItems).every(itemName => 
                        results[itemName] > 0 || drawnItems.some(item => item.name === itemName)))))) {
-                lastDrawItems = [...drawnItems];
+                appState.lastDrawItems = [...drawnItems];
             }
             
             // 记录结果
             drawnItems.forEach(item => {
+                if (!item) return;
+                
                 results[item.name]++;
                 autoRecordItems([item]);
                 
                 // 检查是否满足停止条件
-                if (selectedStopItems.size > 0 && selectedStopItems.has(item.name)) {
+                if (appState.selectedStopItems.size > 0 && appState.selectedStopItems.has(item.name)) {
                     foundTargetItems.push(item.name);
                     targetItemTotalCount++;
                 }
@@ -1377,14 +1364,14 @@ async function performBatchDraw(containerType, totalDraws) {
             batchProgressBar.style.width = `${progress}%`;
             
             // 检查是否需要提前停止
-            if (selectedStopItems.size > 0) {
+            if (appState.selectedStopItems.size > 0) {
                 if (stopOnAnyCheckbox.checked && foundTargetItems.length > 0) {
                     stopReason = `抽中目标物品: ${foundTargetItems[0]}`;
                     break;
                 } else if (!stopOnAnyCheckbox.checked) {
                     // 检查是否所有选中物品都已抽中
                     let allFound = true;
-                    selectedStopItems.forEach(itemName => {
+                    appState.selectedStopItems.forEach(itemName => {
                         if (results[itemName] === 0) {
                             allFound = false;
                         }
@@ -1407,7 +1394,7 @@ async function performBatchDraw(containerType, totalDraws) {
         stopReason = '抽取过程出错';
     } finally {
         // 完成后处理
-        isBatchDrawing = false;
+        appState.isBatchDrawing = false;
         startBatchBtn.disabled = false;
         startBatchBtn.innerHTML = '<i class="fa fa-play mr-2"></i> 开始一键抽取';
         
@@ -1418,37 +1405,38 @@ async function performBatchDraw(containerType, totalDraws) {
         showBatchResults(containerType, completedDraws, results, stopReason, targetItemTotalCount);
         
         // 显示最后一次抽取的容器物品
-        if (lastDrawItems.length > 0) {
+        if (appState.lastDrawItems.length > 0) {
             setTimeout(() => {
                 // 先关闭结果弹窗
                 batchResultModal.classList.remove('active');
                 
                 // 显示最后一次抽取的物品
-                currentContainerType = containerType;
+                appState.currentContainerType = containerType;
                 unlockModal.classList.remove('hidden');
                 
                 // 设置标题和网格大小
                 if (containerType === 'large') {
                     rewardTitle.textContent = '大保险容器物品清单';
-                    gridSize = 4;
+                    appState.gridSize = 4;
                 } else if (containerType === 'small') {
                     rewardTitle.textContent = '小保险容器物品清单';
-                    gridSize = 4;
+                    appState.gridSize = 4;
                 } else if (containerType === 'crocodile') {
                     rewardTitle.textContent = '鳄鱼巢穴物品清单';
-                    gridSize = 5;
+                    appState.gridSize = 5;
                 }
+                appState.cellPercentage = 100 / appState.gridSize;
                 
                 generateGridLines();
                 unlockScreen.classList.add('hidden');
                 rewardScreen.classList.remove('hidden');
                 
                 // 直接显示最后一次抽取的物品
-                currentRewardItems = [...lastDrawItems];
-                const allItemCells = placeAllItemPlaceholders(lastDrawItems);
-                readItemsInOrder(lastDrawItems, allItemCells);
+                appState.currentRewardItems = [...appState.lastDrawItems];
+                const allItemCells = placeAllItemPlaceholders(appState.lastDrawItems);
+                readItemsInOrder(appState.lastDrawItems, allItemCells);
                 
-                isProcessingRewards = false;
+                appState.isProcessingRewards = false;
             }, 1000);
         }
     }
@@ -1456,15 +1444,18 @@ async function performBatchDraw(containerType, totalDraws) {
 
 function drawContainerItems(containerType) {
     let selectedItems = [];
-    const itemPool = containerType === 'large' ? largeContainerItems : 
-                    containerType === 'small' ? smallContainerItems : 
-                    crocodileNestItems;
+    const itemPool = getCurrentContainerItemPool();
+    
+    if (!itemPool || itemPool.length === 0) {
+        console.error(`获取${containerType}容器物品池失败`);
+        return selectedItems;
+    }
     
     if (containerType === 'crocodile') {
         // 鳄鱼巢穴抽取逻辑
         const itemCount = getRandomItemCount();
         
-        // 复苏呼吸机特殊概率逻辑（与非洲之心相同，0.1%）
+        // 复苏呼吸机特殊概率逻辑（0.1%）
         const resuscitationVentilator = itemPool.find(item => item.name === '复苏呼吸机');
         if (resuscitationVentilator && Math.random() < 0.001) {
             selectedItems.push({...resuscitationVentilator});
@@ -1481,32 +1472,53 @@ function drawContainerItems(containerType) {
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
         const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
+        let hasHeartOfAfrica = false;
+        
         if (heartOfAfrica && Math.random() < 0.001) {
-            selectedItems.push({...heartOfAfrica});
-            return selectedItems;
+            hasHeartOfAfrica = true;
         }
         
         // 按品质抽取物品
         for (let i = 0; i < itemCount; i++) {
+            // 随机决定是否在当前位置放置非洲之心（30%概率）
+            if (hasHeartOfAfrica && Math.random() < 0.3) {
+                selectedItems.push({...heartOfAfrica});
+                hasHeartOfAfrica = false; // 确保只放置一次
+                continue;
+            }
+            
             const random = Math.random();
             
             if (random < 0.30) {
                 // 蓝色物品
                 const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
-                selectedItems.push({...blueItems[Math.floor(Math.random() * blueItems.length)]});
+                if (blueItems.length > 0) {
+                    selectedItems.push({...blueItems[Math.floor(Math.random() * blueItems.length)]});
+                }
             } else if (random < 0.60) {
                 // 紫色物品
                 const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
-                selectedItems.push({...purpleItems[Math.floor(Math.random() * purpleItems.length)]});
+                if (purpleItems.length > 0) {
+                    selectedItems.push({...purpleItems[Math.floor(Math.random() * purpleItems.length)]});
+                }
             } else if (random < 0.90) {
                 // 金色物品
                 const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
-                selectedItems.push({...goldItems[Math.floor(Math.random() * goldItems.length)]});
+                if (goldItems.length > 0) {
+                    selectedItems.push({...goldItems[Math.floor(Math.random() * goldItems.length)]});
+                }
             } else {
                 // 红色物品（不含非洲之心）
                 const redItems = itemPool.filter(item => item.color === 'red' && item.name !== '非洲之心');
-                selectedItems.push({...redItems[Math.floor(Math.random() * redItems.length)]});
+                if (redItems.length > 0) {
+                    selectedItems.push({...redItems[Math.floor(Math.random() * redItems.length)]});
+                }
             }
+        }
+        
+        // 如果还没放置非洲之心，放在最后
+        if (hasHeartOfAfrica) {
+            selectedItems.push({...heartOfAfrica});
         }
     } else {
         // 小保险抽取逻辑
@@ -1514,14 +1526,29 @@ function drawContainerItems(containerType) {
         
         // 抽取非洲之心的特殊逻辑 (0.1%概率)
         const heartOfAfrica = itemPool.find(item => item.name === '非洲之心');
-        if (heartOfAfrica && Math.random() < 0.001) {
-            selectedItems.push({...heartOfAfrica});
-            return selectedItems;
-        }
         
-        // 按品质抽取物品
-        for (let i = 0; i < itemCount; i++) {
-            selectedItems.push(drawSmallContainerItem(itemPool));
+        if (heartOfAfrica && Math.random() < 0.001) {
+            // 小容器中非洲之心有70%概率单独出现，30%概率与其他物品一起出现
+            if (Math.random() < 0.7) {
+                // 单独出现
+                selectedItems.push({...heartOfAfrica});
+            } else {
+                // 与其他物品一起出现，随机位置
+                const heartPosition = Math.floor(Math.random() * itemCount);
+                
+                for (let i = 0; i < itemCount; i++) {
+                    if (i === heartPosition) {
+                        selectedItems.push({...heartOfAfrica});
+                    } else {
+                        selectedItems.push(drawSmallContainerItem(itemPool));
+                    }
+                }
+            }
+        } else {
+            // 正常抽取小保险物品
+            for (let i = 0; i < itemCount; i++) {
+                selectedItems.push(drawSmallContainerItem(itemPool));
+            }
         }
     }
     
@@ -1552,7 +1579,7 @@ function showBatchResults(containerType, totalDraws, results, stopReason, target
     }
     
     // 显示目标物品抽中次数
-    if (selectedStopItems.size > 0 && targetItemCount > 0) {
+    if (appState.selectedStopItems.size > 0 && targetItemCount > 0) {
         resultTargetItemCount.classList.remove('hidden');
         resultTargetItemCount.querySelector('span').textContent = targetItemCount;
     } else {
@@ -1571,7 +1598,7 @@ function showBatchResults(containerType, totalDraws, results, stopReason, target
         batchResultItems.innerHTML = '<div class="text-center text-gray-400 py-2">未抽中任何物品</div>';
     } else {
         sortedItems.forEach(([name, count]) => {
-            const item = items.find(i => i.name === name);
+            const item = appState.allItems.find(i => i.name === name);
             if (!item) return;
             
             const itemElement = document.createElement('div');
@@ -1659,17 +1686,22 @@ function showToast(message) {
     }, 2000);
 }
 
+// 加载状态管理
+function showLoading() {
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden');
+    }
+}
+
+function hideLoading() {
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+
 // 窗口事件
 window.addEventListener('resize', adjustButtonPosition);
-window.addEventListener('load', () => {
-    initScrollers();
-    renderItemRecords();
-    initBatchDrawSettings();
-    
-    // 初始化显示第一个视图
-    viewSections[0].classList.add('active');
-    navItems[0].classList.add('active');
-});
+window.addEventListener('load', initApp);
 
 // 关闭模态框时的全局处理
 unlockModal.addEventListener('click', (e) => {
@@ -1679,16 +1711,16 @@ unlockModal.addEventListener('click', (e) => {
         unlockModal.classList.add('hidden');
         rewardScreen.classList.add('hidden');
         unlockScreen.classList.remove('hidden');
-        rewardsShown = false;
-        isProcessingRewards = false;
+        appState.rewardsShown = false;
+        appState.isProcessingRewards = false;
     }
 });
 
 // 阻止批量抽取时的页面滚动
 document.addEventListener('keydown', (e) => {
-    if (isBatchDrawing && (e.key === 'Escape')) {
+    if (appState.isBatchDrawing && (e.key === 'Escape')) {
         if (confirm('确定要取消批量抽取吗？')) {
-            isBatchDrawing = false;
+            appState.isBatchDrawing = false;
         }
     }
 });
