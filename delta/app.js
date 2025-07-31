@@ -217,7 +217,7 @@ const items = [
     { name: "无线电钻", size: [2, 1], color: "blue", image: "delta/无线电钻.png", description: "充电式电钻工具" },
     { name: "木雕烟斗", size: [2, 1], color: "blue", image: "delta/木雕烟斗.png", description: "木质雕刻的烟斗" },
     { name: "芳纶纤维", size: [2, 1], color: "blue", image: "delta/芳纶纤维.png", description: "高强度合成纤维材料" },
-    { name: "听诊器", size: [2, 1], color: "blue", image: "delta/听诊器.png", description: "医疗诊断用听诊设备" },
+    { name: "听诊器", size: [1, 2], color: "blue", image: "delta/听诊器.png", description: "医疗诊断用听诊设备" },
     { name: "电子温度计", size: [2, 2], color: "blue", image: "delta/电子温度计.png", description: "电子温度测量设备" },
     { name: "医疗无人机", size: [2, 2], color: "blue", image: "delta/医疗无人机.png", description: "用于医疗用途的无人机" },
     { name: "轻型户外炉具", size: [2, 2], color: "blue", image: "delta/轻型户外炉具.png", description: "便携的户外烹饪设备" },
