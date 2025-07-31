@@ -222,7 +222,6 @@
         "size": [1, 1],
         "color": "purple",
         "image": "delta/柠檬茶.png",
-        "image": "delta/柠檬茶.png",
         "description": "清爽的柠檬茶饮料"
     },
     {
@@ -305,7 +304,6 @@
     {
         "name": "阿萨拉卫队机密档案",
         "size": [1, 2],
-        "size": [1, 2],
         "color": "purple",
         "image": "delta/阿萨拉卫队机密档案.png",
         "description": "阿萨拉卫队的机密文件"
@@ -323,7 +321,6 @@
         "color": "purple",
         "image": "delta/HIFI声卡.png",
         "description": "高保真音频处理卡"
-    },
     },
     {
         "name": "广角镜头",
@@ -578,4 +575,3 @@
         "description": "储存燃气的容器"
     }
 ]
-    
