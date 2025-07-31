@@ -152,7 +152,7 @@ const items = [
     { name: "血氧仪", size: [1, 1], color: "gold", image: "delta/血氧仪.png", description: "检测血氧饱和度的便携式设备" },
     { name: "海盗金币", size: [1, 1], color: "gold", image: "delta/海盗金币.png", description: "古代海盗遗留的金币，具有收藏价值" },
     { name: "手机", size: [1, 1], color: "gold", image: "delta/手机.png", description: "智能手机，功能齐全" },
-    { name: "卫星电话", size: [1, 1], color: "gold", image: "delta/卫星电话.png", description: "可在全球范围内通讯的卫星电话" },
+    { name: "卫星电话", size: [1, 2], color: "gold", image: "delta/卫星电话.png", description: "可在全球范围内通讯的卫星电话" },
     { name: "高速固态硬盘", size: [1, 1], color: "gold", image: "delta/高速固态硬盘.png", description: "高速读写的固态硬盘" },
     { name: "数码相机", size: [1, 1], color: "gold", image: "delta/数码相机.png", description: "高像素数码相机，拍摄效果出色" },
     { name: "CPU", size: [1, 1], color: "gold", image: "delta/CPU.png", description: "高性能中央处理器" },
