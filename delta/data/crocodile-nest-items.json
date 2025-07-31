@@ -1,0 +1,581 @@
+[
+    {
+        "name": "复苏呼吸机",
+        "size": [3, 3],
+        "color": "red",
+        "image": "delta/复苏呼吸机.png",
+        "rarity": "legendary",
+        "description": "高级生命支持设备，可在紧急情况下维持患者呼吸功能"
+    },
+    {
+        "name": "主战坦克模型",
+        "size": [3, 3],
+        "color": "red",
+        "image": "delta/主战坦克模型.png",
+        "description": "精细制作的主战坦克比例模型，具有收藏价值"
+    },
+    {
+        "name": "步战车模型",
+        "size": [3, 2],
+        "color": "red",
+        "image": "delta/步战车模型.png",
+        "description": "步战车的精致模型，细节还原度高"
+    },
+    {
+        "name": "量子存储",
+        "size": [1, 1],
+        "color": "red",
+        "image": "delta/量子存储.png",
+        "description": "采用量子技术的先进存储设备，容量巨大"
+    },
+    {
+        "name": "塞伊德的怀表",
+        "size": [1, 1],
+        "color": "red",
+        "image": "delta/塞伊德的怀表.png",
+        "description": "塞伊德的个人怀表，具有收藏价值"
+    },
+    {
+        "name": "名贵机械表",
+        "size": [1, 1],
+        "color": "red",
+        "image": "delta/名贵机械表.png",
+        "description": "高端机械表，工艺精湛，价值不菲"
+    },
+    {
+        "name": "\"钻石\"鱼子酱",
+        "size": [1, 1],
+        "color": "red",
+        "image": "delta/\"钻石\"鱼子酱.png",
+        "description": "被称为\"钻石\"的顶级鱼子酱，极其稀有昂贵"
+    },
+    {
+        "name": "奥莉薇娅香槟",
+        "size": [1, 2],
+        "color": "red",
+        "image": "delta/奥莉薇娅香槟.png",
+        "description": "顶级奥莉薇娅品牌香槟，口感醇厚"
+    },
+    {
+        "name": "资料：设计图纸",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/资料：设计图纸.png",
+        "description": "包含重要设计信息的资料图纸"
+    },
+    {
+        "name": "纯金打火机",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/纯金打火机.png",
+        "description": "纯金打造的打火机，工艺精美"
+    },
+    {
+        "name": "阿萨拉特色酒杯",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/阿萨拉特色酒杯.png",
+        "description": "阿萨拉地区特色工艺酒杯"
+    },
+    {
+        "name": "体内除颤器",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/体内除颤器.png",
+        "description": "植入式体内除颤设备，可挽救心脏骤停患者"
+    },
+    {
+        "name": "燃料电池",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/燃料电池.png",
+        "description": "高效燃料电池，提供持久电力"
+    },
+    {
+        "name": "血氧仪",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/血氧仪.png",
+        "description": "检测血氧饱和度的便携式设备"
+    },
+    {
+        "name": "海盗金币",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/海盗金币.png",
+        "description": "古代海盗遗留的金币，具有收藏价值"
+    },
+    {
+        "name": "手机",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/手机.png",
+        "description": "智能手机，功能齐全"
+    },
+    {
+        "name": "卫星电话",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/卫星电话.png",
+        "description": "可在全球范围内通讯的卫星电话"
+    },
+    {
+        "name": "高速固态硬盘",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/高速固态硬盘.png",
+        "description": "高速读写的固态硬盘"
+    },
+    {
+        "name": "数码相机",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/数码相机.png",
+        "description": "高像素数码相机，拍摄效果出色"
+    },
+    {
+        "name": "CPU",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/CPU.png",
+        "description": "高性能中央处理器"
+    },
+    {
+        "name": "可编程处理器",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/可编程处理器.png",
+        "description": "可灵活编程的处理器，适用于多种场景"
+    },
+    {
+        "name": "咖啡",
+        "size": [1, 1],
+        "color": "gold",
+        "image": "delta/咖啡.png",
+        "description": "高品质咖啡豆，口感浓郁"
+    },
+    {
+        "name": "\"蓝宝石\"龙舌兰",
+        "size": [2, 1],
+        "color": "gold",
+        "image": "delta/\"蓝宝石\"龙舌兰.png",
+        "description": "名为\"蓝宝石\"的顶级龙舌兰酒"
+    },
+    {
+        "name": "心脏支架",
+        "size": [2, 1],
+        "color": "gold",
+        "image": "delta/心脏支架.png",
+        "description": "用于心脏手术的医疗支架"
+    },
+    {
+        "name": "军用望远镜",
+        "size": [2, 2],
+        "color": "gold",
+        "image": "delta/军用望远镜.png",
+        "description": "高倍率军用望远镜，视野清晰"
+    },
+    {
+        "name": "军用炸药",
+        "size": [2, 2],
+        "color": "gold",
+        "image": "delta/军用炸药.png",
+        "description": "军用级炸药，威力巨大"
+    },
+    {
+        "name": "能量凝胶",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/能量凝胶.png",
+        "description": "提供快速能量补充的凝胶"
+    },
+    {
+        "name": "信号棒",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/信号棒.png",
+        "description": "发出强光信号的应急设备"
+    },
+    {
+        "name": "间谍笔",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/间谍笔.png",
+        "description": "伪装成钢笔的间谍设备"
+    },
+    {
+        "name": "GS5手柄",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/GS5手柄.png",
+        "description": "GS5游戏机专用手柄"
+    },
+    {
+        "name": "电子干扰器",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/电子干扰器.png",
+        "description": "便携式电子信号干扰设备"
+    },
+    {
+        "name": "柠檬茶",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/柠檬茶.png",
+        "image": "delta/柠檬茶.png",
+        "description": "清爽的柠檬茶饮料"
+    },
+    {
+        "name": "资料：军事情报",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/资料：军事情报.png",
+        "description": "包含军事情报的机密资料"
+    },
+    {
+        "name": "植物样本",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/植物样本.png",
+        "description": "未知植物的样本，具有研究价值"
+    },
+    {
+        "name": "鳄鱼蛋",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/鳄鱼蛋.png",
+        "description": "新鲜的鳄鱼蛋，外壳坚硬"
+    },
+    {
+        "name": "鳄鱼血样",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/鳄鱼血样.png",
+        "description": "鳄鱼血液样本，用于研究"
+    },
+    {
+        "name": "后妃耳环",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/后妃耳环.png",
+        "description": "古代后妃佩戴的珍贵耳环"
+    },
+    {
+        "name": "固态硬盘",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/固态硬盘.png",
+        "description": "存储数据的固态存储设备"
+    },
+    {
+        "name": "内存条",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/内存条.png",
+        "description": "计算机内存模块"
+    },
+    {
+        "name": "海盗弯刀",
+        "size": [1, 1],
+        "color": "purple",
+        "image": "delta/海盗弯刀.png",
+        "description": "海盗使用的弯刀"
+    },
+    {
+        "name": "人工膝关节",
+        "size": [1, 2],
+        "color": "purple",
+        "image": "delta/人工膝关节.png",
+        "description": "用于替换手术的人工膝关节"
+    },
+    {
+        "name": "燃气喷灯",
+        "size": [1, 2],
+        "color": "purple",
+        "image": "delta/燃气喷灯.png",
+        "description": "用于加热或焊接的燃气喷灯"
+    },
+    {
+        "name": "粉碎钳",
+        "size": [1, 2],
+        "color": "purple",
+        "image": "delta/粉碎钳.png",
+        "description": "用于破拆的重型钳子"
+    },
+    {
+        "name": "阿萨拉卫队机密档案",
+        "size": [1, 2],
+        "size": [1, 2],
+        "color": "purple",
+        "image": "delta/阿萨拉卫队机密档案.png",
+        "description": "阿萨拉卫队的机密文件"
+    },
+    {
+        "name": "便携生存套件",
+        "size": [1, 2],
+        "color": "purple",
+        "image": "delta/便携生存套件.png",
+        "description": "包含多种生存工具的便携套件"
+    },
+    {
+        "name": "HIFI声卡",
+        "size": [2, 1],
+        "color": "purple",
+        "image": "delta/HIFI声卡.png",
+        "description": "高保真音频处理卡"
+    },
+    },
+    {
+        "name": "广角镜头",
+        "size": [2, 1],
+        "color": "purple",
+        "image": "delta/广角镜头.png",
+        "description": "相机用广角镜头"
+    },
+    {
+        "name": "专业声卡",
+        "size": [2, 1],
+        "color": "purple",
+        "image": "delta/专业声卡.png",
+        "description": "专业级音频处理设备"
+    },
+    {
+        "name": "收音机",
+        "size": [2, 1],
+        "color": "purple",
+        "image": "delta/收音机.png",
+        "description": "接收广播信号的设备"
+    },
+    {
+        "name": "军用露营灯",
+        "size": [1, 3],
+        "color": "purple",
+        "image": "delta/军用露营灯.png",
+        "description": "军用级别的露营照明设备"
+    },
+    {
+        "name": "继电器",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/继电器.png",
+        "description": "用于电路控制的继电器"
+    },
+    {
+        "name": "摄像头",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/摄像头.png",
+        "description": "用于拍摄的视频设备"
+    },
+    {
+        "name": "军用电源",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/军用电源.png",
+        "description": "军用规格的电源设备"
+    },
+    {
+        "name": "音频播放器",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/音频播放器.png",
+        "description": "播放音频文件的设备"
+    },
+    {
+        "name": "多用途电池",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/多用途电池.png",
+        "description": "可用于多种设备的电池"
+    },
+    {
+        "name": "高精数卡尺",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/高精数卡尺.png",
+        "description": "高精度测量工具"
+    },
+    {
+        "name": "维生素腾片",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/维生素腾片.png",
+        "description": "补充维生素的泡腾片"
+    },
+    {
+        "name": "蛋白粉包",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/蛋白粉包.png",
+        "description": "便携装蛋白质补充粉"
+    },
+    {
+        "name": "糖三角",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/糖三角.png",
+        "description": "传统面食，内有糖馅"
+    },
+    {
+        "name": "狩猎火柴",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/狩猎火柴.png",
+        "description": "防风防水的户外火柴"
+    },
+    {
+        "name": "低级燃料",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/低级燃料.png",
+        "description": "品质较低的燃料"
+    },
+    {
+        "name": "英式袋泡茶",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/英式袋泡茶.png",
+        "description": "英国风格的袋泡茶"
+    },
+    {
+        "name": "存储卡",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/存储卡.png",
+        "description": "用于存储数据的存储卡"
+    },
+    {
+        "name": "炒面",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/炒面.png",
+        "description": "速食炒面"
+    },
+    {
+        "name": "可乐",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/可乐.png",
+        "description": "碳酸饮料"
+    },
+    {
+        "name": "转换插座",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/转换插座.png",
+        "description": "多功能电源转换插座"
+    },
+    {
+        "name": "额温枪",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/额温枪.png",
+        "description": "测量体温的红外设备"
+    },
+    {
+        "name": "U盘",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/U盘.png",
+        "description": "便携式存储设备"
+    },
+    {
+        "name": "摩卡咖啡壶",
+        "size": [1, 2],
+        "color": "blue",
+        "image": "delta/摩卡咖啡壶.png",
+        "description": "制作摩卡咖啡的器具"
+    },
+    {
+        "name": "火药",
+        "size": [1, 2],
+        "color": "blue",
+        "image": "delta/火药.png",
+        "description": "用于爆炸物的化学物质"
+    },
+    {
+        "name": "情报文件",
+        "size": [1, 2],
+        "color": "blue",
+        "image": "delta/情报文件.png",
+        "description": "包含情报信息的文件"
+    },
+    {
+        "name": "军情录音",
+        "size": [1, 3],
+        "color": "blue",
+        "image": "delta/军情录音.png",
+        "description": "记录军事信息的录音"
+    },
+    {
+        "name": "电子显微镜",
+        "size": [1, 3],
+        "color": "blue",
+        "image": "delta/电子显微镜.png",
+        "description": "用于微观观察的电子设备"
+    },
+    {
+        "name": "骨锯",
+        "size": [3, 1],
+        "color": "blue",
+        "image": "delta/骨锯.png",
+        "description": "用于切割骨骼的医疗工具"
+    },
+    {
+        "name": "无线电钻",
+        "size": [2, 1],
+        "color": "blue",
+        "image": "delta/无线电钻.png",
+        "description": "充电式电钻工具"
+    },
+    {
+        "name": "木雕烟斗",
+        "size": [2, 1],
+        "color": "blue",
+        "image": "delta/木雕烟斗.png",
+        "description": "木质雕刻的烟斗"
+    },
+    {
+        "name": "芳纶纤维",
+        "size": [2, 1],
+        "color": "blue",
+        "image": "delta/芳纶纤维.png",
+        "description": "高强度合成纤维材料"
+    },
+    {
+        "name": "听诊器",
+        "size": [2, 1],
+        "color": "blue",
+        "image": "delta/听诊器.png",
+        "description": "医疗诊断用听诊设备"
+    },
+    {
+        "name": "电子温度计",
+        "size": [2, 2],
+        "color": "blue",
+        "image": "delta/电子温度计.png",
+        "description": "电子温度测量设备"
+    },
+    {
+        "name": "医疗无人机",
+        "size": [2, 2],
+        "color": "blue",
+        "image": "delta/医疗无人机.png",
+        "description": "用于医疗用途的无人机"
+    },
+    {
+        "name": "轻型户外炉具",
+        "size": [2, 2],
+        "color": "blue",
+        "image": "delta/轻型户外炉具.png",
+        "description": "便携的户外烹饪设备"
+    },
+    {
+        "name": "燃气罐",
+        "size": [2, 2],
+        "color": "blue",
+        "image": "delta/燃气罐.png",
+        "description": "储存燃气的容器"
+    }
+]
+    
