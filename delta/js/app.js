@@ -1,4 +1,3 @@
-
 // 全局变量初始化
 const largeContainer = document.getElementById('largeContainer');
 const smallContainer = document.getElementById('smallContainer');
@@ -55,7 +54,7 @@ const detailDescription = document.getElementById('detailDescription');
 const toast = document.getElementById('toast');
 const loadingIndicator = document.getElementById('loadingIndicator');
 
-const scrollCols = document.querySelectorAll('.scroll-container');
+const scrollCols = document.querySelectorAll('.scroll-col');;
 const scrollElements = [
     document.getElementById('scroll0'),
     document.getElementById('scroll1'),
