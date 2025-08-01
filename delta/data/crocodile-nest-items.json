@@ -22,6 +22,20 @@
         "description": "步战车的精致模型，细节还原度高"
     },
     {
+        "name": "军用控制终端",
+        "size": [2, 1],
+        "color": "red",
+        "image": "delta/军用控制终端.png",
+        "description": "军用控制终端"
+    },
+    {
+        "name": "显卡",
+        "size": [2, 1],
+        "color": "red",
+        "image": "delta/显卡.png",
+        "description": "显卡"
+    },
+    {
         "name": "量子存储",
         "size": [1, 1],
         "color": "red",
@@ -86,7 +100,7 @@
     },
     {
         "name": "燃料电池",
-        "size": [1, 1],
+        "size": [2, 6],
         "color": "gold",
         "image": "delta/燃料电池.png",
         "description": "高效燃料电池，提供持久电力"
@@ -106,15 +120,22 @@
         "description": "古代海盗遗留的金币，具有收藏价值"
     },
     {
+        "name": "军用弹道计算机",
+        "size": [2, 1],
+        "color": "gold",
+        "image": "delta/军用弹道计算机.png",
+        "description": "军用弹道计算"
+    },
+    {
         "name": "手机",
-        "size": [1, 1],
+        "size": [1, 2],
         "color": "gold",
         "image": "delta/手机.png",
         "description": "智能手机，功能齐全"
     },
     {
         "name": "卫星电话",
-        "size": [1, 1],
+        "size": [1, 2],
         "color": "gold",
         "image": "delta/卫星电话.png",
         "description": "可在全球范围内通讯的卫星电话"
@@ -149,21 +170,21 @@
     },
     {
         "name": "咖啡",
-        "size": [1, 1],
+        "size": [1, 2],
         "color": "gold",
         "image": "delta/咖啡.png",
         "description": "高品质咖啡豆，口感浓郁"
     },
     {
         "name": "\"蓝宝石\"龙舌兰",
-        "size": [2, 1],
+        "size": [1, 2],
         "color": "gold",
         "image": "delta/\"蓝宝石\"龙舌兰.png",
         "description": "名为\"蓝宝石\"的顶级龙舌兰酒"
     },
     {
         "name": "心脏支架",
-        "size": [2, 1],
+        "size": [1, 2],
         "color": "gold",
         "image": "delta/心脏支架.png",
         "description": "用于心脏手术的医疗支架"
@@ -295,10 +316,10 @@
         "description": "用于加热或焊接的燃气喷灯"
     },
     {
-        "name": "粉碎钳",
+        "name": "高出力粉碎钳",
         "size": [1, 2],
         "color": "purple",
-        "image": "delta/粉碎钳.png",
+        "image": "delta/高出力粉碎钳.png",
         "description": "用于破拆的重型钳子"
     },
     {
@@ -310,7 +331,7 @@
     },
     {
         "name": "便携生存套件",
-        "size": [1, 2],
+        "size": [2, 1],
         "color": "purple",
         "image": "delta/便携生存套件.png",
         "description": "包含多种生存工具的便携套件"
@@ -342,6 +363,34 @@
         "color": "purple",
         "image": "delta/收音机.png",
         "description": "接收广播信号的设备"
+    },
+    {
+        "name": "加密路由器",
+        "size": [2, 2],
+        "color": "purple",
+        "image": "delta/加密路由器.png",
+        "description": "加密路由器"
+    },
+        {
+        "name": "ASOS电脑主板",
+        "size": [2, 2],
+        "color": "purple",
+        "image": "delta/ASOS电脑主板.png",
+        "description": "电脑主板"
+    },
+    {
+        "name": "离心机",
+        "size": [2, 2],
+        "color": "purple",
+        "image": "delta/离心机.png",
+        "description": ""
+    },
+    {
+        "name": "生化培养箱",
+        "size": [2, 2],
+        "color": "purple",
+        "image": "delta/生化培养箱.png",
+        "description": ""
     },
     {
         "name": "军用露营灯",
@@ -386,10 +435,10 @@
         "description": "可用于多种设备的电池"
     },
     {
-        "name": "高精数卡尺",
+        "name": "高精数显卡尺",
         "size": [1, 1],
         "color": "blue",
-        "image": "delta/高精数卡尺.png",
+        "image": "delta/高精数显卡尺.png",
         "description": "高精度测量工具"
     },
     {
@@ -405,6 +454,13 @@
         "color": "blue",
         "image": "delta/蛋白粉包.png",
         "description": "便携装蛋白质补充粉"
+    },
+    {
+        "name": "资料：商业文件",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/资料：商业文件.png",
+        "description": "资料文件"
     },
     {
         "name": "糖三角",
