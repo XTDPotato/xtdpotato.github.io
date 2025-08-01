@@ -8,6 +8,14 @@
         "description": "高级生命支持设备，可在紧急情况下维持患者呼吸功能"
     },
     {
+        "name": "强化碳纤维板",
+        "size": [3, 3],
+        "color": "red",
+        "image": "delta/强化碳纤维板.png",
+        "rarity": "legendary",
+        "description": ""
+    },
+    {
         "name": "主战坦克模型",
         "size": [3, 3],
         "color": "red",
