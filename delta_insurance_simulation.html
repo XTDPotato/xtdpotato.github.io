@@ -1,783 +1,552 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三角洲容器模拟</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Material3 主题颜色
-                        primary: '#6366f1', // 靛蓝色作为主色调
-                        secondary: '#ec4899', // 粉色作为辅助色
-                        tertiary: '#10b981', // 绿色作为第三色调（鳄鱼窝）
-                        surface: '#ffffff',
-                        'surface-variant': '#f1f5f9',
-                        'on-primary': '#ffffff',
-                        'on-secondary': '#ffffff',
-                        'on-tertiary': '#ffffff',
-                        'on-surface': '#1e293b',
-                        'on-surface-variant': '#64748b',
-                        'error': '#ef4444',
-                        'outline': '#cbd5e1',
-                    },
-                    fontFamily: {
-                        sans: ['Roboto', 'sans-serif'],
-                        digital: ['Orbitron', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        'glow': '0 0 15px rgba(99, 102, 241, 0.5)',
-                        'crocodile-glow': '0 0 15px rgba(16, 185, 129, 0.5)',
-                    }
-                }
-            }
-        }
-    </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-with-footer {
-                padding-bottom: 80px; 
-            }
-            .content-auto {
-                content-visibility: auto;
-            }
-            .text-shadow {
-                text-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
-            }
-            .crocodile-shadow {
-                text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-            }
-            .scroll-container {
-                overflow: hidden;
-                position: relative;
-                height: 160px;
-                width: 64px;
-                border: 1px solid theme('colors.outline');
-                border-radius: 8px;
-                background-color: theme('colors.surface');
-            }
-            .target-line {
-                position: absolute;
-                left: 0;
-                right: 0;
-                height: 3px;
-                background-color: theme('colors.primary');
-                top: 80px;
-                z-index: 10;
-            }
-            .target-box {
-                position: absolute;
-                left: 8px;
-                right: 8px;
-                height: 32px;
-                top: 64px;
-                z-index: 5;
-                border: 2px solid theme('colors.primary');
-                border-radius: 4px;
-                background-color: rgba(99, 102, 241, 0.1);
-                pointer-events: none;
-            }
-            .error-highlight {
-                animation: error 0.5s ease-out;
-            }
-            @keyframes error {
-                0%, 100% { border-color: theme('colors.outline'); }
-                50% { border-color: theme('colors.error'); background-color: rgba(239, 68, 68, 0.1); }
-            }
-            .modal-backdrop {
-                backdrop-filter: blur(5px);
-                background-color: rgba(0, 0, 0, 0.5);
-            }
-            .progress-shine {
-                position: relative;
-                overflow: hidden;
-            }
-            .progress-shine::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: -100%;
-                width: 50%;
-                height: 100%;
-                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-                animation: shine 2s infinite;
-            }
-            @keyframes shine {
-                100% { left: 150%; }
-            }
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.6; }
-            }
-            .pulse {
-                animation: pulse 1.5s infinite;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; transform: scale(0.9); }
-                to { opacity: 1; transform: scale(1); }
-            }
-            .fade-in {
-                animation: fadeIn 0.3s ease-out forwards;
-            }
-            @keyframes slideUp {
-                from { transform: translateY(20px); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
-            }
-            .slide-up {
-                animation: slideUp 0.3s ease-out forwards;
-            }
-            .grid-cell {
-                aspect-ratio: 1/1;
-                background-clip: padding-box;
-                transition: all 0.3s ease;
-            }
-            .unread-item {
-                background-color: theme('colors.surface');
-                background-image: linear-gradient(45deg, rgba(100, 116, 185, 0.05) 25%, transparent 25%),
-                                  linear-gradient(-45deg, rgba(100, 116, 185, 0.05) 25%, transparent 25%),
-                                  linear-gradient(-45deg, rgba(100, 116, 185, 0.05) 25%, transparent 25%),
-                                  linear-gradient(45deg, transparent 75%, rgba(100, 116, 185, 0.05) 75%),
-                                  linear-gradient(-45deg, transparent 75%, rgba(100, 116, 185, 0.05) 75%);
-                background-size: 20px 20px;
-                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            }
-            .placeholder-item {
-                background-color: rgba(100, 116, 185, 0.1);
-                border: 1px dashed rgba(100, 116, 185, 0.3);
-            }
-            .magnifier-track {
-                position: absolute;
-                pointer-events: none;
-            }
-            .magnifier {
-                position: absolute;
-                color: rgba(100, 116, 185, 0.7);
-                animation: magnifier-path 2s linear infinite;
-                pointer-events: none;
-                transform: translate(-50%, -50%);
-                font-size: 1.5rem !important;
-            }
-            @keyframes magnifier-path {
-                0% { transform: translate(-50%, -50%) translate(0, 0); }
-                25% { transform: translate(-50%, -50%) translate(50%, -50%); }
-                50% { transform: translate(-50%, -50%) translate(50%, 50%); }
-                75% { transform: translate(-50%, -50%) translate(-50%, 50%); }
-                100% { transform: translate(-50%, -50%) translate(0, 0); }
-            }
-            @keyframes completePulse {
-                0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-                50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
-            }
-            .complete-animation {
-                animation: completePulse 1s ease-in-out;
-            }
-            @keyframes charScale {
-                0%, 100% { transform: scale(1); }
-                25% { transform: scale(1.4); }
-                50% { transform: scale(1); }
-                75% { transform: scale(1.2); }
-            }
-            .char-scale {
-                animation: charScale 1s ease-out;
-            }
-            @keyframes buttonClick {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(0.95); }
-            }
-            .button-click {
-                animation: buttonClick 0.2s ease-out;
-            }
-            .final-highlight {
-                box-shadow: 0 0 20px rgba(99, 102, 241, 0.7);
-                border-color: theme('colors.primary') !important;
-            }
-            .crocodile-final-highlight {
-                box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
-                border-color: theme('colors.tertiary') !important;
-            }
-            .center-char {
-                font-weight: bold !important;
-                transform: scale(1.1);
-                color: theme('colors.primary') !important;
-            }
-            .crocodile-center-char {
-                font-weight: bold !important;
-                transform: scale(1.1);
-                color: theme('colors.tertiary') !important;
-            }
-            .active-column {
-                border-color: theme('colors.primary') !important;
-                box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
-            }
-            .crocodile-active-column {
-                border-color: theme('colors.tertiary') !important;
-                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            }
-            .record-item {
-                transition: all 0.2s ease;
-                border-bottom: 1px solid rgba(100, 116, 185, 0.1);
-            }
-            .record-item:hover {
-                background-color: rgba(100, 116, 185, 0.05);
-                transform: translateX(3px);
-                cursor: pointer;
-            }
-            .counter-badge {
-                min-width: 24px;
-                height: 24px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .item-gradient {
-                background-image: linear-gradient(135deg, rgba(100, 116, 185, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%);
-            }
-            .skip-button {
-                transition: all 0.2s ease;
-            }
-            .skip-button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            .item-name {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: 2px 4px;
-                background-color: rgba(255, 255, 255, 0.8);
-                color: theme('colors.on-surface');
-                font-size: 10px;
-                text-align: center;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                z-index: 1;
-            }
-            .grid-lines {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-            }
-            .grid-line {
-                position: absolute;
-                background-color: rgba(100, 116, 185, 0.1);
-            }
-            .item-detail-modal {
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s ease;
-            }
-            .item-detail-modal.active {
-                opacity: 1;
-                visibility: visible;
-            }
-            .fullsize-icon {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 4px;
-                font-size: 24px;
-            }
-            .record-icon {
-                width: 24px;
-                height: 24px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 16px;
-            }
-            .nav-item {
-                transition: all 0.2s ease;
-                cursor: pointer;
-                color: theme('colors.on-surface-variant');
-            }
-            .nav-item.active {
-                color: theme('colors.primary');
-                border-color: theme('colors.primary');
-                box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
-            }
-            .nav-item:hover:not(.active) {
-                color: theme('colors.on-surface');
-                border-color: rgba(100, 116, 185, 0.5);
-            }
-            .item-checkbox {
-                position: absolute;
-                top: 2px;
-                right: 2px;
-                z-index: 2;
-                width: 16px;
-                height: 16px;
-                opacity: 0;
-                cursor: pointer;
-            }
-            .item-checkbox + label {
-                position: absolute;
-                top: 2px;
-                right: 2px;
-                z-index: 1;
-                width: 16px;
-                height: 16px;
-                background-color: rgba(255, 255, 255, 0.8);
-                border: 1px solid rgba(100, 116, 185, 0.3);
-                border-radius: 2px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            .item-checkbox:checked + label::after {
-                content: "✓";
-                position: absolute;
-                color: theme('colors.primary');
-                font-size: 12px;
-                top: 0;
-                left: 2px;
-            }
-            .batch-progress-container {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 4px;
-                background-color: rgba(255, 255, 255, 0.8);
-                z-index: 100;
-                display: none;
-            }
-            .batch-progress-bar {
-                height: 100%;
-                background-color: theme('colors.primary');
-                width: 0%;
-                transition: width 0.3s ease;
-            }
-            .crocodile-progress-bar {
-                background-color: theme('colors.tertiary');
-            }
-            .view-section {
-                display: none;
-                animation: fadeIn 0.3s ease-out;
-            }
-            .view-section.active {
-                display: block;
-            }
-            .toast {
-                position: fixed;
-                bottom: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background-color: theme('colors.surface');
-                color: theme('colors.on-surface');
-                padding: 8px 16px;
-                border-radius: 20px;
-                border: 1px solid rgba(100, 116, 185, 0.1);
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-            .toast.show {
-                opacity: 1;
-            }
-            .container-item {
-                transition: all 0.3s ease;
-                cursor: pointer;
-                border: 1px solid transparent;
-            }
-            .container-item.active {
-                border-color: theme('colors.primary') !important;
-                box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-                transform: scale(1.05);
-            }
-            .container-item.crocodile-active {
-                border-color: theme('colors.tertiary') !important;
-                box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-                transform: scale(1.05);
-            }
-            .container-item.disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-                position: relative;
-            }
-            .container-item.disabled::after {
-                content: "开发中";
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background-color: rgba(255, 255, 255, 0.8);
-                padding: 2px 8px;
-                border-radius: 4px;
-                font-size: 14px;
-                color: theme('colors.on-surface-variant');
-                border: 1px solid rgba(100, 116, 185, 0.1);
-            }
-            .search-container {
-                position: relative;
-                margin-bottom: 4px;
-            }
-            .search-input {
-                width: 100%;
-                padding: 8px 16px 8px 40px;
-                background-color: theme('colors.surface');
-                border: 1px solid theme('colors.outline');
-                border-radius: 20px;
-                color: theme('colors.on-surface');
-                font-size: 14px;
-                transition: all 0.2s ease;
-            }
-            .search-input:focus {
-                outline: none;
-                border-color: theme('colors.primary');
-                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            }
-            .search-icon {
-                position: absolute;
-                left: 12px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: theme('colors.on-surface-variant');
-            }
-            .multi-select-controls {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 4px;
-                font-size: 12px;
-            }
-            .multi-select-button {
-                color: theme('colors.primary');
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            .multi-select-button:hover {
-                text-decoration: underline;
-                color: #7c7ff2;
-            }
-            /* Material3 Switch */
-            .toggle-switch {
-                position: relative;
-                display: inline-block;
-                width: 51px;
-                height: 31px;
-            }
-            .toggle-switch input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-            .toggle-slider {
-                position: absolute;
-                cursor: pointer;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: #e5e7eb;
-                transition: .3s;
-                border-radius: 34px;
-            }
-            .toggle-slider:before {
-                position: absolute;
-                content: "";
-                height: 23px;
-                width: 23px;
-                left: 4px;
-                bottom: 4px;
-                background-color: white;
-                transition: .3s;
-                border-radius: 50%;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            }
-            input:checked + .toggle-slider {
-                background-color: theme('colors.primary');
-            }
-            input:checked + .toggle-slider:before {
-                transform: translateX(20px);
-            }
-            .item-image {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                filter: brightness(1);
-            }
-            ::-webkit-scrollbar {
-                width: 6px;
-                height: 6px;
-            }
-            ::-webkit-scrollbar-track {
-                background: rgba(241, 245, 249, 0.5);
-                border-radius: 3px;
-            }
-            ::-webkit-scrollbar-thumb {
-                background: rgba(100, 116, 185, 0.3);
-                border-radius: 3px;
-            }
-            ::-webkit-scrollbar-thumb:hover {
-                background: rgba(100, 116, 185, 0.5);
-            }
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4 font-sans text-on-surface">
-    <div class="w-full max-w-2xl flex flex-col min-h-screen content-with-footer">
-        <div class="text-center mb-6">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-primary text-shadow">三角洲容器模拟</h1>
-        </div>
-        
-        <!-- 导航栏 - Material3 风格 -->
-        <div class="flex justify-center mb-8 bg-white rounded-full shadow-md p-1 max-w-md mx-auto">
-            <div class="nav-item active flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
-                <i class="material-icons mr-1">home</i>
-                <span class="hidden sm:inline">主页</span>
-            </div>
-            <div class="nav-item flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
-                <i class="material-icons mr-1">auto_awesome</i>
-                <span class="hidden sm:inline">一键抽取</span>
-            </div>
-            <div class="nav-item flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
-                <i class="material-icons mr-1">history</i>
-                <span class="hidden sm:inline">记录</span>
-            </div>
-        </div>
-        
-        <!-- 主页视图 -->
-        <div id="mainView" class="view-section active">
-            <div class="text-center mb-8">
-                <div class="flex flex-col md:flex-row justify-center gap-6">
-                    <!-- 大保险容器 -->
-                    <div id="largeContainer" class="container-item relative w-56 h-56 md:w-64 md:h-64 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-glow bg-gradient-to-br from-primary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
-                        <div class="absolute inset-4 border-2 border-primary/30 rounded-lg flex items-center justify-center flex-col">
-                            <img src="delta/container_large.png" alt="大保险容器" class="w-32 h-32 md:w-40 md:h-40 mb-4 pulse">
-                            <span class="text-xl md:text-2xl font-bold text-primary">大保险</span>
-                            <span class="text-sm text-on-surface-variant mt-2">需解锁</span>
-                        </div>
-                        <div class="absolute top-1/4 left-0 w-full h-1 bg-primary/10"></div>
-                        <div class="absolute bottom-1/4 left-0 w-full h-1 bg-primary/10"></div>
-                        <div class="absolute top-0 left-1/4 w-1 h-full bg-primary/10"></div>
-                        <div class="absolute top-0 right-1/4 w-1 h-full bg-primary/10"></div>
-                    </div>
-                    
-                    <!-- 小保险容器 -->
-                    <div id="smallContainer" class="container-item relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-glow bg-gradient-to-br from-primary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
-                        <div class="absolute inset-4 border-2 border-primary/30 rounded-lg flex items-center justify-center flex-col">
-                            <img src="delta/container_small.png" alt="小保险容器" class="w-28 h-28 md:w-36 md:h-36 mb-4 pulse">
-                            <span class="text-xl md:text-2xl font-bold text-primary">小保险</span>
-                            <span class="text-sm text-on-surface-variant mt-2">直接打开</span>
-                        </div>
-                        <div class="absolute top-1/4 left-0 w-full h-1 bg-primary/10"></div>
-                        <div class="absolute bottom-1/4 left-0 w-full h-1 bg-primary/10"></div>
-                        <div class="absolute top-0 left-1/4 w-1 h-full bg-primary/10"></div>
-                        <div class="absolute top-0 right-1/4 w-1 h-full bg-primary/10"></div>
-                    </div>
-                    
-                    <!-- 鳄鱼窝容器 -->
-                    <div id="crocodileNest" class="container-item relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-crocodile-glow bg-gradient-to-br from-tertiary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
-                        <div class="absolute inset-4 border-2 border-tertiary/30 rounded-lg flex items-center justify-center flex-col">
-                            <img src="delta/container_crocodile.png" alt="鳄鱼窝容器" class="w-28 h-28 md:w-36 md:h-36 mb-4 pulse">
-                            <span class="text-xl md:text-2xl font-bold text-tertiary crocodile-shadow">鳄鱼窝</span>
-                            <span class="text-sm text-on-surface-variant mt-2">直接打开</span>
-                        </div>
-                        <div class="absolute top-1/4 left-0 w-full h-1 bg-tertiary/10"></div>
-                        <div class="absolute bottom-1/4 left-0 w-full h-1 bg-tertiary/10"></div>
-                        <div class="absolute top-0 left-1/4 w-1 h-full bg-tertiary/10"></div>
-                        <div class="absolute top-0 right-1/4 w-1 h-full bg-tertiary/10"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 一键抽取视图 -->
-        <div id="batchView" class="view-section">
-            <div class="bg-white rounded-xl p-6 mb-8 border border-outline/50 shadow-md slide-up">
-                <h2 class="text-xl font-bold mb-6 text-primary flex items-center">
-                    <i class="material-icons mr-2">auto_awesome</i> 一键抽取设置
-                </h2>
-                
-                <div class="mb-6">
-                    <label class="block text-sm text-on-surface-variant mb-3">容器类型</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="containerTypeList">
-                        <div class="container-item active p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow" data-type="large">
-                            <img src="delta/container_large.png" alt="大保险容器" class="w-16 h-16 mx-auto mb-3">
-                            <span>大保险</span>
-                        </div>
-                        <div class="container-item p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow" data-type="small">
-                            <img src="delta/container_small.png" alt="小保险容器" class="w-16 h-16 mx-auto mb-3">
-                            <span>小保险</span>
-                        </div>
-                        <div class="container-item p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow" data-type="crocodile">
-                            <img src="delta/container_crocodile.png" alt="鳄鱼窝容器" class="w-16 h-16 mx-auto mb-3">
-                            <span class="text-tertiary">鳄鱼窝</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 鳄鱼窝特有设置 -->
-                <div id="crocodileSettings" class="mb-6 hidden bg-tertiary/5 p-4 rounded-xl border border-tertiary/20">
-                    <label class="block text-sm text-tertiary mb-3">鳄鱼驯服度</label>
-                    <input type="range" id="tamenessLevel" min="0" max="100" value="70" 
-                           class="w-full h-2 bg-outline rounded-lg appearance-none cursor-pointer accent-tertiary">
-                    <div class="flex justify-between text-xs text-on-surface-variant mt-2">
-                        <span>野生 (低概率)</span>
-                        <span id="tamenessValue">70%</span>
-                        <span>完全驯服 (高概率)</span>
-                    </div>
-                    <p class="text-xs text-on-surface-variant mt-3">驯服度越高，获得稀有物品的概率越大</p>
-                </div>
-                
-                <div class="mb-6">
-                    <label for="drawCount" class="block text-sm text-on-surface-variant mb-2">抽取次数</label>
-                    <div class="flex">
-                        <input type="number" id="drawCount" min="1" max="10000" value="10" class="bg-surface border border-outline rounded-l-lg px-4 py-2.5 w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                        <button id="maxCountBtn" class="bg-outline hover:bg-outline/70 px-4 rounded-r-lg transition-colors">
-                            最大
-                        </button>
-                    </div>
-                    <p class="text-xs text-on-surface-variant mt-2">最多可输入10000次</p>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-sm text-on-surface-variant mb-3">停止条件（可选）</label>
-                    <p class="text-xs text-on-surface-variant mb-3">选择抽中以下物品后自动停止</p>
-                    
-                    <!-- 搜索框 -->
-                    <div class="search-container mb-4">
-                        <i class="material-icons search-icon">search</i>
-                        <input type="text" id="stopConditionSearch" class="search-input" placeholder="搜索物品...">
-                    </div>
-                    
-                    <div id="stopConditionContainer" class="max-h-[150px] overflow-y-auto pr-2 space-y-1 text-sm border border-outline rounded-lg p-2 bg-surface">
-                        <!-- 动态生成物品选择列表 -->
-                    </div>
-                    
-                    <!-- 多选控制区 -->
-                    <div class="multi-select-controls mt-4">
-                        <div class="multi-select-button" id="deselectAllBtn">取消全选</div>
-                        <div class="flex items-center">
-                            <span class="mr-2">滑动多选</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="slideSelectToggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" id="stopOnAny" class="mr-2 accent-primary">
-                            <span>抽中任何选中物品即停止</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <button id="startBatchBtn" class="w-full bg-primary text-on-primary font-medium py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors duration-300 flex items-center justify-center shadow-md hover:shadow-lg">
-                    <i class="material-icons mr-2">play_arrow</i> 开始一键抽取
-                </button>
-            </div>
-        </div>
-        
-        <!-- 记录视图 -->
-        <div id="recordsView" class="view-section">
-            <div class="bg-white rounded-xl p-6 mb-8 border border-outline/50 shadow-md slide-up">
-                <h2 class="text-xl font-bold mb-6 text-primary flex items-center">
-                    <i class="material-icons mr-2">history</i> 物品获取记录
-                </h2>
-                
-                <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
-                    <div class="flex gap-3">
-                        <button id="clearRecordsBtn" class="text-sm bg-error/10 text-error border border-error/20 py-1.5 px-4 rounded-lg hover:bg-error/20 transition-colors duration-300">
-                            <i class="material-icons mr-1" style="font-size: 16px;">delete</i> 清空记录
-                        </button>
-                        <div class="relative">
-                            <select id="filterRecords" class="text-sm bg-surface text-on-surface border border-outline py-1.5 px-4 pr-8 rounded-lg appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                                <option value="all">全部记录</option>
-                                <option value="large">大保险</option>
-                                <option value="small">小保险</option>
-                                <option value="crocodile">鳄鱼窝</option>
-                            </select>
-                            <i class="material-icons absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-on-surface-variant pointer-events-none">arrow_drop_down</i>
-                        </div>
-                    </div>
-                    <span class="text-sm text-on-surface-variant" id="totalItemsCount">总计: 0 件</span>
-                </div>
-                
-                <div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2 border border-outline rounded-lg p-3 bg-surface">
-                    <div class="text-on-surface-variant text-center py-6">
-                        暂无物品记录
-                    </div>
-                </div>
-            </div>
-        </div>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>
+			三角洲容器模拟
+		</title>
+		<script src="https://cdn.tailwindcss.com">
+		</script>
+		<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+		rel="stylesheet">
+		<!-- Material Icons -->
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						colors: {
+							// Material3 主题颜色
+							primary: '#6366f1',
+							// 靛蓝色作为主色调
+							secondary: '#ec4899',
+							// 粉色作为辅助色
+							tertiary: '#10b981',
+							// 绿色作为第三色调（鳄鱼窝）
+							surface: '#ffffff',
+							'surface-variant': '#f1f5f9',
+							'on-primary': '#ffffff',
+							'on-secondary': '#ffffff',
+							'on-tertiary': '#ffffff',
+							'on-surface': '#1e293b',
+							'on-surface-variant': '#64748b',
+							'error': '#ef4444',
+							'outline': '#cbd5e1',
+						},
+						fontFamily: {
+							sans: ['Roboto', 'sans-serif'],
+							digital: ['Orbitron', 'sans-serif'],
+						},
+						boxShadow: {
+							'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+							'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+							'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+							'glow': '0 0 15px rgba(99, 102, 241, 0.5)',
+							'crocodile-glow': '0 0 15px rgba(16, 185, 129, 0.5)',
+						}
+					}
+				}
+			}
+		</script>
+		<style type="text/tailwindcss">
+			@layer utilities { .content-with-footer { padding-bottom: 80px; } .content-auto
+			{ content-visibility: auto; } .text-shadow { text-shadow: 0 0 8px rgba(99,
+			102, 241, 0.5); } .crocodile-shadow { text-shadow: 0 0 8px rgba(16, 185,
+			129, 0.5); } .scroll-container { overflow: hidden; position: relative;
+			height: 160px; width: 64px; border: 1px solid theme('colors.outline');
+			border-radius: 8px; background-color: theme('colors.surface'); } .target-line
+			{ position: absolute; left: 0; right: 0; height: 3px; background-color:
+			theme('colors.primary'); top: 80px; z-index: 10; } .target-box { position:
+			absolute; left: 8px; right: 8px; height: 32px; top: 64px; z-index: 5; border:
+			2px solid theme('colors.primary'); border-radius: 4px; background-color:
+			rgba(99, 102, 241, 0.1); pointer-events: none; } .error-highlight { animation:
+			error 0.5s ease-out; } @keyframes error { 0%, 100% { border-color: theme('colors.outline');
+			} 50% { border-color: theme('colors.error'); background-color: rgba(239,
+			68, 68, 0.1); } } .modal-backdrop { backdrop-filter: blur(5px); background-color:
+			rgba(0, 0, 0, 0.5); } .progress-shine { position: relative; overflow: hidden;
+			} .progress-shine::after { content: ''; position: absolute; top: 0; left:
+			-100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent,
+			rgba(255,255,255,0.2), transparent); animation: shine 2s infinite; } @keyframes
+			shine { 100% { left: 150%; } } @keyframes pulse { 0%, 100% { opacity: 1;
+			} 50% { opacity: 0.6; } } .pulse { animation: pulse 1.5s infinite; } @keyframes
+			fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform:
+			scale(1); } } .fade-in { animation: fadeIn 0.3s ease-out forwards; } @keyframes
+			slideUp { from { transform: translateY(20px); opacity: 0; } to { transform:
+			translateY(0); opacity: 1; } } .slide-up { animation: slideUp 0.3s ease-out
+			forwards; } .grid-cell { aspect-ratio: 1/1; background-clip: padding-box;
+			transition: all 0.3s ease; } .unread-item { background-color: theme('colors.surface');
+			background-image: linear-gradient(45deg, rgba(100, 116, 185, 0.05) 25%,
+			transparent 25%), linear-gradient(-45deg, rgba(100, 116, 185, 0.05) 25%,
+			transparent 25%), linear-gradient(-45deg, rgba(100, 116, 185, 0.05) 25%,
+			transparent 25%), linear-gradient(45deg, transparent 75%, rgba(100, 116,
+			185, 0.05) 75%), linear-gradient(-45deg, transparent 75%, rgba(100, 116,
+			185, 0.05) 75%); background-size: 20px 20px; background-position: 0 0,
+			0 10px, 10px -10px, -10px 0px; } .placeholder-item { background-color:
+			rgba(100, 116, 185, 0.1); border: 1px dashed rgba(100, 116, 185, 0.3);
+			} .magnifier-track { position: absolute; pointer-events: none; } .magnifier
+			{ position: absolute; color: rgba(100, 116, 185, 0.7); animation: magnifier-path
+			2s linear infinite; pointer-events: none; transform: translate(-50%, -50%);
+			font-size: 1.5rem !important; } @keyframes magnifier-path { 0% { transform:
+			translate(-50%, -50%) translate(0, 0); } 25% { transform: translate(-50%,
+			-50%) translate(50%, -50%); } 50% { transform: translate(-50%, -50%) translate(50%,
+			50%); } 75% { transform: translate(-50%, -50%) translate(-50%, 50%); }
+			100% { transform: translate(-50%, -50%) translate(0, 0); } } @keyframes
+			completePulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(16,
+			185, 129, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(16,
+			185, 129, 0.6); } } .complete-animation { animation: completePulse 1s ease-in-out;
+			} @keyframes charScale { 0%, 100% { transform: scale(1); } 25% { transform:
+			scale(1.4); } 50% { transform: scale(1); } 75% { transform: scale(1.2);
+			} } .char-scale { animation: charScale 1s ease-out; } @keyframes buttonClick
+			{ 0%, 100% { transform: scale(1); } 50% { transform: scale(0.95); } } .button-click
+			{ animation: buttonClick 0.2s ease-out; } .final-highlight { box-shadow:
+			0 0 20px rgba(99, 102, 241, 0.7); border-color: theme('colors.primary')
+			!important; } .crocodile-final-highlight { box-shadow: 0 0 20px rgba(16,
+			185, 129, 0.7); border-color: theme('colors.tertiary') !important; } .center-char
+			{ font-weight: bold !important; transform: scale(1.1); color: theme('colors.primary')
+			!important; } .crocodile-center-char { font-weight: bold !important; transform:
+			scale(1.1); color: theme('colors.tertiary') !important; } .active-column
+			{ border-color: theme('colors.primary') !important; box-shadow: 0 0 10px
+			rgba(99, 102, 241, 0.5); } .crocodile-active-column { border-color: theme('colors.tertiary')
+			!important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); } .record-item
+			{ transition: all 0.2s ease; border-bottom: 1px solid rgba(100, 116, 185,
+			0.1); } .record-item:hover { background-color: rgba(100, 116, 185, 0.05);
+			transform: translateX(3px); cursor: pointer; } .counter-badge { min-width:
+			24px; height: 24px; display: inline-flex; align-items: center; justify-content:
+			center; } .item-gradient { background-image: linear-gradient(135deg, rgba(100,
+			116, 185, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%); } .skip-button { transition:
+			all 0.2s ease; } .skip-button:hover { transform: translateY(-2px); box-shadow:
+			0 4px 8px rgba(0, 0, 0, 0.1); } .item-name { position: absolute; bottom:
+			0; left: 0; right: 0; padding: 2px 4px; background-color: rgba(255, 255,
+			255, 0.8); color: theme('colors.on-surface'); font-size: 10px; text-align:
+			center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+			z-index: 1; } .grid-lines { position: absolute; top: 0; left: 0; width:
+			100%; height: 100%; pointer-events: none; } .grid-line { position: absolute;
+			background-color: rgba(100, 116, 185, 0.1); } .item-detail-modal { opacity:
+			0; visibility: hidden; transition: all 0.3s ease; } .item-detail-modal.active
+			{ opacity: 1; visibility: visible; } .fullsize-icon { width: 100%; height:
+			100%; display: flex; align-items: center; justify-content: center; padding:
+			4px; font-size: 24px; } .record-icon { width: 24px; height: 24px; display:
+			inline-flex; align-items: center; justify-content: center; font-size: 16px;
+			} .nav-item { transition: all 0.2s ease; cursor: pointer; color: theme('colors.on-surface-variant');
+			} .nav-item.active { color: theme('colors.primary'); border-color: theme('colors.primary');
+			box-shadow: 0 0 8px rgba(99, 102, 241, 0.3); } .nav-item:hover:not(.active)
+			{ color: theme('colors.on-surface'); border-color: rgba(100, 116, 185,
+			0.5); } .item-checkbox { position: absolute; top: 2px; right: 2px; z-index:
+			2; width: 16px; height: 16px; opacity: 0; cursor: pointer; } .item-checkbox
+			+ label { position: absolute; top: 2px; right: 2px; z-index: 1; width:
+			16px; height: 16px; background-color: rgba(255, 255, 255, 0.8); border:
+			1px solid rgba(100, 116, 185, 0.3); border-radius: 2px; cursor: pointer;
+			transition: all 0.2s ease; } .item-checkbox:checked + label::after { content:
+			"✓"; position: absolute; color: theme('colors.primary'); font-size: 12px;
+			top: 0; left: 2px; } .batch-progress-container { position: fixed; top:
+			0; left: 0; width: 100%; height: 4px; background-color: rgba(255, 255,
+			255, 0.8); z-index: 100; display: none; } .batch-progress-bar { height:
+			100%; background-color: theme('colors.primary'); width: 0%; transition:
+			width 0.3s ease; } .crocodile-progress-bar { background-color: theme('colors.tertiary');
+			} .view-section { display: none; animation: fadeIn 0.3s ease-out; } .view-section.active
+			{ display: block; } .toast { position: fixed; bottom: 100px; left: 50%;
+			transform: translateX(-50%); background-color: theme('colors.surface');
+			color: theme('colors.on-surface'); padding: 8px 16px; border-radius: 20px;
+			border: 1px solid rgba(100, 116, 185, 0.1); box-shadow: 0 4px 6px -1px
+			rgba(0, 0, 0, 0.1); z-index: 1000; opacity: 0; transition: opacity 0.3s
+			ease; } .toast.show { opacity: 1; } .container-item { transition: all 0.3s
+			ease; cursor: pointer; border: 1px solid transparent; } .container-item.active
+			{ border-color: theme('colors.primary') !important; box-shadow: 0 0 15px
+			rgba(99, 102, 241, 0.3); transform: scale(1.05); } .container-item.crocodile-active
+			{ border-color: theme('colors.tertiary') !important; box-shadow: 0 0 15px
+			rgba(16, 185, 129, 0.3); transform: scale(1.05); } .container-item.disabled
+			{ opacity: 0.6; cursor: not-allowed; position: relative; } .container-item.disabled::after
+			{ content: "开发中"; position: absolute; top: 50%; left: 50%; transform: translate(-50%,
+			-50%); background-color: rgba(255, 255, 255, 0.8); padding: 2px 8px; border-radius:
+			4px; font-size: 14px; color: theme('colors.on-surface-variant'); border:
+			1px solid rgba(100, 116, 185, 0.1); } .search-container { position: relative;
+			margin-bottom: 4px; } .search-input { width: 100%; padding: 8px 16px 8px
+			40px; background-color: theme('colors.surface'); border: 1px solid theme('colors.outline');
+			border-radius: 20px; color: theme('colors.on-surface'); font-size: 14px;
+			transition: all 0.2s ease; } .search-input:focus { outline: none; border-color:
+			theme('colors.primary'); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+			} .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+			color: theme('colors.on-surface-variant'); } .multi-select-controls { display:
+			flex; justify-content: space-between; margin-top: 4px; font-size: 12px;
+			} .multi-select-button { color: theme('colors.primary'); cursor: pointer;
+			transition: all 0.2s ease; } .multi-select-button:hover { text-decoration:
+			underline; color: #7c7ff2; } /* Material3 Switch */ .toggle-switch { position:
+			relative; display: inline-block; width: 51px; height: 31px; } .toggle-switch
+			input { opacity: 0; width: 0; height: 0; } .toggle-slider { position: absolute;
+			cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color:
+			#e5e7eb; transition: .3s; border-radius: 34px; } .toggle-slider:before
+			{ position: absolute; content: ""; height: 23px; width: 23px; left: 4px;
+			bottom: 4px; background-color: white; transition: .3s; border-radius: 50%;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); } input:checked + .toggle-slider
+			{ background-color: theme('colors.primary'); } input:checked + .toggle-slider:before
+			{ transform: translateX(20px); } .item-image { width: 100%; height: 100%;
+			object-fit: contain; filter: brightness(1); } ::-webkit-scrollbar { width:
+			6px; height: 6px; } ::-webkit-scrollbar-track { background: rgba(241, 245,
+			249, 0.5); border-radius: 3px; } ::-webkit-scrollbar-thumb { background:
+			rgba(100, 116, 185, 0.3); border-radius: 3px; } ::-webkit-scrollbar-thumb:hover
+			{ background: rgba(100, 116, 185, 0.5); } }
+		</style>
+		<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap"
+		rel="stylesheet">
+	</head>
+	<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4 font-sans text-on-surface">
+		<div class="w-full max-w-2xl flex flex-col min-h-screen content-with-footer">
+			<div class="text-center mb-6">
+				<h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold mb-4 text-primary text-shadow">
+					三角洲容器模拟
+				</h1>
+			</div>
+			<!-- 导航栏 - Material3 风格 -->
+			<div class="flex justify-center mb-8 bg-white rounded-full shadow-md p-1 max-w-md mx-auto">
+				<div class="nav-item active flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
+					<i class="material-icons mr-1">
+						home
+					</i>
+					<span class="hidden sm:inline">
+						主页
+					</span>
+				</div>
+				<div class="nav-item flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
+					<i class="material-icons mr-1">
+						auto_awesome
+					</i>
+					<span class="hidden sm:inline">
+						一键抽取
+					</span>
+				</div>
+				<div class="nav-item flex-1 py-2 px-4 rounded-full text-center flex items-center justify-center">
+					<i class="material-icons mr-1">
+						history
+					</i>
+					<span class="hidden sm:inline">
+						记录
+					</span>
+				</div>
+			</div>
+			<!-- 主页视图 -->
+			<div id="mainView" class="view-section active">
+				<div class="text-center mb-8">
+					<div class="flex flex-col md:flex-row justify-center gap-6">
+						<!-- 大保险容器 -->
+						<div id="largeContainer" class="container-item relative w-56 h-56 md:w-64 md:h-64 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-glow bg-gradient-to-br from-primary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
+							<div class="absolute inset-4 border-2 border-primary/30 rounded-lg flex items-center justify-center flex-col">
+								<img src="delta/container_large.png" alt="大保险容器" class="w-32 h-32 md:w-40 md:h-40 mb-4 pulse">
+								<span class="text-xl md:text-2xl font-bold text-primary">
+									大保险
+								</span>
+								<span class="text-sm text-on-surface-variant mt-2">
+									需解锁
+								</span>
+							</div>
+							<div class="absolute top-1/4 left-0 w-full h-1 bg-primary/10">
+							</div>
+							<div class="absolute bottom-1/4 left-0 w-full h-1 bg-primary/10">
+							</div>
+							<div class="absolute top-0 left-1/4 w-1 h-full bg-primary/10">
+							</div>
+							<div class="absolute top-0 right-1/4 w-1 h-full bg-primary/10">
+							</div>
+						</div>
+						<!-- 小保险容器 -->
+						<div id="smallContainer" class="container-item relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-glow bg-gradient-to-br from-primary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
+							<div class="absolute inset-4 border-2 border-primary/30 rounded-lg flex items-center justify-center flex-col">
+								<img src="delta/container_small.png" alt="小保险容器" class="w-28 h-28 md:w-36 md:h-36 mb-4 pulse">
+								<span class="text-xl md:text-2xl font-bold text-primary">
+									小保险
+								</span>
+								<span class="text-sm text-on-surface-variant mt-2">
+									直接打开
+								</span>
+							</div>
+							<div class="absolute top-1/4 left-0 w-full h-1 bg-primary/10">
+							</div>
+							<div class="absolute bottom-1/4 left-0 w-full h-1 bg-primary/10">
+							</div>
+							<div class="absolute top-0 left-1/4 w-1 h-full bg-primary/10">
+							</div>
+							<div class="absolute top-0 right-1/4 w-1 h-full bg-primary/10">
+							</div>
+						</div>
+						<!-- 鳄鱼窝容器 -->
+						<div id="crocodileNest" class="container-item relative w-48 h-48 md:w-56 md:h-56 mx-auto cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-crocodile-glow bg-gradient-to-br from-tertiary/5 to-surface rounded-xl flex items-center justify-center shadow-md">
+							<div class="absolute inset-4 border-2 border-tertiary/30 rounded-lg flex items-center justify-center flex-col">
+								<img src="delta/container_crocodile.png" alt="鳄鱼窝容器" class="w-28 h-28 md:w-36 md:h-36 mb-4 pulse">
+								<span class="text-xl md:text-2xl font-bold text-tertiary crocodile-shadow">
+									鳄鱼窝
+								</span>
+								<span class="text-sm text-on-surface-variant mt-2">
+									直接打开
+								</span>
+							</div>
+							<div class="absolute top-1/4 left-0 w-full h-1 bg-tertiary/10">
+							</div>
+							<div class="absolute bottom-1/4 left-0 w-full h-1 bg-tertiary/10">
+							</div>
+							<div class="absolute top-0 left-1/4 w-1 h-full bg-tertiary/10">
+							</div>
+							<div class="absolute top-0 right-1/4 w-1 h-full bg-tertiary/10">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 一键抽取视图 -->
+			<div id="batchView" class="view-section">
+				<div class="bg-white rounded-xl p-6 mb-8 border border-outline/50 shadow-md slide-up">
+					<h2 class="text-xl font-bold mb-6 text-primary flex items-center">
+						<i class="material-icons mr-2">
+							auto_awesome
+						</i>
+						一键抽取设置
+					</h2>
+					<div class="mb-6">
+						<label class="block text-sm text-on-surface-variant mb-3">
+							容器类型
+						</label>
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="containerTypeList">
+							<div class="container-item active p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+							data-type="large">
+								<img src="delta/container_large.png" alt="大保险容器" class="w-16 h-16 mx-auto mb-3">
+								<span>
+									大保险
+								</span>
+							</div>
+							<div class="container-item p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+							data-type="small">
+								<img src="delta/container_small.png" alt="小保险容器" class="w-16 h-16 mx-auto mb-3">
+								<span>
+									小保险
+								</span>
+							</div>
+							<div class="container-item p-4 border-2 border-outline rounded-xl text-center cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+							data-type="crocodile">
+								<img src="delta/container_crocodile.png" alt="鳄鱼窝容器" class="w-16 h-16 mx-auto mb-3">
+								<span class="text-tertiary">
+									鳄鱼窝
+								</span>
+							</div>
+						</div>
+					</div>
+					<!-- 鳄鱼窝特有设置 -->
+					<div id="crocodileSettings" class="mb-6 hidden bg-tertiary/5 p-4 rounded-xl border border-tertiary/20">
+						<label class="block text-sm text-tertiary mb-3">
+							鳄鱼驯服度
+						</label>
+						<input type="range" id="tamenessLevel" min="0" max="100" value="70" class="w-full h-2 bg-outline rounded-lg appearance-none cursor-pointer accent-tertiary">
+						<div class="flex justify-between text-xs text-on-surface-variant mt-2">
+							<span>
+								野生 (低概率)
+							</span>
+							<span id="tamenessValue">
+								70%
+							</span>
+							<span>
+								完全驯服 (高概率)
+							</span>
+						</div>
+						<p class="text-xs text-on-surface-variant mt-3">
+							驯服度越高，获得稀有物品的概率越大
+						</p>
+					</div>
+					<div class="mb-6">
+						<label for="drawCount" class="block text-sm text-on-surface-variant mb-2">
+							抽取次数
+						</label>
+						<div class="flex">
+							<input type="number" id="drawCount" min="1" max="10000" value="10" class="bg-surface border border-outline rounded-l-lg px-4 py-2.5 w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+							<button id="maxCountBtn" class="bg-outline hover:bg-outline/70 px-4 rounded-r-lg transition-colors">
+								最大
+							</button>
+						</div>
+						<p class="text-xs text-on-surface-variant mt-2">
+							最多可输入10000次
+						</p>
+					</div>
+					<div class="mb-6">
+						<label class="block text-sm text-on-surface-variant mb-3">
+							停止条件（可选）
+						</label>
+						<p class="text-xs text-on-surface-variant mb-3">
+							选择抽中以下物品后自动停止
+						</p>
+						<!-- 搜索框 -->
+						<div class="search-container mb-4">
+							<i class="material-icons search-icon">
+								search
+							</i>
+							<input type="text" id="stopConditionSearch" class="search-input" placeholder="搜索物品...">
+						</div>
+						<div id="stopConditionContainer" class="max-h-[150px] overflow-y-auto pr-2 space-y-1 text-sm border border-outline rounded-lg p-2 bg-surface">
+							<!-- 动态生成物品选择列表 -->
+						</div>
+						<!-- 多选控制区 -->
+						<div class="multi-select-controls mt-4">
+							<div class="multi-select-button" id="deselectAllBtn">
+								取消全选
+							</div>
+							<div class="flex items-center">
+								<span class="mr-2">
+									滑动多选
+								</span>
+								<label class="toggle-switch">
+									<input type="checkbox" id="slideSelectToggle">
+									<span class="toggle-slider">
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="mt-4">
+							<label class="flex items-center cursor-pointer">
+								<input type="checkbox" id="stopOnAny" class="mr-2 accent-primary">
+								<span>
+									抽中任何选中物品即停止
+								</span>
+							</label>
+						</div>
+					</div>
+					<button id="startBatchBtn" class="w-full bg-primary text-on-primary font-medium py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors duration-300 flex items-center justify-center shadow-md hover:shadow-lg">
+						<i class="material-icons mr-2">
+							play_arrow
+						</i>
+						开始一键抽取
+					</button>
+				</div>
+			</div>
+			<!-- 记录视图 -->
+			<div id="recordsView" class="view-section">
+				<div class="bg-white rounded-xl p-6 mb-8 border border-outline/50 shadow-md slide-up">
+					<h2 class="text-xl font-bold mb-6 text-primary flex items-center">
+						<i class="material-icons mr-2">
+							history
+						</i>
+						物品获取记录
+					</h2>
+					<div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+						<div class="flex gap-3">
+							<button id="clearRecordsBtn" class="text-sm bg-error/10 text-error border border-error/20 py-1.5 px-4 rounded-lg hover:bg-error/20 transition-colors duration-300">
+								<i class="material-icons mr-1" style="font-size: 16px;">
+									delete
+								</i>
+								清空记录
+							</button>
+							<div class="relative">
+								<select id="filterRecords" class="text-sm bg-surface text-on-surface border border-outline py-1.5 px-4 pr-8 rounded-lg appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+									<option value="all">
+										全部记录
+									</option>
+									<option value="large">
+										大保险
+									</option>
+									<option value="small">
+										小保险
+									</option>
+									<option value="crocodile">
+										鳄鱼窝
+									</option>
+								</select>
+								<i class="material-icons absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-on-surface-variant pointer-events-none">
+									arrow_drop_down
+								</i>
+							</div>
+						</div>
+						<span class="text-sm text-on-surface-variant" id="totalItemsCount">
+							总计: 0 件
+						</span>
+					</div>
+					<div id="recordsContainer" class="max-h-[200px] overflow-y-auto pr-2 text-sm space-y-2 border border-outline rounded-lg p-3 bg-surface">
+						<div class="text-on-surface-variant text-center py-6">
+							暂无物品记录
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="crocodileRewardScreen" class="p-6 hidden">
+				<h2 class="text-2xl font-bold mb-6 text-center text-tertiary crocodile-shadow"
+				id="crocodileRewardTitle">
+					鳄鱼窝物品清单
+				</h2>
+				<div id="crocodileGridContainer" class="w-full aspect-square bg-surface-variant relative mb-6 p-4 rounded-lg">
+					<div class="grid-lines" id="crocodileGridLines">
+					</div>
+				</div>
+				<button id="closeCrocodileBtn" class="w-full bg-outline hover:bg-outline/70 text-on-surface font-medium py-2.5 px-4 rounded-lg transition-colors duration-300">
+					关闭
+				</button>
+			</div>
+		</div>
+		</div>
+		<div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+			<div class="modal-backdrop absolute inset-0">
+			</div>
+			<div class="relative bg-white w-full max-w-xl mx-4 rounded-xl shadow-xl overflow-hidden fade-in">
+				<div id="unlockScreen" class="p-6">
+					<h2 class="text-2xl font-bold mb-6 text-center text-primary">
+						解锁大保险
+					</h2>
+					<div class="flex justify-center gap-4 mb-6" id="scrollArea">
+						<div class="scroll-container relative bg-surface" data-target="6" data-next="1"
+						data-chars="2,K,6,L,D">
+							<div class="target-line">
+							</div>
+							<div class="target-box">
+							</div>
+							<div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0"
+							id="scroll0">
+							</div>
+						</div>
+						<div class="scroll-container relative bg-surface" data-target="D" data-next="2"
+						data-chars="O,9,D,(,~">
+							<div class="target-line">
+							</div>
+							<div class="target-box">
+							</div>
+							<div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0"
+							id="scroll1">
+							</div>
+						</div>
+						<div class="scroll-container relative bg-surface" data-target="F" data-next="3"
+						data-chars="+,4,F,^,&">
+							<div class="target-line">
+							</div>
+							<div class="target-box">
+							</div>
+							<div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0"
+							id="scroll2">
+							</div>
+						</div>
+						<div class="scroll-container relative bg-surface" data-target="U" data-next="4"
+						data-chars="&,M,U,=,2">
+							<div class="target-line">
+							</div>
+							<div class="target-box">
+							</div>
+							<div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0"
+							id="scroll3">
+							</div>
+						</div>
+						<div class="scroll-container relative bg-surface" data-target="P" data-next="5"
+						data-chars="),9,P,6,@">
+							<div class="target-line">
+							</div>
+							<div class="target-box">
+							</div>
+							<div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0"
+							id="scroll4">
+							</div>
+						</div>
+					</div>
+					<div class="flex flex-col sm:flex-row justify-center gap-4 mb-8" id="buttonContainer">
+						<div class="select-button w-24 h-14 border-2 border-tertiary/50 text-tertiary hover:bg-tertiary/10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
+							<span class="font-bold">
+								选定密码
+							</span>
+						</div>
+						<!-- 引入外部JavaScript文件 -->
+						<script src="delta/app.js">
+						</script>
+					</div>
+                </div></div></div>
+	</body>
 
-        
-                
-                <div id="crocodileRewardScreen" class="p-6 hidden">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-tertiary crocodile-shadow" id="crocodileRewardTitle">鳄鱼窝物品清单</h2>
-                    
-                    <div id="crocodileGridContainer" class="w-full aspect-square bg-surface-variant relative mb-6 p-4 rounded-lg">
-                        <div class="grid-lines" id="crocodileGridLines">
-                        </div>
-                    </div>
-                    
-                    <button id="closeCrocodileBtn" class="w-full bg-outline hover:bg-outline/70 text-on-surface font-medium py-2.5 px-4 rounded-lg transition-colors duration-300">
-                        关闭
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="unlockModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-            <div class="modal-backdrop absolute inset-0"></div>
-            <div class="relative bg-white w-full max-w-xl mx-4 rounded-xl shadow-xl overflow-hidden fade-in">
-                <div id="unlockScreen" class="p-6">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-primary">解锁大保险</h2>
-                    
-                    <div class="flex justify-center gap-4 mb-6" id="scrollArea">
-                        <div class="scroll-container relative bg-surface" data-target="6" data-next="1" data-chars="2,K,6,L,D">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll0">
-                            </div>
-                        </div>
-                        <div class="scroll-container relative bg-surface" data-target="D" data-next="2" data-chars="O,9,D,(,~">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll1">
-                            </div>
-                        </div>
-                        <div class="scroll-container relative bg-surface" data-target="F" data-next="3" data-chars="+,4,F,^,&">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll2">
-                            </div>
-                        </div>
-                        <div class="scroll-container relative bg-surface" data-target="U" data-next="4" data-chars="&,M,U,=,2">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll3">
-                            </div>
-                        </div>
-                        <div class="scroll-container relative bg-surface" data-target="P" data-next="5" data-chars="),9,P,6,@">
-                            <div class="target-line"></div>
-                            <div class="target-box"></div>
-                            <div class="text-center text-2xl font-bold flex flex-col items-center justify-start h-full py-0" id="scroll4">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8" id="buttonContainer">
-                        <div class="select-button w-24 h-14 border-2 border-tertiary/50 text-tertiary hover:bg-tertiary/10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300">
-                            <span class="font-bold">选定密码</span>
-                        </div>
+</html>
