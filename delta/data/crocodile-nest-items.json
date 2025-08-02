@@ -65,11 +65,11 @@
         "description": "高端机械表，工艺精湛，价值不菲"
     },
     {
-        "name": "\"钻石\"鱼子酱",
+        "name": "“钻石”鱼子酱",
         "size": [1, 1],
         "color": "red",
-        "image": "delta/\"钻石\"鱼子酱.png",
-        "description": "被称为\"钻石\"的顶级鱼子酱，极其稀有昂贵"
+        "image": "delta/“钻石”鱼子酱.png",
+        "description": "被称为“钻石”的顶级鱼子酱，极其稀有昂贵"
     },
     {
         "name": "奥莉薇娅香槟",
@@ -136,7 +136,7 @@
     },
     {
         "name": "手机",
-        "size": [1, 2],
+        "size": [1, 1],
         "color": "gold",
         "image": "delta/手机.png",
         "description": "智能手机，功能齐全"
