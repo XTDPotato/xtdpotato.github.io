@@ -121,10 +121,10 @@
         "description": "检测血氧饱和度的便携式设备"
     },
     {
-        "name": "海盗金币",
+        "name": "亮闪闪的海盗金币",
         "size": [1, 1],
         "color": "gold",
-        "image": "delta/海盗金币.png",
+        "image": "delta/亮闪闪的海盗金币.png",
         "description": "古代海盗遗留的金币，具有收藏价值"
     },
     {
@@ -338,11 +338,11 @@
         "description": "阿萨拉卫队的机密文件"
     },
     {
-        "name": "便携生存套件",
+        "name": "便携生存套组",
         "size": [2, 1],
         "color": "purple",
-        "image": "delta/便携生存套件.png",
-        "description": "包含多种生存工具的便携套件"
+        "image": "delta/便携生存套组.png",
+        "description": "包含多种生存工具的便携套组"
     },
     {
         "name": "HIFI声卡",
@@ -443,10 +443,10 @@
         "description": "可用于多种设备的电池"
     },
     {
-        "name": "高精数显卡尺",
+        "name": "高精度数显卡尺",
         "size": [1, 1],
         "color": "blue",
-        "image": "delta/高精数显卡尺.png",
+        "image": "delta/高精度数显卡尺.png",
         "description": "高精度测量工具"
     },
     {
@@ -464,10 +464,10 @@
         "description": "补充维生素的泡腾片"
     },
     {
-        "name": "蛋白粉包",
+        "name": "大豆蛋白粉包",
         "size": [1, 1],
         "color": "blue",
-        "image": "delta/蛋白粉包.png",
+        "image": "delta/大豆蛋白粉包.png",
         "description": "便携装蛋白质补充粉"
     },
     {
@@ -590,10 +590,10 @@
         "description": "用于切割骨骼的医疗工具"
     },
     {
-        "name": "无线电钻",
+        "name": "无线便携电钻",
         "size": [2, 1],
         "color": "blue",
-        "image": "delta/无线电钻.png",
+        "image": "delta/无线便携电钻.png",
         "description": "充电式电钻工具"
     },
     {
