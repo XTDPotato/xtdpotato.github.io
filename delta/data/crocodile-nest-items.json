@@ -212,10 +212,10 @@
         "description": "军用级炸药，威力巨大"
     },
     {
-        "name": "能量凝胶",
+        "name": "清新凝味能量凝胶",
         "size": [1, 1],
         "color": "purple",
-        "image": "delta/能量凝胶.png",
+        "image": "delta/清新凝味能量凝胶.png",
         "description": "提供快速能量补充的凝胶"
     },
     {
@@ -247,10 +247,10 @@
         "description": "便携式电子信号干扰设备"
     },
     {
-        "name": "柠檬茶",
+        "name": "生津柠檬茶",
         "size": [1, 1],
         "color": "purple",
-        "image": "delta/柠檬茶.png",
+        "image": "delta/生津柠檬茶.png",
         "description": "清爽的柠檬茶饮料"
     },
     {
@@ -450,10 +450,17 @@
         "description": "高精度测量工具"
     },
     {
-        "name": "维生素腾片",
+        "name": "军用罐头",
         "size": [1, 1],
         "color": "blue",
-        "image": "delta/维生素腾片.png",
+        "image": "delta/军用罐头.png",
+        "description": "军用罐头"
+    },
+    {
+        "name": "维生素泡腾片",
+        "size": [1, 1],
+        "color": "blue",
+        "image": "delta/维生素泡腾片.png",
         "description": "补充维生素的泡腾片"
     },
     {
