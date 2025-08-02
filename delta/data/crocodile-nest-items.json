@@ -184,11 +184,11 @@
         "description": "高品质咖啡豆，口感浓郁"
     },
     {
-        "name": "\"蓝宝石\"龙舌兰",
+        "name": "“蓝宝石”龙舌兰",
         "size": [1, 2],
         "color": "gold",
-        "image": "delta/\"蓝宝石\"龙舌兰.png",
-        "description": "名为\"蓝宝石\"的顶级龙舌兰酒"
+        "image": "delta/“蓝宝石”龙舌兰.png",
+        "description": "名为“蓝宝石”的顶级龙舌兰酒"
     },
     {
         "name": "心脏支架",
