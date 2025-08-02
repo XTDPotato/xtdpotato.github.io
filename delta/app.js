@@ -162,10 +162,11 @@ function getRandomItemCount() {
         // 鳄鱼巢穴物品数量概率分布
         const random = Math.random();
         if (random < 0.1) return 1;
-        if (random < 0.2) return 2;
-        if (random < 0.4) return 3;
-        if (random < 0.6) return 4;
-        return 5;
+        if (random < 0.1) return 2;
+        if (random < 0.3) return 3;
+        if (random < 0.4) return 4;
+        if (random < 0.5) return 5;
+        return 6;
     }
     
     // 大容器默认分布
