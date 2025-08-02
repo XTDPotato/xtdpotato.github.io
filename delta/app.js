@@ -873,16 +873,16 @@ function getCurrentContainerItemPool() {
 function drawCrocodileNestItem(itemPool) {
     const random = Math.random();
     
-    // 鳄鱼巢穴的概率分布：40%蓝，30%紫，20%金，10%红
+    // 鳄鱼巢穴的概率分布：
     if (random < 0.40) {
         // 蓝色物品
         const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '复苏呼吸机');
         return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
-    } else if (random < 0.70) {
+    } else if (random < 0.30) {
         // 紫色物品
         const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '复苏呼吸机');
         return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
-    } else if (random < 0.90) {
+    } else if (random < 0.20) {
         // 金色物品
         const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '复苏呼吸机');
         return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
@@ -901,11 +901,11 @@ function drawSmallContainerItem(itemPool) {
         // 蓝色物品
         const blueItems = itemPool.filter(item => item.color === 'blue' && item.name !== '非洲之心');
         return {...blueItems[Math.floor(Math.random() * blueItems.length)]};
-    } else if (random < 0.60) {
+    } else if (random < 0.35) {
         // 紫色物品
         const purpleItems = itemPool.filter(item => item.color === 'purple' && item.name !== '非洲之心');
         return {...purpleItems[Math.floor(Math.random() * purpleItems.length)]};
-    } else if (random < 0.95) {
+    } else if (random < 0.40) {
         // 金色物品
         const goldItems = itemPool.filter(item => item.color === 'gold' && item.name !== '非洲之心');
         return {...goldItems[Math.floor(Math.random() * goldItems.length)]};
