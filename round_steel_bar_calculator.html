@@ -83,7 +83,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      align-items: center;
     }
     
     .app-title {
@@ -159,15 +158,68 @@
       flex: 1;
     }
     
-    .result-display {
+    .result-section {
       margin-top: 12px;
       padding: 14px;
       background-color: var(--surface-container);
       border-radius: 8px;
+    }
+    
+    .result-display {
       text-align: center;
       font-size: 18px;
       color: var(--on-surface);
       font-weight: 500;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .record-btn {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .record-btn:hover {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    
+    /* 记录管理按钮区域 */
+    .record-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .record-control-btn {
+      flex: 1;
+      background-color: var(--surface-container);
+      border: 1px solid var(--outline);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      color: var(--on-surface);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .record-control-btn:hover {
+      background-color: var(--surface-container-high);
     }
     
     /* 数字键盘样式 - 固定在底部 */
@@ -224,6 +276,260 @@
       color: var(--on-primary-container);
       font-size: 16px;
     }
+    
+    /* 记录列表弹窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background-color: var(--surface-color);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--outline);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--on-surface);
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .modal-footer {
+      padding: 16px;
+      border-top: 1px solid var(--outline);
+      display: flex;
+      gap: 8px;
+    }
+    
+    .modal-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      flex: 1;
+    }
+    
+    .modal-btn.primary {
+      background-color: var(--primary);
+      color: var(--on-primary);
+    }
+    
+    .modal-btn.danger {
+      background-color: var(--error-container);
+      color: var(--on-error-container);
+    }
+    
+    .modal-btn.cancel {
+      background-color: var(--surface-container);
+      color: var(--on-surface);
+    }
+    
+    /* 记录列表样式 */
+    .record-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .record-item {
+      background-color: var(--surface-container);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    
+    .record-item.selected {
+      background-color: var(--primary-container);
+      border: 1px solid var(--primary);
+    }
+    
+    .record-item:hover {
+      background-color: var(--surface-container-high);
+    }
+    
+    .record-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid var(--outline);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .record-checkbox.visible {
+      display: flex;
+    }
+    
+    .record-checkbox.checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    .record-content {
+      flex: 1;
+    }
+    
+    .record-summary {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    
+    .record-time {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
+    
+    /* 滑动操作按钮 */
+    .slide-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      display: flex;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .record-item.slide-active .slide-actions {
+      transform: translateX(0);
+    }
+    
+    .slide-action {
+      width: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .slide-action.edit {
+      background-color: var(--primary);
+    }
+    
+    .slide-action.delete {
+      background-color: var(--error-container);
+      color: var(--on-error-container);
+    }
+    
+    /* 多选工具栏 */
+    .multi-select-toolbar {
+      display: none;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--outline);
+      background-color: var(--surface-container);
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .multi-select-toolbar.active {
+      display: flex;
+    }
+    
+    .selected-count {
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    /* 详情弹窗样式 */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .detail-item {
+      background-color: var(--surface-container);
+      padding: 8px;
+      border-radius: 6px;
+    }
+    
+    .detail-label {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+    
+    .detail-value {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* 编辑表单样式 */
+    .edit-input {
+      width: 100%;
+      background-color: var(--surface-container);
+      border: 1px solid var(--outline);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+      color: var(--on-surface);
+    }
+    
+    .import-export-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -257,14 +563,29 @@
         </div>
       </div>
       
-      <!-- 长度输入 - 修正单位为mm -->
+      <!-- 长度输入 -->
       <div class="input-group">
         <label class="input-label">长度 (mm)</label>
         <div id="length" class="input-field">0.00</div>
       </div>
       
-      <!-- 结果显示 -->
-      <div class="result-display" id="result">重量: 0.0000 KG</div>
+      <!-- 结果显示和记录按钮 -->
+      <div class="result-section">
+        <div class="result-display">
+          重量: <span id="resultValue">0.0000</span> KG
+          <button class="record-btn" id="addRecordBtn">
+            <span class="material-icons">add</span>
+          </button>
+        </div>
+        
+        <!-- 记录管理按钮 -->
+        <div class="record-controls">
+          <button class="record-control-btn" id="showRecordsBtn">
+            <span class="material-icons">list</span>
+            记录列表
+          </button>
+        </div>
+      </div>
     </main>
     
     <!-- 数字键盘 - 固定在底部 -->
@@ -285,10 +606,121 @@
           <span class="material-icons">backspace</span>
         </button>
       </div>
-      <!-- 底部按钮行 - 清空当前和清空全部放在同一排 -->
       <div class="pad-bottom-row">
         <button class="pad-btn clear" id="clearBtn">清空当前</button>
         <button class="pad-btn clear-all" id="clearAllBtn">清空直径和长度</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 记录列表弹窗 -->
+  <div class="modal-overlay" id="recordsModal">
+    <div class="modal">
+      <!-- 多选工具栏 -->
+      <div class="multi-select-toolbar" id="multiSelectToolbar">
+        <span class="selected-count" id="selectedCount">已选择 0 项</span>
+        <button class="modal-btn danger" id="deleteSelectedBtn">删除所选</button>
+        <button class="modal-btn cancel" id="exitMultiSelectBtn">取消</button>
+      </div>
+      
+      <div class="modal-header">
+        <h2 class="modal-title">记录列表</h2>
+        <div>
+          <button class="modal-btn" id="multiSelectBtn">
+            <span class="material-icons">select_all</span>
+          </button>
+          <button class="modal-close" id="closeRecordsModal">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-body">
+        <div class="import-export-buttons">
+          <button class="modal-btn primary" id="exportRecordsBtn">导出记录</button>
+          <button class="modal-btn primary" id="importRecordsBtn">导入记录</button>
+          <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+        <ul class="record-list" id="recordList">
+          <!-- 记录列表将通过JS动态生成 -->
+        </ul>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="modal-btn danger" id="deleteAllRecordsBtn">删除所有记录</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 记录详情弹窗 -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">记录详情</h2>
+        <button class="modal-close" id="closeDetailModal">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body" id="detailContent">
+        <!-- 详情内容将通过JS动态生成 -->
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="closeDetailBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 编辑记录弹窗 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">编辑记录</h2>
+        <button class="modal-close" id="closeEditModal">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editRecordId">
+        <div class="input-group">
+          <label class="input-label">密度系数</label>
+          <input type="text" class="edit-input" id="editDensity">
+        </div>
+        <div class="input-group">
+          <label class="input-label">直径1 (mm)</label>
+          <input type="text" class="edit-input" id="editDiameter1">
+        </div>
+        <div class="input-group">
+          <label class="input-label">直径2 (mm)</label>
+          <input type="text" class="edit-input" id="editDiameter2">
+        </div>
+        <div class="input-group">
+          <label class="input-label">长度 (mm)</label>
+          <input type="text" class="edit-input" id="editLength">
+        </div>
+        <div class="input-group">
+          <label class="input-label">重量 (KG)</label>
+          <input type="text" class="edit-input" id="editWeight" readonly>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="cancelEditBtn">取消</button>
+        <button class="modal-btn primary" id="saveEditBtn">保存</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 确认弹窗 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="confirmTitle">确认操作</h2>
+      </div>
+      <div class="modal-body" id="confirmMessage">
+        您确定要执行此操作吗？
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="cancelConfirmBtn">取消</button>
+        <button class="modal-btn danger" id="confirmActionBtn">确认</button>
       </div>
     </div>
   </div>
@@ -299,12 +731,46 @@
     const diameter1El = document.getElementById('diameter1');
     const diameter2El = document.getElementById('diameter2');
     const lengthEl = document.getElementById('length');
-    const resultEl = document.getElementById('result');
+    const resultValueEl = document.getElementById('resultValue');
+    const resultEl = document.querySelector('.result-display');
     const deleteBtn = document.getElementById('deleteBtn');
     const clearBtn = document.getElementById('clearBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const numButtons = document.querySelectorAll('.pad-btn[data-num]');
     const themeToggle = document.getElementById('themeToggle');
+    const addRecordBtn = document.getElementById('addRecordBtn');
+    const showRecordsBtn = document.getElementById('showRecordsBtn');
+    const recordsModal = document.getElementById('recordsModal');
+    const closeRecordsModal = document.getElementById('closeRecordsModal');
+    const recordList = document.getElementById('recordList');
+    const deleteAllRecordsBtn = document.getElementById('deleteAllRecordsBtn');
+    const detailModal = document.getElementById('detailModal');
+    const closeDetailModal = document.getElementById('closeDetailModal');
+    const closeDetailBtn = document.getElementById('closeDetailBtn');
+    const detailContent = document.getElementById('detailContent');
+    const editModal = document.getElementById('editModal');
+    const closeEditModal = document.getElementById('closeEditModal');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const editRecordId = document.getElementById('editRecordId');
+    const editDensity = document.getElementById('editDensity');
+    const editDiameter1 = document.getElementById('editDiameter1');
+    const editDiameter2 = document.getElementById('editDiameter2');
+    const editLength = document.getElementById('editLength');
+    const editWeight = document.getElementById('editWeight');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+    const confirmActionBtn = document.getElementById('confirmActionBtn');
+    const exportRecordsBtn = document.getElementById('exportRecordsBtn');
+    const importRecordsBtn = document.getElementById('importRecordsBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const multiSelectBtn = document.getElementById('multiSelectBtn');
+    const multiSelectToolbar = document.getElementById('multiSelectToolbar');
+    const selectedCount = document.getElementById('selectedCount');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const exitMultiSelectBtn = document.getElementById('exitMultiSelectBtn');
     
     // 所有输入框元素
     const inputElements = [densityEl, diameter1El, diameter2El, lengthEl];
@@ -314,9 +780,26 @@
     let activeInput = densityEl;
     let isInitialValue = true; // 标记是否为初始值
     
-    // 初始化主题
+    // 记录相关变量
+    let records = [];
+    let currentEditId = null;
+    let currentConfirmAction = null;
+    let selectedRecords = [];
+    let isMultiSelectMode = false;
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      setActiveInput(densityEl);
+      initTheme();
+      loadRecords();
+      updateRecordList();
+      
+      // 监听系统主题变化
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
+    });
+    
+    // 主题相关函数
     function initTheme() {
-      // 检查用户偏好或本地存储
       const savedTheme = localStorage.getItem('theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       
@@ -329,7 +812,6 @@
       }
     }
     
-    // 切换主题
     function toggleTheme() {
       const isDark = document.body.classList.toggle('dark-mode');
       
@@ -342,87 +824,61 @@
       }
     }
     
-    // 初始化激活状态
+    // 输入框激活状态管理
     function setActiveInput(inputEl) {
-      // 移除所有输入框的激活状态
       inputElements.forEach(el => {
         el.classList.remove('active');
       });
       
-      // 设置当前输入框为激活状态
       activeInput = inputEl;
       activeInput.classList.add('active');
       
-      // 检查是否为初始值
       isInitialValue = (activeInput.textContent === '0.00' || 
                        (activeInput === densityEl && activeInput.textContent === '0.00617'));
     }
     
-    // 输入数字处理逻辑 - 修复0和小数点输入问题
+    // 数字输入处理
     function inputNumber(num) {
       if (!activeInput) return;
       
       let currentValue = activeInput.textContent.trim();
       
-      // 处理初始状态
       if (isInitialValue) {
         if (num === '.') {
-          // 初始状态下输入小数点，变为0.
           currentValue = '0.';
           isInitialValue = false;
         } else if (num === '0') {
-          // 初始状态下输入0，保持为0.00
           currentValue = '0';
           isInitialValue = false;
         } else {
-          // 输入非0数字时，直接显示该数字
           currentValue = num;
           isInitialValue = false;
         }
       } else {
-        // 处理小数点
         if (num === '.') {
-          // 如果已经有小数点，忽略
           if (currentValue.includes('.')) {
             return;
           }
-          // 如果没有小数点，添加
           currentValue += '.';
-        } 
-        // 处理数字
-        else {
-          // 特殊情况：当前值是0，再输入0保持为0
+        } else {
           if (currentValue === '0' && num === '0') {
             return;
           }
-          
-          // 如果已有小数点，不限制小数位数，允许输入如0.001这样的数值
           currentValue += num;
         }
       }
       
-      // 更新显示值
       activeInput.textContent = currentValue;
-      
-      // 实时计算
       calculateWeight();
     }
     
     // 删除最后一个字符
     function deleteNumber() {
-      if (!activeInput) return;
+      if (!activeInput || isInitialValue) return;
       
       let currentValue = activeInput.textContent.trim();
-      
-      // 如果是初始值，不删除
-      if (isInitialValue) {
-        return;
-      }
-      
-      // 删除最后一个字符
       currentValue = currentValue.slice(0, -1);
       
-      // 处理删除后的状态
       if (currentValue === '' || currentValue === '.') {
         if (activeInput === densityEl) {
           currentValue = '0.00617';
@@ -433,8 +889,6 @@
       }
       
       activeInput.textContent = currentValue;
-      
-      // 实时计算
       calculateWeight();
     }
     
@@ -442,86 +896,540 @@
     function clearInput() {
       if (!activeInput) return;
       
-      // 重置为初始值
       if (activeInput === densityEl) {
         activeInput.textContent = '0.00617';
       } else {
         activeInput.textContent = '0.00';
       }
       isInitialValue = true;
-      
-      // 实时计算
       calculateWeight();
     }
     
-    // 清空全部（只清空直径和长度）
-    function clearAll() {
+    // 清空直径和长度
+    function clearDiameterAndLength() {
       diameterAndLengthInputs.forEach(input => {
         input.textContent = '0.00';
       });
-      
-      // 保持当前激活状态
       setActiveInput(activeInput);
-      
-      // 实时计算
       calculateWeight();
     }
     
-    // 计算重量 - 实时计算
-   
+    // 计算重量
     function calculateWeight() {
-      // 获取输入值并转换为数字
       const density = parseFloat(densityEl.textContent) || 0;
       const diameter1 = parseFloat(diameter1El.textContent) || 0;
       const diameter2 = parseFloat(diameter2El.textContent) || 0;
       const length = parseFloat(lengthEl.textContent) || 0;
       
-      // 计算平均直径
       const avgDiameter = (diameter1 + diameter2) / 2;
-      
-      // 计算重量: 重量 = 密度系数 × 直径² × 长度 / 1000(转换为米) / 1000
       const weight = density * avgDiameter * avgDiameter * length / 1000;
       
-      // 显示结果，保留4位小数
-      resultEl.textContent = `重量: ${weight.toFixed(4)} KG`;
+      resultValueEl.textContent = weight.toFixed(4);
+      return weight;
+    }
+    
+    // 记录管理相关函数
+    function loadRecords() {
+      const savedRecords = localStorage.getItem('steelBarRecords');
+      if (savedRecords) {
+        records = JSON.parse(savedRecords);
+      } else {
+        records = [];
+      }
+    }
+    
+    function saveRecords() {
+      localStorage.setItem('steelBarRecords', JSON.stringify(records));
+    }
+    
+    function addRecord() {
+      const density = parseFloat(densityEl.textContent) || 0;
+      const diameter1 = parseFloat(diameter1El.textContent) || 0;
+      const diameter2 = parseFloat(diameter2El.textContent) || 0;
+      const length = parseFloat(lengthEl.textContent) || 0;
+      const weight = calculateWeight();
+      
+      // 检查是否为重复记录
+      const isDuplicate = records.some(record => 
+        record.density === density &&
+        record.diameter1 === diameter1 &&
+        record.diameter2 === diameter2 &&
+        record.length === length &&
+        record.weight === weight
+      );
+      
+      if (isDuplicate) {
+        showConfirm('重复记录', '此记录已存在，是否仍要添加？', () => {
+          saveNewRecord(density, diameter1, diameter2, length, weight);
+        });
+        return;
+      }
+      
+      saveNewRecord(density, diameter1, diameter2, length, weight);
+    }
+    
+    function saveNewRecord(density, diameter1, diameter2, length, weight) {
+      const newRecord = {
+        id: Date.now().toString(),
+        time: new Date().toLocaleString(),
+        density,
+        diameter1,
+        diameter2,
+        length,
+        weight
+      };
+      
+      records.unshift(newRecord); // 添加到数组开头
+      saveRecords();
+      updateRecordList();
+      
+      // 显示添加成功的提示
+      const originalText = addRecordBtn.innerHTML;
+      addRecordBtn.innerHTML = '<span class="material-icons">check</span>';
+      setTimeout(() => {
+        addRecordBtn.innerHTML = originalText;
+      }, 1000);
+    }
+    
+    function updateRecordList() {
+      recordList.innerHTML = '';
+      
+      if (records.length === 0) {
+        recordList.innerHTML = '<li style="text-align: center; padding: 16px;">暂无记录</li>';
+        return;
+      }
+      
+      records.forEach(record => {
+        const li = document.createElement('li');
+        li.className = 'record-item';
+        li.dataset.id = record.id;
+        
+        // 多选框
+        const checkbox = document.createElement('div');
+        checkbox.className = 'record-checkbox';
+        checkbox.innerHTML = '<span class="material-icons" style="font-size: 16px;">check</span>';
+        if (isMultiSelectMode) {
+          checkbox.classList.add('visible');
+        }
+        if (selectedRecords.includes(record.id)) {
+          checkbox.classList.add('checked');
+        }
+        
+        // 记录内容
+        const content = document.createElement('div');
+        content.className = 'record-content';
+        content.innerHTML = `
+          <div class="record-summary">
+            <span>直径: ${record.diameter1.toFixed(2)}/${record.diameter2.toFixed(2)}mm</span>
+            <span>重量: ${record.weight.toFixed(4)}kg</span>
+          </div>
+          <div class="record-summary">
+            <span>长度: ${record.length.toFixed(2)}mm</span>
+          </div>
+          <div class="record-time">${record.time}</div>
+        `;
+        
+        // 滑动操作按钮
+        const slideActions = document.createElement('div');
+        slideActions.className = 'slide-actions';
+        slideActions.innerHTML = `
+          <button class="slide-action edit" data-id="${record.id}">
+            <span class="material-icons">edit</span>
+          </button>
+          <button class="slide-action delete" data-id="${record.id}">
+            <span class="material-icons">delete</span>
+          </button>
+        `;
+        
+        li.appendChild(checkbox);
+        li.appendChild(content);
+        li.appendChild(slideActions);
+        recordList.appendChild(li);
+        
+        // 添加事件监听
+        setupRecordItemEvents(li);
+      });
+    }
+    
+    function setupRecordItemEvents(item) {
+      const recordId = item.dataset.id;
+      const checkbox = item.querySelector('.record-checkbox');
+      const editBtn = item.querySelector('.slide-action.edit');
+      const deleteBtn = item.querySelector('.slide-action.delete');
+      
+      // 点击记录项
+      item.addEventListener('click', (e) => {
+        // 如果点击的是操作按钮，不触发选择
+        if (e.target.closest('.slide-action')) return;
+        
+        if (isMultiSelectMode) {
+          // 在多选模式下点击记录项切换选择状态
+          toggleRecordSelection(recordId);
+        } else {
+          // 非多选模式下点击查看详情
+          showRecordDetail(recordId);
+        }
+      });
+      
+      // 编辑记录
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editRecord(recordId);
+        resetSlideState();
+      });
+      
+      // 删除记录
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showConfirm('删除记录', '您确定要删除这条记录吗？', () => {
+          deleteRecord(recordId);
+        });
+        resetSlideState();
+      });
+      
+      // 滑动操作
+      let startX, moveX, isSwiping = false;
+      
+      item.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isSwiping = true;
+      });
+      
+      item.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
+        moveX = e.touches[0].clientX;
+      });
+      
+      item.addEventListener('touchend', () => {
+        if (!isSwiping || isMultiSelectMode) return;
+        
+        const diffX = startX - moveX;
+        if (diffX > 50) { // 向左滑动超过50px
+          resetSlideState();
+          item.classList.add('slide-active');
+        } else if (diffX < -30) { // 向右滑动超过30px
+          item.classList.remove('slide-active');
+        }
+        
+        isSwiping = false;
+      });
+      
+      // 点击其他地方关闭滑动状态
+      document.addEventListener('click', (e) => {
+        if (!item.contains(e.target) && !e.target.closest('.slide-action') && !isMultiSelectMode) {
+          item.classList.remove('slide-active');
+        }
+      });
+    }
+    
+    function resetSlideState() {
+      document.querySelectorAll('.record-item.slide-active').forEach(item => {
+        item.classList.remove('slide-active');
+      });
+    }
+    
+    function showRecordDetail(recordId) {
+      const record = records.find(r => r.id === recordId);
+      if (!record) return;
+      
+      detailContent.innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">直径1 (mm)</div>
+            <div class="detail-value">${record.diameter1.toFixed(2)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">直径2 (mm)</div>
+            <div class="detail-value">${record.diameter2.toFixed(2)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">长度 (mm)</div>
+            <div class="detail-value">${record.length.toFixed(2)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">重量 (KG)</div>
+            <div class="detail-value">${record.weight.toFixed(4)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">密度系数</div>
+            <div class="detail-value">${record.density.toFixed(5)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">记录时间</div>
+            <div class="detail-value">${record.time}</div>
+          </div>
+        </div>
+      `;
+      
+      detailModal.classList.add('active');
+    }
+    
+    function editRecord(recordId) {
+      const record = records.find(r => r.id === recordId);
+      if (!record) return;
+      
+      currentEditId = recordId;
+      editRecordId.value = recordId;
+      editDensity.value = record.density;
+      editDiameter1.value = record.diameter1;
+      editDiameter2.value = record.diameter2;
+      editLength.value = record.length;
+      editWeight.value = record.weight.toFixed(4);
+      
+      editModal.classList.add('active');
+    }
+    
+    function saveEditedRecord() {
+      if (!currentEditId) return;
+      
+      const index = records.findIndex(r => r.id === currentEditId);
+      if (index === -1) return;
+      
+      const density = parseFloat(editDensity.value) || 0;
+      const diameter1 = parseFloat(editDiameter1.value) || 0;
+      const diameter2 = parseFloat(editDiameter2.value) || 0;
+      const length = parseFloat(editLength.value) || 0;
+      const avgDiameter = (diameter1 + diameter2) / 2;
+      const weight = density * avgDiameter * avgDiameter * length / 1000;
+      
+      // 更新记录
+      records[index] = {
+        ...records[index],
+        density,
+        diameter1,
+        diameter2,
+        length,
+        weight,
+        time: new Date().toLocaleString() // 更新时间为编辑时间
+      };
+      
+      saveRecords();
+      updateRecordList();
+      editModal.classList.remove('active');
+      currentEditId = null;
+    }
+    
+    function deleteRecord(recordId) {
+      const initialLength = records.length;
+      records = records.filter(r => r.id !== recordId);
+      
+      if (records.length < initialLength) {
+        saveRecords();
+        updateRecordList();
+      }
+    }
+    
+    function deleteAllRecords() {
+      if (records.length === 0) return;
+      
+      showConfirm('删除所有记录', '您确定要删除所有记录吗？此操作不可恢复。', () => {
+        records = [];
+        saveRecords();
+        updateRecordList();
+        recordsModal.classList.remove('active');
+      });
+    }
+    
+    function showConfirm(title, message, action) {
+      confirmTitle.textContent = title;
+      confirmMessage.textContent = message;
+      currentConfirmAction = action;
+      confirmModal.classList.add('active');
+    }
+    
+    function exportRecords() {
+      if (records.length === 0) {
+        showConfirm('导出记录', '没有记录可导出', () => {});
+        return;
+      }
+      
+      const dataStr = JSON.stringify(records, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `锻钢圆棒记录_${new Date().toLocaleDateString()}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+    
+    function importRecords() {
+      importFileInput.click();
+    }
+    
+    function handleImportedFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedRecords = JSON.parse(e.target.result);
+          
+          if (!Array.isArray(importedRecords)) {
+            throw new Error('导入的文件格式不正确');
+          }
+          
+          // 过滤重复记录
+          let newRecordsCount = 0;
+          importedRecords.forEach(importedRecord => {
+            const isDuplicate = records.some(existing => 
+              existing.density === importedRecord.density &&
+              existing.diameter1 === importedRecord.diameter1 &&
+              existing.diameter2 === importedRecord.diameter2 &&
+              existing.length === importedRecord.length &&
+              existing.weight === importedRecord.weight
+            );
+            
+            if (!isDuplicate) {
+              // 确保每条记录都有id和time
+              const recordToAdd = {
+                id: importedRecord.id || Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                time: importedRecord.time || new Date().toLocaleString(),
+                density: importedRecord.density || 0,
+                diameter1: importedRecord.diameter1 || 0,
+                diameter2: importedRecord.diameter2 || 0,
+                length: importedRecord.length || 0,
+                weight: importedRecord.weight || 0
+              };
+              
+              records.unshift(recordToAdd);
+              newRecordsCount++;
+            }
+          });
+          
+          saveRecords();
+          updateRecordList();
+          
+          showConfirm('导入成功', `成功导入 ${newRecordsCount} 条新记录`, () => {});
+        } catch (error) {
+          showConfirm('导入失败', `导入过程中出现错误: ${error.message}`, () => {});
+        }
+      };
+      reader.readAsText(file);
+      
+      // 重置文件输入，以便可以重复选择同一个文件
+      importFileInput.value = '';
+    }
+    
+    // 多选功能
+    function enterMultiSelectMode() {
+      isMultiSelectMode = true;
+      multiSelectToolbar.classList.add('active');
+      selectedRecords = [];
+      updateSelectedCount();
+      updateRecordList(); // 刷新列表以显示复选框
+    }
+    
+    function exitMultiSelectMode() {
+      isMultiSelectMode = false;
+      multiSelectToolbar.classList.remove('active');
+      selectedRecords = [];
+      updateSelectedCount();
+      updateRecordList(); // 刷新列表以隐藏复选框
+      resetSlideState();
+    }
+    
+    function toggleRecordSelection(recordId) {
+      const index = selectedRecords.indexOf(recordId);
+      
+      if (index === -1) {
+        selectedRecords.push(recordId);
+      } else {
+        selectedRecords.splice(index, 1);
+      }
+      
+      updateSelectedCount();
+      updateRecordList(); // 刷新列表以更新复选框状态
+    }
+    
+    function updateSelectedCount() {
+      selectedCount.textContent = `已选择 ${selectedRecords.length} 项`;
+    }
+    
+    function deleteSelectedRecords() {
+      if (selectedRecords.length === 0) return;
+      
+      showConfirm('删除所选记录', `您确定要删除选中的 ${selectedRecords.length} 条记录吗？`, () => {
+        records = records.filter(r => !selectedRecords.includes(r.id));
+        saveRecords();
+        updateRecordList();
+        exitMultiSelectMode();
+      });
     }
     
     // 事件监听
-    densityEl.addEventListener('click', () => {
-      setActiveInput(densityEl);
-    });
-    
-    diameter1El.addEventListener('click', () => {
-      setActiveInput(diameter1El);
-    });
-    
-    diameter2El.addEventListener('click', () => {
-      setActiveInput(diameter2El);
-    });
-    
-    lengthEl.addEventListener('click', () => {
-      setActiveInput(lengthEl);
-    });
+    densityEl.addEventListener('click', () => setActiveInput(densityEl));
+    diameter1El.addEventListener('click', () => setActiveInput(diameter1El));
+    diameter2El.addEventListener('click', () => setActiveInput(diameter2El));
+    lengthEl.addEventListener('click', () => setActiveInput(lengthEl));
     
     deleteBtn.addEventListener('click', deleteNumber);
     clearBtn.addEventListener('click', clearInput);
-    clearAllBtn.addEventListener('click', clearAll);
+    clearAllBtn.addEventListener('click', clearDiameterAndLength);
     themeToggle.addEventListener('click', toggleTheme);
     
     numButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        inputNumber(btn.dataset.num);
-      });
+      btn.addEventListener('click', () => inputNumber(btn.dataset.num));
     });
     
-    // 初始化
-    document.addEventListener('DOMContentLoaded', () => {
-      setActiveInput(densityEl);
-      initTheme();
-      
-      // 监听系统主题变化
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
+    // 记录相关事件
+    addRecordBtn.addEventListener('click', addRecord);
+    showRecordsBtn.addEventListener('click', () => {
+      recordsModal.classList.add('active');
+      exitMultiSelectMode(); // 确保打开时不是多选模式
     });
+    
+    closeRecordsModal.addEventListener('click', () => {
+      recordsModal.classList.remove('active');
+      exitMultiSelectMode();
+    });
+    
+    closeDetailModal.addEventListener('click', () => detailModal.classList.remove('active'));
+    closeDetailBtn.addEventListener('click', () => detailModal.classList.remove('active'));
+    
+    closeEditModal.addEventListener('click', () => editModal.classList.remove('active'));
+    cancelEditBtn.addEventListener('click', () => editModal.classList.remove('active'));
+    saveEditBtn.addEventListener('click', saveEditedRecord);
+    
+    deleteAllRecordsBtn.addEventListener('click', deleteAllRecords);
+    
+    cancelConfirmBtn.addEventListener('click', () => confirmModal.classList.remove('active'));
+    confirmActionBtn.addEventListener('click', () => {
+      if (currentConfirmAction) {
+        currentConfirmAction();
+      }
+      confirmModal.classList.remove('active');
+      currentConfirmAction = null;
+    });
+    
+    exportRecordsBtn.addEventListener('click', exportRecords);
+    importRecordsBtn.addEventListener('click', importRecords);
+    importFileInput.addEventListener('change', handleImportedFile);
+    
+    // 编辑框输入时重新计算重量
+    editDensity.addEventListener('input', updateEditedWeight);
+    editDiameter1.addEventListener('input', updateEditedWeight);
+    editDiameter2.addEventListener('input', updateEditedWeight);
+    editLength.addEventListener('input', updateEditedWeight);
+    
+    function updateEditedWeight() {
+      const density = parseFloat(editDensity.value) || 0;
+      const diameter1 = parseFloat(editDiameter1.value) || 0;
+      const diameter2 = parseFloat(editDiameter2.value) || 0;
+      const length = parseFloat(editLength.value) || 0;
+      
+      const avgDiameter = (diameter1 + diameter2) / 2;
+      const weight = density * avgDiameter * avgDiameter * length / 1000;
+      
+      editWeight.value = weight.toFixed(4);
+    }
+    
+    // 多选相关事件
+    multiSelectBtn.addEventListener('click', enterMultiSelectMode);
+    deleteSelectedBtn.addEventListener('click', deleteSelectedRecords);
+    exitMultiSelectBtn.addEventListener('click', exitMultiSelectMode);
   </script>
 </body>
 </html>
