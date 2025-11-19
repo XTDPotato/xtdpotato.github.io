@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>锻钢圆棒重量计算器</title>
+  <!-- 引入MDUI CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+  <!-- 引入MDUI JS -->
+  <script src="https://unpkg.com/mdui@2/mdui.js"></script>
+  <!-- 引入Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    /* 基础样式设置，确保页面不超出屏幕 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.3s ease;
+    }
+    
+    /* 日间模式颜色 */
+    body {
+      --bg-color: #f8f9fa;
+      --surface-color: #ffffff;
+      --surface-container: #f1f3f5;
+      --surface-container-high: #e9ecef;
+      --on-background: #212529;
+      --on-surface: #212529;
+      --on-surface-variant: #6c757d;
+      --outline: #adb5bd;
+      --primary: #2b6cb0;
+      --primary-container: #dbeafe;
+      --on-primary: #ffffff;
+      --on-primary-container: #1e40af;
+      --error-container: #fee2e2;
+      --on-error-container: #b42318;
+      --warning-container: #fff3bf;
+      --on-warning-container: #94400c;
+    }
+    
+    /* 夜间模式颜色 */
+    body.dark-mode {
+      --bg-color: #121212;
+      --surface-color: #1e1e1e;
+      --surface-container: #2d2d2d;
+      --surface-container-high: #3d3d3d;
+      --on-background: #e0e0e0;
+      --on-surface: #e0e0e0;
+      --on-surface-variant: #bbbbbb;
+      --outline: #4a4a4a;
+      --primary: #93c5fd;
+      --primary-container: #1e40af;
+      --on-primary: #1e3a8a;
+      --on-primary-container: #dbeafe;
+      --error-container: #420000;
+      --on-error-container: #ffdad6;
+      --warning-container: #5c4100;
+      --on-warning-container: #fff3bf;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--on-background);
+    }
+    
+    .container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .app-bar {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      padding: 12px 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .app-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 0;
+    }
+    
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--on-primary);
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+    
+    .theme-toggle:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .content-area {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .input-label {
+      margin-bottom: 6px;
+      color: var(--on-surface-variant);
+      font-size: 14px;
+      font-weight: 500;
+      display: block;
+    }
+    
+    .input-field {
+      background-color: var(--surface-container);
+      border: 1px solid var(--outline);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: calc(100% - 26px);
+      color: var(--on-surface);
+    }
+    
+    /* 高亮当前选中的输入框 */
+    .input-field.active {
+      border-color: var(--primary);
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.2);
+    }
+    
+    .diameter-container {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .diameter-item {
+      flex: 1;
+    }
+    
+    .result-display {
+      margin-top: 12px;
+      padding: 14px;
+      background-color: var(--surface-container);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 18px;
+      color: var(--on-surface);
+      font-weight: 500;
+    }
+    
+    /* 数字键盘样式 - 固定在底部 */
+    .number-pad {
+      background-color: var(--surface-color);
+      border-top: 1px solid var(--outline);
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    
+    .pad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .pad-bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .pad-btn {
+      height: 45px;
+      border-radius: 10px;
+      background-color: var(--surface-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      color: var(--on-surface);
+    }
+    
+    .pad-btn:hover {
+      background-color: var(--surface-container-high);
+    }
+    
+    .pad-btn.del {
+      background-color: var(--error-container);
+      color: var(--on-error-container);
+    }
+    
+    .pad-btn.clear {
+      background-color: var(--warning-container);
+      color: var(--on-warning-container);
+    }
+    
+    .pad-btn.clear-all {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 顶部导航栏 -->
+    <header class="app-bar">
+      <h1 class="app-title">锻钢圆棒重量计算器</h1>
+      <button class="theme-toggle" id="themeToggle">
+        <span class="material-icons">light_mode</span>
+      </button>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="content-area">
+      <!-- 密度系数输入 -->
+      <div class="input-group">
+        <label class="input-label">密度系数 (默认: 0.00617/1000)</label>
+        <div id="density" class="input-field">0.00617</div>
+      </div>
+      
+      <!-- 直径输入 -->
+      <div class="input-group">
+        <label class="input-label">直径 (mm)</label>
+        <div class="diameter-container">
+          <div class="diameter-item">
+            <div id="diameter1" class="input-field">0.00</div>
+          </div>
+          <div class="diameter-item">
+            <div id="diameter2" class="input-field">0.00</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 长度输入 -->
+      <div class="input-group">
+        <label class="input-label">长度 (m)</label>
+        <div id="length" class="input-field">0.00</div>
+      </div>
+      
+      <!-- 结果显示 -->
+      <div class="result-display" id="result">重量: 0.0000 KG</div>
+    </main>
+    
+    <!-- 数字键盘 - 固定在底部 -->
+    <div class="number-pad" id="numberPad">
+      <div class="pad-grid">
+        <button class="pad-btn" data-num="1">1</button>
+        <button class="pad-btn" data-num="2">2</button>
+        <button class="pad-btn" data-num="3">3</button>
+        <button class="pad-btn" data-num="4">4</button>
+        <button class="pad-btn" data-num="5">5</button>
+        <button class="pad-btn" data-num="6">6</button>
+        <button class="pad-btn" data-num="7">7</button>
+        <button class="pad-btn" data-num="8">8</button>
+        <button class="pad-btn" data-num="9">9</button>
+        <button class="pad-btn" data-num=".">.</button>
+        <button class="pad-btn" data-num="0">0</button>
+        <button class="pad-btn del" id="deleteBtn">
+          <span class="material-icons">backspace</span>
+        </button>
+      </div>
+      <!-- 底部按钮行 - 清空当前和清空全部放在同一排 -->
+      <div class="pad-bottom-row">
+        <button class="pad-btn clear" id="clearBtn">清空当前</button>
+        <button class="pad-btn clear-all" id="clearAllBtn">清空直径和长度</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 获取DOM元素
+    const densityEl = document.getElementById('density');
+    const diameter1El = document.getElementById('diameter1');
+    const diameter2El = document.getElementById('diameter2');
+    const lengthEl = document.getElementById('length');
+    const resultEl = document.getElementById('result');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const numButtons = document.querySelectorAll('.pad-btn[data-num]');
+    const themeToggle = document.getElementById('themeToggle');
+    
+    // 所有输入框元素
+    const inputElements = [densityEl, diameter1El, diameter2El, lengthEl];
+    const diameterAndLengthInputs = [diameter1El, diameter2El, lengthEl];
+    
+    // 当前激活的输入框
+    let activeInput = densityEl;
+    let isInitialValue = true; // 标记是否为初始值
+    
+    // 初始化主题
+    function initTheme() {
+      // 检查用户偏好或本地存储
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.classList.add('dark-mode');
+        themeToggle.innerHTML = '<span class="material-icons">dark_mode</span>';
+      } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.innerHTML = '<span class="material-icons">light_mode</span>';
+      }
+    }
+    
+    // 切换主题
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      
+      if (isDark) {
+        localStorage.setItem('theme', 'dark');
+        themeToggle.innerHTML = '<span class="material-icons">dark_mode</span>';
+      } else {
+        localStorage.setItem('theme', 'light');
+        themeToggle.innerHTML = '<span class="material-icons">light_mode</span>';
+      }
+    }
+    
+    // 初始化激活状态
+    function setActiveInput(inputEl) {
+      // 移除所有输入框的激活状态
+      inputElements.forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      // 设置当前输入框为激活状态
+      activeInput = inputEl;
+      activeInput.classList.add('active');
+      
+      // 检查是否为初始值
+      isInitialValue = (activeInput.textContent === '0.00' || 
+                       (activeInput === densityEl && activeInput.textContent === '0.00617'));
+    }
+    
+    // 输入数字处理逻辑
+    function inputNumber(num) {
+      if (!activeInput) return;
+      
+      let currentValue = activeInput.textContent.trim();
+      
+      // 处理初始状态
+      if (isInitialValue) {
+        if (num === '.') {
+          return; // 初始状态下不直接输入小数点
+        } else if (num === '0') {
+          // 输入0时保持初始状态
+          return;
+        } else {
+          // 输入非0数字时，重置为该数字
+          currentValue = num;
+          isInitialValue = false;
+        }
+      } else {
+        // 处理小数点
+        if (num === '.') {
+          // 如果已经有小数点，忽略
+          if (currentValue.includes('.')) {
+            return;
+          }
+          currentValue += '.';
+        } 
+        // 处理数字
+        else {
+          // 如果已有小数点，检查小数位数（限制2位）
+          if (currentValue.includes('.')) {
+            const parts = currentValue.split('.');
+            if (parts[1].length >= 2) {
+              return; // 小数部分已达2位，不再添加
+            }
+          }
+          currentValue += num;
+        }
+      }
+      
+      // 更新显示值
+      activeInput.textContent = currentValue;
+      
+      // 实时计算
+      calculateWeight();
+    }
+    
+    // 删除最后一个字符
+    function deleteNumber() {
+      if (!activeInput) return;
+      
+      let currentValue = activeInput.textContent.trim();
+      
+      // 如果是初始值，不删除
+      if (isInitialValue) {
+        return;
+      }
+      
+      // 删除最后一个字符
+      currentValue = currentValue.slice(0, -1);
+      
+      // 如果为空或只剩小数点，重置为初始值
+      if (currentValue === '' || currentValue === '.') {
+        if (activeInput === densityEl) {
+          currentValue = '0.00617';
+        } else {
+          currentValue = '0.00';
+        }
+        isInitialValue = true;
+      }
+      
+      activeInput.textContent = currentValue;
+      
+      // 实时计算
+      calculateWeight();
+    }
+    
+    // 清空当前输入
+    function clearInput() {
+      if (!activeInput) return;
+      
+      // 重置为初始值
+      if (activeInput === densityEl) {
+        activeInput.textContent = '0.00617';
+      } else {
+        activeInput.textContent = '0.00';
+      }
+      isInitialValue = true;
+      
+      // 实时计算
+      calculateWeight();
+    }
+    
+    // 清空全部（只清空直径和长度）
+    function clearAll() {
+      diameterAndLengthInputs.forEach(input => {
+        input.textContent = '0.00';
+      });
+      
+      // 保持当前激活状态
+      setActiveInput(activeInput);
+      
+      // 实时计算
+      calculateWeight();
+    }
+    
+    // 计算重量 - 实时计算
+    function calculateWeight() {
+      // 获取输入值并转换为数字
+      const density = parseFloat(densityEl.textContent) || 0;
+      const diameter1 = parseFloat(diameter1El.textContent) || 0;
+      const diameter2 = parseFloat(diameter2El.textContent) || 0;
+      const length = parseFloat(lengthEl.textContent) || 0;
+      
+      // 计算平均直径
+      const avgDiameter = (diameter1 + diameter2) / 2;
+      
+      // 计算重量: 重量 = 密度系数 × 直径² × 长度 / 1000
+      const weight = density * avgDiameter * avgDiameter * length / 1000;
+      
+      // 显示结果，保留4位小数
+      resultEl.textContent = `重量: ${weight.toFixed(4)} KG`;
+    }
+    
+    // 事件监听
+    densityEl.addEventListener('click', () => {
+      setActiveInput(densityEl);
+    });
+    
+    diameter1El.addEventListener('click', () => {
+      setActiveInput(diameter1El);
+    });
+    
+    diameter2El.addEventListener('click', () => {
+      setActiveInput(diameter2El);
+    });
+    
+    lengthEl.addEventListener('click', () => {
+      setActiveInput(lengthEl);
+    });
+    
+    deleteBtn.addEventListener('click', deleteNumber);
+    clearBtn.addEventListener('click', clearInput);
+    clearAllBtn.addEventListener('click', clearAll);
+    themeToggle.addEventListener('click', toggleTheme);
+    
+    numButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        inputNumber(btn.dataset.num);
+      });
+    });
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      setActiveInput(densityEl);
+      initTheme();
+      
+      // 监听系统主题变化
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
+    });
+  </script>
+</body>
+</html>
