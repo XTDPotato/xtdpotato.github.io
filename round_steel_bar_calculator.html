@@ -83,6 +83,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      align-items: center;
     }
     
     .app-title {
@@ -256,7 +257,7 @@
         </div>
       </div>
       
-      <!-- 长度输入 -->
+      <!-- 长度输入 - 修正单位为mm -->
       <div class="input-group">
         <label class="input-label">长度 (mm)</label>
         <div id="length" class="input-field">0.00</div>
@@ -357,7 +358,7 @@
                        (activeInput === densityEl && activeInput.textContent === '0.00617'));
     }
     
-    // 输入数字处理逻辑
+    // 输入数字处理逻辑 - 修复0和小数点输入问题
     function inputNumber(num) {
       if (!activeInput) return;
       
@@ -366,12 +367,15 @@
       // 处理初始状态
       if (isInitialValue) {
         if (num === '.') {
-          return; // 初始状态下不直接输入小数点
+          // 初始状态下输入小数点，变为0.
+          currentValue = '0.';
+          isInitialValue = false;
         } else if (num === '0') {
-          // 输入0时保持初始状态
-          return;
+          // 初始状态下输入0，保持为0.00
+          currentValue = '0';
+          isInitialValue = false;
         } else {
-          // 输入非0数字时，重置为该数字
+          // 输入非0数字时，直接显示该数字
           currentValue = num;
           isInitialValue = false;
         }
@@ -382,17 +386,17 @@
           if (currentValue.includes('.')) {
             return;
           }
+          // 如果没有小数点，添加
           currentValue += '.';
         } 
         // 处理数字
         else {
-          // 如果已有小数点，检查小数位数（限制2位）
-          if (currentValue.includes('.')) {
-            const parts = currentValue.split('.');
-            if (parts[1].length >= 2) {
-              return; // 小数部分已达2位，不再添加
-            }
+          // 特殊情况：当前值是0，再输入0保持为0
+          if (currentValue === '0' && num === '0') {
+            return;
           }
+          
+          // 如果已有小数点，不限制小数位数，允许输入如0.001这样的数值
           currentValue += num;
         }
       }
@@ -418,7 +422,7 @@
       // 删除最后一个字符
       currentValue = currentValue.slice(0, -1);
       
-      // 如果为空或只剩小数点，重置为初始值
+      // 处理删除后的状态
       if (currentValue === '' || currentValue === '.') {
         if (activeInput === densityEl) {
           currentValue = '0.00617';
@@ -464,6 +468,7 @@
     }
     
     // 计算重量 - 实时计算
+   
     function calculateWeight() {
       // 获取输入值并转换为数字
       const density = parseFloat(densityEl.textContent) || 0;
@@ -474,7 +479,7 @@
       // 计算平均直径
       const avgDiameter = (diameter1 + diameter2) / 2;
       
-      // 计算重量: 重量 = 密度系数 × 直径² × 长度 / 1000
+      // 计算重量: 重量 = 密度系数 × 直径² × 长度 / 1000(转换为米) / 1000
       const weight = density * avgDiameter * avgDiameter * length / 1000;
       
       // 显示结果，保留4位小数
