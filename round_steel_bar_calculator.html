@@ -10,6 +10,8 @@
   <script src="https://unpkg.com/mdui@2/mdui.js"></script>
   <!-- 引入Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- 引入xlsx.js库 -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     /* 基础样式设置，确保页面不超出屏幕 */
     html, body {
@@ -639,7 +641,7 @@
         <div class="import-export-buttons">
           <button class="modal-btn primary" id="exportRecordsBtn">导出记录</button>
           <button class="modal-btn primary" id="importRecordsBtn">导入记录</button>
-          <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          <input type="file" id="importFileInput" accept=".xlsx, .xls" style="display: none;">
         </div>
         <ul class="record-list" id="recordList">
           <!-- 记录列表将通过JS动态生成 -->
@@ -1237,23 +1239,37 @@
       confirmModal.classList.add('active');
     }
     
+    // 导出为XLSX文件
     function exportRecords() {
       if (records.length === 0) {
         showConfirm('导出记录', '没有记录可导出', () => {});
         return;
       }
       
-      const dataStr = JSON.stringify(records, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      // 准备导出的数据，合并直径并确保小值在前
+      const exportData = records.map(record => {
+        const minDiameter = Math.min(record.diameter1, record.diameter2);
+        const maxDiameter = Math.max(record.diameter1, record.diameter2);
+        return {
+          '记录时间': record.time,
+          '实际直径(mm)': `${minDiameter.toFixed(2)}-${maxDiameter.toFixed(2)}`,
+          '长度(mm)': record.length.toFixed(2),
+          '密度系数': record.density.toFixed(5),
+          '重量(KG)': record.weight.toFixed(4)
+        };
+      });
       
-      const exportFileDefaultName = `锻钢圆棒记录_${new Date().toLocaleDateString()}.json`;
+      // 创建工作簿和工作表
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '锻钢圆棒记录');
       
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
+      // 导出文件
+      const exportFileName = `锻钢圆棒记录_${new Date().toLocaleDateString()}.xlsx`;
+      XLSX.writeFile(workbook, exportFileName);
     }
     
+    // 导入XLSX文件
     function importRecords() {
       importFileInput.click();
     }
@@ -1265,49 +1281,101 @@
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const importedRecords = JSON.parse(e.target.result);
+          // 读取Excel文件
+          const workbook = XLSX.read(e.target.result, { type: 'array' });
           
-          if (!Array.isArray(importedRecords)) {
-            throw new Error('导入的文件格式不正确');
+          // 获取第一个工作表
+          const worksheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[worksheetName];
+          
+          // 转换为JSON
+          const importedData = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (!Array.isArray(importedData) || importedData.length === 0) {
+            throw new Error('导入的文件中没有有效数据');
           }
           
-          // 过滤重复记录
           let newRecordsCount = 0;
-          importedRecords.forEach(importedRecord => {
-            const isDuplicate = records.some(existing => 
-              existing.density === importedRecord.density &&
-              existing.diameter1 === importedRecord.diameter1 &&
-              existing.diameter2 === importedRecord.diameter2 &&
-              existing.length === importedRecord.length &&
-              existing.weight === importedRecord.weight
+          
+          // 处理导入的数据
+          importedData.forEach(item => {
+            // 解析实际直径（支持两种格式：合并的和分开的）
+            let diameter1 = 0, diameter2 = 0;
+            const diameterStr = item['实际直径(mm)'] || item['直径1(mm)'];
+            
+            if (diameterStr && typeof diameterStr === 'string' && diameterStr.includes('-')) {
+              // 处理合并格式：251-252.2
+              const diameterParts = diameterStr.split('-').map(Number);
+              if (diameterParts.length === 2 && !isNaN(diameterParts[0]) && !isNaN(diameterParts[1])) {
+                diameter1 = diameterParts[0];
+                diameter2 = diameterParts[1];
+              }
+            } else if (item['直径1(mm)'] && item['直径2(mm)']) {
+              // 处理分开的格式
+              diameter1 = parseFloat(item['直径1(mm)']) || 0;
+              diameter2 = parseFloat(item['直径2(mm)']) || 0;
+            } else if (!isNaN(parseFloat(diameterStr))) {
+              // 如果只有一个直径值，两个直径都用这个值
+              diameter1 = parseFloat(diameterStr) || 0;
+              diameter2 = parseFloat(diameterStr) || 0;
+            }
+            
+            // 解析其他字段
+            const length = parseFloat(item['长度(mm)']) || 0;
+            const density = parseFloat(item['密度系数']) || 0.00617; // 默认值
+            const weight = parseFloat(item['重量(KG)']) || 0;
+            const time = item['记录时间'] || new Date().toLocaleString();
+            
+            // 验证数据有效性
+            if (diameter1 <= 0 && diameter2 <= 0) {
+              console.warn('跳过无效记录：直径必须大于0', item);
+              return;
+            }
+            
+            if (length <= 0) {
+              console.warn('跳过无效记录：长度必须大于0', item);
+              return;
+            }
+            
+            // 检查是否为重复记录
+            const isDuplicate = records.some(record => 
+              Math.abs(record.density - density) < 0.00001 &&
+              Math.abs(record.diameter1 - diameter1) < 0.001 &&
+              Math.abs(record.diameter2 - diameter2) < 0.001 &&
+              Math.abs(record.length - length) < 0.001
             );
             
             if (!isDuplicate) {
-              // 确保每条记录都有id和time
-              const recordToAdd = {
-                id: importedRecord.id || Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                time: importedRecord.time || new Date().toLocaleString(),
-                density: importedRecord.density || 0,
-                diameter1: importedRecord.diameter1 || 0,
-                diameter2: importedRecord.diameter2 || 0,
-                length: importedRecord.length || 0,
-                weight: importedRecord.weight || 0
-              };
-              
-              records.unshift(recordToAdd);
+              // 添加新记录
+              records.unshift({
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                time,
+                density,
+                diameter1,
+                diameter2,
+                length,
+                weight
+              });
               newRecordsCount++;
             }
           });
           
-          saveRecords();
-          updateRecordList();
+          // 保存并更新列表
+          if (newRecordsCount > 0) {
+            saveRecords();
+            updateRecordList();
+            showConfirm('导入成功', `成功导入 ${newRecordsCount} 条新记录`, () => {});
+          } else {
+            showConfirm('导入结果', '没有找到新的有效记录或所有记录都已存在', () => {});
+          }
           
-          showConfirm('导入成功', `成功导入 ${newRecordsCount} 条新记录`, () => {});
         } catch (error) {
+          console.error('导入失败', error);
           showConfirm('导入失败', `导入过程中出现错误: ${error.message}`, () => {});
         }
       };
-      reader.readAsText(file);
+      
+      reader.readAsArrayBuffer(file);
       
       // 重置文件输入，以便可以重复选择同一个文件
       importFileInput.value = '';
