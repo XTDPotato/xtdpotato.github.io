@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no,viewport-fit=cover">
     <title>圆棒入库数据管理-Gemini生成</title>
     <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
     
@@ -183,12 +183,27 @@
          background-color: #333333 !important;
     }
 
+    /* 修复空状态元素占位和越界问题 */
     .empty-state {
         text-align: center;
-        padding: 50px 20px;
+        padding: 50px 20px; 
         color: #757575;
-        height: 1000px;
+        position: absolute; 
+        top: 0; 
+        left: 0;
+        width: 100%; 
+        height: 100%;
         display: none;
+        z-index: 50;
+        background-color: var(--background-color);
+        box-sizing: border-box;
+    }
+
+    .empty-state p {
+        word-break: break-word; 
+        overflow-wrap: break-word; 
+        max-width: 90%; 
+        margin: 10px auto 0 auto;
     }
     
     /* 虚拟键盘样式 */
@@ -267,24 +282,36 @@
     .clear-key { background-color: #f44336 !important; color: white !important; }
     .system-keyboard { background-color: #2196f3 !important; color: white !important; }
     
-    /* 表格整体缩放容器（关键修改） */
+    /* 修复表格容器高度和溢出问题 */
+    .data-table-container-div {
+        padding: 0 6px;
+        width: 100%;
+        height: calc(100vh - 100px); 
+        box-sizing: border-box;
+        position: relative; 
+    }
+    
     .data-table-container {
-        overflow-x: auto; 
-        overflow-y: auto; 
-        min-width: 100%
-        max-height: calc(100vh - 120px);
+        overflow: auto; 
+        box-sizing: border-box;
+        min-width: 100%;
+        width: 100%;
+        max-height: calc(160vh - 100px);
+        height: calc(100vh - 100px);
         margin-top: 0;
-        padding: 0 8px;
+        
         -webkit-overflow-scrolling: touch;
         transform-origin: top left;
         transition: transform 0.2s ease-out;
+        transform: none; 
     }
 
     #dataTable {
-        width: 100%;
+        min-width: 100%; 
         border-collapse: collapse;
         table-layout: auto;
     }
+
     
     /* 冻结表头 */
     #dataTable th {
@@ -297,7 +324,7 @@
         border-bottom: 2px solid var(--border-color);
     }
 
-    /* 单元格（已去除所有 calc * scale，改为固定值） */
+    /* 单元格 */
     #dataTable th, #dataTable td {
         padding: 12px 8px; 
         border: 1px solid var(--border-color);
@@ -305,15 +332,23 @@
         white-space: normal;
         word-break: break-word;
         font-size: 1rem; 
+        /* 🌟 核心修正：恢复基础最小宽度，防止过度压缩 🌟 */
         min-width: 80px; 
-        max-width: 300px;
         overflow: visible;
     }
     
-    .action-col   { min-width: 100px; width: 100px; max-width: 100px; }
-    .seq-col      { min-width: 60px; width: 60px; position: relative; }
-    .checkbox-col { min-width: 50px; width: 50px; }
-    .remark-col   { min-width: 150px; max-width: 300px; }
+    /* 🌟 修正列宽样式 - 固定列 🌟 */
+    .action-col   { min-width: 100px; width: 100px; max-width: 100px; } 
+    .seq-col      { min-width: 60px; width: 60px; position: relative; } 
+    .checkbox-col { min-width: 50px; width: 50px; } 
+    /* 🌟 修正列宽样式 - 内容可变长列 🌟 */
+    /* 移除备注列的固定宽度限制，它现在默认继承 min-width: 80px */
+    .remark-col   { min-width: 150px; } /* 备注列通常需要更大的最小宽度 */
+
+    /* * 钢种、产品号、炉号、状态、位置、直径、长度、重量等列 
+    * 它们将继承 #dataTable th, #dataTable td 中的 min-width: 80px，
+    * 并在内容较长时自动加宽，确保不会过度换行。
+    */
     
     .delete-btn { color: #f44336; }
 
@@ -409,12 +444,13 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 16px;
-        height: 56px;
+        height: 56px; /* 固定高度 */
         border-bottom: 1px solid var(--border-color);
         position: sticky; 
         top: 0; 
         background-color: var(--surface-color);
         z-index: 10;
+        flex-shrink: 0;
     }
     
     .modal-header-custom h2 {
@@ -429,16 +465,18 @@
         flex-grow: 1; 
     }
     
+    /* 修正全屏模态框主体高度 */
     .full-height-custom .modal-body-custom {
-        max-height: calc(100vh - 120px); 
-        height: calc(100vh - 120px);
+        max-height: calc(100vh - 56px - 64px); 
+        height: calc(100vh - 56px - 64px);
         padding: 0; 
+        box-sizing: border-box;
     }
     
     #calculatorModalCustom .modal-body-custom {
         max-height: calc(100vh - 370px); 
         height: auto;
-        overflow-y: scroll; 
+        overflow-y: auto; 
         padding: 0; 
     }
     
@@ -454,7 +492,7 @@
         background-color: var(--surface-color); 
         z-index: 10;
         box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-        height: 64px;
+        height: 64px; /* 固定高度 */
         box-sizing: border-box;
         flex-shrink: 0; 
     }
@@ -473,7 +511,7 @@
     
     /* 重复数据确认模态框 */
     #duplicateConfirmationModalCustom .modal-body-custom {
-        max-height: calc(100vh - 170px);
+        max-height: calc(100vh - 56px - 64px); 
         padding: 16px;
         overflow-y: auto;
     }
@@ -548,6 +586,9 @@
         color: var(--text-color);
     }
 </style>
+
+
+
 </head>
 <body>
 
@@ -625,38 +666,42 @@
         <div class="item-count" id="itemCount"></div>
     </div>
     
-    <div class="data-table-container">
-        <table id="dataTable">
-            <thead>
-                <tr>
-                    <th class="seq-col">序号</th>
-                    <th class="checkbox-col" style="display: none;">
-                        <mdui-checkbox id="selectAllCheckbox">全选</mdui-checkbox>
-                    </th>
-                    <th>钢种</th>
-                    <th>产品号</th>
-                    <th>卡片号</th>
-                    <th>炉号</th>
-                    <th>实际直径</th>
-                    <th>直径</th>
-                    <th>长度</th>
-                    <th>重量</th>
-                    <th>状态</th>
-                    <th>位置</th>
-                    <th>硬度</th>
-                    <th class="remark-col">备注</th>
-                    <th class="action-col">操作</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                </tbody>
-        </table>
+    
+    <div class="data-table-container-div">
+        <div class="data-table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th class="seq-col">序号</th>
+                        <th class="checkbox-col" style="display: none;">
+                            <mdui-checkbox id="selectAllCheckbox">全选</mdui-checkbox>
+                        </th>
+                        <th>钢种</th>
+                        <th>产品号</th>
+                        <th>卡片号</th>
+                        <th>炉号</th>
+                        <th>实际直径</th>
+                        <th>直径</th>
+                        <th>长度</th>
+                        <th>重量</th>
+                        <th>状态</th>
+                        <th>位置</th>
+                        <th>硬度</th>
+                        <th class="remark-col">备注</th>
+                        <th class="action-col">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    
+        <div class="empty-state" id="emptyState">
+            <span class="material-icons" style="font-size: 48px;">inbox</span>
+            <p>暂无数据，点击右下角“添加”按钮开始录入。</p>
+        </div>
     </div>
-
-    <div class="empty-state" id="emptyState">
-        <span class="material-icons" style="font-size: 48px;">inbox</span>
-        <p>暂无数据，点击右下角“添加”按钮开始录入。</p>
-    </div>
+    
 
     <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
 
@@ -899,7 +944,7 @@
       id="aboutDialog"
       headline="关于"
       description="HTML Made with Gemini.
-      Version: 0.9.6"
+      Version: 0.9.7 Hotfix"
       close-on-overlay-click
     >
         <div slot="body">
@@ -912,6 +957,7 @@
 
     <mdui-snackbar id="general-snackbar" placement="bottom-center" closeable>
         </mdui-snackbar>
+
         
 <script>
 /**
