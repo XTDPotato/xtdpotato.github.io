@@ -1,0 +1,4204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no,viewport-fit=cover">
+	<title>圆棒入库数据管理</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Text:wght@400;500&family=Google+Sans+Display:wght@400;500&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+	<script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+		/* 🎨 全局样式与黑暗模式 */
+		:root {
+		    --primary-color: #00796b;
+		    --background-color: #f5f5f5;
+		    --surface-color: #ffffff;
+		    --text-color: #212121;
+		    --border-color: #e0e0e0;
+		    --drawer-icon-size: 24px;
+		}
+		
+		body.dark-mode {
+		    --primary-color: #80cbc4; 
+		    --background-color: #121212; 
+		    --surface-color: #1e1e1e; 
+		    --text-color: #ffffff;
+		    --border-color: #333333;
+		}
+		
+		body.mdui-theme-dark {
+		    --mdui-theme-color-surface: var(--surface-color);
+		    --mdui-theme-color-background: var(--background-color);
+		    --mdui-theme-color-primary: var(--primary-color);
+		    --mdui-top-app-bar-background-color: var(--surface-color);
+		}
+		
+		.data-form input, .data-form select, .search-bar input {
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		}
+		
+		.search-bar {
+		    background-color: var(--background-color); 
+		}
+		
+		body {
+		    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+		    margin: 0;
+		    padding-bottom: 80px; /* 为底部常驻栏预留空间 */
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		    transition: background-color 0.3s, color 0.3s;
+		}
+		
+		/* 🌟 顶部固定区域样式 🌟 */
+		.top-fixed-area {
+		    position: sticky;
+		    top: 0;
+		    z-index: 100;
+		    background-color: var(--surface-color);
+		    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		    padding: 8px 16px 0 16px;
+		}
+		
+		.action-bar {
+		    display: flex;
+		    align-items: center; 
+		    justify-content: flex-start;
+		    gap: 8px;
+		    flex-wrap: nowrap; 
+		    background-color: var(--surface-color);
+		    padding-bottom: 8px;
+		}
+		
+		.search-bar {
+		    display: flex;
+		    align-items: center;
+		    border-radius: 8px;
+		    padding: 4px 8px;
+		    flex-grow: 1;
+		    width: 50%;
+		    max-width: 400px;
+		    border: 1px solid var(--border-color);
+		}
+		
+		.search-bar input {
+		    border: none;
+		    outline: none;
+		    background: none;
+		    padding: 8px;
+		    flex-grow: 1;
+		    min-width: 0;
+		}
+		
+		/* 搜索替换容器 - 紧凑布局，上下按钮紧贴右侧 */
+		.search-replace-container {
+		    background-color: var(--surface-color);
+		    padding: 12px 16px 16px 16px !important;
+		    box-sizing: border-box;
+		    width: 100%;
+		    max-width: 100%;
+		    border-top: 1px solid var(--border-color);
+		    margin: 0;
+		}
+
+		.search-replace-main {
+		    display: flex;
+		    flex-direction: column;
+		    gap: 10px;
+		}
+
+		.search-replace-top-row {
+		    display: flex;
+		    align-items: center;
+		    gap: 6px;
+		}
+
+		.search-replace-top-row input {
+		    flex: 1;
+		    padding: 10px 12px;
+		    border: 1px solid var(--border-color);
+		    border-radius: 8px;
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		    font-size: 1rem;
+		    min-width: 0;
+		}
+
+		.search-replace-nav-buttons {
+		    display: flex;
+		    flex-direction: column;
+		    gap: 4px;
+		}
+
+		.search-replace-button-row {
+		    display: flex;
+		    gap: 10px;
+		    justify-content: flex-start;
+		}
+
+		.search-replace-bottom-row {
+		    display: flex;
+		    justify-content: space-between;
+		    align-items: center;
+		    flex-wrap: wrap;
+		    gap: 8px;
+		    font-size: 0.9rem;
+		    color: #757575;
+		}
+
+		@media (min-width: 600px) {
+		    .search-replace-main { gap: 12px; }
+		    .search-replace-top-row { gap: 8px; }
+		    .search-replace-top-row input { border-radius: 8px 0 0 8px; }
+		    .search-replace-nav-buttons mdui-button-icon { border-radius: 0; }
+		    .search-replace-nav-buttons mdui-button-icon:first-child { border-radius: 0 8px 0 0; }
+		    .search-replace-nav-buttons mdui-button-icon:last-child { border-radius: 0 0 8px 0; }
+		    .search-replace-bottom-row { flex-wrap: nowrap; }
+		}
+		
+		.search-clear-btn {
+		    display: none;
+		    cursor: pointer;
+		    color: #757575;
+		}
+		
+		.search-clear-btn.active {
+		    display: inline-block;
+		}
+		
+		.batch-action-container {
+		    width: 100%;
+		    padding: 0 0 8px 0;
+		    background-color: var(--surface-color);
+		    margin-top: -1px; 
+		}
+		
+		/* 底部常驻信息栏 */
+		.bottom-data-summary {
+		    position: fixed;
+		    bottom: 0;
+		    left: 0;
+		    right: 0;
+		    padding: 10px 16px;
+		    background-color: var(--surface-color);
+		    color: #757575;
+		    font-size: 0.9rem;
+		    z-index: 900;
+		    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+		    border-top: 1px solid var(--border-color);
+		    transition: all 0.3s ease;
+		    display: flex;
+		    flex-direction: column;
+		    gap: 8px;
+		    align-items: center;
+		}
+		
+		.bottom-summary-content {
+		    display: flex;
+		    justify-content: space-between;
+		    align-items: center;
+		    width: 100%;
+		    flex-wrap: wrap;
+		    gap: 12px;
+		}
+		
+		.bottom-summary-left {
+		    font-weight: 500;
+		}
+		
+		.bottom-summary-right {
+		    display: flex;
+		    align-items: center;
+		    gap: 12px;
+		    flex-shrink: 0;
+		}
+		
+		.page-info-container {
+		    display: flex;
+		    align-items: center;
+		    gap: 6px;
+		}
+		
+		.page-info-text {
+		    cursor: pointer;
+		    user-select: none;
+		    white-space: nowrap;
+		}
+		
+		.page-input {
+		    width: 60px;
+		    padding: 4px 8px;
+		    font-size: 0.9rem;
+		    border: 1px solid var(--border-color);
+		    border-radius: 4px;
+		    text-align: center;
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		    display: none;
+		}
+		
+		body:has(#virtualKeyboard[style*="block"]) .bottom-data-summary {
+		    bottom: 320px;
+		    transition: bottom 0.3s ease;
+		}
+		
+		.dark-mode .bottom-data-summary {
+		    background-color: rgba(30, 30, 30, 0.95);
+		}
+		
+		@media (min-width: 600px) {
+		    .bottom-data-summary {
+		        flex-direction: row;
+		        padding: 10px 24px;
+		    }
+		    .bottom-summary-content {
+		        flex-wrap: nowrap;
+		    }
+		    .bottom-summary-right {
+		        gap: 16px;
+		    }
+		}
+		
+		/* 表单输入框样式 */
+		.data-form {
+		    padding: 16px;
+		}
+		.data-form input, .data-form select {
+		    width: 100%;
+		    padding: 10px;
+		    margin-bottom: 12px;
+		    border: 1px solid var(--border-color);
+		    border-radius: 4px;
+		    box-sizing: border-box;
+		}
+		
+		.data-form label {
+		    display: block;
+		    margin-bottom: 4px;
+		    font-size: 0.9rem;
+		    color: #757575;
+		}
+		
+		#remarks {
+		    height: 200px; 
+		    font-size: 16px; 
+		}
+		
+		.readonly-input {
+		     cursor: pointer !important;
+		     background-color: #e0e0e0 !important;
+		}
+		
+		.dark-mode .readonly-input {
+		     background-color: #333333 !important;
+		}
+		
+		/* 修复空状态元素占位和越界问题 */
+		.empty-state {
+		    text-align: center;
+		    padding: 50px 20px; 
+		    color: #757575;
+		    position: absolute; 
+		    top: 0; 
+		    left: 0;
+		    width: 100%; 
+		    height: 100%;
+		    display: none;
+		    z-index: 50;
+		    background-color: var(--background-color);
+		    box-sizing: border-box;
+		}
+		
+		.empty-state p {
+		    word-break: break-word; 
+		    overflow-wrap: break-word; 
+		    max-width: 90%; 
+		    margin: 10px auto 0 auto;
+		}
+		
+		/* 虚拟键盘样式 */
+#virtualKeyboard {
+    position: fixed;
+    bottom: 10px; 
+    padding-bottom: 15px;
+    left: 0;
+    width: 100%;
+    background-color: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 2000; 
+    display: none;
+    box-sizing: border-box;
+}
+
+.keyboard-row {
+    display: flex;
+    padding: 5px 8px;
+    justify-content: center;
+    margin: 0;
+    gap: 4px; /* 边距小一些：从6px改为4px */
+}
+
+.keyboard-key {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 8px; /* 高度低一点：垂直padding从12px改为9px */
+    border-radius: 6px;
+    text-align: center;
+    font-size: 16px; /* 字体稍小，配合高度降低 */
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.1s, transform 0.1s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 扩大点击热区，覆盖视觉缝隙 */
+    position: relative;
+    margin-left: 2px;
+    margin-right: 2px; /* 配合gap:4px，点击区域无缝覆盖 */
+}
+
+.keyboard-key::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    left: -6px;
+    right: -6px;
+}
+
+.keyboard-key:active {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    transform: scale(0.95);
+}
+
+.special {
+    background-color: #bdbdbd;
+    color: #212121;
+}
+
+.dark-mode .special {
+    background-color: #424242;
+    color: #ffffff;
+}
+
+.wide { flex: 1.6 1 0; }
+.extra-wide { flex: 3 1 0; }
+
+.keyboard-key.empty {
+    background: none;
+    box-shadow: none;
+    cursor: default;
+    flex: 1 1 0;
+    padding: 0;
+    margin: 0;
+}
+
+.clear-key { background-color: #f44336 !important; color: white !important; }
+.system-keyboard { background-color: #2196f3 !important; color: white !important; }
+
+#shortcutContainer {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 5px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+#shortcutContainer .keyboard-row {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px; /* 快捷键边距也小一点 */
+    padding: 5px 8px;
+}
+
+#shortcutContainer .keyboard-key {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+		
+		.shortcut-key, .status-key {
+		    flex: none;
+		    padding: 6px 10px;
+		    margin: 2px;
+		}
+		
+		/* 表格容器高度 */
+		.data-table-container-div {
+		    width: 100%;
+		    max-width: 100%;
+		    overflow: auto;
+		    -webkit-overflow-scrolling: touch;
+		}
+		
+		.data-table-container {
+		    overflow: visible !important;
+		    width: max-content;
+		    max-width: 100%;
+		    min-width: 100%;
+		    transform-origin: 0 0;
+		    transition: transform 0.15s ease-out;
+		    will-change: transform;
+		}
+		
+		#dataTable {
+		    width: max-content;
+		    min-width: 100%;
+		}
+		
+		/* 冻结表头 */
+		#dataTable th {
+		    position: sticky;
+		    top: 0; 
+		    z-index: 50; 
+		    background-color: var(--surface-color);
+		    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); 
+		    font-weight: 500;
+		    border-bottom: 2px solid var(--border-color);
+		}
+		
+		/* 单元格 */
+		#dataTable th, #dataTable td {
+		    padding: 12px 8px; 
+		    border: 1px solid var(--border-color);
+		    text-align: center;
+		    white-space: normal;
+		    word-break: break-word;
+		    font-size: 1rem; 
+		    min-width: 80px; 
+		    overflow: visible;
+		}
+		
+		/* 修正列宽样式 - 固定列 */
+		.action-col   { min-width: 100px; width: 100px; max-width: 100px; } 
+		.seq-col      { min-width: 60px; width: 60px; position: relative; } 
+		.checkbox-col { min-width: 50px; width: 50px; } 
+		.remark-col   { min-width: 150px; }
+		
+		.delete-btn { color: #f44336; }
+		
+		.selected {
+		    background-color: rgba(0, 121, 107, 0.1) !important;
+		}
+		.dark-mode .selected {
+		    background-color: rgba(128, 203, 196, 0.2) !important;
+		}
+		
+		.highlight {
+		    background-color: rgba(255, 193, 7, 0.3) !important;
+		    transition: background-color 0.5s ease-out;
+		}
+		
+		/* 搜索替换高亮 */
+		.search-match-highlight {
+		    background-color: #ffc107; 
+		    font-weight: bold;
+		    color: #212121;
+		}
+		.dark-mode .search-match-highlight {
+		    background-color: #ffd54f; 
+		    color: #212121;
+		}
+		.current-match-highlight {
+		    outline: 2px solid var(--primary-color);
+		    outline-offset: -2px;
+		}
+		
+		/* 移动按钮 */
+		.move-buttons {
+		    display: none;
+		    flex-direction: column;
+		    position: absolute;
+		    left: 0; top: 0;
+		    height: 100%;
+		    justify-content: center;
+		    z-index: 10;
+		    background-color: rgba(255, 255, 255, 0.8);
+		    border-right: 1px solid var(--border-color);
+		    padding: 0 4px;
+		}
+		.dark-mode .move-buttons { background-color: rgba(30, 30, 30, 0.8); }
+		#dataTable tr:hover .move-buttons { display: flex; }
+		
+		.move-btn {
+		    background: none;
+		    border: none;
+		    padding: 2px;
+		    cursor: pointer;
+		    margin: 1px 0;
+		    color: var(--primary-color);
+		    transition: color 0.1s;
+		}
+		.move-btn:hover { color: #f44336; }
+		
+		#dataTable td, #dataTable th { position: relative; }
+		
+		/* 自定义 Modal/Sheet 样式 */
+		.modal-custom {
+		    display: none; 
+		    position: fixed;
+		    top: 0; left: 0;
+		    width: 100%; height: 100%;
+		    background-color: rgba(0, 0, 0, 0.4);
+		    z-index: 1050; 
+		}
+		
+		.modal-content-custom {
+		    background-color: var(--surface-color);
+		    margin: 15% auto; 
+		    padding: 0;
+		    border-radius: 8px;
+		    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+		    width: 90%; 
+		    max-width: 500px; 
+		    display: flex;
+		    flex-direction: column;
+		    max-height: 90vh; 
+		    overflow: hidden;
+		}
+		
+		.full-height-custom .modal-content-custom {
+		    width: 100%;
+		    max-width: 100%;
+		    height: 100%;
+		    margin: 0;
+		    border-radius: 0; 
+		}
+		
+		.modal-header-custom {
+		    display: flex;
+		    align-items: center;
+		    justify-content: space-between;
+		    padding: 0 16px;
+		    height: 56px;
+		    border-bottom: 1px solid var(--border-color);
+		    position: sticky; 
+		    top: 0; 
+		    background-color: var(--surface-color);
+		    z-index: 10;
+		    flex-shrink: 0;
+		}
+		
+		.modal-header-custom h2 {
+		    margin: 0;
+		    font-size: 1.1rem;
+		    font-weight: 500;
+		}
+		
+		.modal-body-custom {
+		    padding: 16px; 
+		    overflow-y: auto; 
+		    flex-grow: 1; 
+		    box-sizing: border-box;
+		    padding-bottom: 80px !important; 
+		    margin-bottom: -64px;
+		}
+		
+		.full-height-custom .modal-body-custom {
+		    max-height: calc(100vh - 56px - 80px); 
+		    height: calc(100vh - 56px - 80px);
+		    padding: 0; 
+		    box-sizing: border-box;
+		    padding-bottom: 80px !important;
+		}
+		
+		#calculatorModalCustom .modal-body-custom {
+		    max-height: calc(100vh - 370px); 
+		    height: auto;
+		    overflow-y: auto; 
+		    padding: 0; 
+		}
+		
+		/* 防止 dropdown 菜单被 modal 裁剪 */
+		#sortModalCustom mdui-select::part(menu) {
+		    max-height: 300px !important;
+		    overflow-y: auto;
+		}
+		
+		.modal-footer-custom {
+		    padding: 16px 16px 24px 16px;
+		    display: flex; 
+		    justify-content: flex-end; 
+		    gap: 12px;
+		    position: sticky; 
+		    bottom: 0; 
+		    background-color: var(--surface-color); 
+		    z-index: 10;
+		    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+		    border-top: 1px solid var(--border-color);
+		    box-sizing: border-box;
+		    flex-shrink: 0; 
+		    align-items: center;
+		}
+		
+		.modal-custom:not(.full-height-custom) .modal-content-custom {
+		    position: absolute; 
+		    top: 50%;
+		    left: 50%;
+		    transform: translate(-50%, -50%);
+		    width: 90%; 
+		    max-width: 450px;
+		    max-height: 90vh;
+		}
+		
+		/* 排序规则项样式 */
+		#sortRulesContainer .sort-rule {
+		    background-color: var(--background-color);
+		    padding: 6px 14px;
+		    border-radius: 8px;
+		    border: 1px solid var(--border-color);
+		    margin-bottom: 12px;
+		    display: flex;
+		    align-items: center;
+		    gap: 6px;
+		    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+		}
+		
+		#sortRulesContainer mdui-button-icon[icon="delete"] {
+		    color: #f44336;
+		}
+		
+		#confirmModalCustom .modal-body-custom { padding: 16px; }
+		
+		/* 重复数据确认模态框 */
+		#duplicateConfirmationModalCustom .modal-body-custom {
+		    max-height: calc(100vh - 56px - 64px); 
+		    padding: 16px;
+		    overflow-y: auto;
+		}
+		
+		.duplicate-item {
+		    border: 1px solid var(--border-color);
+		    padding: 10px;
+		    margin-bottom: 10px;
+		    border-radius: 4px;
+		    background-color: var(--background-color);
+		}
+		.dark-mode .duplicate-item { background-color: #282828; }
+		
+		.duplicate-actions label { margin-right: 15px; font-size: 0.9rem; }
+		
+		.duplicate-item table { width: 100%; margin: 10px 0 15px; border-collapse: collapse; }
+		.duplicate-item table th, .duplicate-item table td { padding: 8px; border: 1px solid var(--border-color); text-align: center; }
+		.duplicate-item table th { background-color: var(--surface-color); }
+		
+		#drawerList mdui-icon { font-size: var(--drawer-icon-size); }
+		
+		.checkbox-col {
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    padding: 0 !important; 
+		}
+		
+		.checkbox-col > mdui-checkbox {
+		    margin: 0; 
+		    padding: 12px 8px; 
+		}
+		
+		.top-action-buttons {
+		    display: flex;
+		    gap: 8px;
+		    align-items: center;
+		    flex-shrink: 0; 
+		}
+		
+		#mainFab {
+		    position: fixed;
+		    right: 16px;
+		    bottom: 76px; /* 避开底部常驻栏 */
+		    z-index: 1000; 
+		}
+		
+		/* 快速编辑弹窗 */
+		#quickEditDialog .modal-content-custom {
+		    max-width: 400px;
+		    top: 30%; 
+		    transform: translate(-50%, -50%); 
+		}
+		
+		#quickEditDialog .modal-body-custom { padding: 20px; }
+		
+		#quickEditDialog label {
+		    display: block;
+		    margin-bottom: 8px;
+		    font-weight: 500;
+		    color: var(--primary-color);
+		}
+		
+		#quickEditInput {
+		    font-size: 1.2rem;
+		    padding: 12px;
+		    border: 2px solid var(--primary-color);
+		    border-radius: 4px;
+		    width: 100%;
+		    box-sizing: border-box;
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		}
+		/* === 强制全局使用 Google Sans（放在所有样式最后）=== */
+*,
+*::before,
+*::after,
+body, input, button, textarea, select,
+.mdui-typography,
+.mdui-button,
+.mdui-list-item,
+.mdui-top-app-bar,
+.mdui-dialog,
+.mdui-text-field-input,
+#dataTable,
+#dataTable th,
+#dataTable td,
+.data-form input,
+.data-form select,
+.virtualKeyboard * {
+    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, -apple-system, sans-serif !important;
+}
+
+/* 加粗文字使用 Medium 字重（更优雅） */
+h1, h2, h3, h4, h5, h6,
+.mdui-top-app-bar-title,
+.mdui-button,
+.mdui-list-item-headline,
+.mdui-dialog-headline {
+    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, sans-serif !important;
+    font-weight: 500 !important;
+}
+
+/* 虚拟键盘键也强制使用 */
+.keyboard-key {
+    font-family: 'Google Sans Text', system-ui, sans-serif !important;
+    font-weight: 500 !important;
+}
+/* === 修复：保护 Material Icons 不被 Google Sans 覆盖 === */
+.material-icons,
+mdui-button-icon .mdui-icon,
+mdui-top-app-bar .mdui-icon,
+mdui-list-item .mdui-icon,
+mdui-navigation-drawer .mdui-icon,
+mdui-fab .mdui-icon,
+.move-btn .material-icons {
+    font-family: 'Material Icons' !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    speak: none;
+    display: inline-block;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+	</style>
+</head>
+<body>
+	<mdui-navigation-drawer id="drawer" close-on-overlay-click placement="left" close-on-esc>
+		<mdui-top-app-bar slot="header">
+			<mdui-top-app-bar-title>功能菜单</mdui-top-app-bar-title>
+		</mdui-top-app-bar>
+		<mdui-list id="drawerList">
+			<mdui-collapse>
+				<mdui-collapse-item id="themeCollapse">
+					<mdui-list-item slot="header" icon="dark_mode" headline="主题模式 (当前: 自动)"></mdui-list-item>
+					<mdui-list id="themeCollapseContent">
+						<mdui-list-item class="theme-option" data-theme="auto" icon="brightness_auto" headline="自动 (跟随系统)"></mdui-list-item>
+						<mdui-list-item class="theme-option" data-theme="light" icon="light_mode" headline="日间模式"></mdui-list-item>
+						<mdui-list-item class="theme-option" data-theme="dark" icon="dark_mode" headline="夜间模式"></mdui-list-item>
+					</mdui-list>
+				</mdui-collapse-item>
+			</mdui-collapse>
+			<mdui-list-item id="importItem" icon="file_upload" headline="导入 Excel"></mdui-list-item>
+			<mdui-list-item id="exportItem" icon="file_download" headline="导出 Excel"></mdui-list-item>
+			<mdui-list-item id="calculatorBtn" icon="calculate" headline="计算重量"></mdui-list-item>
+			<mdui-divider></mdui-divider>
+			<mdui-list-item id="sortItem" icon="sort" headline="数据排序"></mdui-list-item>
+		</mdui-list>
+	</mdui-navigation-drawer>
+
+	<div class="top-fixed-area">
+		<div class="action-bar">
+			<mdui-button-icon icon="menu" id="openDrawerBtn"></mdui-button-icon>
+			<div class="search-bar">
+				<span class="material-icons" style="color:#757575;">search</span>
+				<input type="text" id="searchInput" placeholder="搜索所有字段...">
+				<span class="material-icons search-clear-btn" id="searchClearBtn">clear</span>
+			</div>
+			<div class="top-action-buttons">
+				<mdui-button-icon icon="find_replace" id="toggleSearchReplaceBtn" style="margin-right: -8px;"></mdui-button-icon>
+				<mdui-dropdown placement="bottom-end">
+					<mdui-button-icon slot="trigger" icon="more_vert" id="topMenuBtn"></mdui-button-icon>
+					<mdui-menu>
+						<mdui-menu-item id="multiSelectMenuItem" icon="check_box_outline_blank">
+							<span id="multiSelectMenuText">进入多选模式</span>
+						</mdui-menu-item>
+						<mdui-menu-item id="aboutItem" icon="info">关于</mdui-menu-item>
+					</mdui-menu>
+				</mdui-dropdown>
+			</div>
+		</div>
+
+		<div class="search-replace-container" id="searchReplaceContainer" style="display: none;">
+			<div class="search-replace-main">
+				<div class="search-replace-top-row">
+					<input type="text" id="replaceQuery" placeholder="替换为">
+					<div class="search-replace-nav-buttons">
+						<mdui-button-icon icon="arrow_upward" id="prevMatchBtn"></mdui-button-icon>
+						<mdui-button-icon icon="arrow_downward" id="nextMatchBtn"></mdui-button-icon>
+					</div>
+				</div>
+				<div class="search-replace-button-row">
+					<mdui-button variant="filled" id="replaceOneBtn" disabled>替换当前</mdui-button>
+					<mdui-button variant="outlined" id="replaceAllBtn" color="error" disabled>替换全部</mdui-button>
+				</div>
+				<div class="search-replace-bottom-row">
+					<span id="searchResultCount">找到 0 个匹配项</span>
+					<mdui-switch id="filterMatchRowsSwitch">只显示匹配行</mdui-switch>
+				</div>
+			</div>
+		</div>
+
+		<div class="batch-action-container">
+			<mdui-button variant="outlined" color="error" id="deleteSelectedBtn" style="display: none; width: 100%;">
+				<mdui-icon name="delete"></mdui-icon> 批量删除 (<span id="selectedCount">0</span>)
+			</mdui-button>
+		</div>
+	</div>
+
+	<div class="data-table-container-div">
+		<div class="data-table-container">
+			<table id="dataTable">
+				<thead>
+					<tr>
+						<th class="seq-col">序号</th>
+						<th class="checkbox-col" style="display: none;">
+							<mdui-checkbox id="selectAllCheckbox">全选</mdui-checkbox>
+						</th>
+						<th>钢种</th>
+						<th>产品号</th>
+						<th>卡片号</th>
+						<th>炉号</th>
+						<th>实际直径</th>
+						<th>直径</th>
+						<th>长度</th>
+						<th>重量</th>
+						<th>状态</th>
+						<th>位置</th>
+						<th>硬度</th>
+						<th class="remark-col">备注</th>
+						<th class="action-col">操作</th>
+					</tr>
+				</thead>
+				<tbody id="tableBody"></tbody>
+			</table>
+		</div>
+
+		<!-- 底部常驻信息栏：总条数 + 分页控制 -->
+		<div class="bottom-data-summary">
+			<div class="bottom-summary-content">
+				<div class="bottom-summary-left" id="totalCountText">共 0 条数据</div>
+				<div class="bottom-summary-right">
+					<div class="page-info-container">
+						<span class="page-info-text" id="pageInfoText">第 1 / 1 页</span>
+						<input type="number" class="page-input" id="pageJumpInput" min="1" value="1">
+					</div>
+					<div style="display: flex; gap: 8px;">
+						<mdui-button-icon icon="navigate_before" id="bottomPrevBtn"></mdui-button-icon>
+						<mdui-button-icon icon="navigate_next" id="bottomNextBtn"></mdui-button-icon>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="empty-state" id="emptyState">
+			<span class="material-icons" style="font-size: 48px;">inbox</span>
+			<p>暂无数据，点击右下角“添加”按钮开始录入。</p>
+		</div>
+	</div>
+
+	<input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+
+	<div id="dataSheetCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div id="dataSheetHeader" class="modal-header-custom">
+				<h2 id="modalTitle">添加数据</h2>
+				<mdui-button-icon icon="close" id="closeDataModal"></mdui-button-icon>
+			</div>
+			<div id="dataSheetContent" class="modal-body-custom">
+				<form id="dataForm" class="data-form">
+					<input type="hidden" id="editIndex" value="-1">
+					<label for="steelType">钢种</label>
+					<input type="text" id="steelType" class="readonly-input">
+					<label for="productId">产品号</label>
+					<input type="text" id="productId" class="readonly-input">
+					<label for="cardId">卡片号</label>
+					<input type="text" id="cardId" class="readonly-input">
+					<label for="furnaceId">炉号</label>
+					<input type="text" id="furnaceId" class="readonly-input">
+					<mdui-divider style="margin-bottom:10px"></mdui-divider>
+					<label for="actualDiameter">实际直径</label>
+					<input type="text" id="actualDiameter" class="numeric-input readonly-input">
+					<label for="diameter">直径</label>
+					<input type="text" id="diameter" class="numeric-input readonly-input">
+					<label for="length">长度</label>
+					<input type="text" id="length" class="numeric-input readonly-input">
+					<label for="weight">重量</label>
+					<input type="text" id="weight" class="numeric-input readonly-input">
+					<mdui-divider style="margin-bottom:10px"></mdui-divider>
+					<label for="status">状态</label>
+					<input type="text" id="status" class="readonly-input">
+					<label for="position">位置</label>
+					<input type="text" id="position" class="readonly-input">
+					<label for="hardness">硬度</label>
+					<input type="text" id="hardness" class="numeric-input readonly-input">
+					<label for="remarks">备注</label>
+					<textarea rows="5" cols="30" id="remarks"></textarea>
+				</form>
+			</div>
+			<div id="dataSheetFooter" class="modal-footer-custom">
+				<mdui-button variant="text" id="cancelBtn">取消</mdui-button>
+				<mdui-button variant="filled" id="saveBtn">保存</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<div id="quickEditDialog" class="modal-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 id="quickEditTitle">快速编辑</h2>
+				<mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<label id="quickEditLabel">字段名</label>
+				<input type="text" id="quickEditInput" class="readonly-input">
+				<input type="hidden" id="quickEditIndex">
+				<input type="hidden" id="quickEditField">
+			</div>
+			<div class="modal-footer-custom" style="justify-content: space-between;">
+				<mdui-button variant="text" id="openFullEditBtn">打开完整编辑界面</mdui-button>
+				<mdui-button variant="filled" id="saveQuickEditBtn">保存</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<div id="virtualKeyboard">
+		<div id="shortcutContainer"></div>
+		<div id="keyboardRows"></div>
+	</div>
+
+	<div id="confirmModalCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">操作确认</h2>
+				<mdui-button-icon icon="close" id="closeConfirmModal"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<div id="confirmMessage"></div>
+			</div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="cancelConfirmBtn">取消</mdui-button>
+				<mdui-button variant="filled" color="error" id="confirmActionBtn">确定</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<div id="calculatorModalCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">圆棒重量计算</h2>
+				<mdui-button-icon icon="close" id="closeCalculatorModal"></mdui-button-icon>
+			</div>
+			<div id="calculatorContent" class="modal-body-custom">
+				<form id="calculatorForm" class="data-form" style="padding: 16px;">
+					<label for="calcDiameter1">直径 1 (mm)</label>
+					<input type="text" id="calcDiameter1" class="numeric-input readonly-input">
+					<label for="calcDiameter2">直径 2 (mm)</label>
+					<input type="text" id="calcDiameter2" class="numeric-input readonly-input">
+					<label for="calcLength">长度 (mm)</label>
+					<input type="text" id="calcLength" class="numeric-input readonly-input">
+					<label for="calcDensity">密度 (Kg/mm³, 默认 0.00617)</label>
+					<input type="text" id="calcDensity" readonly>
+					<label for="calcResult">计算结果 (Kg)</label>
+					<input type="text" id="calcResult" readonly style="font-weight: bold; font-size: 1.2em;">
+				</form>
+			</div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="clearCalcBtn" color="error">清空全部</mdui-button>
+				<mdui-button variant="text" id="cancelCalcBtn">取消</mdui-button>
+				<mdui-button variant="filled" id="calculateAndAddBtn">计算并填充</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<div id="duplicateConfirmationModalCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">导入重复数据确认</h2>
+				<mdui-button-icon icon="close" id="closeDuplicateModal"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<p>总共导入 <span id="modal-total-count" style="font-weight: bold;">0</span> 条记录。其中：</p>
+				<ul>
+					<li>新数据 <span id="modal-new-count" style="font-weight: bold; color: var(--primary-color);">0</span> 条（将直接添加）</li>
+					<li>重复数据 <span id="modal-duplicate-count" style="font-weight: bold; color: #f44336;">0</span> 条（请选择处理方式）</li>
+				</ul>
+				<div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+					<mdui-button variant="outlined" id="modal-btn-select-all-skip">全部跳过 (保留现有)</mdui-button>
+					<mdui-button variant="outlined" id="modal-btn-select-all-override">全部覆盖 (使用新值)</mdui-button>
+				</div>
+				<div id="modal-duplicate-list"></div>
+			</div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="modal-btn-cancel-import">取消导入</mdui-button>
+				<mdui-button variant="filled" id="modal-btn-confirm">确认处理并完成导入</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<div id="sortModalCustom" class="full-height-custom modal-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">数据排序</h2>
+				<mdui-button-icon icon="close" id="closeSortModal"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<div class="data-form" style="padding: 0 16px;">
+					<p style="color: #757575; font-size: 0.9rem; margin-bottom: 16px;">从上到下优先级依次降低（先按第一条，再按第二条，以此类推）</p>
+					<mdui-button variant="outlined" id="addSortRuleBtn" style="width: 100%; margin-top: 12px;">
+						<mdui-icon name="add"></mdui-icon> 添加排序规则
+					</mdui-button>
+					<div id="sortRulesContainer"></div>
+				</div>
+			</div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="cancelSortBtn">取消</mdui-button>
+				<mdui-button variant="filled" id="applySortBtn">应用排序</mdui-button>
+			</div>
+		</div>
+	</div>
+
+	<mdui-fab icon="add" id="mainFab"></mdui-fab>
+
+	<script type="text/template" id="duplicate-item-template">
+		<div class="duplicate-item">
+			<h4>产品号：PRODUCT_ID</h4>
+			<div class="duplicate-differences">
+				<table>
+					<thead>
+						<tr>
+							<th>字段</th>
+							<th>现有值</th>
+							<th>新值</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+			<div class="duplicate-actions">
+				<label><input type="radio" name="action-ITEM_INDEX" value="skip" checked> 跳过 (保留现有值)</label>
+				<label><input type="radio" name="action-ITEM_INDEX" value="override"> 覆盖 (使用新值)</label>
+			</div>
+		</div>
+	</script>
+
+	<script type="text/template" id="difference-row-template">
+		<tr>
+			<th>FIELD_NAME</th>
+			<td>OLD_VALUE</td>
+			<td style="color: #f44336; font-weight: bold;">NEW_VALUE</td>
+		</tr>
+	</script>
+
+<mdui-dialog 
+    id="aboutDialog" 
+    fullscreen
+    headline="关于 & 操作指南" 
+    close-on-overlay-click 
+    class="full-height-custom"
+>
+    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+        圆棒入库数据管理
+        <br><span style="font-size: 12px; font-weight: normal; color: #666;">版本：26.1.06</span>
+    </div>
+    
+    <div style="font-size: 12px; color: #888; margin-bottom: 12px;">
+        制作：使用Gemini + Doubao + Grok<br/>
+        更新：持续修复 bug，优化用户体验
+    </div>
+
+    <mdui-divider style="margin-bottom: 12px;"></mdui-divider>
+
+    <div style="font-size: 13px; line-height: 1.8; color: #333;">
+        <strong>【基础操作】</strong><br/>
+        • <b>添加/编辑数据</b>：点击右下角 + 按钮，或直接点击表格行<br/>
+        • <b>快速编辑</b>：点击表格单元格，可快速修改单个字段<br/>
+        • <b>多选删除</b>：点击右上角 ⋮ → 进入多选模式 → 勾选行 → 批量删除<br/>
+        <br/>
+
+        <strong>【数据处理】</strong><br/>
+        • <b>导入/导出 Excel</b>：左侧抽屉菜单 → 导入 Excel / 导出 Excel<br/>
+        • <b>搜索</b>：顶部搜索框输入关键字，支持搜索所有字段<br/>
+        • <b>搜索替换</b>：点击 🔍↔️ 按钮打开替换面板，可替换当前或全部<br/>
+        • <b>计算重量</b>：抽屉菜单 → 计算重量 → 输入参数并填充<br/>
+        • <b>数据排序</b>：抽屉菜单 → 数据排序 → 添加规则并应用<br/>
+        <br/>
+
+        <strong>【手势与显示】</strong><br/>
+        • <b>表格缩放</b>：双指捏合缩小，双指张开放大（最大原尺寸）<br/>
+        • <b>移动行序</b>：鼠标悬停在行左侧，使用出现 ↑↓ 按钮拖动<br/>
+        • <b>手机端移动行序</b>：进入多选模式，点击项目出现 ↑↓ 按钮点击操作<br/>
+        <br/>
+
+        <strong>【虚拟键盘说明】</strong><br/>
+        • <b>自动弹出</b>：点击输入框自动弹出自定义键盘<br/>
+        • <b>切换字段</b>：点击右下角 <b>▼（完成）</b> 键自动跳转下一项<br/>
+        • <b>关闭键盘</b>：长按 <b>▼</b> 键或在快编模式点击 <b>✔</b> 键<br/>
+        • <b>快捷删除</b>：<b>←✘</b> 清空内容；<b>←</b> 删除前一字符（支持长按）<br/>
+        • <b>快捷输入</b>：首行支持钢种、状态、位置等一键填入<br/>
+    </div>
+
+    <div style="margin-top: 16px; font-size: 12px; color: #999; text-align: center;">
+        如有问题或建议，欢迎反馈改进。感谢使用！
+    </div>
+    
+    <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
+        关闭
+    </mdui-button>
+</mdui-dialog>
+
+    <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
+        关闭
+    </mdui-button>
+</mdui-dialog>
+		
+
+	<mdui-snackbar id="general-snackbar" placement="bottom-center" closeable></mdui-snackbar>
+
+	<script>
+		/**
+		 * =========================================================================
+		 * 圆棒入库数据管理系统 - JavaScript 核心逻辑（支持多字段动态排序）
+		 * Based on MDUI v2
+		 * =========================================================================
+		 */
+		
+		// 核心数据存储
+		let tableData = [];             // 存储所有圆棒数据的数组
+		let currentInput = null;        // 当前激活的输入框 DOM 元素
+		let keyboardState = JSON.parse(localStorage.getItem('keyboardState')) || {
+		    shiftState: 'locked-on',    // 大小写状态：locked-on（大写锁定）、on（临时大写）、off（小写锁定）
+		    inputType: 'text'           // 绑定的输入字段类型，用于决定键盘布局
+		};
+		let currentEditIndex = -1;      // 当前正在编辑的数据项在 tableData 中的索引，-1 表示新增
+		let isMultiSelectMode = false;  // 是否处于多选模式
+		let selectedRows = new Set();   // 存储选中的行在 tableData 中的原始索引
+		let selectedTheme = localStorage.getItem('theme') || 'auto'; // 当前主题模式
+		let searchTerm = '';            // 当前搜索关键字
+		let isSearchReplaceVisible = false; // 搜索替换区域是否可见
+		let currentPage = 1;
+        const PAGE_SIZE = 50; // 每页条数，可根据设备调整（手机50，平板100）
+        let totalPages = 1;
+		// 搜索/替换变量
+		let searchMatches = [];         
+		let currentMatchIndex = -1;     
+		let isSearchActive = false;     
+		const searchableFields = [
+		    'steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 
+		    'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'
+		];
+		let duplicateCurrentPage = 1;
+        const DUPLICATE_PAGE_SIZE = 10; // 重复确认每页显示条数
+        let duplicateTotalPages = 1;
+        let isFilterMatchRows = false; // 是否启用“只显示匹配行”
+		// 数据表单字段顺序，用于虚拟键盘的 Tab 切换逻辑
+		const inputFieldOrder = [
+		  'steelType', 'productId', 'cardId', 'furnaceId',
+		  'actualDiameter', 'diameter', 'length', 'weight',
+		  'status', 'position', 'hardness', 'remarks'
+		];
+		
+		// 字段中文标签映射
+		const fieldLabels = {
+		    'steelType': '钢种',
+		    'productId': '产品号',
+		    'cardId': '卡片号',
+		    'furnaceId': '炉号',
+		    'actualDiameter': '实际直径',
+		    'diameter': '直径',
+		    'length': '长度',
+		    'weight': '重量',
+		    'status': '状态',
+		    'position': '位置',
+		    'hardness': '硬度',
+		    'remarks': '备注'
+		};
+		
+		// 多字段排序专用选项（卡片号放在最前面）
+		const sortFieldOptions = [
+		    { value: 'cardId', label: '卡片号' },
+		    { value: 'productId', label: '产品号' },
+		    { value: 'steelType', label: '钢种' },
+		    { value: 'furnaceId', label: '炉号' },
+		    { value: 'actualDiameter', label: '实际直径' },
+		    { value: 'diameter', label: '直径' },
+		    { value: 'length', label: '长度' },
+		    { value: 'weight', label: '重量' },
+		    { value: 'status', label: '状态' },
+		    { value: 'position', label: '位置' },
+		    { value: 'hardness', label: '硬度' }
+		];
+		
+		const numericSortFields = ['actualDiameter', 'diameter', 'length', 'weight', 'hardness'];
+		
+		// DOM 元素引用
+		const dom = {
+		  themeCollapse: document.getElementById('themeCollapse'),
+		  themeCollapseContent: document.getElementById('themeCollapseContent'),
+		  tableBody: document.getElementById('tableBody'),
+		  emptyState: document.getElementById('emptyState'),
+		  itemCount: document.getElementById('itemCount'),
+		  addBtn: document.getElementById('mainFab'), 
+		  importItem: document.getElementById('importItem'),
+		  exportItem: document.getElementById('exportItem'),
+		  fileInput: document.getElementById('fileInput'),
+		  deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
+		  selectedCount: document.getElementById('selectedCount'),
+		  selectAllCheckbox: document.getElementById('selectAllCheckbox'),
+		  drawer: document.getElementById('drawer'),
+		  openDrawerBtn: document.getElementById('openDrawerBtn'),
+		  dataSheet: document.getElementById('dataSheetCustom'), 
+		  closeDataModal: document.getElementById('closeDataModal'),
+		  saveBtn: document.getElementById('saveBtn'),
+		  cancelBtn: document.getElementById('cancelBtn'),
+		  dataForm: document.getElementById('dataForm'),
+		  modalTitle: document.getElementById('modalTitle'),
+		  editIndex: document.getElementById('editIndex'),
+		  quickEditDialog: document.getElementById('quickEditDialog'),
+		  closeQuickEdit: document.getElementById('closeQuickEdit'),
+		  quickEditLabel: document.getElementById('quickEditLabel'),
+		  quickEditInput: document.getElementById('quickEditInput'),
+		  quickEditIndex: document.getElementById('quickEditIndex'),
+		  quickEditField: document.getElementById('quickEditField'),
+		  saveQuickEditBtn: document.getElementById('saveQuickEditBtn'),
+		  openFullEditBtn: document.getElementById('openFullEditBtn'),
+		  confirmModal: document.getElementById('confirmModalCustom'), 
+		  closeConfirmModal: document.getElementById('closeConfirmModal'),
+		  confirmMessage: document.getElementById('confirmMessage'),
+		  cancelConfirmBtn: document.getElementById('cancelConfirmBtn'),
+		  confirmActionBtn: document.getElementById('confirmActionBtn'),
+		  virtualKeyboard: document.getElementById('virtualKeyboard'),
+		  keyboardRows: document.getElementById('keyboardRows'),
+		  shortcutContainer: document.getElementById('shortcutContainer'),
+		  searchInput: document.getElementById('searchInput'),
+		  searchClearBtn: document.getElementById('searchClearBtn'),
+		  calculatorModal: document.getElementById('calculatorModalCustom'), 
+		  calculatorBtn: document.getElementById('calculatorBtn'),
+		  closeCalculatorModal: document.getElementById('closeCalculatorModal'),
+		  calculatorForm: document.getElementById('calculatorForm'),
+		  calcDiameter1: document.getElementById('calcDiameter1'),
+		  calcDiameter2: document.getElementById('calcDiameter2'),
+		  calcLength: document.getElementById('calcLength'),
+		  calcDensity: document.getElementById('calcDensity'),
+		  calcResult: document.getElementById('calcResult'),
+		  calculateAndAddBtn: document.getElementById('calculateAndAddBtn'),
+		  cancelCalcBtn: document.getElementById('cancelCalcBtn'),
+		  clearCalcBtn: document.getElementById('clearCalcBtn'),
+		  duplicateConfirmationModal: document.getElementById('duplicateConfirmationModalCustom'), 
+		  closeDuplicateModal: document.getElementById('closeDuplicateModal'),
+		  generalSnackbar: document.getElementById('general-snackbar'),
+		  filterMatchRowsSwitch: document.getElementById('filterMatchRowsSwitch'),
+		  
+		  multiSelectMenuText: document.getElementById('multiSelectMenuText'), 
+		  multiSelectMenuItem: document.getElementById('multiSelectMenuItem'), 
+		  
+		  toggleSearchReplaceBtn: document.getElementById('toggleSearchReplaceBtn'),
+		  searchReplaceContainer: document.getElementById('searchReplaceContainer'),
+		  replaceQueryInput: document.getElementById('replaceQuery'),       
+		  searchResultCount: document.getElementById('searchResultCount'), 
+		  prevMatchBtn: document.getElementById('prevMatchBtn'),           
+		  nextMatchBtn: document.getElementById('nextMatchBtn'),           
+		  replaceOneBtn: document.getElementById('replaceOneBtn'),         
+		  replaceAllBtn: document.getElementById('replaceAllBtn'),
+		  
+		  sortItem: document.getElementById('sortItem'),
+		  sortModal: document.getElementById('sortModalCustom'),
+		  closeSortModal: document.getElementById('closeSortModal'),
+		  cancelSortBtn: document.getElementById('cancelSortBtn'),
+		  applySortBtn: document.getElementById('applySortBtn'),
+		  sortRulesContainer: document.getElementById('sortRulesContainer'),
+		  addSortRuleBtn: document.getElementById('addSortRuleBtn'),
+		  
+		  aboutDialog: document.getElementById('aboutDialog'),
+		  aboutItem: document.getElementById('aboutItem'),
+		  totalCountText: document.getElementById('totalCountText'),
+		  bottomPrevBtn: document.getElementById('bottomPrevBtn'),   // 前一页按钮
+            bottomNextBtn: document.getElementById('bottomNextBtn'),    // 下一页按钮
+            pageInfoText: document.getElementById('pageInfoText'),      // "第 x/y 页" 文字
+            pageJumpInput:document.getElementById('pageJumpInput')   // 跳转输入框
+		  
+		  
+		};
+		
+		// 表单输入字段 DOM 引用
+		const formElements = {
+		  steelType: document.getElementById('steelType'),
+		  productId: document.getElementById('productId'),
+		  cardId: document.getElementById('cardId'),
+		  furnaceId: document.getElementById('furnaceId'),
+		  actualDiameter: document.getElementById('actualDiameter'),
+		  diameter: document.getElementById('diameter'),
+		  length: document.getElementById('length'),
+		  weight: document.getElementById('weight'),
+		  status: document.getElementById('status'),
+		  position: document.getElementById('position'),
+		  hardness: document.getElementById('hardness'),
+		  remarks: document.getElementById('remarks')
+		};
+		const inputFields = Object.values(formElements); 
+		
+		// 虚拟键盘的快捷选项常量
+		const statusOptions = ['车光', '调车', '花皮', '黑皮', '黑调', '花调'];
+		const positionOptions = ['外', '过道', '立车', '打卡机','校直机'];
+		const steelTypeOptions = [
+		    '42CrMo4',
+		    'C45E',
+		    '4140Q&T',
+		    '1045Norm',
+		    'C45',
+		    'S355J2G3',
+		    '16/20MnCrS5',
+		    '1.2714',
+		    '18CrMo4',
+		    '18NiCrMo5+A',
+		    'S355J2+N',
+		    '4145',
+		    'A105/LF2'
+		];
+		const cardIdOptions = [
+		    '无备',
+		    '备库',
+		    'V478-',
+		    'V15P',
+		    'V2526-',
+		    'V2527-',
+		    'TS',
+		    'TH',
+		    'VT'
+		];
+		const furnaceIdOptions = [
+		    '1251',
+		    'VD25/',
+		    '1250',
+		    '251050',
+		    '251051',
+		    '25D0',
+		    '25C0',
+		    'VD26/'
+		];
+		
+		/**
+		 * 显示底部通知栏（Snackbar）
+		 */
+		function showSnackbar(message, color) {
+		  const snackbar = dom.generalSnackbar;
+		  if (!snackbar) return;
+		  snackbar.innerHTML = message;
+		  if (color) snackbar.color = color;
+		  else snackbar.removeAttribute('color');
+		  snackbar.open = true;
+		}
+		
+		function isSystemDarkMode() {
+		    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+		}
+		
+		function initTheme() {
+		  let mode = selectedTheme === 'auto' ? (isSystemDarkMode() ? 'dark' : 'light') : selectedTheme;
+		  const body = document.body;
+		  if (mode === 'dark') {
+		    body.classList.add('dark-mode', 'mdui-theme-dark');
+		  } else {
+		    body.classList.remove('dark-mode', 'mdui-theme-dark');
+		  }
+		  updateThemeSelectionInDrawer();
+		}
+		
+		function changeTheme(theme) {
+		  selectedTheme = theme;
+		  localStorage.setItem('theme', selectedTheme);
+		  initTheme();
+		  dom.drawer.open = false; 
+		}
+		
+		function updateThemeSelectionInDrawer() {
+		    const themeOptions = dom.themeCollapseContent.querySelectorAll('.theme-option');
+		    themeOptions.forEach(item => item.removeAttribute('selected'));
+		    const current = dom.themeCollapseContent.querySelector(`.theme-option[data-theme="${selectedTheme}"]`);
+		    if (current) current.setAttribute('selected', 'true');
+		    
+		    const headerItem = dom.themeCollapse.querySelector('mdui-list-item[slot="header"]');
+		    let headlineText = "主题模式 (当前: 自动)";
+		    let iconName = "brightness_auto";
+		    if (selectedTheme === 'light') { headlineText = "主题模式 (当前: 日间)"; iconName = "light_mode"; }
+		    else if (selectedTheme === 'dark') { headlineText = "主题模式 (当前: 夜间)"; iconName = "dark_mode"; }
+		    if (headerItem) {
+		        headerItem.setAttribute('headline', headlineText);
+		        headerItem.setAttribute('icon', iconName);
+		    }
+		}
+		
+		function openCustomModal(modalElement) {
+		    if (modalElement) modalElement.style.display = 'block';
+		}
+		
+		function closeCustomModal(modalElement) {
+		    if (modalElement) modalElement.style.display = 'none';
+		}
+		
+		function initEventListeners() {
+		  dom.openDrawerBtn.addEventListener('click', () => { dom.drawer.open = true; });
+		  dom.themeCollapseContent.querySelectorAll('.theme-option').forEach(item => {
+		      item.addEventListener('click', (e) => {
+		          const theme = e.currentTarget.getAttribute('data-theme');
+		          changeTheme(theme);
+		      });
+		  });
+		
+		  dom.closeDataModal.addEventListener('click', () => { closeCustomModal(dom.dataSheet); dom.virtualKeyboard.style.display = 'none'; });
+		  dom.cancelBtn.addEventListener('click', () => {
+		    if (window.confirm('确定要取消操作吗？取消后当前输入的内容可能会丢失。')) {
+		      closeCustomModal(dom.dataSheet); 
+		      dom.virtualKeyboard.style.display = 'none';
+		    }
+		  });
+		
+		  dom.closeQuickEdit.addEventListener('click', () => { closeCustomModal(dom.quickEditDialog); dom.virtualKeyboard.style.display = 'none'; 
+		  keyboardState.isQuickEdit = false;
+		saveKeyboardState();
+		  
+		  });
+		  dom.saveQuickEditBtn.addEventListener('click', saveQuickEdit);
+		  dom.openFullEditBtn.addEventListener('click', () => {
+		  keyboardState.isQuickEdit = false;
+		saveKeyboardState();
+		    const index = parseInt(dom.quickEditIndex.value);
+		    const targetFieldId = dom.quickEditField.value;  // 获取当前快速编辑的字段 ID
+		
+		    closeCustomModal(dom.quickEditDialog);
+		    dom.virtualKeyboard.style.display = 'none';  // 保险起见关闭键盘
+		
+		    setTimeout(() => {
+		        openEditModal(index, targetFieldId);  // 传入字段 ID
+		    }, 150);  // 稍延长一点延迟，确保上一个 modal 完全关闭
+		});
+		  
+		  dom.quickEditInput.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      currentInput = e.target;
+		      const realFieldId = dom.quickEditField.value;
+		      updateKeyboardForInput(currentInput, realFieldId); 
+		      showVirtualKeyboard();
+		  });
+		  
+		  dom.closeConfirmModal.addEventListener('click', () => closeCustomModal(dom.confirmModal));
+		  dom.cancelConfirmBtn.addEventListener('click', () => closeCustomModal(dom.confirmModal));
+		  dom.closeCalculatorModal.addEventListener('click', () => { closeCustomModal(dom.calculatorModal); dom.virtualKeyboard.style.display = 'none'; });
+		  dom.cancelCalcBtn.addEventListener('click', () => { closeCustomModal(dom.calculatorModal); dom.virtualKeyboard.style.display = 'none'; });
+		  dom.clearCalcBtn.addEventListener('click', clearCalculatorInputs);
+		  dom.closeDuplicateModal.addEventListener('click', () => closeCustomModal(dom.duplicateConfirmationModal));
+		  document.getElementById('modal-btn-cancel-import').addEventListener('click', () => {
+		      closeCustomModal(dom.duplicateConfirmationModal);
+		      showSnackbar('导入操作已取消', 'warning');
+		  });
+		  
+		  dom.sortItem.addEventListener('click', openSortModal);
+		  dom.closeSortModal.addEventListener('click', () => closeCustomModal(dom.sortModal));
+		  dom.cancelSortBtn.addEventListener('click', () => closeCustomModal(dom.sortModal));
+		  dom.applySortBtn.addEventListener('click', applySort);
+		  dom.addSortRuleBtn.addEventListener('click', () => addSortRule());
+		  
+		  dom.toggleSearchReplaceBtn.addEventListener('click', toggleSearchReplaceVisibility);
+		  
+		  dom.multiSelectMenuItem.addEventListener('click', () => { 
+		      dom.drawer.open = false; 
+		      toggleMultiSelectMode(); 
+		  });
+		  
+		  if (dom.aboutItem && dom.aboutDialog) {
+		      dom.aboutItem.addEventListener('click', () => {
+		          dom.aboutDialog.open = true;
+		          dom.drawer.open = false;
+		      });
+		  }
+		  
+		dom.searchInput.addEventListener('input', (e) => {
+    const newQuery = e.target.value.trim();
+    if (newQuery !== dom.searchInput.value.trim()) return; // 防抖用（可选）
+
+    // 每次输入都重新搜索 + 高亮
+    startSearch();
+    updateTable(); // 触发高亮应用
+});
+		  
+		  dom.replaceQueryInput.addEventListener('input', () => {
+		    dom.replaceOneBtn.disabled = searchMatches.length === 0;
+		    dom.replaceAllBtn.disabled = searchMatches.length === 0;
+		  });
+		  
+		  dom.prevMatchBtn.addEventListener('click', () => navigateMatch(-1));
+		  dom.nextMatchBtn.addEventListener('click', () => navigateMatch(1));
+		  dom.replaceOneBtn.addEventListener('click', replaceOne);
+		  dom.replaceAllBtn.addEventListener('click', confirmReplaceAll);
+		
+		  inputFields.forEach(field => {
+		    field.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      currentInput = e.target;
+		      
+		      if (currentInput.id === 'remarks') {
+		        currentInput.removeAttribute('readonly');
+		        currentInput.classList.remove('readonly-input');
+		        dom.virtualKeyboard.style.display = 'none';
+		        currentInput.focus();
+		        return; 
+		      }
+		      
+		      currentInput.setAttribute('readonly', 'true');
+		      currentInput.classList.add('readonly-input');
+		      updateKeyboardForInput(currentInput);
+		      showVirtualKeyboard();
+		      
+		      setTimeout(() => {
+		        const modalContent = document.getElementById('dataSheetContent');
+		        if(modalContent) {
+		            const inputRect = currentInput.getBoundingClientRect();
+		            const modalRect = modalContent.getBoundingClientRect();
+		            const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3; 
+		            modalContent.scrollTo({ top: offset, behavior: 'smooth' });
+		        }
+		      }, 100);
+		    });
+		    
+		    field.addEventListener('dblclick', (e) => {
+		      e.stopPropagation();
+		      currentInput = e.target;
+		      if (currentInput.id === 'remarks') return; 
+		      
+		      if (currentInput.hasAttribute('readonly')) {
+		        currentInput.removeAttribute('readonly');
+		        currentInput.classList.remove('readonly-input');
+		        dom.virtualKeyboard.style.display = 'none';
+		        currentInput.focus();
+		      } else {
+		        currentInput.setAttribute('readonly', 'true');
+		        currentInput.classList.add('readonly-input');
+		        updateKeyboardForInput(currentInput);
+		        showVirtualKeyboard();
+		      }
+		    });
+		  });
+		  
+		  dom.importItem.addEventListener('click', () => { dom.drawer.open = false; dom.fileInput.click(); });
+		  dom.exportItem.addEventListener('click', () => { dom.drawer.open = false; exportToExcel(); });
+		  dom.addBtn.addEventListener('click', openAddModal); 
+		  dom.fileInput.addEventListener('change', handleFileImport);
+		  dom.selectAllCheckbox.addEventListener('change', handleSelectAll);
+		  dom.deleteSelectedBtn.addEventListener('click', confirmDeleteSelected);
+		  dom.saveBtn.addEventListener('click', saveData);
+		
+		  dom.searchClearBtn.addEventListener('click', () => {
+		    dom.searchInput.value = '';
+		    searchTerm = '';
+		    updateTable();
+		  });
+		
+		  dom.calculatorBtn.addEventListener('click', openCalculatorModal);
+		  dom.calculateAndAddBtn.addEventListener('click', calculateAndAddData);
+		  
+		  dom.tableBody.addEventListener('click', (e) => {
+		    if (isMultiSelectMode) return;
+		    if (e.target.closest('mdui-button-icon') || e.target.closest('mdui-checkbox')) return;
+		    
+		    const row = e.target.closest('tr');
+		    if (!row) return;
+		    
+		    const index = parseInt(row.getAttribute('data-index'));
+		    const cell = e.target.closest('td');
+		    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
+		    
+		    if (targetFieldId) {
+		        if (targetFieldId === 'remarks') openEditModal(index, targetFieldId);
+		        else openQuickEdit(index, targetFieldId);
+		    } else {
+		        openEditModal(index);
+		    }
+		  });
+		  
+		  // 新增：底部翻页按钮事件
+		    dom.bottomPrevBtn.addEventListener('click', () => {
+		        if (currentPage > 1) {
+		            currentPage--;
+		            updateTable();
+		        }
+		    });
+
+		    dom.bottomNextBtn.addEventListener('click', () => {
+		        if (currentPage < totalPages) {
+		            currentPage++;
+		            updateTable();
+		        }
+		    });
+
+		    // 新增：点击页码文本显示输入框
+		    dom.pageInfoText.addEventListener('click', () => {
+		        dom.pageInfoText.style.display = 'none';
+		        dom.pageJumpInput.style.display = 'inline-block';
+		        dom.pageJumpInput.focus();
+		        dom.pageJumpInput.select();
+		    });
+
+		    // 输入框回车或失焦跳转
+		    dom.pageJumpInput.addEventListener('keydown', (e) => {
+		        if (e.key === 'Enter') {
+		            e.preventDefault();
+		            jumpToPage();
+		        }
+		    });
+		  
+		  
+		  dom.pageJumpInput.addEventListener('blur', jumpToPage);
+
+		    
+		}
+		
+		
+		function jumpToPage() {
+		        let target = parseInt(dom.pageJumpInput.value);
+		        target = Math.max(1, Math.min(totalPages, isNaN(target) ? currentPage : target));
+		        if (target !== currentPage) {
+		            currentPage = target;
+		            updateTable();
+		        }
+		        dom.pageJumpInput.style.display = 'none';
+		        dom.pageInfoText.style.display = 'inline-block';
+		    }
+		function toggleSearchReplaceVisibility() {
+		    isSearchReplaceVisible = !isSearchReplaceVisible;
+		    const container = dom.searchReplaceContainer;
+		    
+		    if (isSearchReplaceVisible) {
+		        container.style.display = 'flex';
+		        dom.toggleSearchReplaceBtn.icon = 'expand_less';
+		        startSearch();
+		    } else {
+		        container.style.display = 'none';
+		        dom.toggleSearchReplaceBtn.icon = 'find_replace';
+		        isSearchActive = false;
+		        searchMatches = [];
+		        currentMatchIndex = -1;
+		        updateTable();
+		    }
+		}
+		
+		function handleSelectAll() {
+		    if (!isMultiSelectMode) return;
+		    selectedRows.clear();
+		    const filteredData = getFilteredData();
+		    if (dom.selectAllCheckbox.checked) {
+		      filteredData.forEach(item => {
+		          const originalIndex = tableData.indexOf(item);
+		          if (originalIndex !== -1) selectedRows.add(originalIndex);
+		      });
+		    }
+		    updateTable();
+		}
+		
+		function openCalculatorModal() {
+		    dom.drawer.open = false;
+		    openCustomModal(dom.calculatorModal); 
+		    dom.calcDiameter1.value = '';
+		    dom.calcDiameter2.value = '';
+		    dom.calcLength.value = '';
+		    dom.calcResult.value = '';
+		    
+		    currentInput = dom.calcDiameter1;
+		    updateKeyboardForInput(currentInput);
+		    showVirtualKeyboard();
+		    currentInput.focus();
+		}
+		
+		function clearCalculatorInputs() {
+		    dom.calcDiameter1.value = '';
+		    dom.calcDiameter2.value = '';
+		    dom.calcLength.value = '';
+		    dom.calcResult.value = '';
+		    calculateWeight(); 
+		    
+		    dom.calcDiameter1.focus();
+		    currentInput = dom.calcDiameter1;
+		    updateKeyboardForInput(currentInput);
+		}
+		
+		function getFilteredData() {
+		  if (!searchTerm) return [...tableData];
+		  return tableData.filter(item => 
+		    Object.values(item).some(value => 
+		      value !== null && value !== undefined && value.toString().toLowerCase().includes(searchTerm)
+		    )
+		  );
+		}
+function updateTable() {
+    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
+const displayData = [...tableData];
+
+		    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
+		    currentPage = Math.min(currentPage, totalPages);
+
+		    const startIndex = (currentPage - 1) * PAGE_SIZE;
+		    const endIndex = startIndex + PAGE_SIZE;
+		    const pageData = displayData.slice(startIndex, endIndex);
+
+		    // 更新底部栏信息
+		    dom.totalCountText.textContent = `共 ${tableData.length} 条数据`;
+		    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+		    dom.pageJumpInput.value = currentPage;
+		    dom.pageJumpInput.max = totalPages;
+		    dom.bottomPrevBtn.disabled = currentPage === 1;
+		    dom.bottomNextBtn.disabled = currentPage === totalPages;
+
+    dom.emptyState.style.display = tableData.length === 0 ? 'block' : 'none';
+    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+    dom.selectedCount.textContent = selectedRows.size;
+
+    // 多选模式下显示/隐藏复选框列
+    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
+    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
+
+    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
+    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
+    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
+    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
+
+    // 全选复选框状态
+    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
+        const origIndex = tableData.indexOf(item);
+        return selectedRows.has(origIndex);
+    });
+
+    // 清空并重新渲染表格体
+    dom.tableBody.innerHTML = '';
+
+    pageData.forEach((item, displayIndex) => {
+        const originalIndex = tableData.indexOf(item);
+        const globalSeq = originalIndex + 1;
+
+        const row = document.createElement('tr');
+        row.setAttribute('data-index', originalIndex);
+
+        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
+
+        row.innerHTML = `
+          <td class="seq-col">
+            ${globalSeq}
+            <div class="move-buttons">
+                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
+                  <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
+                </button>
+                <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
+                  <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
+                </button>
+            </div>
+          </td>
+          <td class="checkbox-col" style="display:${displayStyle};">
+            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
+          </td>
+          <td data-field="steelType">${item.steelType || '-'}</td>
+          <td data-field="productId">${item.productId || '-'}</td>
+          <td data-field="cardId">${item.cardId || '-'}</td>
+          <td data-field="furnaceId">${item.furnaceId || '-'}</td>
+          <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
+          <td data-field="diameter">${item.diameter || '-'}</td>
+          <td data-field="length">${item.length || '-'}</td>
+          <td data-field="weight">${item.weight || '-'}</td>
+          <td data-field="status">${item.status || '-'}</td>
+          <td data-field="position">${item.position || '-'}</td>
+          <td data-field="hardness">${item.hardness || '-'}</td>
+          <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
+          <td class="action-col">
+            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
+          </td>
+        `;
+
+        dom.tableBody.appendChild(row);
+    });
+
+    // 应用搜索高亮（必须在行渲染完成后执行）
+    applySearchHighlight();
+
+    // 绑定行内按钮事件（编辑、删除、移动、复选框）
+    bindRowEvents();
+
+    // 如果你之前有独立的 renderPaginationControls 调用，请删除或注释掉
+    // const oldPagination = document.getElementById('paginationControls');
+    // if (oldPagination) oldPagination.remove();
+}
+/**
+ * 更新搜索结果计数显示（修复占位符暴露问题）
+ */
+function updateSearchResultCount() {
+  const resultCountEl = document.getElementById('searchResultCount');
+  if (!resultCountEl) return; // 防DOM元素不存在
+  
+  const matchCount = searchMatches.length;
+  let countText = `找到 ${matchCount} 个匹配项`;
+  
+  // 只有存在匹配项时，才显示当前匹配位置
+  if (matchCount > 0 && currentMatchIndex >= 0) {
+    const currentPos = currentMatchIndex + 1;
+    countText += ` (当前 ${currentPos}/${matchCount})`;
+  }
+  
+  // 安全设置文本（核心修复：避免语法占位符暴露）
+  resultCountEl.textContent = countText;
+}
+// 新增：统一的高亮函数，便于在翻页或替换后调用
+function applySearchHighlight() {
+    const query = dom.searchInput.value.trim().toLowerCase();
+
+    // 如果没有搜索词，清除所有高亮和计数
+    if (!query || !isSearchActive) {
+        document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+            el.classList.remove('search-match-highlight', 'current-match-highlight');
+        });
+        dom.searchResultCount.textContent = '';
+        return;
+    }
+
+    // 清除旧高亮
+    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+        el.classList.remove('search-match-highlight', 'current-match-highlight');
+    });
+
+    // 高亮当前页所有包含搜索词的单元格（无论替换面板是否打开）
+    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+        const rowIndex = parseInt(row.getAttribute('data-index'));
+        searchableFields.forEach(field => {
+            const cell = row.querySelector(`td[data-field="${field}"]`);
+            if (!cell) return;
+            const cellValue = (tableData[rowIndex][field] || '').toString().toLowerCase();
+            if (cellValue.includes(query)) {
+                cell.classList.add('search-match-highlight');
+            }
+        });
+    });
+
+    // 更新搜索结果计数（仅在替换面板打开时显示详细计数）
+    if (isSearchReplaceVisible) {
+        if (searchMatches.length === 0) {
+            dom.searchResultCount.textContent = '未找到匹配项';
+        } else {
+            // 防止越界
+            if (currentMatchIndex < 0) currentMatchIndex = 0;
+            if (currentMatchIndex >= searchMatches.length) currentMatchIndex = searchMatches.length - 1;
+
+            dom.searchResultCount.textContent = 
+                `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
+        }
+    } else {
+        // 替换面板关闭时，只显示找到多少个（不显示当前第几个）
+        dom.searchResultCount.textContent = searchMatches.length > 0 
+            ? `找到 ${searchMatches.length} 个匹配项` 
+            : '';
+    }
+
+    // 如果有当前匹配项，高亮边框并滚动（仅在替换面板打开时）
+    if (isSearchReplaceVisible && currentMatchIndex !== -1 && searchMatches.length > 0) {
+        highlightAndScrollToCurrentMatch();
+    }
+}
+
+// 高亮当前匹配项并滚动
+function highlightAndScrollToCurrentMatch() {
+    // 先清除旧高亮
+    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+        el.classList.remove('search-match-highlight', 'current-match-highlight');
+    });
+
+    const match = searchMatches[currentMatchIndex];
+    const targetRow = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
+    if (!targetRow) return;
+
+    // 高亮该行所有匹配字段
+    searchableFields.forEach(field => {
+        const cell = targetRow.querySelector(`td[data-field="${field}"]`);
+        if (!cell) return;
+        const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
+        const query = dom.searchInput.value.trim().toLowerCase();
+        if (query && cellValue.includes(query)) {
+            cell.classList.add('search-match-highlight');
+        }
+    });
+
+    // 当前匹配字段加边框高亮
+    const currentCell = targetRow.querySelector(`td[data-field="${match.field}"]`);
+    if (currentCell) {
+        currentCell.classList.add('current-match-highlight');
+
+        // 平滑滚动到单元格
+        const container = document.querySelector('.data-table-container');
+        if (container) {
+            const cellRect = currentCell.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const offsetTop = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
+            const offsetLeft = container.scrollLeft + cellRect.left - containerRect.left - (containerRect.width / 3);
+
+            container.scrollTo({
+                top: offsetTop,
+                left: Math.max(0, offsetLeft),
+                behavior: 'smooth'
+            });
+        }
+    }
+}
+function startSearch() {
+    const query = dom.searchInput.value.trim();
+    if (!query) {
+        isSearchActive = false;
+        searchMatches = [];
+        currentMatchIndex = -1;
+        applySearchHighlight(); // 清除高亮
+        dom.replaceOneBtn.disabled = true;
+        dom.replaceAllBtn.disabled = true;
+        return;
+    }
+
+    searchMatches = [];
+    tableData.forEach((item, index) => {
+        searchableFields.forEach(field => {
+            const value = (item[field] || '').toString().toLowerCase();
+            if (value.includes(query.toLowerCase())) {
+                searchMatches.push({
+                    rowIndex: index,
+                    field: field
+                });
+            }
+        });
+    });
+
+    isSearchActive = true;
+    currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
+
+    dom.replaceOneBtn.disabled = searchMatches.length === 0;
+    dom.replaceAllBtn.disabled = searchMatches.length === 0;
+
+    // 跳转到第一个匹配项（会自动翻页并滚动）
+    if (searchMatches.length > 0) {
+        jumpToMatch(0);
+    } else {
+        applySearchHighlight();
+    }
+}
+
+function navigateMatch(direction) {
+    if (searchMatches.length === 0) {
+        dom.searchResultCount.textContent = '未找到匹配项';
+        return;
+    }
+
+    // 计算新的匹配索引（支持循环）
+    let newIndex = currentMatchIndex + direction;
+    if (newIndex >= searchMatches.length) newIndex = 0;
+    if (newIndex < 0) newIndex = searchMatches.length - 1;
+
+    // 【关键修复】直接跳转到目标匹配项所在页面
+    jumpToMatch(newIndex);
+}
+
+function jumpToMatch(matchIndex) {
+    if (matchIndex < 0 || matchIndex >= searchMatches.length) return;
+
+    currentMatchIndex = matchIndex;
+    const match = searchMatches[currentMatchIndex];
+    const targetRowIndex = match.rowIndex; // 这是全局 tableData 中的索引
+
+    // 计算目标页面
+    const targetPage = Math.floor(targetRowIndex / PAGE_SIZE) + 1;
+
+    // 如果不在当前页，先翻页
+    if (currentPage !== targetPage) {
+        currentPage = targetPage;
+        updateTable(); // 渲染新页面
+
+        // 等待 DOM 更新完成后高亮并滚动
+        requestAnimationFrame(() => {
+            setTimeout(highlightAndScrollToCurrentMatch, 100);
+        });
+    } else {
+        // 同页直接高亮滚动
+        highlightAndScrollToCurrentMatch();
+    }
+
+    // 更新计数显示
+    dom.searchResultCount.textContent = 
+        `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
+}
+
+function renderPaginationControls(totalFiltered) {
+    // 移除旧的分页控件
+    const oldPagination = document.getElementById('paginationControls');
+    if (oldPagination) oldPagination.remove();
+
+    if (totalPages <= 1) return;
+
+    const paginationDiv = document.createElement('div');
+    paginationDiv.id = 'paginationControls';
+    paginationDiv.style.cssText = `
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 8px; 
+        padding: 16px; 
+        background-color: var(--surface-color);
+        
+    `;
+
+    // ==================== 上一页按钮 ====================
+    const prevBtn = document.createElement('mdui-button-icon');
+    prevBtn.icon = 'navigate_before';
+    prevBtn.disabled = currentPage === 1;
+
+    let prevLongPressTimer = null;
+    const LONG_PRESS_DELAY = 500;
+
+    prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentPage > 1) {
+            currentPage--;
+            updateTable();
+            scrollToTopSmooth();
+            updatePageInfoDisplay();
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        }
+    });
+
+    // 长按跳到第一页
+    prevBtn.addEventListener('pointerdown', (e) => {
+        if (currentPage === 1) return;
+        prevLongPressTimer = setTimeout(() => {
+            currentPage = 1;
+            updateTable();
+            scrollToTopSmooth();
+            updatePageInfoDisplay();
+            prevBtn.disabled = true;
+            nextBtn.disabled = currentPage === totalPages;
+        }, LONG_PRESS_DELAY);
+    });
+
+    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongPressTimer));
+    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongPressTimer));
+    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongPressTimer));
+
+    // ==================== 下一页按钮 ====================
+    const nextBtn = document.createElement('mdui-button-icon');
+    nextBtn.icon = 'navigate_next';
+    nextBtn.disabled = currentPage === totalPages;
+
+    let nextLongPressTimer = null;
+
+    nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentPage < totalPages) {
+            currentPage++;
+            updateTable();
+            scrollToTopSmooth();
+            updatePageInfoDisplay();
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        }
+    });
+
+    // 长按跳到最后一页
+    nextBtn.addEventListener('pointerdown', (e) => {
+        if (currentPage === totalPages) return;
+        nextLongPressTimer = setTimeout(() => {
+            currentPage = totalPages;
+            updateTable();
+            scrollToTopSmooth();
+            updatePageInfoDisplay();
+            nextBtn.disabled = true;
+            prevBtn.disabled = currentPage === 1;
+        }, LONG_PRESS_DELAY);
+    });
+
+    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongPressTimer));
+    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongPressTimer));
+    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongPressTimer));
+
+    // ==================== 页码显示与输入 ====================
+    const pageInfoContainer = document.createElement('div');
+    pageInfoContainer.style.display = 'flex';
+    pageInfoContainer.style.alignItems = 'center';
+    pageInfoContainer.style.minWidth = '80px';
+    pageInfoContainer.style.justifyContent = 'center';
+
+    const pageInfoText = document.createElement('span');
+    pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+    pageInfoText.style.fontSize = '0.95rem';
+    pageInfoText.style.color = '#757575';
+    pageInfoText.style.cursor = 'pointer';
+    pageInfoText.style.userSelect = 'none';
+
+    const pageInput = document.createElement('input');
+    pageInput.type = 'number';
+    pageInput.value = currentPage;
+    pageInput.style.width = '60px';
+    pageInput.style.padding = '4px 8px';
+    pageInput.style.fontSize = '0.95rem';
+    pageInput.style.border = '1px solid var(--border-color)';
+    pageInput.style.borderRadius = '4px';
+    pageInput.style.textAlign = 'center';
+    pageInput.style.display = 'none';
+    pageInput.min = 1;
+    pageInput.max = totalPages;
+
+    pageInfoContainer.appendChild(pageInfoText);
+    pageInfoContainer.appendChild(pageInput);
+
+    pageInfoText.addEventListener('click', () => {
+        pageInfoText.style.display = 'none';
+        pageInput.style.display = 'inline-block';
+        pageInput.focus();
+        pageInput.select();
+    });
+
+    function confirmPageJump() {
+        let targetPage = parseInt(pageInput.value);
+        targetPage = Math.max(1, Math.min(totalPages, isNaN(targetPage) ? currentPage : targetPage));
+        if (targetPage !== currentPage) {
+            currentPage = targetPage;
+            updateTable();
+            scrollToTopSmooth();
+        }
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages;
+        updatePageInfoDisplay();
+    }
+
+    pageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmPageJump();
+        }
+    });
+
+    pageInput.addEventListener('blur', confirmPageJump);
+
+    function updatePageInfoDisplay() {
+        pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+        pageInput.value = currentPage;
+        pageInput.max = totalPages;
+        pageInput.style.display = 'none';
+        pageInfoText.style.display = 'inline-block';
+    }
+
+    paginationDiv.appendChild(prevBtn);
+    paginationDiv.appendChild(pageInfoContainer);
+    paginationDiv.appendChild(nextBtn);
+
+    const tableContainerDiv = document.querySelector('.data-table-container-div');
+    tableContainerDiv.parentNode.insertBefore(paginationDiv, tableContainerDiv.nextSibling);
+}
+
+
+function scrollToTopSmooth() {
+    const container = document.querySelector('.data-table-container');
+    if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+		function bindRowEvents() {
+		  document.querySelectorAll('.edit-btn').forEach(btn => {
+		    btn.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      const index = parseInt(e.currentTarget.getAttribute('data-index'));
+		      openEditModal(index);
+		    });
+		  });
+		  
+		  document.querySelectorAll('.delete-btn').forEach(btn => {
+		    btn.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      const index = parseInt(e.currentTarget.getAttribute('data-index'));
+		      confirmDeleteRow(index);
+		    });
+		  });
+		  
+		  document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+		    checkbox.addEventListener('change', (e) => {
+		      e.stopPropagation();
+		      const index = parseInt(e.target.getAttribute('data-index'));
+		      const row = e.target.closest('tr');
+		      e.target.checked ? selectedRows.add(index) : selectedRows.delete(index);
+		      const filteredData = getFilteredData();
+		      dom.selectAllCheckbox.checked = selectedRows.size === filteredData.length && filteredData.length > 0;
+		      dom.selectedCount.textContent = selectedRows.size;
+		      row.classList.toggle('selected', e.target.checked);
+		    });
+		  });
+		  
+		  document.querySelectorAll('.up-btn').forEach(btn => {
+		    btn.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      moveRow(parseInt(e.currentTarget.getAttribute('data-index')), 'up');
+		    });
+		  });
+		  
+		  document.querySelectorAll('.down-btn').forEach(btn => {
+		    btn.addEventListener('click', (e) => {
+		      e.stopPropagation();
+		      moveRow(parseInt(e.currentTarget.getAttribute('data-index')), 'down');
+		    });
+		  });
+		}
+		
+		function confirmDeleteRow(index) {
+		    const itemToDelete = tableData[index];
+		    
+		    // 增强版确认消息：显示更多字段，布局清晰美观
+		    const message = `
+		        <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
+		            <div style="margin-bottom: 6px; font-weight: 500;">
+		                您确定要删除以下数据吗？
+		            </div>
+		            
+		            <div style="padding: 4px; background-color: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
+		                <div style="display: grid; grid-template-columns: max-content 1fr; gap: 6px 10px; align-items: center;">
+		                    <strong style="color: #757575;">产品号：</strong>
+		                    <strong style="color: var(--primary-color); font-size: 1.1em; word-break: break-all;">
+		                        ${itemToDelete.productId || 'N/A'}
+		                    </strong>
+		
+		                    <strong style="color: #757575;">钢种：</strong>
+		                    <span>${itemToDelete.steelType || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">卡片号：</strong>
+		                    <span>${itemToDelete.cardId || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">炉号：</strong>
+		                    <span>${itemToDelete.furnaceId || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">实际直径：</strong>
+		                    <span>${itemToDelete.actualDiameter || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">直径：</strong>
+		                    <span>${itemToDelete.diameter || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">长度：</strong>
+		                    <span>${itemToDelete.length || 'N/A'} mm</span>
+		
+		                    <strong style="color: #757575;">重量：</strong>
+		                    <span style="font-weight: 600;">${itemToDelete.weight || 'N/A'} Kg</span>
+		
+		                    <strong style="color: #757575;">状态：</strong>
+		                    <span>${itemToDelete.status || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">位置：</strong>
+		                    <span>${itemToDelete.position || 'N/A'}</span>
+		
+		                    <strong style="color: #757575;">硬度：</strong>
+		                    <span>${itemToDelete.hardness || 'N/A'}</span>
+		
+		                    ${itemToDelete.remarks ? 
+		                        `<strong style="color: #757575; grid-column: 1;">备注：</strong>
+		                         <span style="grid-column: 2; word-break: break-all; color: #e91e63;">${itemToDelete.remarks}</span>` 
+		                        : ''
+		                    }
+		                </div>
+		            </div>
+		        </div>
+		    `;
+		
+		    dom.confirmMessage.innerHTML = message;
+		    openCustomModal(dom.confirmModal); 
+		    
+		    dom.confirmActionBtn.onclick = () => {
+		        tableData.splice(index, 1);
+		        selectedRows.clear();
+		        saveDataToLocalStorage();
+		        updateTable();
+		        closeCustomModal(dom.confirmModal); 
+		        dom.confirmActionBtn.onclick = null;
+		        showSnackbar('数据已删除', 'success');
+		    };
+		}
+		
+		function moveRow(index, direction) {
+		  if (direction === 'up' && index > 0) {
+		    [tableData[index - 1], tableData[index]] = [tableData[index], tableData[index - 1]];
+		  } else if (direction === 'down' && index < tableData.length - 1) {
+		    [tableData[index], tableData[index + 1]] = [tableData[index + 1], tableData[index]];
+		  }
+		  saveDataToLocalStorage();
+		  updateTable();
+		}
+		
+		function confirmDeleteSelected() {
+		    if (selectedRows.size > 0) {
+		      dom.confirmMessage.innerHTML = `您确定要删除选中的 <strong style="color: #f44336;">${selectedRows.size}</strong> 条数据吗？`;
+		      openCustomModal(dom.confirmModal); 
+		      dom.confirmActionBtn.onclick = () => {
+		        deleteSelected();
+		        closeCustomModal(dom.confirmModal); 
+		        dom.confirmActionBtn.onclick = null;
+		      };
+		    }
+		}
+		
+		function deleteSelected() {
+		  const sortedIndexes = Array.from(selectedRows).sort((a, b) => b - a);
+		  sortedIndexes.forEach(index => tableData.splice(index, 1));
+		  const deletedCount = sortedIndexes.length;
+		  selectedRows.clear();
+		  dom.selectAllCheckbox.checked = false;
+		  saveDataToLocalStorage();
+		  updateTable();
+		  showSnackbar(`成功删除 ${deletedCount} 条数据`, 'success');
+		}
+		
+		function openAddModal() {
+		  openAddModalWithData({});
+		}
+		
+		function openAddModalWithData(preFilledData) {
+		  if(dom.dataForm) dom.dataForm.reset();
+		  if(dom.modalTitle) dom.modalTitle.textContent = '添加数据';
+		  if(dom.editIndex) dom.editIndex.value = '-1';
+		  
+		  currentEditIndex = -1;
+		  
+		  for(const key in preFilledData) {
+		    if (preFilledData.hasOwnProperty(key) && formElements[key]) {
+		      formElements[key].value = preFilledData[key];
+		    }
+		  }
+		
+		  let inputToFocus = formElements.steelType;
+		  inputFields.forEach(field => {
+		    if(field.id !== 'remarks') {
+		        field.setAttribute('readonly', 'true');
+		        field.classList.add('readonly-input');
+		    } else {
+		        field.removeAttribute('readonly'); 
+		        field.classList.remove('readonly-input');
+		    }
+		    if(field.id === 'steelType') inputToFocus = field;
+		  });
+		  
+		  openCustomModal(dom.dataSheet);
+		  currentInput = inputToFocus;
+		  
+		  if (currentInput.id === 'remarks') {
+		      dom.virtualKeyboard.style.display = 'none';
+		  } else {
+		      updateKeyboardForInput(currentInput);
+		      showVirtualKeyboard();
+		  }
+		  
+		  currentInput.focus();
+		}
+		
+		function findDuplicates(newItem) {
+		  const duplicates = [];
+		  tableData.forEach((existingItem, index) => {
+		    if (newItem.productId && newItem.productId.trim() !== '' && newItem.productId === existingItem.productId) {
+		      duplicates.push({ 
+		        index, 
+		        reason: '产品号重复', 
+		        existingItem: existingItem,
+		        newItem: newItem,
+		        productId: newItem.productId,
+		        differences: getObjectDifferences(existingItem, newItem)
+		      });
+		    }
+		  });
+		  return duplicates;
+		}
+		
+		function highlightAndScrollToRow(index) {
+		  setTimeout(() => {
+		    const row = document.querySelector(`tbody tr[data-index="${index}"]`);
+		    if (row) {
+		      document.querySelectorAll('#dataTable .highlight').forEach(r => r.classList.remove('highlight'));
+		      row.classList.add('highlight');
+		      setTimeout(() => row.classList.remove('highlight'), 2000);
+		      const container = document.querySelector('.data-table-container');
+		      if (container) {
+		          const rowRect = row.getBoundingClientRect();
+		          const containerRect = container.getBoundingClientRect();
+		          const scrollTop = container.scrollTop;
+		          const offset = rowRect.top - containerRect.top + scrollTop - (containerRect.height / 2) + (rowRect.height / 2);
+		          container.scrollTo({ top: offset, behavior: 'smooth' });
+		      } else {
+		        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		      }
+		    }
+		  }, 100);
+		}
+		
+		function saveData() {
+		  const formData = {};
+		  for(const key in formElements) {
+		    if (formElements.hasOwnProperty(key)) {
+		      formData[key] = formElements[key] ? formElements[key].value.trim() : '';
+		    }
+		  }
+		
+		  if (!formData.productId && !formData.cardId && !formData.furnaceId) {
+		    showSnackbar('产品号、卡片号、炉号至少填写一项！', 'warning');
+		    return;
+		  }
+		
+		  const isEditMode = currentEditIndex !== -1;
+		  const isProductIdChanged = isEditMode && tableData[currentEditIndex].productId !== formData.productId;
+		
+		  if (!isEditMode || isProductIdChanged) {
+		      const duplicateItems = findDuplicates(formData);
+		      const realDuplicates = duplicateItems.filter(dup => dup.index !== currentEditIndex);
+		      if (realDuplicates.length > 0) {
+		        if (!window.confirm(`发现 ${realDuplicates.length} 条产品号重复的数据！您正在 \( {isEditMode ? '修改为' : '添加产品号'}： \){formData.productId || 'N/A'}\n确定要继续吗？`)) { 
+		          const firstDuplicateIndex = realDuplicates[0].index;
+		          closeCustomModal(dom.dataSheet);
+		          dom.virtualKeyboard.style.display = 'none';
+		          highlightAndScrollToRow(firstDuplicateIndex);
+		          return;
+		        }
+		      }
+		  }
+		
+		  if (!isEditMode) {
+		    tableData.push(formData);
+		  } else {
+		    tableData[currentEditIndex] = formData;
+		  }
+		
+		  saveDataToLocalStorage();
+		  currentPage = 1;
+		  updateTable();
+		  closeCustomModal(dom.dataSheet);
+		  dom.virtualKeyboard.style.display = 'none';
+		
+		  showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
+		}
+		
+		function openEditModal(index, targetFieldId = null) {
+		  currentEditIndex = index;
+		  if (dom.editIndex) dom.editIndex.value = index;
+		
+		  const item = tableData[index];
+		  
+		  for (const key in formElements) {
+		    if (formElements.hasOwnProperty(key)) {
+		      formElements[key].value = item[key] || '';
+		    }
+		  }
+		  
+		  let inputToFocus = formElements.steelType;
+		  inputFields.forEach(field => {
+		    if(field.id !== 'remarks') {
+		        field.setAttribute('readonly', 'true');
+		        field.classList.add('readonly-input');
+		    } else {
+		        field.removeAttribute('readonly'); 
+		        field.classList.remove('readonly-input');
+		    }
+		    if(field.id === 'steelType') inputToFocus = field;
+		  });
+		  
+		  if (targetFieldId && formElements[targetFieldId]) inputToFocus = formElements[targetFieldId];
+		  
+		  dom.modalTitle.textContent = '编辑数据';
+		  openCustomModal(dom.dataSheet); 
+		  
+		  currentInput = inputToFocus;
+		  
+		  if (currentInput.id === 'remarks') {
+		      dom.virtualKeyboard.style.display = 'none';
+		  } else {
+		      updateKeyboardForInput(currentInput);
+		      showVirtualKeyboard();
+		  }
+		
+		  currentInput.focus();
+		  
+		  const modalContent = document.getElementById('dataSheetContent');
+		  if(modalContent) {
+		      setTimeout(() => {
+		          const inputRect = currentInput.getBoundingClientRect();
+		          const modalRect = modalContent.getBoundingClientRect();
+		          const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3; 
+		          modalContent.scrollTo({ top: offset, behavior: 'smooth' });
+		      }, 50);
+		  }
+		}
+		
+		function openQuickEdit(index, fieldId) {
+		    const item = tableData[index];
+		    const fieldName = fieldLabels[fieldId] || fieldId;
+		    
+		    dom.quickEditLabel.textContent = fieldName;
+		    dom.quickEditInput.value = item[fieldId] || '';
+		    dom.quickEditIndex.value = index;
+		    dom.quickEditField.value = fieldId;
+		    
+		    dom.quickEditInput.setAttribute('readonly', 'true');
+		    dom.quickEditInput.classList.add('readonly-input');
+		    
+		    openCustomModal(dom.quickEditDialog);
+		    
+		    currentInput = dom.quickEditInput;
+		    
+		    // 关键：标记当前是快速编辑单字段模式
+		    keyboardState.isQuickEdit = true;
+		    saveKeyboardState();
+		    
+		    updateKeyboardForInput(currentInput, fieldId); 
+		    showVirtualKeyboard();
+		    
+		    currentInput.focus();
+		}
+		function saveQuickEdit() {
+		    const index = parseInt(dom.quickEditIndex.value);
+		    const fieldId = dom.quickEditField.value;
+		    const newValue = dom.quickEditInput.value.trim();
+		    
+		    if (index >= 0 && index < tableData.length) {
+		        if (['actualDiameter', 'diameter', 'length', 'weight', 'hardness'].includes(fieldId) && isNaN(parseFloat(newValue)) && newValue.length > 0) {
+		            showSnackbar('请输入有效的数字或留空', 'error');
+		            return;
+		        }
+		        
+		        tableData[index][fieldId] = newValue;
+		        saveDataToLocalStorage();
+		        updateTable();
+		        closeCustomModal(dom.quickEditDialog);
+		        dom.virtualKeyboard.style.display = 'none';
+		        showSnackbar('快速修改已保存', 'success');
+		        
+		        
+		keyboardState.isQuickEdit = false;
+		saveKeyboardState();
+		    }
+		}
+		
+		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
+
+
+function startSearch() {
+    const query = dom.searchInput.value.trim();
+
+    // 清空搜索状态
+    searchMatches = [];
+    currentMatchIndex = -1;
+
+    if (!query) {
+        isSearchActive = false;
+        applySearchHighlight(); // 清除高亮
+        dom.replaceOneBtn.disabled = true;
+        dom.replaceAllBtn.disabled = true;
+        return;
+    }
+
+    // 重新构建所有匹配项（全局）
+    tableData.forEach((item, index) => {
+        searchableFields.forEach(field => {
+            const value = (item[field] || '').toString().toLowerCase();
+            if (value.includes(query.toLowerCase())) {
+                searchMatches.push({
+                    rowIndex: index,
+                    field: field
+                });
+            }
+        });
+    });
+
+    isSearchActive = true;
+
+    // 更新替换按钮状态
+    const hasMatches = searchMatches.length > 0;
+    dom.replaceOneBtn.disabled = !hasMatches;
+    dom.replaceAllBtn.disabled = !hasMatches;
+
+    if (hasMatches) {
+        currentMatchIndex = 0;
+        jumpToMatch(0); // 【关键】自动跳转到第一个匹配项（会翻页 + 滚动）
+    } else {
+        applySearchHighlight(); // 显示“未找到匹配项”
+    }
+}
+function navigateMatch(direction) {
+    if (searchMatches.length === 0) return;
+
+    currentMatchIndex += direction;
+    if (currentMatchIndex >= searchMatches.length) currentMatchIndex = 0;
+    if (currentMatchIndex < 0) currentMatchIndex = searchMatches.length - 1;
+
+    updateCurrentMatchUI();
+}
+
+function updateCurrentMatchUI() {
+    // 更新计数显示
+
+dom.searchResultCount.textContent = searchMatches.length === 0 
+    ? `找到 0 个匹配项` 
+    : `找到 ${searchMatches.length} 个匹配项 (当前 ${currentMatchIndex + 1}/${searchMatches.length})`;
+	
+    // 先清除所有旧高亮
+    document.querySelectorAll('.search-match-highlight').forEach(el => 
+        el.classList.remove('search-match-highlight'));
+    document.querySelectorAll('.current-match-highlight').forEach(el => 
+        el.classList.remove('current-match-highlight'));
+
+    if (searchMatches.length === 0) return;
+
+    const match = searchMatches[currentMatchIndex];
+    const rowIndex = match.rowIndex;
+
+    // === 关键：自动翻到包含该行的页面 ===
+    const filteredData = getFilteredData();
+    const displayIndex = filteredData.indexOf(tableData[rowIndex]);
+    if (displayIndex !== -1) {
+        const targetPage = Math.floor(displayIndex / PAGE_SIZE) + 1;
+        if (currentPage !== targetPage) {
+            currentPage = targetPage;
+            updateTable(); // 先翻页渲染
+            setTimeout(highlightCurrentMatchCell, 150); // 等待 DOM 更新后高亮
+        } else {
+            highlightCurrentMatchCell();
+        }
+    } else {
+        highlightCurrentMatchCell();
+    }
+}
+
+function highlightCurrentMatchCell() {
+    const match = searchMatches[currentMatchIndex];
+    const row = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
+    if (!row) return;
+
+    // 高亮该行所有包含搜索词的单元格
+    searchableFields.forEach(field => {
+        const cell = row.querySelector(`td[data-field="${field}"]`);
+        if (cell) {
+            const query = dom.searchInput.value.trim().toLowerCase();
+            const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
+            if (query && cellValue.includes(query)) {
+                cell.classList.add('search-match-highlight');
+            }
+        }
+    });
+
+    // 当前匹配字段加粗边框高亮
+    const currentCell = row.querySelector(`td[data-field="${match.field}"]`);
+    if (currentCell) {
+        currentCell.classList.add('current-match-highlight');
+        
+        // 平滑滚动到当前单元格
+        const container = document.querySelector('.data-table-container');
+        if (container) {
+            const cellRect = currentCell.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const offset = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
+            container.scrollTo({ top: offset, behavior: 'smooth' });
+        }
+    }
+}
+
+function replaceOne() {
+    if (currentMatchIndex === -1 || searchMatches.length === 0) {
+        showSnackbar('没有选中的匹配项可替换', 'warning');
+        return;
+    }
+
+    const match = searchMatches[currentMatchIndex];
+    const newText = dom.replaceQueryInput.value.trim();
+    const oldText = dom.searchInput.value.trim();
+
+    if (!oldText) {
+        showSnackbar('搜索词不能为空', 'warning');
+        return;
+    }
+
+    const rowIndex = match.rowIndex;
+    const fieldId = match.field;
+    const originalValue = tableData[rowIndex][fieldId] || '';
+
+    const regex = new RegExp(escapeRegExp(oldText), 'gi');
+    const newValue = originalValue.replace(regex, newText);
+
+    if (newValue !== originalValue) {
+        tableData[rowIndex][fieldId] = newValue;
+        saveDataToLocalStorage();
+        showSnackbar(`已替换当前匹配项`, 'success');
+    } else {
+        showSnackbar('当前匹配项无需替换', 'info');
+    }
+
+    // 【关键修复】替换后立即刷新表格 + 重新搜索保持高亮和当前位置
+    updateTable();
+    startSearch();  // 重新计算匹配项并尽量保持在下一个
+    
+}
+
+function confirmReplaceAll() {
+    const oldText = dom.searchInput.value.trim();
+    const newText = dom.replaceQueryInput.value.trim();
+
+    if (!oldText) {
+        showSnackbar('搜索词不能为空', 'warning');
+        return;
+    }
+
+    if (searchMatches.length === 0) {
+        showSnackbar('没有匹配项可替换', 'warning');
+        return;
+    }
+
+    dom.confirmMessage.innerHTML = `
+        <div style="text-align:center;">
+            <p>确定将所有 <strong style="color:var(--primary-color);">${escapeHtml(oldText)}</strong> 
+               替换为 <strong style="color:#f44336;">${escapeHtml(newText || '(空)')}</strong> 吗？</p>
+            <p style="margin-top:12px;color:#757575;">共将影响 ${searchMatches.length} 处</p>
+        </div>
+    `;
+
+    openCustomModal(dom.confirmModal);
+
+    dom.confirmActionBtn.onclick = () => {
+        let replaceCount = 0;
+        const regex = new RegExp(escapeRegExp(oldText), 'gi');
+
+        tableData.forEach(item => {
+            searchableFields.forEach(field => {
+                const val = (item[field] || '').toString();
+                if (val.toLowerCase().includes(oldText.toLowerCase())) {
+                    const newVal = val.replace(regex, newText);
+                    if (newVal !== val) {
+                        item[field] = newVal;
+                        replaceCount++;
+                    }
+                }
+            });
+        });
+
+        saveDataToLocalStorage();
+
+        if (replaceCount > 0) {
+            showSnackbar(`成功替换 ${replaceCount} 处！`, 'success');
+        } else {
+            showSnackbar('没有发生实际替换', 'info');
+        }
+
+        // 【关键修复】替换全部后刷新表格 + 关闭搜索面板 + 清空搜索词
+    updateTable();
+    dom.searchInput.value = '';
+    dom.replaceQueryInput.value = '';
+    searchTerm = '';
+    isSearchActive = false;
+    searchMatches = [];
+    currentMatchIndex = -1;
+    toggleSearchReplaceVisibility();
+
+        closeCustomModal(dom.confirmModal);
+        dom.confirmActionBtn.onclick = null;
+    };
+}
+
+// 辅助函数：HTML转义和正则转义
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+function replaceAll() {
+    const oldText = dom.searchInput.value.trim();
+    const newText = dom.replaceQueryInput.value;
+
+    if (!oldText) return;
+
+    let replaceCount = 0;
+    const regex = new RegExp(escapeRegExp(oldText), 'gi');
+
+    tableData.forEach(item => {
+        searchableFields.forEach(field => {
+            const originalValue = (item[field] || '').toString();
+            if (originalValue.toLowerCase().includes(oldText.toLowerCase())) {
+                const newValue = originalValue.replace(regex, newText);
+                if (newValue !== originalValue) {
+                    item[field] = newValue;
+                    replaceCount++;
+                }
+            }
+        });
+    });
+
+    if (replaceCount > 0) {
+        saveDataToLocalStorage();
+        showSnackbar(`成功替换 ${replaceCount} 处匹配项！`, 'success');
+    } else {
+        showSnackbar('没有匹配项被替换', 'warning');
+    }
+
+    // 替换完成后自动关闭替换面板并清除搜索
+    isSearchActive = false;
+    searchMatches = [];
+    currentMatchIndex = -1;
+    updateTable();
+    toggleSearchReplaceVisibility(); // 关闭替换区域
+}
+
+		
+		function closeVirtualKeyboardAndKeepReadOnly() {
+		    dom.virtualKeyboard.style.display = 'none';
+		    currentInput = null;
+		}
+		
+		/* ==================== 虚拟键盘核心逻辑 ==================== */
+		
+		function saveKeyboardState() {
+		  localStorage.setItem('keyboardState', JSON.stringify(keyboardState));
+		}
+		
+		function toggleShift() {
+		  switch (keyboardState.shiftState) {
+		    case 'locked-on':   
+		      keyboardState.shiftState = 'off';
+		      break;
+		    case 'off':         
+		      keyboardState.shiftState = 'on';
+		      break;
+		    case 'on':          
+		      keyboardState.shiftState = 'locked-on';
+		      break;
+		  }
+		  saveKeyboardState();
+		  generateVirtualKeyboard();
+		}
+		
+		function createShortcutKeys(options, keyClass) {
+		  const shortcutRow = document.createElement('div');
+		  shortcutRow.className = 'keyboard-row';
+		  
+		  options.forEach(option => {
+		    const keyElement = document.createElement('div');
+		    keyElement.className = `keyboard-key ${keyClass}`;
+		    keyElement.textContent = option;
+		    keyElement.addEventListener('click', () => {
+		      if (currentInput) {
+		        insertText(option);
+		        currentInput.focus();
+		      }
+		    });
+		    shortcutRow.appendChild(keyElement);
+		  });
+		  
+		  dom.shortcutContainer.appendChild(shortcutRow);
+		}
+		
+		function generateVirtualKeyboard() {
+		  dom.shortcutContainer.innerHTML = '';
+		  dom.keyboardRows.innerHTML = '';
+		
+		  const isUpperCase = keyboardState.shiftState === 'locked-on' || keyboardState.shiftState === 'on';
+		  let keyRows = [];
+		
+		  switch(keyboardState.inputType) {
+		    case 'number':
+		    case 'numeric-input':
+		      keyRows = [
+		        ['%', '1', '2', '3','+', 'clear'],
+		        [':', '4', '5', '6', '-', 'backspace'],
+		        ['#', '7', '8', '9','*', 'esc'], 
+		        ['_', '.', '0', '/','、', 'done'] 
+		      ];
+		      break;
+		      
+		    case 'status':
+		      createShortcutKeys(statusOptions, 'status-key');
+		      keyRows = [['clear', 'backspace', 'esc', 'done']];
+		      break;
+		      
+		    case 'cardId':
+		      createShortcutKeys(cardIdOptions, 'shortcut-key');
+		    case 'steelType':
+		      if (keyboardState.inputType === 'steelType') createShortcutKeys(steelTypeOptions, 'shortcut-key');
+		    case 'productId':
+		      if (keyboardState.inputType === 'productId') createShortcutKeys(['TH','TH5','TH6'], 'shortcut-key'); 
+		    case 'furnaceId':
+		if (keyboardState.inputType === 'furnaceId') {
+		    const year = new Date().getFullYear().toString().slice(2);
+		    const lastyear = (parseInt(year) - 1).toString().slice(-2);
+		    // 修正：移除多余反斜杠，使用 ${变量} 正确插值
+		    const furnaceShortcuts = [
+		        `VD${year}/`,       
+		        `VD${lastyear}/`,   
+		        `${year}1`,          
+		        `1${year}1`,
+		        `${lastyear}1`,
+		        `1${lastyear}1`
+		    ];
+		    createShortcutKeys(furnaceShortcuts, 'shortcut-key');
+		}
+		    case 'text':
+		    default:
+		      const lettersRow1 = isUpperCase ? ['Q','W','E','R','T','Y','U','I','O','P'] : ['q','w','e','r','t','y','u','i','o','p'];
+		      const lettersRow2 = isUpperCase ? ['A','S','D','F','G','H','J','K','L'] : ['a','s','d','f','g','h','j','k','l'];
+		      const lettersRow3 = isUpperCase ? ['Z','X','C','V','B','N','M'] : ['z','x','c','v','b','n','m'];
+		      keyRows = [
+		        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+		        [...lettersRow1],
+		        ['', ...lettersRow2, '+','-'],
+		        ['shift', ...lettersRow3, 'backspace'],
+		        ['symbol',',','space', '.', 'clear','done']
+		      ];
+		      break;
+		      
+		    case 'position':
+		      createShortcutKeys(positionOptions, 'shortcut-key');
+		      keyRows = [
+		        ['%', '1', '2', '3', 'A'],
+		        ['/', '4', '5', '6', 'B'],
+		        ['+', '7', '8', '9', 'C'],
+		        ['*', '/','0', '-','D'],
+		        ['clear', 'backspace','esc','done'] 
+		      ];
+		      break;
+		      
+		    case 'symbol':
+		      keyRows = [
+		        ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
+		        ['_', '+', '=', '|', '\\', ':', '"', '<', '>', '?', ','],
+		        ['`', '}', '[', ']', '{', '(', ')', '.', '/', ''],
+		        ['ABC', 'space', 'backspace','clear', 'done'] 
+		      ];
+		      break;
+		  }
+		
+		  keyRows.forEach(row => {
+		    const rowElement = document.createElement('div');
+		    rowElement.className = 'keyboard-row';
+		    row.forEach(key => {
+		      if (key !== undefined) rowElement.appendChild(createKeyElement(key));
+		    });
+		    dom.keyboardRows.appendChild(rowElement);
+		  });
+		}
+		
+		function createKeyElement(key) {
+		  const keyElement = document.createElement('div');
+		  keyElement.className = 'keyboard-key';
+		
+		  // 首先处理空占位键
+		  if (key === '') {
+		    keyElement.classList.add('empty');
+		    return keyElement;
+		  }
+		
+		  // 特殊功能键 - 必须尽早处理并 return，避免进入通用逻辑
+		  if (key === 'shift') {
+		    keyElement.className += ' special wide';
+		    keyElement.innerHTML = keyboardState.shiftState === 'locked-on' ? '⇪' : '⇧';
+		    keyElement.addEventListener('click', toggleShift);
+		    return keyElement;
+		  }
+		
+		  if (key === 'backspace') {
+		    keyElement.className += ' special wide';
+		    keyElement.innerHTML = '←';
+		
+		    let deleteInterval = null;
+		    const DELETE_DELAY = 500;
+		    const DELETE_SPEED = 80;
+		
+		    keyElement.addEventListener('pointerdown', (e) => {
+		      e.preventDefault();
+		      handleBackspace();
+		
+		      deleteInterval = setTimeout(() => {
+		        deleteInterval = setInterval(handleBackspace, DELETE_SPEED);
+		      }, DELETE_DELAY);
+		    });
+		
+		    const stopDeleting = () => {
+		      clearTimeout(deleteInterval);
+		      clearInterval(deleteInterval);
+		      deleteInterval = null;
+		    };
+		
+		    keyElement.addEventListener('pointerup', stopDeleting);
+		    keyElement.addEventListener('pointercancel', stopDeleting);
+		    keyElement.addEventListener('pointerleave', stopDeleting);
+		    keyElement.addEventListener('click', (e) => e.preventDefault());
+		
+		    return keyElement;
+		  }
+		
+		  if (key === 'space') {
+		    keyElement.className += ' special extra-wide';
+		    keyElement.textContent = '';
+		    keyElement.addEventListener('click', () => insertText(' '));
+		    return keyElement;
+		  }
+		
+		  if (key === 'esc') {
+		    keyElement.className += ' system-keyboard wide';
+		    keyElement.textContent = '✔';  // 正确显示对勾
+		    keyElement.addEventListener('click', closeVirtualKeyboardAndKeepReadOnly);
+		    return keyElement;  // 必须 return！
+		  }
+		if(key === 'done') {
+		    keyElement.className += ' special wide';
+		    keyElement.style.position = 'relative';
+		
+		    // 快速编辑模式下：显示“完成”，点击直接关闭键盘
+		    if (keyboardState.isQuickEdit) {
+		        keyElement.textContent = '✔'; 
+		    } else {
+		        keyElement.textContent = '▼';
+		    }
+		
+		    let longPressTimer = null;
+		    const LONG_PRESS_DURATION = 600;
+		
+		    keyElement.addEventListener('pointerdown', (e) => {
+		        e.preventDefault();
+		
+		        // 长按仍保留关闭功能（备用）
+		        longPressTimer = setTimeout(() => {
+		            closeVirtualKeyboardAndKeepReadOnly();
+		            showSnackbar('键盘已关闭（长按完成）', 'success');
+		        }, LONG_PRESS_DURATION);
+		    });
+		
+		    keyElement.addEventListener('pointerup', (e) => {
+		        if (longPressTimer) {
+		            clearTimeout(longPressTimer);
+		            longPressTimer = null;
+		
+		            if (keyboardState.isQuickEdit) {
+		                // 快速编辑：短按 = 关闭键盘（不跳转）
+		                closeVirtualKeyboardAndKeepReadOnly();
+		            } else {
+		                // 完整编辑：短按 = 跳转下一个
+		                handleNextInput();
+		            }
+		        }
+		    });
+		
+		    keyElement.addEventListener('pointercancel', () => {
+		        if (longPressTimer) clearTimeout(longPressTimer);
+		    });
+		
+		    keyElement.addEventListener('pointerleave', () => {
+		        if (longPressTimer) clearTimeout(longPressTimer);
+		    });
+		
+		    keyElement.addEventListener('click', (e) => {
+		        e.preventDefault();
+		        e.stopPropagation();
+		    });
+		
+		    return keyElement;
+		}
+		
+		  if (key === 'clear') {
+		    keyElement.className += ' clear-key wide';
+		    keyElement.textContent = '←✘';
+		    keyElement.addEventListener('click', clearInput);
+		    return keyElement;
+		  }
+		
+		  if (key === 'symbol') {
+		    keyElement.className += ' special wide';
+		    keyElement.textContent = '符';
+		    keyElement.addEventListener('click', () => {
+		      keyboardState.inputType = 'symbol';
+		      saveKeyboardState();
+		      generateVirtualKeyboard();
+		    });
+		    return keyElement;
+		  }
+		
+		  if (key === 'ABC') {
+		    keyElement.className += ' special wide';
+		    keyElement.textContent = 'ABC';
+		    keyElement.addEventListener('click', () => {
+		      keyboardState.inputType = 'text';
+		      saveKeyboardState();
+		      generateVirtualKeyboard();
+		    });
+		    return keyElement;
+		  }
+		
+		  // 普通字符键（最后处理）
+		  keyElement.textContent = key;
+		  keyElement.addEventListener('click', () => {
+		    insertText(key);
+		    if (keyboardState.shiftState === 'on') {
+		      keyboardState.shiftState = 'off';
+		      saveKeyboardState();
+		      generateVirtualKeyboard();
+		    }
+		  });
+		
+		  return keyElement;
+		}
+		
+		function handleNextInput() {
+		  if (!currentInput) {
+		    dom.virtualKeyboard.style.display = 'none';
+		    return;
+		  }
+		  
+		  const currentId = currentInput.id;
+		  const isCalcInput = currentInput.closest('#calculatorForm');
+		  const isQuickEditInput = currentId === 'quickEditInput';
+		  
+		  if (isQuickEditInput) {
+		      saveQuickEdit(); 
+		      dom.virtualKeyboard.style.display = 'none';
+		      return;
+		  }
+		  
+		  let nextInput = null;
+		  if (isCalcInput) {
+		      const calcInputs = [dom.calcDiameter1, dom.calcDiameter2, dom.calcLength];
+		      const currentIndex = calcInputs.indexOf(currentInput);
+		      const nextIndex = currentIndex === calcInputs.length - 1 ? 0 : currentIndex + 1;
+		      nextInput = calcInputs[nextIndex];
+		  } else {
+		      const currentIndex = inputFieldOrder.indexOf(currentId);
+		      const nextIndex = currentIndex === inputFieldOrder.length - 1 ? 0 : currentIndex + 1;
+		      nextInput = formElements[inputFieldOrder[nextIndex]];
+		  }
+		  
+		  if (!nextInput) {
+		      dom.virtualKeyboard.style.display = 'none';
+		      return;
+		  }
+		  
+		  currentInput = nextInput;
+		  
+		  if (currentInput.id === 'remarks' && !isCalcInput) {
+		    currentInput.removeAttribute('readonly');
+		    currentInput.classList.remove('readonly-input');
+		    dom.virtualKeyboard.style.display = 'none';
+		  } else {
+		    currentInput.setAttribute('readonly', 'true');
+		    currentInput.classList.add('readonly-input');
+		    updateKeyboardForInput(currentInput);
+		    showVirtualKeyboard();
+		  }
+		
+		  currentInput.focus();
+		  const modalContent = currentInput.closest('.modal-body-custom'); 
+		  if(modalContent) {
+		      setTimeout(() => {
+		          const inputRect = currentInput.getBoundingClientRect();
+		          const modalRect = modalContent.getBoundingClientRect();
+		          const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3; 
+		          modalContent.scrollTo({ top: offset, behavior: 'smooth' });
+		      }, 50);
+		  }
+		}
+		
+		function updateKeyboardForInput(input, overrideId = null) {
+		  if (!input) return;
+		  
+		  const numericFields = ['actualDiameter', 'diameter', 'length', 'weight', 'hardness', 'calcDiameter1', 'calcDiameter2', 'calcLength', 'calcDensity'];
+		  const currentId = overrideId || input.id;
+		  const isNumeric = numericFields.includes(currentId);
+		  
+		  if (isNumeric) keyboardState.inputType = 'number';
+		  else if (currentId === 'productId') keyboardState.inputType = 'productId';
+		  else if (currentId === 'cardId') keyboardState.inputType = 'cardId';
+		  else if (currentId === 'steelType') keyboardState.inputType = 'steelType';
+		  else if (currentId === 'furnaceId') keyboardState.inputType = 'furnaceId';
+		  else if (currentId === 'position') keyboardState.inputType = 'position';
+		  else if (currentId === 'status') keyboardState.inputType = 'status';
+		  else keyboardState.inputType = 'text';
+		  
+		  saveKeyboardState();
+		  generateVirtualKeyboard();
+		}
+		
+		function insertText(text) {
+		  if (!currentInput) return;
+		  currentInput.focus(); 
+		  
+		  const startPos = currentInput.selectionStart;
+		  const endPos = currentInput.selectionEnd;
+		  const currentValue = currentInput.value;
+		  
+		  currentInput.value = currentValue.substring(0, startPos) + text + currentValue.substring(endPos);
+		  currentInput.selectionStart = currentInput.selectionEnd = startPos + text.length;
+		  
+		  const event = new Event('input', { bubbles: true });
+		  currentInput.dispatchEvent(event);
+		
+		  if (currentInput.closest('#calculatorForm')) calculateWeight();
+		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
+		}
+		
+		function handleBackspace() {
+		  if (!currentInput) return;
+		  currentInput.focus();
+		  
+		  const startPos = currentInput.selectionStart;
+		  const endPos = currentInput.selectionEnd;
+		  const currentValue = currentInput.value;
+		  
+		  if (startPos === endPos && startPos > 0) {
+		    currentInput.value = currentValue.substring(0, startPos - 1) + currentValue.substring(endPos);
+		    currentInput.selectionStart = currentInput.selectionEnd = startPos - 1;
+		  } else if (startPos !== endPos) {
+		    currentInput.value = currentValue.substring(0, startPos) + currentValue.substring(endPos);
+		    currentInput.selectionStart = currentInput.selectionEnd = startPos;
+		  }
+		  
+		  const event = new Event('input', { bubbles: true });
+		  currentInput.dispatchEvent(event);
+		
+		  if (currentInput.closest('#calculatorForm')) calculateWeight();
+		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
+		}
+		
+		function clearInput() {
+		  if (currentInput) {
+		    currentInput.value = '';
+		    currentInput.focus();
+		    const event = new Event('input', { bubbles: true });
+		    currentInput.dispatchEvent(event);
+		    if (currentInput.closest('#calculatorForm')) calculateWeight();
+		  }
+		}
+		
+		function showVirtualKeyboard() {
+		  generateVirtualKeyboard();
+		  dom.virtualKeyboard.style.display = 'block';
+		}
+		
+		function loadData() {
+		  const savedData = localStorage.getItem('roundBarData');
+		  if (savedData) tableData = JSON.parse(savedData);
+		}
+		
+		function saveDataToLocalStorage() {
+		  localStorage.setItem('roundBarData', JSON.stringify(tableData));
+		}
+		
+		function getObjectDifferences(oldObj, newObj) {
+		  const differences = [];
+		  const trackableKeys = ['steelType', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
+		  for (const key of trackableKeys) {
+		    const oldValue = (oldObj[key] ?? '').toString().trim();
+		    const newValue = (newObj[key] ?? '').toString().trim();
+		    if (String(oldValue) !== String(newValue)) {
+		      differences.push({
+		        field: fieldLabels[key],
+		        existingItem: oldObj,
+		        newValue: newValue,
+		        key: key
+		      });
+		    }
+		  }
+		  return differences;
+		}
+		
+function finalizeImport(newData, duplicateEntries, totalImported) {
+    let actuallyAdded = newData.length;
+    let actuallyOverridden = 0;
+    let actuallySkipped = 0;
+
+    duplicateEntries.forEach(entry => {
+        const action = entry.action;
+        const index = tableData.findIndex(item => item.productId && item.productId.trim() !== '' && item.productId === entry.productId);
+        if (action === 'override' && index !== -1) {
+            tableData[index] = entry.newItem;
+            actuallyOverridden++;
+        } else if (action === 'skip') {
+            actuallySkipped++;
+        }
+    });
+
+    if (newData.length > 0) tableData = [...tableData, ...newData];
+    
+    if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
+        saveDataToLocalStorage();
+        currentPage = 1;  // 【新增】导入后重置到第一页
+        updateTable();
+    }
+
+    let resultMessage = `导入完成！共读取 ${totalImported} 条记录。`;
+    if (actuallyAdded > 0) resultMessage += ` 成功添加 ${actuallyAdded} 条新数据。`;
+    if (actuallyOverridden > 0) resultMessage += ` 覆盖 ${actuallyOverridden} 条重复数据。`;
+    if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
+    if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
+    showSnackbar(resultMessage, 'success');
+}
+		
+
+
+function showDuplicateConfirmationModal(duplicateEntries, newData, totalImported) {
+    // 临时保存数据供分页使用
+    window.currentDuplicateEntries = duplicateEntries;
+
+    const modalElement = dom.duplicateConfirmationModal;
+    openCustomModal(modalElement); 
+    
+    const listContainer = modalElement.querySelector('#modal-duplicate-list');
+    const totalCountEl = modalElement.querySelector('#modal-total-count');
+    const newCountEl = modalElement.querySelector('#modal-new-count');
+    const duplicateCountEl = modalElement.querySelector('#modal-duplicate-count');
+
+    totalCountEl.textContent = totalImported;
+    newCountEl.textContent = newData.length;
+    duplicateCountEl.textContent = duplicateEntries.length;
+
+    // 初始化分页
+    duplicateTotalPages = Math.max(1, Math.ceil(duplicateEntries.length / DUPLICATE_PAGE_SIZE));
+    duplicateCurrentPage = 1;
+
+    listContainer.innerHTML = '';
+    renderDuplicatePage(listContainer);
+    renderDuplicatePagination(listContainer);
+
+    // 全部跳过 / 全部覆盖
+    document.getElementById('modal-btn-select-all-skip').onclick = () => {
+        modalElement.querySelectorAll('input[type="radio"][value="skip"]').forEach(radio => radio.checked = true);
+    };
+
+    document.getElementById('modal-btn-select-all-override').onclick = () => {
+        modalElement.querySelectorAll('input[type="radio"][value="override"]').forEach(radio => radio.checked = true);
+    };
+
+    // 确认导入
+    document.getElementById('modal-btn-confirm').onclick = () => {
+        const finalDuplicateData = window.currentDuplicateEntries.map((entry, index) => {
+            const radio = modalElement.querySelector(`input[name="action-${index}"]:checked`);
+            return { ...entry, action: radio ? radio.value : 'skip' };
+        });
+
+        closeCustomModal(modalElement);
+        delete window.currentDuplicateEntries; // 清理
+        setTimeout(() => finalizeImport(newData, finalDuplicateData, totalImported), 300);
+    };
+}
+
+function renderDuplicatePage(listContainer) {
+    listContainer.innerHTML = '';
+
+    const entries = window.currentDuplicateEntries || [];
+    const startIndex = (duplicateCurrentPage - 1) * DUPLICATE_PAGE_SIZE;
+    const endIndex = Math.min(startIndex + DUPLICATE_PAGE_SIZE, entries.length);
+    const pageEntries = entries.slice(startIndex, endIndex);
+
+    const itemTemplateHtml = document.getElementById('duplicate-item-template').innerHTML;
+    const differenceTemplateHtml = document.getElementById('difference-row-template').innerHTML;
+
+    pageEntries.forEach((entry, pageIndex) => {
+        const globalIndex = startIndex + pageIndex;
+        let itemHtml = itemTemplateHtml
+            .replace(/PRODUCT_ID/g, entry.productId || 'N/A')
+            .replace(/ITEM_INDEX/g, globalIndex);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = itemHtml;
+
+        const tbody = tempDiv.querySelector('.duplicate-differences tbody');
+        // 修复：新增tbody存在性判断（括号问题导致的核心报错——tbody为null时操作innerHTML）
+        if (tbody) {
+            if (entry.differences.length > 0) {
+                entry.differences.forEach(diff => {
+                    const rowHtml = differenceTemplateHtml
+                        .replace('FIELD_NAME', diff.field)
+                        .replace('OLD_VALUE', diff.existingItem[diff.key] || '-')
+                        .replace('NEW_VALUE', diff.newValue);
+                    tbody.innerHTML += rowHtml;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#757575;font-style:italic;">无关键字段差异</td></tr>';
+            }
+        }
+
+        // 设置 radio name
+        tempDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.name = `action-${globalIndex}`;
+        });
+
+        listContainer.appendChild(tempDiv.firstElementChild);
+    });
+}
+
+function renderDuplicatePagination(listContainer) {
+    const old = listContainer.parentNode.querySelector('#duplicatePagination');
+    if (old) old.remove();
+
+    if (duplicateTotalPages <= 1) return;
+
+    const paginationDiv = document.createElement('div');
+    paginationDiv.id = 'duplicatePagination';
+    paginationDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:16px;padding:20px 0;background:var(--surface-color);';
+
+    const prevBtn = document.createElement('mdui-button-icon');
+    prevBtn.icon = 'navigate_before';
+    prevBtn.disabled = duplicateCurrentPage === 1;
+
+    let prevLongTimer = null;
+    const LONG_PRESS = 500;
+
+    prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (duplicateCurrentPage > 1) {
+            duplicateCurrentPage--;
+            renderDuplicatePage(listContainer);
+            renderDuplicatePagination(listContainer);
+        }
+    });
+
+    prevBtn.addEventListener('pointerdown', () => {
+        if (duplicateCurrentPage === 1) return;
+        prevLongTimer = setTimeout(() => {
+            duplicateCurrentPage = 1;
+            renderDuplicatePage(listContainer);
+            renderDuplicatePagination(listContainer);
+        }, LONG_PRESS);
+    });
+    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongTimer));
+    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongTimer));
+    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongTimer));
+
+    const pageInfo = document.createElement('span');
+    pageInfo.textContent = `第 ${duplicateCurrentPage} / ${duplicateTotalPages} 页（共 ${(window.currentDuplicateEntries || []).length} 条重复）`;
+    pageInfo.style.cssText = 'font-size:0.95rem;color:#757575;';
+
+    const nextBtn = document.createElement('mdui-button-icon');
+    nextBtn.icon = 'navigate_next';
+    nextBtn.disabled = duplicateCurrentPage === duplicateTotalPages;
+
+    let nextLongTimer = null;
+
+    nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (duplicateCurrentPage < duplicateTotalPages) {
+            duplicateCurrentPage++;
+            renderDuplicatePage(listContainer);
+            renderDuplicatePagination(listContainer);
+        }
+    });
+
+    nextBtn.addEventListener('pointerdown', () => {
+        if (duplicateCurrentPage === duplicateTotalPages) return;
+        nextLongTimer = setTimeout(() => {
+            duplicateCurrentPage = duplicateTotalPages;
+            renderDuplicatePage(listContainer);
+            renderDuplicatePagination(listContainer);
+        }, LONG_PRESS);
+    });
+    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongTimer));
+    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongTimer));
+    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongTimer));
+
+    paginationDiv.appendChild(prevBtn);
+    paginationDiv.appendChild(pageInfo);
+    paginationDiv.appendChild(nextBtn);
+
+    listContainer.parentNode.appendChild(paginationDiv);
+}
+		
+function handleFileImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+        showSnackbar('导入失败，文件大小不能超过10MB', 'error');
+        dom.fileInput.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let sheetNames = []; // ← 提前声明，作用域提升到整个 onload 函数
+
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            // 关键修复：在这里赋值 sheetNames
+            sheetNames = workbook.SheetNames;
+
+            if (sheetNames.length === 0) {
+                showSnackbar('文件中没有找到工作表', 'error');
+                return;
+            }
+
+            let selectedSheetName = sheetNames[0];
+
+            // 多工作表时弹出选择框
+            if (sheetNames.length > 1) {
+                const options = sheetNames.map((name, idx) => 
+                    `<mdui-menu-item value="\( {name}"> \){name} (Sheet${idx + 1})</mdui-menu-item>`
+                ).join('');
+
+                const selectHTML = `
+                    <mdui-select variant="outlined" value="${selectedSheetName}" style="width: 100%; margin-bottom: 16px;">
+                        <mdui-menu-item value="" disabled selected>请选择要导入的工作表</mdui-menu-item>
+                        ${options}
+                    </mdui-select>
+                `;
+
+                dom.confirmMessage.innerHTML = `
+                    <div style="padding: 16px; text-align: center;">
+                        <div style="font-size: 1.1rem; margin-bottom: 16px;">选择要导入的工作表</div>
+                        ${selectHTML}
+                    </div>
+                `;
+
+                openCustomModal(dom.confirmModal);
+
+                // 临时覆盖确认按钮行为
+                dom.confirmActionBtn.textContent = '确认导入';
+                dom.confirmActionBtn.onclick = () => {
+                    const selectEl = dom.confirmModal.querySelector('mdui-select');
+                    selectedSheetName = selectEl.value;
+                    if (!selectedSheetName) {
+                        showSnackbar('请先选择一个工作表', 'warning');
+                        return;
+                    }
+                    closeCustomModal(dom.confirmModal);
+                    proceedWithImport(selectedSheetName);
+                };
+
+                dom.cancelConfirmBtn.onclick = () => {
+                    closeCustomModal(dom.confirmModal);
+                    dom.fileInput.value = ''; // 用户取消时也清空
+                };
+
+                return; // 等待用户选择，不继续执行下面的代码
+            }
+
+            // 只有一个工作表，直接导入
+            proceedWithImport(selectedSheetName);
+
+        } catch (error) {
+            console.error('导入错误:', error);
+            showSnackbar('导入失败，请检查文件格式是否为有效Excel', 'error');
+        } finally {
+            // 修复后安全访问 sheetNames
+            // 单工作表且没有进入选择流程时自动清空（多工作表已在取消/确认后手动清空）
+            if (sheetNames.length === 1) {
+                dom.fileInput.value = '';
+            }
+        }
+
+        // ==================== 导入核心逻辑（保持不变） ====================
+        function proceedWithImport(sheetName) {
+            const fuzzyMapping = {
+                steelType: ['钢种'],
+                productId: ['产品号'],
+                cardId: ['卡片号'],
+                furnaceId: ['炉号'],
+                actualDiameter: ['实际直径', '实测直径', '实径'],
+                diameter: ['直径', '名义直径', '规格', 'φ'],
+                length: ['长度', '长', '米', 'm'],
+                weight: ['重量', '重', '吨', 'kg', 'Kg'],
+                status: ['状态', '表面'],
+                position: ['位置', '库位'],
+                hardness: ['硬度', 'HB', 'HRC'],
+                remarks: ['备注', '说明', '注', '备注信息']
+            };
+
+            const worksheet = workbook.Sheets[sheetName];
+            const rawData = XLSX.utils.sheet_to_json(worksheet, { 
+                header: 1,
+                defval: ''
+            });
+
+            if (rawData.length < 1) {
+                showSnackbar('选中工作表中没有数据', 'error');
+                dom.fileInput.value = '';
+                return;
+            }
+
+            // 智能查找表头行
+            const keyHeaders = ['产品号', '钢种', '卡片号', '炉号'];
+            let headerRowIndex = -1;
+            let headerRow = null;
+
+            for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+                const row = rawData[i];
+                if (row.some(cell => 
+                    typeof cell === 'string' && keyHeaders.some(key => cell.includes(key))
+                )) {
+                    headerRowIndex = i;
+                    headerRow = row.map(cell => String(cell).trim());
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                showSnackbar('未能识别表头行（需包含“产品号”或“钢种”等字段）', 'error');
+                dom.fileInput.value = '';
+                return;
+            }
+
+            // 建立列映射
+            const colIndexMap = {};
+            headerRow.forEach((header, idx) => {
+                const lowerHeader = header.toLowerCase();
+                for (const field in fuzzyMapping) {
+                    if (fuzzyMapping[field].some(keyword => lowerHeader.includes(keyword.toLowerCase()))) {
+                        colIndexMap[field] = idx;
+                        break;
+                    }
+                }
+            });
+
+            if (!colIndexMap.productId && !colIndexMap.cardId && !colIndexMap.furnaceId) {
+                showSnackbar('表头未找到“产品号”“卡片号”或“炉号”列，无法导入', 'error');
+                dom.fileInput.value = '';
+                return;
+            }
+
+            // 读取数据行
+            const dataRows = rawData.slice(headerRowIndex + 1);
+            const formattedData = dataRows
+                .map(row => {
+                    const item = {};
+                    for (const field in colIndexMap) {
+                        const colIdx = colIndexMap[field];
+                        item[field] = (row[colIdx] !== undefined && row[colIdx] !== null) 
+                            ? String(row[colIdx]).trim() 
+                            : '';
+                    }
+                    return item;
+                })
+                .filter(item => item.productId || item.cardId || item.furnaceId);
+
+            if (formattedData.length === 0) {
+                showSnackbar('未找到有效数据行', 'warning');
+                dom.fileInput.value = '';
+                return;
+            }
+
+            // 重复检测
+            const totalImported = formattedData.length;
+            const newData = [];
+            const duplicateEntries = [];
+
+            formattedData.forEach(newItem => {
+                const existingItem = tableData.find(item => 
+                    item.productId && item.productId.trim() !== '' && item.productId === newItem.productId
+                );
+                if (!existingItem) {
+                    newData.push(newItem);
+                } else {
+                    duplicateEntries.push({
+                        productId: newItem.productId,
+                        existingItem: existingItem,
+                        newItem: newItem,
+                        differences: getObjectDifferences(existingItem, newItem)
+                    });
+                }
+            });
+
+            if (duplicateEntries.length > 0) {
+                showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
+            } else {
+                finalizeImport(newData, [], totalImported);
+            }
+
+            // 导入完成后统一清空文件选择（避免重复触发）
+            dom.fileInput.value = '';
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+		
+		function exportToExcel() {
+		  const exportData = getFilteredData();
+		  if (exportData.length === 0) {
+		    showSnackbar('暂无数据可导出', 'warning');
+		    return;
+		  }
+		  
+		  const formattedExportData = exportData.map((item, index) => ({
+		    '序号': index + 1,
+		    '钢种': item.steelType || '',
+		    '产品号': item.productId || '',
+		    '卡片号': item.cardId || '',
+		    '炉号': item.furnaceId || '',
+		    '实际直径': item.actualDiameter || '',
+		    '直径': item.diameter || '',
+		    '长度': item.length || '', 
+		    '重量': item.weight || '', 
+		    '状态': item.status || '',
+		    '位置': item.position || '',
+		    '硬度': item.hardness || '',
+		    '备注': item.remarks || ''
+		  }));
+		  
+		  const worksheet = XLSX.utils.json_to_sheet(formattedExportData);
+		  const workbook = XLSX.utils.book_new();
+		  XLSX.utils.book_append_sheet(workbook, worksheet, '圆棒入库数据');
+		  
+		  const dateString = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+		  XLSX.writeFile(workbook, `圆棒入库数据_${dateString}.xlsx`);
+		}
+		
+		function calculateWeight() {
+		  const diameter1 = parseFloat(dom.calcDiameter1.value) || 0;
+		  const diameter2 = parseFloat(dom.calcDiameter2.value) || 0;
+		  const length = parseFloat(dom.calcLength.value) || 0;
+		  const densityFactor = parseFloat(dom.calcDensity.value) || 0.00617; 
+		  
+		  if (diameter1 <= 0 || diameter2 <= 0 || length <= 0) {
+		    dom.calcResult.value = '';
+		    return;
+		  }
+		  
+		  const crudeWeight = densityFactor * diameter1 * diameter2 * length / 1000;
+		  dom.calcResult.value = crudeWeight.toFixed(2);
+		}
+		
+		function initAutoCalculate() {
+		  const calcInputs = [dom.calcDiameter1, dom.calcDiameter2, dom.calcLength];
+		  calcInputs.forEach(input => {
+		    if (input) {
+		      input.addEventListener('input', calculateWeight);
+		      input.addEventListener('change', calculateWeight);
+		    }
+		  });
+		  
+		  dom.calcDensity.addEventListener('dblclick', (e) => {
+		      e.stopPropagation();
+		      const densityInput = dom.calcDensity;
+		      if (densityInput.hasAttribute('readonly')) {
+		          densityInput.removeAttribute('readonly');
+		          densityInput.classList.remove('readonly-input');
+		          densityInput.focus();
+		      } else {
+		          densityInput.setAttribute('readonly', 'true');
+		          densityInput.classList.add('readonly-input');
+		          densityInput.blur();
+		      }
+		  });
+		  
+		  calculateWeight();
+		}
+		
+		function calculateAndAddData() {
+		    const diameter1 = parseFloat(dom.calcDiameter1.value);
+		    const diameter2 = parseFloat(dom.calcDiameter2.value);
+		    const length = parseFloat(dom.calcLength.value);
+		    const weight = parseFloat(dom.calcResult.value);
+		
+		    if (isNaN(diameter1) || isNaN(diameter2) || isNaN(length) || diameter1 <= 0 || diameter2 <= 0 || length <= 0) {
+		      showSnackbar('请输入有效的计算参数', 'error');
+		      return;
+		    }
+		
+		    const minDiameter = Math.min(diameter1, diameter2);
+		    const maxDiameter = Math.max(diameter1, diameter2);
+		    const actualDiameter = `\( {minDiameter.toFixed(2)}- \){maxDiameter.toFixed(2)}`;
+		    const averageDiameter = ((minDiameter + maxDiameter) / 2).toFixed(2);
+		
+		    const preFilledData = {
+		      actualDiameter: actualDiameter,
+		      diameter: averageDiameter, 
+		      length: length.toFixed(2),
+		      weight: weight.toFixed(2)
+		    };
+		
+		    closeCustomModal(dom.calculatorModal); 
+		    dom.virtualKeyboard.style.display = 'none'; 
+		    openAddModalWithData(preFilledData);
+		}
+		
+		function toggleMultiSelectMode() {
+		  isMultiSelectMode = !isMultiSelectMode;
+		  selectedRows.clear();
+		  
+		  const menuText = dom.multiSelectMenuText;
+		  if (isMultiSelectMode) {
+		    menuText.textContent = '退出多选模式';
+		    dom.multiSelectMenuItem.icon = 'check_box';
+		  } else {
+		    menuText.textContent = '进入多选模式';
+		    dom.multiSelectMenuItem.icon = 'check_box_outline_blank';
+		  }
+		  
+		  updateTable();
+		}
+		
+		function initCalculatorKeyboard() {
+		  const calcInputs = [dom.calcDiameter1, dom.calcDiameter2, dom.calcLength];
+		  calcInputs.forEach(input => {
+		    if (input) {
+		      input.setAttribute('readonly', 'true');
+		      input.classList.add('readonly-input');
+		      
+		      input.addEventListener('click', (e) => {
+		          if (input.hasAttribute('readonly')) {
+		            e.stopPropagation();
+		            currentInput = e.target;
+		            updateKeyboardForInput(currentInput);
+		            showVirtualKeyboard();
+		            currentInput.focus();
+		            
+		            const modalContent = document.getElementById('calculatorContent');
+		            if(modalContent) {
+		                setTimeout(() => {
+		                    const inputRect = currentInput.getBoundingClientRect();
+		                    const modalRect = modalContent.getBoundingClientRect();
+		                    const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3; 
+		                    modalContent.scrollTo({ top: offset, behavior: 'smooth' });
+		                }, 50);
+		            }
+		          }
+		      });
+		      
+		      input.addEventListener('dblclick', (e) => {
+		          e.stopPropagation();
+		          if (dom.calculatorModal.style.display !== 'block') return;
+		          if (input.hasAttribute('readonly')) {
+		            input.removeAttribute('readonly');
+		            input.classList.remove('readonly-input');
+		            dom.virtualKeyboard.style.display = 'none';
+		            input.focus();
+		          } else {
+		            input.setAttribute('readonly', 'true');
+		            input.classList.add('readonly-input');
+		            currentInput = input;
+		            updateKeyboardForInput(currentInput);
+		            showVirtualKeyboard();
+		          }
+		      });
+		    }
+		  });
+		}
+		// ==================== 多字段排序核心函数（支持记忆 + 修复模板错误） ====================
+		
+		const SORT_RULES_KEY = 'sortRulesMemory'; // localStorage 键名
+		
+		// 保存当前排序规则到 localStorage
+		function saveSortRulesToStorage(rules) {
+		    localStorage.setItem(SORT_RULES_KEY, JSON.stringify(rules));
+		}
+		
+		// 从 localStorage 读取上次排序规则
+		function loadSortRulesFromStorage() {
+		    const saved = localStorage.getItem(SORT_RULES_KEY);
+		    if (!saved) return null;
+		    try {
+		        return JSON.parse(saved);
+		    } catch (e) {
+		        return null;
+		    }
+		}
+		
+		function openSortModal() {
+		    dom.drawer.open = false;
+		    openCustomModal(dom.sortModal);
+		
+		    // 清空容器
+		    dom.sortRulesContainer.innerHTML = '';
+		
+		    // 尝试加载上次记忆的排序规则
+		    const savedRules = loadSortRulesFromStorage();
+		
+		    if (savedRules && savedRules.length > 0) {
+		        // 恢复记忆的规则
+		        savedRules.forEach(rule => {
+		            addSortRule(rule.field, rule.order);
+		        });
+		    } else {
+		        // 没有记忆时，默认添加一条：卡片号升序
+		        addSortRule('cardId', 'asc');
+		    }
+		
+		    updateAddButtonState();
+		}
+		
+function addSortRule(field = 'productId', order = 'asc') {
+    if (dom.sortRulesContainer.children.length >= 5) {
+        showSnackbar('最多支持5个排序规则', 'warning');
+        return;
+    }
+
+    const ruleDiv = document.createElement('div');
+    ruleDiv.className = 'sort-rule';
+    ruleDiv.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 14px; background-color: var(--background-color); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.06);';
+
+    // === 字段选择 mdui-select ===
+    const fieldSelect = document.createElement('mdui-select');
+    fieldSelect.variant = 'outlined';
+    fieldSelect.value = field;
+    fieldSelect.placeholder = '选择字段';
+    fieldSelect.style.width = '100%';
+
+    sortFieldOptions.forEach(opt => {
+        const option = document.createElement('mdui-menu-item');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === field) option.selected = true;
+        fieldSelect.appendChild(option);
+    });
+
+    // === 排序方向 mdui-select ===
+    const orderSelect = document.createElement('mdui-select');
+    orderSelect.variant = 'outlined';
+    orderSelect.value = order;
+    orderSelect.style.width = '100%';
+
+    const ascOption = document.createElement('mdui-menu-item');
+    ascOption.value = 'asc';
+    ascOption.textContent = '升序 ↑';
+    if (order === 'asc') ascOption.selected = true;
+
+    const descOption = document.createElement('mdui-menu-item');
+    descOption.value = 'desc';
+    descOption.textContent = '降序 ↓';
+    if (order === 'desc') descOption.selected = true;
+
+    orderSelect.appendChild(ascOption);
+    orderSelect.appendChild(descOption);
+
+    // === 删除按钮 ===
+    const deleteBtn = document.createElement('mdui-button-icon');
+    deleteBtn.icon = 'delete';
+    deleteBtn.variant = 'tonal';
+    deleteBtn.style.flexShrink = '0';
+
+    deleteBtn.addEventListener('click', () => {
+        ruleDiv.remove();
+        updateAddButtonState();
+    });
+
+    // 组装
+    ruleDiv.appendChild(fieldSelect);
+    ruleDiv.appendChild(orderSelect);
+    ruleDiv.appendChild(deleteBtn);
+
+    dom.sortRulesContainer.appendChild(ruleDiv);
+
+    // 【关键】添加后，智能设置每个 select 的 placement
+    setTimeout(() => {
+        const selects = ruleDiv.querySelectorAll('mdui-select');
+        selects.forEach(select => {
+            // 获取元素在视口中的位置
+            const rect = select.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            // 如果下方空间不足 200px（菜单大约高度），则向上展开
+            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+                select.placement = 'top-start';
+            } else {
+                select.placement = 'bottom-start';
+            }
+        });
+    }, 100); // 延迟确保 DOM 已渲染
+
+    updateAddButtonState();
+}
+		
+		function updateAddButtonState() {
+		    const count = dom.sortRulesContainer.children.length;
+		    dom.addSortRuleBtn.disabled = count >= 5;
+		
+		    // 可选：更新“应用排序”按钮状态（至少一条规则才能应用）
+		    dom.applySortBtn.disabled = count === 0;
+		}
+		
+		function applySort() {
+		    const rules = [];
+    const ruleElements = dom.sortRulesContainer.querySelectorAll('.sort-rule');
+
+    if (ruleElements.length === 0) {
+        showSnackbar('请至少添加一个排序规则', 'warning');
+        return;
+    }
+
+    ruleElements.forEach(el => {
+        const fieldSelect = el.querySelector('mdui-select:first-of-type');
+        const orderSelect = el.querySelector('mdui-select:last-of-type');
+
+        const field = fieldSelect.value;
+        const order = orderSelect.value;
+
+        if (field && order) {
+            rules.push({ field, order });
+        }
+    });
+		
+		    // 执行排序
+		    tableData.sort((a, b) => {
+		        for (const rule of rules) {
+		            let aVal = a[rule.field] ?? '';
+		            let bVal = b[rule.field] ?? '';
+		
+		            let cmp = 0;
+		            if (numericSortFields.includes(rule.field)) {
+		                const aNum = parseFloat(aVal) || 0;
+		                const bNum = parseFloat(bVal) || 0;
+		                cmp = aNum - bNum;
+		            } else {
+		                cmp = String(aVal).localeCompare(String(bVal), 'zh-CN', { numeric: true, sensitivity: 'base' });
+		            }
+		
+		            if (cmp !== 0) {
+		                return rule.order === 'asc' ? cmp : -cmp;
+		            }
+		        }
+		        return 0;
+		    });
+		
+		    // 【关键】应用后保存本次规则到 localStorage，实现记忆功能
+		    saveSortRulesToStorage(rules);
+		
+		    saveDataToLocalStorage();
+		    currentPage = 1;  
+		    updateTable();
+		    closeCustomModal(dom.sortModal);
+		
+		    const msgParts = rules.map((r, i) =>
+		    `第${i + 1}优先级：【${fieldLabels[r.field]}】${r.order === 'asc' ? '升序' : '降序'}`
+		);
+		showSnackbar('排序已应用：' + msgParts.join(' → '), 'success');
+		    
+		    }
+		
+function initTableZoom() {
+    const container = document.querySelector('.data-table-container');
+    if (!container) return;
+
+    let initialDistance = 0;
+    let initialScale = 1;
+    let currentScale = 1;
+
+    // 记录表格的原始尺寸（只测量一次，避免 touchmove 时重排卡顿）
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+
+    const measureNaturalSize = () => {
+        const oldTransform = container.style.transform;
+        container.style.transform = 'none';
+        naturalWidth = container.scrollWidth;
+        naturalHeight = container.scrollHeight;
+        container.style.transform = oldTransform;
+    };
+
+    const getDistance = (touches) => {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const applyScale = (scale) => {
+        // 限制：放大最大1倍，缩小最小0.25倍
+        scale = Math.min(1.0, Math.max(0.25, scale));
+        currentScale = scale;
+
+        // 实时应用缩放 + 容器尺寸（使用预存的原始尺寸，超流畅）
+        container.style.transform = `scale(${scale})`;
+        container.style.width = `${naturalWidth * scale}px`;
+        container.style.height = `${naturalHeight * scale}px`;
+
+        // 底部边距固定60px
+        const outerContainer = document.querySelector('.data-table-container-div');
+        if (outerContainer) {
+            outerContainer.style.paddingBottom = '60px';
+        }
+    };
+
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            initialDistance = getDistance(e.touches);
+            initialScale = currentScale;
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialDistance > 0) {
+            e.preventDefault();
+            const currentDistance = getDistance(e.touches);
+            const ratio = currentDistance / initialDistance;
+            const newScale = initialScale * ratio;
+
+            // 实时更新（无测量开销，丝滑）
+            applyScale(newScale);
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => {
+        initialDistance = 0;
+    });
+
+    // 双击表头恢复到 1 倍
+    const tableHeader = document.querySelector('#dataTable thead');
+    if (tableHeader) {
+        let lastTap = 0;
+        tableHeader.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                applyScale(1);
+                e.preventDefault();
+            }
+            lastTap = now;
+        });
+    }
+
+    // 页面首次加载：测量一次原始尺寸，然后应用初始缩放
+    measureNaturalSize();
+    applyScale(1);
+
+    // 可选：表格数据更新后（如分页、搜索、导入后）重新测量尺寸，确保准确
+    // 你可以在 updateTable() 函数最后加一句： 
+    // if (typeof initTableZoom === 'function') { measureNaturalSize(); applyScale(currentScale); }
+}
+		
+		document.addEventListener('DOMContentLoaded', () => {
+		  initTheme();
+		  initEventListeners();
+		  loadData();
+		  updateTable();
+		  initAutoCalculate();
+		  initCalculatorKeyboard(); 
+		  dom.calcDensity.value = 0.00617;
+		  initTableZoom(); 
+		});
+	</script>
+</body>
+</html>
