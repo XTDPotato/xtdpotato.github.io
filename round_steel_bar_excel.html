@@ -5,13 +5,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no,viewport-fit=cover">
 	<title>圆棒入库数据管理</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Text:wght@400;500&family=Google+Sans+Display:wght@400;500&display=swap" rel="stylesheet">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Text:wght@400;500&family=Google+Sans+Display:wght@400;500&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
 	<script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-<style>
+	<style>
 		/* 🎨 全局样式与黑暗模式 */
 		:root {
 		    --primary-color: #00796b;
@@ -105,19 +105,19 @@
 		    border-top: 1px solid var(--border-color);
 		    margin: 0;
 		}
-
+		
 		.search-replace-main {
 		    display: flex;
 		    flex-direction: column;
 		    gap: 10px;
 		}
-
+		
 		.search-replace-top-row {
 		    display: flex;
 		    align-items: center;
 		    gap: 6px;
 		}
-
+		
 		.search-replace-top-row input {
 		    flex: 1;
 		    padding: 10px 12px;
@@ -128,19 +128,19 @@
 		    font-size: 1rem;
 		    min-width: 0;
 		}
-
+		
 		.search-replace-nav-buttons {
 		    display: flex;
 		    flex-direction: column;
 		    gap: 4px;
 		}
-
+		
 		.search-replace-button-row {
 		    display: flex;
 		    gap: 10px;
 		    justify-content: flex-start;
 		}
-
+		
 		.search-replace-bottom-row {
 		    display: flex;
 		    justify-content: space-between;
@@ -150,7 +150,7 @@
 		    font-size: 0.9rem;
 		    color: #757575;
 		}
-
+		
 		@media (min-width: 600px) {
 		    .search-replace-main { gap: 12px; }
 		    .search-replace-top-row { gap: 8px; }
@@ -322,110 +322,110 @@
 		}
 		
 		/* 虚拟键盘样式 */
-#virtualKeyboard {
-    position: fixed;
-    bottom: 10px; 
-    padding-bottom: 15px;
-    left: 0;
-    width: 100%;
-    background-color: var(--surface-color);
-    border-top: 1px solid var(--border-color);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 2000; 
-    display: none;
-    box-sizing: border-box;
-}
-
-.keyboard-row {
-    display: flex;
-    padding: 5px 8px;
-    justify-content: center;
-    margin: 0;
-    gap: 4px; /* 边距小一些：从6px改为4px */
-}
-
-.keyboard-key {
-    background-color: var(--background-color);
-    color: var(--text-color);
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 9px 8px; /* 高度低一点：垂直padding从12px改为9px */
-    border-radius: 6px;
-    text-align: center;
-    font-size: 16px; /* 字体稍小，配合高度降低 */
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.1s, transform 0.1s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    /* 扩大点击热区，覆盖视觉缝隙 */
-    position: relative;
-    margin-left: 2px;
-    margin-right: 2px; /* 配合gap:4px，点击区域无缝覆盖 */
-}
-
-.keyboard-key::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    bottom: -6px;
-    left: -6px;
-    right: -6px;
-}
-
-.keyboard-key:active {
-    background-color: var(--primary-color);
-    color: #ffffff;
-    transform: scale(0.95);
-}
-
-.special {
-    background-color: #bdbdbd;
-    color: #212121;
-}
-
-.dark-mode .special {
-    background-color: #424242;
-    color: #ffffff;
-}
-
-.wide { flex: 1.6 1 0; }
-.extra-wide { flex: 3 1 0; }
-
-.keyboard-key.empty {
-    background: none;
-    box-shadow: none;
-    cursor: default;
-    flex: 1 1 0;
-    padding: 0;
-    margin: 0;
-}
-
-.clear-key { background-color: #f44336 !important; color: white !important; }
-.system-keyboard { background-color: #2196f3 !important; color: white !important; }
-
-#shortcutContainer {
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 5px;
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-#shortcutContainer .keyboard-row {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 4px; /* 快捷键边距也小一点 */
-    padding: 5px 8px;
-}
-
-#shortcutContainer .keyboard-key {
-    margin-left: 2px;
-    margin-right: 2px;
-}
+		#virtualKeyboard {
+		    position: fixed;
+		    bottom: 10px; 
+		    padding-bottom: 15px;
+		    left: 0;
+		    width: 100%;
+		    background-color: var(--surface-color);
+		    border-top: 1px solid var(--border-color);
+		    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+		    z-index: 2000; 
+		    display: none;
+		    box-sizing: border-box;
+		}
+		
+		.keyboard-row {
+		    display: flex;
+		    padding: 5px 8px;
+		    justify-content: center;
+		    margin: 0;
+		    gap: 4px; /* 边距小一些：从6px改为4px */
+		}
+		
+		.keyboard-key {
+		    background-color: var(--background-color);
+		    color: var(--text-color);
+		    flex: 1 1 0;
+		    min-width: 0;
+		    padding: 9px 8px; /* 高度低一点：垂直padding从12px改为9px */
+		    border-radius: 6px;
+		    text-align: center;
+		    font-size: 16px; /* 字体稍小，配合高度降低 */
+		    cursor: pointer;
+		    user-select: none;
+		    transition: background-color 0.1s, transform 0.1s;
+		    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    
+		    /* 扩大点击热区，覆盖视觉缝隙 */
+		    position: relative;
+		    margin-left: 2px;
+		    margin-right: 2px; /* 配合gap:4px，点击区域无缝覆盖 */
+		}
+		
+		.keyboard-key::before {
+		    content: '';
+		    position: absolute;
+		    top: -6px;
+		    bottom: -6px;
+		    left: -6px;
+		    right: -6px;
+		}
+		
+		.keyboard-key:active {
+		    background-color: var(--primary-color);
+		    color: #ffffff;
+		    transform: scale(0.95);
+		}
+		
+		.special {
+		    background-color: #bdbdbd;
+		    color: #212121;
+		}
+		
+		.dark-mode .special {
+		    background-color: #424242;
+		    color: #ffffff;
+		}
+		
+		.wide { flex: 1.6 1 0; }
+		.extra-wide { flex: 3 1 0; }
+		
+		.keyboard-key.empty {
+		    background: none;
+		    box-shadow: none;
+		    cursor: default;
+		    flex: 1 1 0;
+		    padding: 0;
+		    margin: 0;
+		}
+		
+		.clear-key { background-color: #f44336 !important; color: white !important; }
+		.system-keyboard { background-color: #2196f3 !important; color: white !important; }
+		
+		#shortcutContainer {
+		    padding: 5px 0;
+		    border-bottom: 1px solid var(--border-color);
+		    margin-bottom: 5px;
+		    overflow-x: auto;
+		    white-space: nowrap;
+		}
+		
+		#shortcutContainer .keyboard-row {
+		    flex-wrap: nowrap;
+		    justify-content: flex-start;
+		    gap: 4px; /* 快捷键边距也小一点 */
+		    padding: 5px 8px;
+		}
+		
+		#shortcutContainer .keyboard-key {
+		    margin-left: 2px;
+		    margin-right: 2px;
+		}
 		
 		.shortcut-key, .status-key {
 		    flex: none;
@@ -747,60 +747,60 @@
 		    color: var(--text-color);
 		}
 		/* === 强制全局使用 Google Sans（放在所有样式最后）=== */
-*,
-*::before,
-*::after,
-body, input, button, textarea, select,
-.mdui-typography,
-.mdui-button,
-.mdui-list-item,
-.mdui-top-app-bar,
-.mdui-dialog,
-.mdui-text-field-input,
-#dataTable,
-#dataTable th,
-#dataTable td,
-.data-form input,
-.data-form select,
-.virtualKeyboard * {
-    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, -apple-system, sans-serif !important;
-}
-
-/* 加粗文字使用 Medium 字重（更优雅） */
-h1, h2, h3, h4, h5, h6,
-.mdui-top-app-bar-title,
-.mdui-button,
-.mdui-list-item-headline,
-.mdui-dialog-headline {
-    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, sans-serif !important;
-    font-weight: 500 !important;
-}
-
-/* 虚拟键盘键也强制使用 */
-.keyboard-key {
-    font-family: 'Google Sans Text', system-ui, sans-serif !important;
-    font-weight: 500 !important;
-}
-/* === 修复：保护 Material Icons 不被 Google Sans 覆盖 === */
-.material-icons,
-mdui-button-icon .mdui-icon,
-mdui-top-app-bar .mdui-icon,
-mdui-list-item .mdui-icon,
-mdui-navigation-drawer .mdui-icon,
-mdui-fab .mdui-icon,
-.move-btn .material-icons {
-    font-family: 'Material Icons' !important;
-    font-weight: normal !important;
-    font-style: normal !important;
-    speak: none;
-    display: inline-block;
-    text-transform: none;
-    letter-spacing: normal;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+		*,
+		*::before,
+		*::after,
+		body, input, button, textarea, select,
+		.mdui-typography,
+		.mdui-button,
+		.mdui-list-item,
+		.mdui-top-app-bar,
+		.mdui-dialog,
+		.mdui-text-field-input,
+		#dataTable,
+		#dataTable th,
+		#dataTable td,
+		.data-form input,
+		.data-form select,
+		.virtualKeyboard * {
+		    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, -apple-system, sans-serif !important;
+		}
+		
+		/* 加粗文字使用 Medium 字重（更优雅） */
+		h1, h2, h3, h4, h5, h6,
+		.mdui-top-app-bar-title,
+		.mdui-button,
+		.mdui-list-item-headline,
+		.mdui-dialog-headline {
+		    font-family: 'Google Sans Text', 'Google Sans Display', system-ui, sans-serif !important;
+		    font-weight: 500 !important;
+		}
+		
+		/* 虚拟键盘键也强制使用 */
+		.keyboard-key {
+		    font-family: 'Google Sans Text', system-ui, sans-serif !important;
+		    font-weight: 500 !important;
+		}
+		/* === 修复：保护 Material Icons 不被 Google Sans 覆盖 === */
+		.material-icons,
+		mdui-button-icon .mdui-icon,
+		mdui-top-app-bar .mdui-icon,
+		mdui-list-item .mdui-icon,
+		mdui-navigation-drawer .mdui-icon,
+		mdui-fab .mdui-icon,
+		.move-btn .material-icons {
+		    font-family: 'Material Icons' !important;
+		    font-weight: normal !important;
+		    font-style: normal !important;
+		    speak: none;
+		    display: inline-block;
+		    text-transform: none;
+		    letter-spacing: normal;
+		    word-wrap: normal;
+		    direction: ltr;
+		    -webkit-font-smoothing: antialiased;
+		    -moz-osx-font-smoothing: grayscale;
+		}
 	</style>
 </head>
 <body>
@@ -826,7 +826,6 @@ mdui-fab .mdui-icon,
 			<mdui-list-item id="sortItem" icon="sort" headline="数据排序"></mdui-list-item>
 		</mdui-list>
 	</mdui-navigation-drawer>
-
 	<div class="top-fixed-area">
 		<div class="action-bar">
 			<mdui-button-icon icon="menu" id="openDrawerBtn"></mdui-button-icon>
@@ -848,7 +847,6 @@ mdui-fab .mdui-icon,
 				</mdui-dropdown>
 			</div>
 		</div>
-
 		<div class="search-replace-container" id="searchReplaceContainer" style="display: none;">
 			<div class="search-replace-main">
 				<div class="search-replace-top-row">
@@ -868,14 +866,11 @@ mdui-fab .mdui-icon,
 				</div>
 			</div>
 		</div>
-
 		<div class="batch-action-container">
 			<mdui-button variant="outlined" color="error" id="deleteSelectedBtn" style="display: none; width: 100%;">
-				<mdui-icon name="delete"></mdui-icon> 批量删除 (<span id="selectedCount">0</span>)
-			</mdui-button>
+				<mdui-icon name="delete"></mdui-icon> 批量删除 (<span id="selectedCount">0</span>) </mdui-button>
 		</div>
 	</div>
-
 	<div class="data-table-container-div">
 		<div class="data-table-container">
 			<table id="dataTable">
@@ -903,7 +898,6 @@ mdui-fab .mdui-icon,
 				<tbody id="tableBody"></tbody>
 			</table>
 		</div>
-
 		<!-- 底部常驻信息栏：总条数 + 分页控制 -->
 		<div class="bottom-data-summary">
 			<div class="bottom-summary-content">
@@ -920,15 +914,12 @@ mdui-fab .mdui-icon,
 				</div>
 			</div>
 		</div>
-
 		<div class="empty-state" id="emptyState">
 			<span class="material-icons" style="font-size: 48px;">inbox</span>
 			<p>暂无数据，点击右下角“添加”按钮开始录入。</p>
 		</div>
 	</div>
-
 	<input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
-
 	<div id="dataSheetCustom" class="modal-custom full-height-custom">
 		<div class="modal-content-custom">
 			<div id="dataSheetHeader" class="modal-header-custom">
@@ -972,7 +963,6 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<div id="quickEditDialog" class="modal-custom">
 		<div class="modal-content-custom">
 			<div class="modal-header-custom">
@@ -991,12 +981,10 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<div id="virtualKeyboard">
 		<div id="shortcutContainer"></div>
 		<div id="keyboardRows"></div>
 	</div>
-
 	<div id="confirmModalCustom" class="modal-custom full-height-custom">
 		<div class="modal-content-custom">
 			<div class="modal-header-custom">
@@ -1012,7 +1000,6 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<div id="calculatorModalCustom" class="modal-custom full-height-custom">
 		<div class="modal-content-custom">
 			<div class="modal-header-custom">
@@ -1040,7 +1027,6 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<div id="duplicateConfirmationModalCustom" class="modal-custom full-height-custom">
 		<div class="modal-content-custom">
 			<div class="modal-header-custom">
@@ -1065,7 +1051,6 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<div id="sortModalCustom" class="full-height-custom modal-custom">
 		<div class="modal-content-custom">
 			<div class="modal-header-custom">
@@ -1076,8 +1061,7 @@ mdui-fab .mdui-icon,
 				<div class="data-form" style="padding: 0 16px;">
 					<p style="color: #757575; font-size: 0.9rem; margin-bottom: 16px;">从上到下优先级依次降低（先按第一条，再按第二条，以此类推）</p>
 					<mdui-button variant="outlined" id="addSortRuleBtn" style="width: 100%; margin-top: 12px;">
-						<mdui-icon name="add"></mdui-icon> 添加排序规则
-					</mdui-button>
+						<mdui-icon name="add"></mdui-icon> 添加排序规则 </mdui-button>
 					<div id="sortRulesContainer"></div>
 				</div>
 			</div>
@@ -1087,11 +1071,8 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</div>
-
 	<mdui-fab icon="add" id="mainFab"></mdui-fab>
-
-	<script type="text/template" id="duplicate-item-template">
-		<div class="duplicate-item">
+	<script type="text/template" id="duplicate-item-template"> <div class="duplicate-item">
 			<h4>产品号：PRODUCT_ID</h4>
 			<div class="duplicate-differences">
 				<table>
@@ -1111,80 +1092,31 @@ mdui-fab .mdui-icon,
 			</div>
 		</div>
 	</script>
-
-	<script type="text/template" id="difference-row-template">
-		<tr>
+	<script type="text/template" id="difference-row-template"> <tr>
 			<th>FIELD_NAME</th>
 			<td>OLD_VALUE</td>
 			<td style="color: #f44336; font-weight: bold;">NEW_VALUE</td>
 		</tr>
 	</script>
-
-<mdui-dialog 
-    id="aboutDialog" 
-    fullscreen
-    headline="关于 & 操作指南" 
-    close-on-overlay-click 
-    class="full-height-custom"
->
-    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">
-        圆棒入库数据管理
-        <br><span style="font-size: 12px; font-weight: normal; color: #666;">版本：26.1.06</span>
-    </div>
-    
-    <div style="font-size: 12px; color: #888; margin-bottom: 12px;">
-        制作：使用Gemini + Doubao + Grok<br/>
-        更新：持续修复 bug，优化用户体验
-    </div>
-
-    <mdui-divider style="margin-bottom: 12px;"></mdui-divider>
-
-    <div style="font-size: 13px; line-height: 1.8; color: #333;">
-        <strong>【基础操作】</strong><br/>
-        • <b>添加/编辑数据</b>：点击右下角 + 按钮，或直接点击表格行<br/>
-        • <b>快速编辑</b>：点击表格单元格，可快速修改单个字段<br/>
-        • <b>多选删除</b>：点击右上角 ⋮ → 进入多选模式 → 勾选行 → 批量删除<br/>
-        <br/>
-
-        <strong>【数据处理】</strong><br/>
-        • <b>导入/导出 Excel</b>：左侧抽屉菜单 → 导入 Excel / 导出 Excel<br/>
-        • <b>搜索</b>：顶部搜索框输入关键字，支持搜索所有字段<br/>
-        • <b>搜索替换</b>：点击 🔍↔️ 按钮打开替换面板，可替换当前或全部<br/>
-        • <b>计算重量</b>：抽屉菜单 → 计算重量 → 输入参数并填充<br/>
-        • <b>数据排序</b>：抽屉菜单 → 数据排序 → 添加规则并应用<br/>
-        <br/>
-
-        <strong>【手势与显示】</strong><br/>
-        • <b>表格缩放</b>：双指捏合缩小，双指张开放大（最大原尺寸）<br/>
-        • <b>移动行序</b>：鼠标悬停在行左侧，使用出现 ↑↓ 按钮拖动<br/>
-        • <b>手机端移动行序</b>：进入多选模式，点击项目出现 ↑↓ 按钮点击操作<br/>
-        <br/>
-
-        <strong>【虚拟键盘说明】</strong><br/>
-        • <b>自动弹出</b>：点击输入框自动弹出自定义键盘<br/>
-        • <b>切换字段</b>：点击右下角 <b>▼（完成）</b> 键自动跳转下一项<br/>
-        • <b>关闭键盘</b>：长按 <b>▼</b> 键或在快编模式点击 <b>✔</b> 键<br/>
-        • <b>快捷删除</b>：<b>←✘</b> 清空内容；<b>←</b> 删除前一字符（支持长按）<br/>
-        • <b>快捷输入</b>：首行支持钢种、状态、位置等一键填入<br/>
-    </div>
-
-    <div style="margin-top: 16px; font-size: 12px; color: #999; text-align: center;">
-        如有问题或建议，欢迎反馈改进。感谢使用！
-    </div>
-    
-    <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
-        关闭
-    </mdui-button>
-</mdui-dialog>
-
-    <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
-        关闭
-    </mdui-button>
-</mdui-dialog>
-		
-
+	<mdui-dialog id="aboutDialog" fullscreen headline="关于 & 操作指南" close-on-overlay-click class="full-height-custom">
+		<div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"> 圆棒入库数据管理 <br><span style="font-size: 12px; font-weight: normal; color: #666;">版本：26.1.06</span>
+		</div>
+		<div style="font-size: 12px; color: #888; margin-bottom: 12px;"> 制作：使用Gemini + Doubao + Grok<br /> 更新：持续修复 bug，优化用户体验 </div>
+		<mdui-divider style="margin-bottom: 12px;"></mdui-divider>
+		<div style="font-size: 13px; line-height: 1.8; color: #333;">
+			<strong>【基础操作】</strong><br /> • <b>添加/编辑数据</b>：点击右下角 + 按钮，或直接点击表格行<br /> • <b>快速编辑</b>：点击表格单元格，可快速修改单个字段<br /> • <b>多选删除</b>：点击右上角 ⋮ → 进入多选模式 → 勾选行 → 批量删除<br />
+			<br />
+			<strong>【数据处理】</strong><br /> • <b>导入/导出 Excel</b>：左侧抽屉菜单 → 导入 Excel / 导出 Excel<br /> • <b>搜索</b>：顶部搜索框输入关键字，支持搜索所有字段<br /> • <b>搜索替换</b>：点击 🔍↔️ 按钮打开替换面板，可替换当前或全部<br /> • <b>计算重量</b>：抽屉菜单 → 计算重量 → 输入参数并填充<br /> • <b>数据排序</b>：抽屉菜单 → 数据排序 → 添加规则并应用<br />
+			<br />
+			<strong>【手势与显示】</strong><br /> • <b>表格缩放</b>：双指捏合缩小，双指张开放大（最大原尺寸）<br /> • <b>移动行序</b>：鼠标悬停在行左侧，使用出现 ↑↓ 按钮拖动<br /> • <b>手机端移动行序</b>：进入多选模式，点击项目出现 ↑↓ 按钮点击操作<br />
+			<br />
+			<strong>【虚拟键盘说明】</strong><br /> • <b>自动弹出</b>：点击输入框自动弹出自定义键盘<br /> • <b>切换字段</b>：点击右下角 <b>▼（完成）</b> 键自动跳转下一项<br /> • <b>关闭键盘</b>：长按 <b>▼</b> 键或在快编模式点击 <b>✔</b> 键<br /> • <b>快捷删除</b>：<b>←✘</b> 清空内容；<b>←</b> 删除前一字符（支持长按）<br /> • <b>快捷输入</b>：首行支持钢种、状态、位置等一键填入<br />
+		</div>
+		<div style="margin-top: 16px; font-size: 12px; color: #999; text-align: center;"> 如有问题或建议，欢迎反馈改进。感谢使用！ </div>
+		<mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;"> 关闭 </mdui-button>
+	</mdui-dialog>
+	
 	<mdui-snackbar id="general-snackbar" placement="bottom-center" closeable></mdui-snackbar>
-
 	<script>
 		/**
 		 * =========================================================================
@@ -1207,8 +1139,8 @@ mdui-fab .mdui-icon,
 		let searchTerm = '';            // 当前搜索关键字
 		let isSearchReplaceVisible = false; // 搜索替换区域是否可见
 		let currentPage = 1;
-        const PAGE_SIZE = 50; // 每页条数，可根据设备调整（手机50，平板100）
-        let totalPages = 1;
+		        const PAGE_SIZE = 50; // 每页条数，可根据设备调整（手机50，平板100）
+		        let totalPages = 1;
 		// 搜索/替换变量
 		let searchMatches = [];         
 		let currentMatchIndex = -1;     
@@ -1218,9 +1150,9 @@ mdui-fab .mdui-icon,
 		    'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'
 		];
 		let duplicateCurrentPage = 1;
-        const DUPLICATE_PAGE_SIZE = 10; // 重复确认每页显示条数
-        let duplicateTotalPages = 1;
-        let isFilterMatchRows = false; // 是否启用“只显示匹配行”
+		        const DUPLICATE_PAGE_SIZE = 10; // 重复确认每页显示条数
+		        let duplicateTotalPages = 1;
+		        let isFilterMatchRows = false; // 是否启用“只显示匹配行”
 		// 数据表单字段顺序，用于虚拟键盘的 Tab 切换逻辑
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
@@ -1343,9 +1275,9 @@ mdui-fab .mdui-icon,
 		  aboutItem: document.getElementById('aboutItem'),
 		  totalCountText: document.getElementById('totalCountText'),
 		  bottomPrevBtn: document.getElementById('bottomPrevBtn'),   // 前一页按钮
-            bottomNextBtn: document.getElementById('bottomNextBtn'),    // 下一页按钮
-            pageInfoText: document.getElementById('pageInfoText'),      // "第 x/y 页" 文字
-            pageJumpInput:document.getElementById('pageJumpInput')   // 跳转输入框
+		            bottomNextBtn: document.getElementById('bottomNextBtn'),    // 下一页按钮
+		            pageInfoText: document.getElementById('pageInfoText'),      // "第 x/y 页" 文字
+		            pageJumpInput:document.getElementById('pageJumpInput')   // 跳转输入框
 		  
 		  
 		};
@@ -1543,13 +1475,13 @@ mdui-fab .mdui-icon,
 		  }
 		  
 		dom.searchInput.addEventListener('input', (e) => {
-    const newQuery = e.target.value.trim();
-    if (newQuery !== dom.searchInput.value.trim()) return; // 防抖用（可选）
-
-    // 每次输入都重新搜索 + 高亮
-    startSearch();
-    updateTable(); // 触发高亮应用
-});
+		    const newQuery = e.target.value.trim();
+		    if (newQuery !== dom.searchInput.value.trim()) return; // 防抖用（可选）
+		
+		    // 每次输入都重新搜索 + 高亮
+		    startSearch();
+		    updateTable(); // 触发高亮应用
+		});
 		  
 		  dom.replaceQueryInput.addEventListener('input', () => {
 		    dom.replaceOneBtn.disabled = searchMatches.length === 0;
@@ -1652,14 +1584,14 @@ mdui-fab .mdui-icon,
 		            updateTable();
 		        }
 		    });
-
+		
 		    dom.bottomNextBtn.addEventListener('click', () => {
 		        if (currentPage < totalPages) {
 		            currentPage++;
 		            updateTable();
 		        }
 		    });
-
+		
 		    // 新增：点击页码文本显示输入框
 		    dom.pageInfoText.addEventListener('click', () => {
 		        dom.pageInfoText.style.display = 'none';
@@ -1667,7 +1599,7 @@ mdui-fab .mdui-icon,
 		        dom.pageJumpInput.focus();
 		        dom.pageJumpInput.select();
 		    });
-
+		
 		    // 输入框回车或失焦跳转
 		    dom.pageJumpInput.addEventListener('keydown', (e) => {
 		        if (e.key === 'Enter') {
@@ -1678,7 +1610,7 @@ mdui-fab .mdui-icon,
 		  
 		  
 		  dom.pageJumpInput.addEventListener('blur', jumpToPage);
-
+		
 		    
 		}
 		
@@ -1758,17 +1690,17 @@ mdui-fab .mdui-icon,
 		    )
 		  );
 		}
-function updateTable() {
-    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
-const displayData = [...tableData];
-
+		function updateTable() {
+		    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
+		const displayData = [...tableData];
+		
 		    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
 		    currentPage = Math.min(currentPage, totalPages);
-
+		
 		    const startIndex = (currentPage - 1) * PAGE_SIZE;
 		    const endIndex = startIndex + PAGE_SIZE;
 		    const pageData = displayData.slice(startIndex, endIndex);
-
+		
 		    // 更新底部栏信息
 		    dom.totalCountText.textContent = `共 ${tableData.length} 条数据`;
 		    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
@@ -1776,462 +1708,462 @@ const displayData = [...tableData];
 		    dom.pageJumpInput.max = totalPages;
 		    dom.bottomPrevBtn.disabled = currentPage === 1;
 		    dom.bottomNextBtn.disabled = currentPage === totalPages;
-
-    dom.emptyState.style.display = tableData.length === 0 ? 'block' : 'none';
-    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
-    dom.selectedCount.textContent = selectedRows.size;
-
-    // 多选模式下显示/隐藏复选框列
-    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
-    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
-    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
-
-    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
-    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
-    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
-    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
-
-    // 全选复选框状态
-    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
-        const origIndex = tableData.indexOf(item);
-        return selectedRows.has(origIndex);
-    });
-
-    // 清空并重新渲染表格体
-    dom.tableBody.innerHTML = '';
-
-    pageData.forEach((item, displayIndex) => {
-        const originalIndex = tableData.indexOf(item);
-        const globalSeq = originalIndex + 1;
-
-        const row = document.createElement('tr');
-        row.setAttribute('data-index', originalIndex);
-
-        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
-
-        row.innerHTML = `
-          <td class="seq-col">
-            ${globalSeq}
-            <div class="move-buttons">
-                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
-                  <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
-                </button>
-                <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
-                  <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
-                </button>
-            </div>
-          </td>
-          <td class="checkbox-col" style="display:${displayStyle};">
-            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
-          </td>
-          <td data-field="steelType">${item.steelType || '-'}</td>
-          <td data-field="productId">${item.productId || '-'}</td>
-          <td data-field="cardId">${item.cardId || '-'}</td>
-          <td data-field="furnaceId">${item.furnaceId || '-'}</td>
-          <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
-          <td data-field="diameter">${item.diameter || '-'}</td>
-          <td data-field="length">${item.length || '-'}</td>
-          <td data-field="weight">${item.weight || '-'}</td>
-          <td data-field="status">${item.status || '-'}</td>
-          <td data-field="position">${item.position || '-'}</td>
-          <td data-field="hardness">${item.hardness || '-'}</td>
-          <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
-          <td class="action-col">
-            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
-            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
-          </td>
-        `;
-
-        dom.tableBody.appendChild(row);
-    });
-
-    // 应用搜索高亮（必须在行渲染完成后执行）
-    applySearchHighlight();
-
-    // 绑定行内按钮事件（编辑、删除、移动、复选框）
-    bindRowEvents();
-
-    // 如果你之前有独立的 renderPaginationControls 调用，请删除或注释掉
-    // const oldPagination = document.getElementById('paginationControls');
-    // if (oldPagination) oldPagination.remove();
-}
-/**
- * 更新搜索结果计数显示（修复占位符暴露问题）
- */
-function updateSearchResultCount() {
-  const resultCountEl = document.getElementById('searchResultCount');
-  if (!resultCountEl) return; // 防DOM元素不存在
-  
-  const matchCount = searchMatches.length;
-  let countText = `找到 ${matchCount} 个匹配项`;
-  
-  // 只有存在匹配项时，才显示当前匹配位置
-  if (matchCount > 0 && currentMatchIndex >= 0) {
-    const currentPos = currentMatchIndex + 1;
-    countText += ` (当前 ${currentPos}/${matchCount})`;
-  }
-  
-  // 安全设置文本（核心修复：避免语法占位符暴露）
-  resultCountEl.textContent = countText;
-}
-// 新增：统一的高亮函数，便于在翻页或替换后调用
-function applySearchHighlight() {
-    const query = dom.searchInput.value.trim().toLowerCase();
-
-    // 如果没有搜索词，清除所有高亮和计数
-    if (!query || !isSearchActive) {
-        document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
-            el.classList.remove('search-match-highlight', 'current-match-highlight');
-        });
-        dom.searchResultCount.textContent = '';
-        return;
-    }
-
-    // 清除旧高亮
-    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
-        el.classList.remove('search-match-highlight', 'current-match-highlight');
-    });
-
-    // 高亮当前页所有包含搜索词的单元格（无论替换面板是否打开）
-    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
-        const rowIndex = parseInt(row.getAttribute('data-index'));
-        searchableFields.forEach(field => {
-            const cell = row.querySelector(`td[data-field="${field}"]`);
-            if (!cell) return;
-            const cellValue = (tableData[rowIndex][field] || '').toString().toLowerCase();
-            if (cellValue.includes(query)) {
-                cell.classList.add('search-match-highlight');
-            }
-        });
-    });
-
-    // 更新搜索结果计数（仅在替换面板打开时显示详细计数）
-    if (isSearchReplaceVisible) {
-        if (searchMatches.length === 0) {
-            dom.searchResultCount.textContent = '未找到匹配项';
-        } else {
-            // 防止越界
-            if (currentMatchIndex < 0) currentMatchIndex = 0;
-            if (currentMatchIndex >= searchMatches.length) currentMatchIndex = searchMatches.length - 1;
-
-            dom.searchResultCount.textContent = 
-                `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
-        }
-    } else {
-        // 替换面板关闭时，只显示找到多少个（不显示当前第几个）
-        dom.searchResultCount.textContent = searchMatches.length > 0 
-            ? `找到 ${searchMatches.length} 个匹配项` 
-            : '';
-    }
-
-    // 如果有当前匹配项，高亮边框并滚动（仅在替换面板打开时）
-    if (isSearchReplaceVisible && currentMatchIndex !== -1 && searchMatches.length > 0) {
-        highlightAndScrollToCurrentMatch();
-    }
-}
-
-// 高亮当前匹配项并滚动
-function highlightAndScrollToCurrentMatch() {
-    // 先清除旧高亮
-    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
-        el.classList.remove('search-match-highlight', 'current-match-highlight');
-    });
-
-    const match = searchMatches[currentMatchIndex];
-    const targetRow = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
-    if (!targetRow) return;
-
-    // 高亮该行所有匹配字段
-    searchableFields.forEach(field => {
-        const cell = targetRow.querySelector(`td[data-field="${field}"]`);
-        if (!cell) return;
-        const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
-        const query = dom.searchInput.value.trim().toLowerCase();
-        if (query && cellValue.includes(query)) {
-            cell.classList.add('search-match-highlight');
-        }
-    });
-
-    // 当前匹配字段加边框高亮
-    const currentCell = targetRow.querySelector(`td[data-field="${match.field}"]`);
-    if (currentCell) {
-        currentCell.classList.add('current-match-highlight');
-
-        // 平滑滚动到单元格
-        const container = document.querySelector('.data-table-container');
-        if (container) {
-            const cellRect = currentCell.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-
-            const offsetTop = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
-            const offsetLeft = container.scrollLeft + cellRect.left - containerRect.left - (containerRect.width / 3);
-
-            container.scrollTo({
-                top: offsetTop,
-                left: Math.max(0, offsetLeft),
-                behavior: 'smooth'
-            });
-        }
-    }
-}
-function startSearch() {
-    const query = dom.searchInput.value.trim();
-    if (!query) {
-        isSearchActive = false;
-        searchMatches = [];
-        currentMatchIndex = -1;
-        applySearchHighlight(); // 清除高亮
-        dom.replaceOneBtn.disabled = true;
-        dom.replaceAllBtn.disabled = true;
-        return;
-    }
-
-    searchMatches = [];
-    tableData.forEach((item, index) => {
-        searchableFields.forEach(field => {
-            const value = (item[field] || '').toString().toLowerCase();
-            if (value.includes(query.toLowerCase())) {
-                searchMatches.push({
-                    rowIndex: index,
-                    field: field
-                });
-            }
-        });
-    });
-
-    isSearchActive = true;
-    currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
-
-    dom.replaceOneBtn.disabled = searchMatches.length === 0;
-    dom.replaceAllBtn.disabled = searchMatches.length === 0;
-
-    // 跳转到第一个匹配项（会自动翻页并滚动）
-    if (searchMatches.length > 0) {
-        jumpToMatch(0);
-    } else {
-        applySearchHighlight();
-    }
-}
-
-function navigateMatch(direction) {
-    if (searchMatches.length === 0) {
-        dom.searchResultCount.textContent = '未找到匹配项';
-        return;
-    }
-
-    // 计算新的匹配索引（支持循环）
-    let newIndex = currentMatchIndex + direction;
-    if (newIndex >= searchMatches.length) newIndex = 0;
-    if (newIndex < 0) newIndex = searchMatches.length - 1;
-
-    // 【关键修复】直接跳转到目标匹配项所在页面
-    jumpToMatch(newIndex);
-}
-
-function jumpToMatch(matchIndex) {
-    if (matchIndex < 0 || matchIndex >= searchMatches.length) return;
-
-    currentMatchIndex = matchIndex;
-    const match = searchMatches[currentMatchIndex];
-    const targetRowIndex = match.rowIndex; // 这是全局 tableData 中的索引
-
-    // 计算目标页面
-    const targetPage = Math.floor(targetRowIndex / PAGE_SIZE) + 1;
-
-    // 如果不在当前页，先翻页
-    if (currentPage !== targetPage) {
-        currentPage = targetPage;
-        updateTable(); // 渲染新页面
-
-        // 等待 DOM 更新完成后高亮并滚动
-        requestAnimationFrame(() => {
-            setTimeout(highlightAndScrollToCurrentMatch, 100);
-        });
-    } else {
-        // 同页直接高亮滚动
-        highlightAndScrollToCurrentMatch();
-    }
-
-    // 更新计数显示
-    dom.searchResultCount.textContent = 
-        `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
-}
-
-function renderPaginationControls(totalFiltered) {
-    // 移除旧的分页控件
-    const oldPagination = document.getElementById('paginationControls');
-    if (oldPagination) oldPagination.remove();
-
-    if (totalPages <= 1) return;
-
-    const paginationDiv = document.createElement('div');
-    paginationDiv.id = 'paginationControls';
-    paginationDiv.style.cssText = `
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        gap: 8px; 
-        padding: 16px; 
-        background-color: var(--surface-color);
-        
-    `;
-
-    // ==================== 上一页按钮 ====================
-    const prevBtn = document.createElement('mdui-button-icon');
-    prevBtn.icon = 'navigate_before';
-    prevBtn.disabled = currentPage === 1;
-
-    let prevLongPressTimer = null;
-    const LONG_PRESS_DELAY = 500;
-
-    prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (currentPage > 1) {
-            currentPage--;
-            updateTable();
-            scrollToTopSmooth();
-            updatePageInfoDisplay();
-            prevBtn.disabled = currentPage === 1;
-            nextBtn.disabled = currentPage === totalPages;
-        }
-    });
-
-    // 长按跳到第一页
-    prevBtn.addEventListener('pointerdown', (e) => {
-        if (currentPage === 1) return;
-        prevLongPressTimer = setTimeout(() => {
-            currentPage = 1;
-            updateTable();
-            scrollToTopSmooth();
-            updatePageInfoDisplay();
-            prevBtn.disabled = true;
-            nextBtn.disabled = currentPage === totalPages;
-        }, LONG_PRESS_DELAY);
-    });
-
-    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongPressTimer));
-    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongPressTimer));
-    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongPressTimer));
-
-    // ==================== 下一页按钮 ====================
-    const nextBtn = document.createElement('mdui-button-icon');
-    nextBtn.icon = 'navigate_next';
-    nextBtn.disabled = currentPage === totalPages;
-
-    let nextLongPressTimer = null;
-
-    nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (currentPage < totalPages) {
-            currentPage++;
-            updateTable();
-            scrollToTopSmooth();
-            updatePageInfoDisplay();
-            prevBtn.disabled = currentPage === 1;
-            nextBtn.disabled = currentPage === totalPages;
-        }
-    });
-
-    // 长按跳到最后一页
-    nextBtn.addEventListener('pointerdown', (e) => {
-        if (currentPage === totalPages) return;
-        nextLongPressTimer = setTimeout(() => {
-            currentPage = totalPages;
-            updateTable();
-            scrollToTopSmooth();
-            updatePageInfoDisplay();
-            nextBtn.disabled = true;
-            prevBtn.disabled = currentPage === 1;
-        }, LONG_PRESS_DELAY);
-    });
-
-    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongPressTimer));
-    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongPressTimer));
-    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongPressTimer));
-
-    // ==================== 页码显示与输入 ====================
-    const pageInfoContainer = document.createElement('div');
-    pageInfoContainer.style.display = 'flex';
-    pageInfoContainer.style.alignItems = 'center';
-    pageInfoContainer.style.minWidth = '80px';
-    pageInfoContainer.style.justifyContent = 'center';
-
-    const pageInfoText = document.createElement('span');
-    pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
-    pageInfoText.style.fontSize = '0.95rem';
-    pageInfoText.style.color = '#757575';
-    pageInfoText.style.cursor = 'pointer';
-    pageInfoText.style.userSelect = 'none';
-
-    const pageInput = document.createElement('input');
-    pageInput.type = 'number';
-    pageInput.value = currentPage;
-    pageInput.style.width = '60px';
-    pageInput.style.padding = '4px 8px';
-    pageInput.style.fontSize = '0.95rem';
-    pageInput.style.border = '1px solid var(--border-color)';
-    pageInput.style.borderRadius = '4px';
-    pageInput.style.textAlign = 'center';
-    pageInput.style.display = 'none';
-    pageInput.min = 1;
-    pageInput.max = totalPages;
-
-    pageInfoContainer.appendChild(pageInfoText);
-    pageInfoContainer.appendChild(pageInput);
-
-    pageInfoText.addEventListener('click', () => {
-        pageInfoText.style.display = 'none';
-        pageInput.style.display = 'inline-block';
-        pageInput.focus();
-        pageInput.select();
-    });
-
-    function confirmPageJump() {
-        let targetPage = parseInt(pageInput.value);
-        targetPage = Math.max(1, Math.min(totalPages, isNaN(targetPage) ? currentPage : targetPage));
-        if (targetPage !== currentPage) {
-            currentPage = targetPage;
-            updateTable();
-            scrollToTopSmooth();
-        }
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = currentPage === totalPages;
-        updatePageInfoDisplay();
-    }
-
-    pageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmPageJump();
-        }
-    });
-
-    pageInput.addEventListener('blur', confirmPageJump);
-
-    function updatePageInfoDisplay() {
-        pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
-        pageInput.value = currentPage;
-        pageInput.max = totalPages;
-        pageInput.style.display = 'none';
-        pageInfoText.style.display = 'inline-block';
-    }
-
-    paginationDiv.appendChild(prevBtn);
-    paginationDiv.appendChild(pageInfoContainer);
-    paginationDiv.appendChild(nextBtn);
-
-    const tableContainerDiv = document.querySelector('.data-table-container-div');
-    tableContainerDiv.parentNode.insertBefore(paginationDiv, tableContainerDiv.nextSibling);
-}
-
-
-function scrollToTopSmooth() {
-    const container = document.querySelector('.data-table-container');
-    if (container) {
-        container.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-}
-
+		
+		    dom.emptyState.style.display = tableData.length === 0 ? 'block' : 'none';
+		    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+		    dom.selectedCount.textContent = selectedRows.size;
+		
+		    // 多选模式下显示/隐藏复选框列
+		    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+		    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
+		    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
+		
+		    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
+		    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
+		    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
+		    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
+		
+		    // 全选复选框状态
+		    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
+		        const origIndex = tableData.indexOf(item);
+		        return selectedRows.has(origIndex);
+		    });
+		
+		    // 清空并重新渲染表格体
+		    dom.tableBody.innerHTML = '';
+		
+		    pageData.forEach((item, displayIndex) => {
+		        const originalIndex = tableData.indexOf(item);
+		        const globalSeq = originalIndex + 1;
+		
+		        const row = document.createElement('tr');
+		        row.setAttribute('data-index', originalIndex);
+		
+		        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
+		
+		        row.innerHTML = `
+		          <td class="seq-col">
+		            ${globalSeq}
+		            <div class="move-buttons">
+		                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
+		                  <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
+		                </button>
+		                <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
+		                  <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
+		                </button>
+		            </div>
+		          </td>
+		          <td class="checkbox-col" style="display:${displayStyle};">
+		            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
+		          </td>
+		          <td data-field="steelType">${item.steelType || '-'}</td>
+		          <td data-field="productId">${item.productId || '-'}</td>
+		          <td data-field="cardId">${item.cardId || '-'}</td>
+		          <td data-field="furnaceId">${item.furnaceId || '-'}</td>
+		          <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
+		          <td data-field="diameter">${item.diameter || '-'}</td>
+		          <td data-field="length">${item.length || '-'}</td>
+		          <td data-field="weight">${item.weight || '-'}</td>
+		          <td data-field="status">${item.status || '-'}</td>
+		          <td data-field="position">${item.position || '-'}</td>
+		          <td data-field="hardness">${item.hardness || '-'}</td>
+		          <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
+		          <td class="action-col">
+		            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+		            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
+		          </td>
+		        `;
+		
+		        dom.tableBody.appendChild(row);
+		    });
+		
+		    // 应用搜索高亮（必须在行渲染完成后执行）
+		    applySearchHighlight();
+		
+		    // 绑定行内按钮事件（编辑、删除、移动、复选框）
+		    bindRowEvents();
+		
+		    // 如果你之前有独立的 renderPaginationControls 调用，请删除或注释掉
+		    // const oldPagination = document.getElementById('paginationControls');
+		    // if (oldPagination) oldPagination.remove();
+		}
+		/**
+		 * 更新搜索结果计数显示（修复占位符暴露问题）
+		 */
+		function updateSearchResultCount() {
+		  const resultCountEl = document.getElementById('searchResultCount');
+		  if (!resultCountEl) return; // 防DOM元素不存在
+		  
+		  const matchCount = searchMatches.length;
+		  let countText = `找到 ${matchCount} 个匹配项`;
+		  
+		  // 只有存在匹配项时，才显示当前匹配位置
+		  if (matchCount > 0 && currentMatchIndex >= 0) {
+		    const currentPos = currentMatchIndex + 1;
+		    countText += ` (当前 ${currentPos}/${matchCount})`;
+		  }
+		  
+		  // 安全设置文本（核心修复：避免语法占位符暴露）
+		  resultCountEl.textContent = countText;
+		}
+		// 新增：统一的高亮函数，便于在翻页或替换后调用
+		function applySearchHighlight() {
+		    const query = dom.searchInput.value.trim().toLowerCase();
+		
+		    // 如果没有搜索词，清除所有高亮和计数
+		    if (!query || !isSearchActive) {
+		        document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+		            el.classList.remove('search-match-highlight', 'current-match-highlight');
+		        });
+		        dom.searchResultCount.textContent = '';
+		        return;
+		    }
+		
+		    // 清除旧高亮
+		    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+		        el.classList.remove('search-match-highlight', 'current-match-highlight');
+		    });
+		
+		    // 高亮当前页所有包含搜索词的单元格（无论替换面板是否打开）
+		    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+		        const rowIndex = parseInt(row.getAttribute('data-index'));
+		        searchableFields.forEach(field => {
+		            const cell = row.querySelector(`td[data-field="${field}"]`);
+		            if (!cell) return;
+		            const cellValue = (tableData[rowIndex][field] || '').toString().toLowerCase();
+		            if (cellValue.includes(query)) {
+		                cell.classList.add('search-match-highlight');
+		            }
+		        });
+		    });
+		
+		    // 更新搜索结果计数（仅在替换面板打开时显示详细计数）
+		    if (isSearchReplaceVisible) {
+		        if (searchMatches.length === 0) {
+		            dom.searchResultCount.textContent = '未找到匹配项';
+		        } else {
+		            // 防止越界
+		            if (currentMatchIndex < 0) currentMatchIndex = 0;
+		            if (currentMatchIndex >= searchMatches.length) currentMatchIndex = searchMatches.length - 1;
+		
+		            dom.searchResultCount.textContent = 
+		                `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
+		        }
+		    } else {
+		        // 替换面板关闭时，只显示找到多少个（不显示当前第几个）
+		        dom.searchResultCount.textContent = searchMatches.length > 0 
+		            ? `找到 ${searchMatches.length} 个匹配项` 
+		            : '';
+		    }
+		
+		    // 如果有当前匹配项，高亮边框并滚动（仅在替换面板打开时）
+		    if (isSearchReplaceVisible && currentMatchIndex !== -1 && searchMatches.length > 0) {
+		        highlightAndScrollToCurrentMatch();
+		    }
+		}
+		
+		// 高亮当前匹配项并滚动
+		function highlightAndScrollToCurrentMatch() {
+		    // 先清除旧高亮
+		    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
+		        el.classList.remove('search-match-highlight', 'current-match-highlight');
+		    });
+		
+		    const match = searchMatches[currentMatchIndex];
+		    const targetRow = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
+		    if (!targetRow) return;
+		
+		    // 高亮该行所有匹配字段
+		    searchableFields.forEach(field => {
+		        const cell = targetRow.querySelector(`td[data-field="${field}"]`);
+		        if (!cell) return;
+		        const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
+		        const query = dom.searchInput.value.trim().toLowerCase();
+		        if (query && cellValue.includes(query)) {
+		            cell.classList.add('search-match-highlight');
+		        }
+		    });
+		
+		    // 当前匹配字段加边框高亮
+		    const currentCell = targetRow.querySelector(`td[data-field="${match.field}"]`);
+		    if (currentCell) {
+		        currentCell.classList.add('current-match-highlight');
+		
+		        // 平滑滚动到单元格
+		        const container = document.querySelector('.data-table-container');
+		        if (container) {
+		            const cellRect = currentCell.getBoundingClientRect();
+		            const containerRect = container.getBoundingClientRect();
+		
+		            const offsetTop = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
+		            const offsetLeft = container.scrollLeft + cellRect.left - containerRect.left - (containerRect.width / 3);
+		
+		            container.scrollTo({
+		                top: offsetTop,
+		                left: Math.max(0, offsetLeft),
+		                behavior: 'smooth'
+		            });
+		        }
+		    }
+		}
+		function startSearch() {
+		    const query = dom.searchInput.value.trim();
+		    if (!query) {
+		        isSearchActive = false;
+		        searchMatches = [];
+		        currentMatchIndex = -1;
+		        applySearchHighlight(); // 清除高亮
+		        dom.replaceOneBtn.disabled = true;
+		        dom.replaceAllBtn.disabled = true;
+		        return;
+		    }
+		
+		    searchMatches = [];
+		    tableData.forEach((item, index) => {
+		        searchableFields.forEach(field => {
+		            const value = (item[field] || '').toString().toLowerCase();
+		            if (value.includes(query.toLowerCase())) {
+		                searchMatches.push({
+		                    rowIndex: index,
+		                    field: field
+		                });
+		            }
+		        });
+		    });
+		
+		    isSearchActive = true;
+		    currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
+		
+		    dom.replaceOneBtn.disabled = searchMatches.length === 0;
+		    dom.replaceAllBtn.disabled = searchMatches.length === 0;
+		
+		    // 跳转到第一个匹配项（会自动翻页并滚动）
+		    if (searchMatches.length > 0) {
+		        jumpToMatch(0);
+		    } else {
+		        applySearchHighlight();
+		    }
+		}
+		
+		function navigateMatch(direction) {
+		    if (searchMatches.length === 0) {
+		        dom.searchResultCount.textContent = '未找到匹配项';
+		        return;
+		    }
+		
+		    // 计算新的匹配索引（支持循环）
+		    let newIndex = currentMatchIndex + direction;
+		    if (newIndex >= searchMatches.length) newIndex = 0;
+		    if (newIndex < 0) newIndex = searchMatches.length - 1;
+		
+		    // 【关键修复】直接跳转到目标匹配项所在页面
+		    jumpToMatch(newIndex);
+		}
+		
+		function jumpToMatch(matchIndex) {
+		    if (matchIndex < 0 || matchIndex >= searchMatches.length) return;
+		
+		    currentMatchIndex = matchIndex;
+		    const match = searchMatches[currentMatchIndex];
+		    const targetRowIndex = match.rowIndex; // 这是全局 tableData 中的索引
+		
+		    // 计算目标页面
+		    const targetPage = Math.floor(targetRowIndex / PAGE_SIZE) + 1;
+		
+		    // 如果不在当前页，先翻页
+		    if (currentPage !== targetPage) {
+		        currentPage = targetPage;
+		        updateTable(); // 渲染新页面
+		
+		        // 等待 DOM 更新完成后高亮并滚动
+		        requestAnimationFrame(() => {
+		            setTimeout(highlightAndScrollToCurrentMatch, 100);
+		        });
+		    } else {
+		        // 同页直接高亮滚动
+		        highlightAndScrollToCurrentMatch();
+		    }
+		
+		    // 更新计数显示
+		    dom.searchResultCount.textContent = 
+		        `找到 ${searchMatches.length} 个匹配项 (当前 \( {currentMatchIndex + 1}/ \){searchMatches.length})`;
+		}
+		
+		function renderPaginationControls(totalFiltered) {
+		    // 移除旧的分页控件
+		    const oldPagination = document.getElementById('paginationControls');
+		    if (oldPagination) oldPagination.remove();
+		
+		    if (totalPages <= 1) return;
+		
+		    const paginationDiv = document.createElement('div');
+		    paginationDiv.id = 'paginationControls';
+		    paginationDiv.style.cssText = `
+		        display: flex; 
+		        justify-content: center; 
+		        align-items: center; 
+		        gap: 8px; 
+		        padding: 16px; 
+		        background-color: var(--surface-color);
+		        
+		    `;
+		
+		    // ==================== 上一页按钮 ====================
+		    const prevBtn = document.createElement('mdui-button-icon');
+		    prevBtn.icon = 'navigate_before';
+		    prevBtn.disabled = currentPage === 1;
+		
+		    let prevLongPressTimer = null;
+		    const LONG_PRESS_DELAY = 500;
+		
+		    prevBtn.addEventListener('click', (e) => {
+		        e.stopPropagation();
+		        if (currentPage > 1) {
+		            currentPage--;
+		            updateTable();
+		            scrollToTopSmooth();
+		            updatePageInfoDisplay();
+		            prevBtn.disabled = currentPage === 1;
+		            nextBtn.disabled = currentPage === totalPages;
+		        }
+		    });
+		
+		    // 长按跳到第一页
+		    prevBtn.addEventListener('pointerdown', (e) => {
+		        if (currentPage === 1) return;
+		        prevLongPressTimer = setTimeout(() => {
+		            currentPage = 1;
+		            updateTable();
+		            scrollToTopSmooth();
+		            updatePageInfoDisplay();
+		            prevBtn.disabled = true;
+		            nextBtn.disabled = currentPage === totalPages;
+		        }, LONG_PRESS_DELAY);
+		    });
+		
+		    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongPressTimer));
+		    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongPressTimer));
+		    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongPressTimer));
+		
+		    // ==================== 下一页按钮 ====================
+		    const nextBtn = document.createElement('mdui-button-icon');
+		    nextBtn.icon = 'navigate_next';
+		    nextBtn.disabled = currentPage === totalPages;
+		
+		    let nextLongPressTimer = null;
+		
+		    nextBtn.addEventListener('click', (e) => {
+		        e.stopPropagation();
+		        if (currentPage < totalPages) {
+		            currentPage++;
+		            updateTable();
+		            scrollToTopSmooth();
+		            updatePageInfoDisplay();
+		            prevBtn.disabled = currentPage === 1;
+		            nextBtn.disabled = currentPage === totalPages;
+		        }
+		    });
+		
+		    // 长按跳到最后一页
+		    nextBtn.addEventListener('pointerdown', (e) => {
+		        if (currentPage === totalPages) return;
+		        nextLongPressTimer = setTimeout(() => {
+		            currentPage = totalPages;
+		            updateTable();
+		            scrollToTopSmooth();
+		            updatePageInfoDisplay();
+		            nextBtn.disabled = true;
+		            prevBtn.disabled = currentPage === 1;
+		        }, LONG_PRESS_DELAY);
+		    });
+		
+		    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongPressTimer));
+		    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongPressTimer));
+		    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongPressTimer));
+		
+		    // ==================== 页码显示与输入 ====================
+		    const pageInfoContainer = document.createElement('div');
+		    pageInfoContainer.style.display = 'flex';
+		    pageInfoContainer.style.alignItems = 'center';
+		    pageInfoContainer.style.minWidth = '80px';
+		    pageInfoContainer.style.justifyContent = 'center';
+		
+		    const pageInfoText = document.createElement('span');
+		    pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+		    pageInfoText.style.fontSize = '0.95rem';
+		    pageInfoText.style.color = '#757575';
+		    pageInfoText.style.cursor = 'pointer';
+		    pageInfoText.style.userSelect = 'none';
+		
+		    const pageInput = document.createElement('input');
+		    pageInput.type = 'number';
+		    pageInput.value = currentPage;
+		    pageInput.style.width = '60px';
+		    pageInput.style.padding = '4px 8px';
+		    pageInput.style.fontSize = '0.95rem';
+		    pageInput.style.border = '1px solid var(--border-color)';
+		    pageInput.style.borderRadius = '4px';
+		    pageInput.style.textAlign = 'center';
+		    pageInput.style.display = 'none';
+		    pageInput.min = 1;
+		    pageInput.max = totalPages;
+		
+		    pageInfoContainer.appendChild(pageInfoText);
+		    pageInfoContainer.appendChild(pageInput);
+		
+		    pageInfoText.addEventListener('click', () => {
+		        pageInfoText.style.display = 'none';
+		        pageInput.style.display = 'inline-block';
+		        pageInput.focus();
+		        pageInput.select();
+		    });
+		
+		    function confirmPageJump() {
+		        let targetPage = parseInt(pageInput.value);
+		        targetPage = Math.max(1, Math.min(totalPages, isNaN(targetPage) ? currentPage : targetPage));
+		        if (targetPage !== currentPage) {
+		            currentPage = targetPage;
+		            updateTable();
+		            scrollToTopSmooth();
+		        }
+		        prevBtn.disabled = currentPage === 1;
+		        nextBtn.disabled = currentPage === totalPages;
+		        updatePageInfoDisplay();
+		    }
+		
+		    pageInput.addEventListener('keydown', (e) => {
+		        if (e.key === 'Enter') {
+		            e.preventDefault();
+		            confirmPageJump();
+		        }
+		    });
+		
+		    pageInput.addEventListener('blur', confirmPageJump);
+		
+		    function updatePageInfoDisplay() {
+		        pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+		        pageInput.value = currentPage;
+		        pageInput.max = totalPages;
+		        pageInput.style.display = 'none';
+		        pageInfoText.style.display = 'inline-block';
+		    }
+		
+		    paginationDiv.appendChild(prevBtn);
+		    paginationDiv.appendChild(pageInfoContainer);
+		    paginationDiv.appendChild(nextBtn);
+		
+		    const tableContainerDiv = document.querySelector('.data-table-container-div');
+		    tableContainerDiv.parentNode.insertBefore(paginationDiv, tableContainerDiv.nextSibling);
+		}
+		
+		
+		function scrollToTopSmooth() {
+		    const container = document.querySelector('.data-table-container');
+		    if (container) {
+		        container.scrollTo({ top: 0, behavior: 'smooth' });
+		    }
+		}
+		
 		function bindRowEvents() {
 		  document.querySelectorAll('.edit-btn').forEach(btn => {
 		    btn.addEventListener('click', (e) => {
@@ -2607,275 +2539,275 @@ function scrollToTopSmooth() {
 		}
 		
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
-
-
-function startSearch() {
-    const query = dom.searchInput.value.trim();
-
-    // 清空搜索状态
-    searchMatches = [];
-    currentMatchIndex = -1;
-
-    if (!query) {
-        isSearchActive = false;
-        applySearchHighlight(); // 清除高亮
-        dom.replaceOneBtn.disabled = true;
-        dom.replaceAllBtn.disabled = true;
-        return;
-    }
-
-    // 重新构建所有匹配项（全局）
-    tableData.forEach((item, index) => {
-        searchableFields.forEach(field => {
-            const value = (item[field] || '').toString().toLowerCase();
-            if (value.includes(query.toLowerCase())) {
-                searchMatches.push({
-                    rowIndex: index,
-                    field: field
-                });
-            }
-        });
-    });
-
-    isSearchActive = true;
-
-    // 更新替换按钮状态
-    const hasMatches = searchMatches.length > 0;
-    dom.replaceOneBtn.disabled = !hasMatches;
-    dom.replaceAllBtn.disabled = !hasMatches;
-
-    if (hasMatches) {
-        currentMatchIndex = 0;
-        jumpToMatch(0); // 【关键】自动跳转到第一个匹配项（会翻页 + 滚动）
-    } else {
-        applySearchHighlight(); // 显示“未找到匹配项”
-    }
-}
-function navigateMatch(direction) {
-    if (searchMatches.length === 0) return;
-
-    currentMatchIndex += direction;
-    if (currentMatchIndex >= searchMatches.length) currentMatchIndex = 0;
-    if (currentMatchIndex < 0) currentMatchIndex = searchMatches.length - 1;
-
-    updateCurrentMatchUI();
-}
-
-function updateCurrentMatchUI() {
-    // 更新计数显示
-
-dom.searchResultCount.textContent = searchMatches.length === 0 
-    ? `找到 0 个匹配项` 
-    : `找到 ${searchMatches.length} 个匹配项 (当前 ${currentMatchIndex + 1}/${searchMatches.length})`;
-	
-    // 先清除所有旧高亮
-    document.querySelectorAll('.search-match-highlight').forEach(el => 
-        el.classList.remove('search-match-highlight'));
-    document.querySelectorAll('.current-match-highlight').forEach(el => 
-        el.classList.remove('current-match-highlight'));
-
-    if (searchMatches.length === 0) return;
-
-    const match = searchMatches[currentMatchIndex];
-    const rowIndex = match.rowIndex;
-
-    // === 关键：自动翻到包含该行的页面 ===
-    const filteredData = getFilteredData();
-    const displayIndex = filteredData.indexOf(tableData[rowIndex]);
-    if (displayIndex !== -1) {
-        const targetPage = Math.floor(displayIndex / PAGE_SIZE) + 1;
-        if (currentPage !== targetPage) {
-            currentPage = targetPage;
-            updateTable(); // 先翻页渲染
-            setTimeout(highlightCurrentMatchCell, 150); // 等待 DOM 更新后高亮
-        } else {
-            highlightCurrentMatchCell();
-        }
-    } else {
-        highlightCurrentMatchCell();
-    }
-}
-
-function highlightCurrentMatchCell() {
-    const match = searchMatches[currentMatchIndex];
-    const row = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
-    if (!row) return;
-
-    // 高亮该行所有包含搜索词的单元格
-    searchableFields.forEach(field => {
-        const cell = row.querySelector(`td[data-field="${field}"]`);
-        if (cell) {
-            const query = dom.searchInput.value.trim().toLowerCase();
-            const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
-            if (query && cellValue.includes(query)) {
-                cell.classList.add('search-match-highlight');
-            }
-        }
-    });
-
-    // 当前匹配字段加粗边框高亮
-    const currentCell = row.querySelector(`td[data-field="${match.field}"]`);
-    if (currentCell) {
-        currentCell.classList.add('current-match-highlight');
-        
-        // 平滑滚动到当前单元格
-        const container = document.querySelector('.data-table-container');
-        if (container) {
-            const cellRect = currentCell.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-            const offset = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
-            container.scrollTo({ top: offset, behavior: 'smooth' });
-        }
-    }
-}
-
-function replaceOne() {
-    if (currentMatchIndex === -1 || searchMatches.length === 0) {
-        showSnackbar('没有选中的匹配项可替换', 'warning');
-        return;
-    }
-
-    const match = searchMatches[currentMatchIndex];
-    const newText = dom.replaceQueryInput.value.trim();
-    const oldText = dom.searchInput.value.trim();
-
-    if (!oldText) {
-        showSnackbar('搜索词不能为空', 'warning');
-        return;
-    }
-
-    const rowIndex = match.rowIndex;
-    const fieldId = match.field;
-    const originalValue = tableData[rowIndex][fieldId] || '';
-
-    const regex = new RegExp(escapeRegExp(oldText), 'gi');
-    const newValue = originalValue.replace(regex, newText);
-
-    if (newValue !== originalValue) {
-        tableData[rowIndex][fieldId] = newValue;
-        saveDataToLocalStorage();
-        showSnackbar(`已替换当前匹配项`, 'success');
-    } else {
-        showSnackbar('当前匹配项无需替换', 'info');
-    }
-
-    // 【关键修复】替换后立即刷新表格 + 重新搜索保持高亮和当前位置
-    updateTable();
-    startSearch();  // 重新计算匹配项并尽量保持在下一个
-    
-}
-
-function confirmReplaceAll() {
-    const oldText = dom.searchInput.value.trim();
-    const newText = dom.replaceQueryInput.value.trim();
-
-    if (!oldText) {
-        showSnackbar('搜索词不能为空', 'warning');
-        return;
-    }
-
-    if (searchMatches.length === 0) {
-        showSnackbar('没有匹配项可替换', 'warning');
-        return;
-    }
-
-    dom.confirmMessage.innerHTML = `
-        <div style="text-align:center;">
-            <p>确定将所有 <strong style="color:var(--primary-color);">${escapeHtml(oldText)}</strong> 
-               替换为 <strong style="color:#f44336;">${escapeHtml(newText || '(空)')}</strong> 吗？</p>
-            <p style="margin-top:12px;color:#757575;">共将影响 ${searchMatches.length} 处</p>
-        </div>
-    `;
-
-    openCustomModal(dom.confirmModal);
-
-    dom.confirmActionBtn.onclick = () => {
-        let replaceCount = 0;
-        const regex = new RegExp(escapeRegExp(oldText), 'gi');
-
-        tableData.forEach(item => {
-            searchableFields.forEach(field => {
-                const val = (item[field] || '').toString();
-                if (val.toLowerCase().includes(oldText.toLowerCase())) {
-                    const newVal = val.replace(regex, newText);
-                    if (newVal !== val) {
-                        item[field] = newVal;
-                        replaceCount++;
-                    }
-                }
-            });
-        });
-
-        saveDataToLocalStorage();
-
-        if (replaceCount > 0) {
-            showSnackbar(`成功替换 ${replaceCount} 处！`, 'success');
-        } else {
-            showSnackbar('没有发生实际替换', 'info');
-        }
-
-        // 【关键修复】替换全部后刷新表格 + 关闭搜索面板 + 清空搜索词
-    updateTable();
-    dom.searchInput.value = '';
-    dom.replaceQueryInput.value = '';
-    searchTerm = '';
-    isSearchActive = false;
-    searchMatches = [];
-    currentMatchIndex = -1;
-    toggleSearchReplaceVisibility();
-
-        closeCustomModal(dom.confirmModal);
-        dom.confirmActionBtn.onclick = null;
-    };
-}
-
-// 辅助函数：HTML转义和正则转义
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-function replaceAll() {
-    const oldText = dom.searchInput.value.trim();
-    const newText = dom.replaceQueryInput.value;
-
-    if (!oldText) return;
-
-    let replaceCount = 0;
-    const regex = new RegExp(escapeRegExp(oldText), 'gi');
-
-    tableData.forEach(item => {
-        searchableFields.forEach(field => {
-            const originalValue = (item[field] || '').toString();
-            if (originalValue.toLowerCase().includes(oldText.toLowerCase())) {
-                const newValue = originalValue.replace(regex, newText);
-                if (newValue !== originalValue) {
-                    item[field] = newValue;
-                    replaceCount++;
-                }
-            }
-        });
-    });
-
-    if (replaceCount > 0) {
-        saveDataToLocalStorage();
-        showSnackbar(`成功替换 ${replaceCount} 处匹配项！`, 'success');
-    } else {
-        showSnackbar('没有匹配项被替换', 'warning');
-    }
-
-    // 替换完成后自动关闭替换面板并清除搜索
-    isSearchActive = false;
-    searchMatches = [];
-    currentMatchIndex = -1;
-    updateTable();
-    toggleSearchReplaceVisibility(); // 关闭替换区域
-}
-
+		
+		
+		function startSearch() {
+		    const query = dom.searchInput.value.trim();
+		
+		    // 清空搜索状态
+		    searchMatches = [];
+		    currentMatchIndex = -1;
+		
+		    if (!query) {
+		        isSearchActive = false;
+		        applySearchHighlight(); // 清除高亮
+		        dom.replaceOneBtn.disabled = true;
+		        dom.replaceAllBtn.disabled = true;
+		        return;
+		    }
+		
+		    // 重新构建所有匹配项（全局）
+		    tableData.forEach((item, index) => {
+		        searchableFields.forEach(field => {
+		            const value = (item[field] || '').toString().toLowerCase();
+		            if (value.includes(query.toLowerCase())) {
+		                searchMatches.push({
+		                    rowIndex: index,
+		                    field: field
+		                });
+		            }
+		        });
+		    });
+		
+		    isSearchActive = true;
+		
+		    // 更新替换按钮状态
+		    const hasMatches = searchMatches.length > 0;
+		    dom.replaceOneBtn.disabled = !hasMatches;
+		    dom.replaceAllBtn.disabled = !hasMatches;
+		
+		    if (hasMatches) {
+		        currentMatchIndex = 0;
+		        jumpToMatch(0); // 【关键】自动跳转到第一个匹配项（会翻页 + 滚动）
+		    } else {
+		        applySearchHighlight(); // 显示“未找到匹配项”
+		    }
+		}
+		function navigateMatch(direction) {
+		    if (searchMatches.length === 0) return;
+		
+		    currentMatchIndex += direction;
+		    if (currentMatchIndex >= searchMatches.length) currentMatchIndex = 0;
+		    if (currentMatchIndex < 0) currentMatchIndex = searchMatches.length - 1;
+		
+		    updateCurrentMatchUI();
+		}
+		
+		function updateCurrentMatchUI() {
+		    // 更新计数显示
+		
+		dom.searchResultCount.textContent = searchMatches.length === 0 
+		    ? `找到 0 个匹配项` 
+		    : `找到 ${searchMatches.length} 个匹配项 (当前 ${currentMatchIndex + 1}/${searchMatches.length})`;
+			
+		    // 先清除所有旧高亮
+		    document.querySelectorAll('.search-match-highlight').forEach(el => 
+		        el.classList.remove('search-match-highlight'));
+		    document.querySelectorAll('.current-match-highlight').forEach(el => 
+		        el.classList.remove('current-match-highlight'));
+		
+		    if (searchMatches.length === 0) return;
+		
+		    const match = searchMatches[currentMatchIndex];
+		    const rowIndex = match.rowIndex;
+		
+		    // === 关键：自动翻到包含该行的页面 ===
+		    const filteredData = getFilteredData();
+		    const displayIndex = filteredData.indexOf(tableData[rowIndex]);
+		    if (displayIndex !== -1) {
+		        const targetPage = Math.floor(displayIndex / PAGE_SIZE) + 1;
+		        if (currentPage !== targetPage) {
+		            currentPage = targetPage;
+		            updateTable(); // 先翻页渲染
+		            setTimeout(highlightCurrentMatchCell, 150); // 等待 DOM 更新后高亮
+		        } else {
+		            highlightCurrentMatchCell();
+		        }
+		    } else {
+		        highlightCurrentMatchCell();
+		    }
+		}
+		
+		function highlightCurrentMatchCell() {
+		    const match = searchMatches[currentMatchIndex];
+		    const row = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
+		    if (!row) return;
+		
+		    // 高亮该行所有包含搜索词的单元格
+		    searchableFields.forEach(field => {
+		        const cell = row.querySelector(`td[data-field="${field}"]`);
+		        if (cell) {
+		            const query = dom.searchInput.value.trim().toLowerCase();
+		            const cellValue = (tableData[match.rowIndex][field] || '').toString().toLowerCase();
+		            if (query && cellValue.includes(query)) {
+		                cell.classList.add('search-match-highlight');
+		            }
+		        }
+		    });
+		
+		    // 当前匹配字段加粗边框高亮
+		    const currentCell = row.querySelector(`td[data-field="${match.field}"]`);
+		    if (currentCell) {
+		        currentCell.classList.add('current-match-highlight');
+		        
+		        // 平滑滚动到当前单元格
+		        const container = document.querySelector('.data-table-container');
+		        if (container) {
+		            const cellRect = currentCell.getBoundingClientRect();
+		            const containerRect = container.getBoundingClientRect();
+		            const offset = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
+		            container.scrollTo({ top: offset, behavior: 'smooth' });
+		        }
+		    }
+		}
+		
+		function replaceOne() {
+		    if (currentMatchIndex === -1 || searchMatches.length === 0) {
+		        showSnackbar('没有选中的匹配项可替换', 'warning');
+		        return;
+		    }
+		
+		    const match = searchMatches[currentMatchIndex];
+		    const newText = dom.replaceQueryInput.value.trim();
+		    const oldText = dom.searchInput.value.trim();
+		
+		    if (!oldText) {
+		        showSnackbar('搜索词不能为空', 'warning');
+		        return;
+		    }
+		
+		    const rowIndex = match.rowIndex;
+		    const fieldId = match.field;
+		    const originalValue = tableData[rowIndex][fieldId] || '';
+		
+		    const regex = new RegExp(escapeRegExp(oldText), 'gi');
+		    const newValue = originalValue.replace(regex, newText);
+		
+		    if (newValue !== originalValue) {
+		        tableData[rowIndex][fieldId] = newValue;
+		        saveDataToLocalStorage();
+		        showSnackbar(`已替换当前匹配项`, 'success');
+		    } else {
+		        showSnackbar('当前匹配项无需替换', 'info');
+		    }
+		
+		    // 【关键修复】替换后立即刷新表格 + 重新搜索保持高亮和当前位置
+		    updateTable();
+		    startSearch();  // 重新计算匹配项并尽量保持在下一个
+		    
+		}
+		
+		function confirmReplaceAll() {
+		    const oldText = dom.searchInput.value.trim();
+		    const newText = dom.replaceQueryInput.value.trim();
+		
+		    if (!oldText) {
+		        showSnackbar('搜索词不能为空', 'warning');
+		        return;
+		    }
+		
+		    if (searchMatches.length === 0) {
+		        showSnackbar('没有匹配项可替换', 'warning');
+		        return;
+		    }
+		
+		    dom.confirmMessage.innerHTML = `
+		        <div style="text-align:center;">
+		            <p>确定将所有 <strong style="color:var(--primary-color);">${escapeHtml(oldText)}</strong> 
+		               替换为 <strong style="color:#f44336;">${escapeHtml(newText || '(空)')}</strong> 吗？</p>
+		            <p style="margin-top:12px;color:#757575;">共将影响 ${searchMatches.length} 处</p>
+		        </div>
+		    `;
+		
+		    openCustomModal(dom.confirmModal);
+		
+		    dom.confirmActionBtn.onclick = () => {
+		        let replaceCount = 0;
+		        const regex = new RegExp(escapeRegExp(oldText), 'gi');
+		
+		        tableData.forEach(item => {
+		            searchableFields.forEach(field => {
+		                const val = (item[field] || '').toString();
+		                if (val.toLowerCase().includes(oldText.toLowerCase())) {
+		                    const newVal = val.replace(regex, newText);
+		                    if (newVal !== val) {
+		                        item[field] = newVal;
+		                        replaceCount++;
+		                    }
+		                }
+		            });
+		        });
+		
+		        saveDataToLocalStorage();
+		
+		        if (replaceCount > 0) {
+		            showSnackbar(`成功替换 ${replaceCount} 处！`, 'success');
+		        } else {
+		            showSnackbar('没有发生实际替换', 'info');
+		        }
+		
+		        // 【关键修复】替换全部后刷新表格 + 关闭搜索面板 + 清空搜索词
+		    updateTable();
+		    dom.searchInput.value = '';
+		    dom.replaceQueryInput.value = '';
+		    searchTerm = '';
+		    isSearchActive = false;
+		    searchMatches = [];
+		    currentMatchIndex = -1;
+		    toggleSearchReplaceVisibility();
+		
+		        closeCustomModal(dom.confirmModal);
+		        dom.confirmActionBtn.onclick = null;
+		    };
+		}
+		
+		// 辅助函数：HTML转义和正则转义
+		function escapeRegExp(string) {
+		    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		}
+		
+		function escapeHtml(text) {
+		    const div = document.createElement('div');
+		    div.textContent = text;
+		    return div.innerHTML;
+		}
+		function replaceAll() {
+		    const oldText = dom.searchInput.value.trim();
+		    const newText = dom.replaceQueryInput.value;
+		
+		    if (!oldText) return;
+		
+		    let replaceCount = 0;
+		    const regex = new RegExp(escapeRegExp(oldText), 'gi');
+		
+		    tableData.forEach(item => {
+		        searchableFields.forEach(field => {
+		            const originalValue = (item[field] || '').toString();
+		            if (originalValue.toLowerCase().includes(oldText.toLowerCase())) {
+		                const newValue = originalValue.replace(regex, newText);
+		                if (newValue !== originalValue) {
+		                    item[field] = newValue;
+		                    replaceCount++;
+		                }
+		            }
+		        });
+		    });
+		
+		    if (replaceCount > 0) {
+		        saveDataToLocalStorage();
+		        showSnackbar(`成功替换 ${replaceCount} 处匹配项！`, 'success');
+		    } else {
+		        showSnackbar('没有匹配项被替换', 'warning');
+		    }
+		
+		    // 替换完成后自动关闭替换面板并清除搜索
+		    isSearchActive = false;
+		    searchMatches = [];
+		    currentMatchIndex = -1;
+		    updateTable();
+		    toggleSearchReplaceVisibility(); // 关闭替换区域
+		}
+		
 		
 		function closeVirtualKeyboardAndKeepReadOnly() {
 		    dom.virtualKeyboard.style.display = 'none';
@@ -3334,416 +3266,416 @@ function replaceAll() {
 		  return differences;
 		}
 		
-function finalizeImport(newData, duplicateEntries, totalImported) {
-    let actuallyAdded = newData.length;
-    let actuallyOverridden = 0;
-    let actuallySkipped = 0;
-
-    duplicateEntries.forEach(entry => {
-        const action = entry.action;
-        const index = tableData.findIndex(item => item.productId && item.productId.trim() !== '' && item.productId === entry.productId);
-        if (action === 'override' && index !== -1) {
-            tableData[index] = entry.newItem;
-            actuallyOverridden++;
-        } else if (action === 'skip') {
-            actuallySkipped++;
-        }
-    });
-
-    if (newData.length > 0) tableData = [...tableData, ...newData];
-    
-    if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
-        saveDataToLocalStorage();
-        currentPage = 1;  // 【新增】导入后重置到第一页
-        updateTable();
-    }
-
-    let resultMessage = `导入完成！共读取 ${totalImported} 条记录。`;
-    if (actuallyAdded > 0) resultMessage += ` 成功添加 ${actuallyAdded} 条新数据。`;
-    if (actuallyOverridden > 0) resultMessage += ` 覆盖 ${actuallyOverridden} 条重复数据。`;
-    if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
-    if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
-    showSnackbar(resultMessage, 'success');
-}
+		function finalizeImport(newData, duplicateEntries, totalImported) {
+		    let actuallyAdded = newData.length;
+		    let actuallyOverridden = 0;
+		    let actuallySkipped = 0;
 		
-
-
-function showDuplicateConfirmationModal(duplicateEntries, newData, totalImported) {
-    // 临时保存数据供分页使用
-    window.currentDuplicateEntries = duplicateEntries;
-
-    const modalElement = dom.duplicateConfirmationModal;
-    openCustomModal(modalElement); 
-    
-    const listContainer = modalElement.querySelector('#modal-duplicate-list');
-    const totalCountEl = modalElement.querySelector('#modal-total-count');
-    const newCountEl = modalElement.querySelector('#modal-new-count');
-    const duplicateCountEl = modalElement.querySelector('#modal-duplicate-count');
-
-    totalCountEl.textContent = totalImported;
-    newCountEl.textContent = newData.length;
-    duplicateCountEl.textContent = duplicateEntries.length;
-
-    // 初始化分页
-    duplicateTotalPages = Math.max(1, Math.ceil(duplicateEntries.length / DUPLICATE_PAGE_SIZE));
-    duplicateCurrentPage = 1;
-
-    listContainer.innerHTML = '';
-    renderDuplicatePage(listContainer);
-    renderDuplicatePagination(listContainer);
-
-    // 全部跳过 / 全部覆盖
-    document.getElementById('modal-btn-select-all-skip').onclick = () => {
-        modalElement.querySelectorAll('input[type="radio"][value="skip"]').forEach(radio => radio.checked = true);
-    };
-
-    document.getElementById('modal-btn-select-all-override').onclick = () => {
-        modalElement.querySelectorAll('input[type="radio"][value="override"]').forEach(radio => radio.checked = true);
-    };
-
-    // 确认导入
-    document.getElementById('modal-btn-confirm').onclick = () => {
-        const finalDuplicateData = window.currentDuplicateEntries.map((entry, index) => {
-            const radio = modalElement.querySelector(`input[name="action-${index}"]:checked`);
-            return { ...entry, action: radio ? radio.value : 'skip' };
-        });
-
-        closeCustomModal(modalElement);
-        delete window.currentDuplicateEntries; // 清理
-        setTimeout(() => finalizeImport(newData, finalDuplicateData, totalImported), 300);
-    };
-}
-
-function renderDuplicatePage(listContainer) {
-    listContainer.innerHTML = '';
-
-    const entries = window.currentDuplicateEntries || [];
-    const startIndex = (duplicateCurrentPage - 1) * DUPLICATE_PAGE_SIZE;
-    const endIndex = Math.min(startIndex + DUPLICATE_PAGE_SIZE, entries.length);
-    const pageEntries = entries.slice(startIndex, endIndex);
-
-    const itemTemplateHtml = document.getElementById('duplicate-item-template').innerHTML;
-    const differenceTemplateHtml = document.getElementById('difference-row-template').innerHTML;
-
-    pageEntries.forEach((entry, pageIndex) => {
-        const globalIndex = startIndex + pageIndex;
-        let itemHtml = itemTemplateHtml
-            .replace(/PRODUCT_ID/g, entry.productId || 'N/A')
-            .replace(/ITEM_INDEX/g, globalIndex);
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = itemHtml;
-
-        const tbody = tempDiv.querySelector('.duplicate-differences tbody');
-        // 修复：新增tbody存在性判断（括号问题导致的核心报错——tbody为null时操作innerHTML）
-        if (tbody) {
-            if (entry.differences.length > 0) {
-                entry.differences.forEach(diff => {
-                    const rowHtml = differenceTemplateHtml
-                        .replace('FIELD_NAME', diff.field)
-                        .replace('OLD_VALUE', diff.existingItem[diff.key] || '-')
-                        .replace('NEW_VALUE', diff.newValue);
-                    tbody.innerHTML += rowHtml;
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#757575;font-style:italic;">无关键字段差异</td></tr>';
-            }
-        }
-
-        // 设置 radio name
-        tempDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
-            radio.name = `action-${globalIndex}`;
-        });
-
-        listContainer.appendChild(tempDiv.firstElementChild);
-    });
-}
-
-function renderDuplicatePagination(listContainer) {
-    const old = listContainer.parentNode.querySelector('#duplicatePagination');
-    if (old) old.remove();
-
-    if (duplicateTotalPages <= 1) return;
-
-    const paginationDiv = document.createElement('div');
-    paginationDiv.id = 'duplicatePagination';
-    paginationDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:16px;padding:20px 0;background:var(--surface-color);';
-
-    const prevBtn = document.createElement('mdui-button-icon');
-    prevBtn.icon = 'navigate_before';
-    prevBtn.disabled = duplicateCurrentPage === 1;
-
-    let prevLongTimer = null;
-    const LONG_PRESS = 500;
-
-    prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (duplicateCurrentPage > 1) {
-            duplicateCurrentPage--;
-            renderDuplicatePage(listContainer);
-            renderDuplicatePagination(listContainer);
-        }
-    });
-
-    prevBtn.addEventListener('pointerdown', () => {
-        if (duplicateCurrentPage === 1) return;
-        prevLongTimer = setTimeout(() => {
-            duplicateCurrentPage = 1;
-            renderDuplicatePage(listContainer);
-            renderDuplicatePagination(listContainer);
-        }, LONG_PRESS);
-    });
-    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongTimer));
-    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongTimer));
-    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongTimer));
-
-    const pageInfo = document.createElement('span');
-    pageInfo.textContent = `第 ${duplicateCurrentPage} / ${duplicateTotalPages} 页（共 ${(window.currentDuplicateEntries || []).length} 条重复）`;
-    pageInfo.style.cssText = 'font-size:0.95rem;color:#757575;';
-
-    const nextBtn = document.createElement('mdui-button-icon');
-    nextBtn.icon = 'navigate_next';
-    nextBtn.disabled = duplicateCurrentPage === duplicateTotalPages;
-
-    let nextLongTimer = null;
-
-    nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (duplicateCurrentPage < duplicateTotalPages) {
-            duplicateCurrentPage++;
-            renderDuplicatePage(listContainer);
-            renderDuplicatePagination(listContainer);
-        }
-    });
-
-    nextBtn.addEventListener('pointerdown', () => {
-        if (duplicateCurrentPage === duplicateTotalPages) return;
-        nextLongTimer = setTimeout(() => {
-            duplicateCurrentPage = duplicateTotalPages;
-            renderDuplicatePage(listContainer);
-            renderDuplicatePagination(listContainer);
-        }, LONG_PRESS);
-    });
-    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongTimer));
-    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongTimer));
-    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongTimer));
-
-    paginationDiv.appendChild(prevBtn);
-    paginationDiv.appendChild(pageInfo);
-    paginationDiv.appendChild(nextBtn);
-
-    listContainer.parentNode.appendChild(paginationDiv);
-}
+		    duplicateEntries.forEach(entry => {
+		        const action = entry.action;
+		        const index = tableData.findIndex(item => item.productId && item.productId.trim() !== '' && item.productId === entry.productId);
+		        if (action === 'override' && index !== -1) {
+		            tableData[index] = entry.newItem;
+		            actuallyOverridden++;
+		        } else if (action === 'skip') {
+		            actuallySkipped++;
+		        }
+		    });
 		
-function handleFileImport(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-        showSnackbar('导入失败，文件大小不能超过10MB', 'error');
-        dom.fileInput.value = '';
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        let sheetNames = []; // ← 提前声明，作用域提升到整个 onload 函数
-
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            // 关键修复：在这里赋值 sheetNames
-            sheetNames = workbook.SheetNames;
-
-            if (sheetNames.length === 0) {
-                showSnackbar('文件中没有找到工作表', 'error');
-                return;
-            }
-
-            let selectedSheetName = sheetNames[0];
-
-            // 多工作表时弹出选择框
-            if (sheetNames.length > 1) {
-                const options = sheetNames.map((name, idx) => 
-                    `<mdui-menu-item value="\( {name}"> \){name} (Sheet${idx + 1})</mdui-menu-item>`
-                ).join('');
-
-                const selectHTML = `
-                    <mdui-select variant="outlined" value="${selectedSheetName}" style="width: 100%; margin-bottom: 16px;">
-                        <mdui-menu-item value="" disabled selected>请选择要导入的工作表</mdui-menu-item>
-                        ${options}
-                    </mdui-select>
-                `;
-
-                dom.confirmMessage.innerHTML = `
-                    <div style="padding: 16px; text-align: center;">
-                        <div style="font-size: 1.1rem; margin-bottom: 16px;">选择要导入的工作表</div>
-                        ${selectHTML}
-                    </div>
-                `;
-
-                openCustomModal(dom.confirmModal);
-
-                // 临时覆盖确认按钮行为
-                dom.confirmActionBtn.textContent = '确认导入';
-                dom.confirmActionBtn.onclick = () => {
-                    const selectEl = dom.confirmModal.querySelector('mdui-select');
-                    selectedSheetName = selectEl.value;
-                    if (!selectedSheetName) {
-                        showSnackbar('请先选择一个工作表', 'warning');
-                        return;
-                    }
-                    closeCustomModal(dom.confirmModal);
-                    proceedWithImport(selectedSheetName);
-                };
-
-                dom.cancelConfirmBtn.onclick = () => {
-                    closeCustomModal(dom.confirmModal);
-                    dom.fileInput.value = ''; // 用户取消时也清空
-                };
-
-                return; // 等待用户选择，不继续执行下面的代码
-            }
-
-            // 只有一个工作表，直接导入
-            proceedWithImport(selectedSheetName);
-
-        } catch (error) {
-            console.error('导入错误:', error);
-            showSnackbar('导入失败，请检查文件格式是否为有效Excel', 'error');
-        } finally {
-            // 修复后安全访问 sheetNames
-            // 单工作表且没有进入选择流程时自动清空（多工作表已在取消/确认后手动清空）
-            if (sheetNames.length === 1) {
-                dom.fileInput.value = '';
-            }
-        }
-
-        // ==================== 导入核心逻辑（保持不变） ====================
-        function proceedWithImport(sheetName) {
-            const fuzzyMapping = {
-                steelType: ['钢种'],
-                productId: ['产品号'],
-                cardId: ['卡片号'],
-                furnaceId: ['炉号'],
-                actualDiameter: ['实际直径', '实测直径', '实径'],
-                diameter: ['直径', '名义直径', '规格', 'φ'],
-                length: ['长度', '长', '米', 'm'],
-                weight: ['重量', '重', '吨', 'kg', 'Kg'],
-                status: ['状态', '表面'],
-                position: ['位置', '库位'],
-                hardness: ['硬度', 'HB', 'HRC'],
-                remarks: ['备注', '说明', '注', '备注信息']
-            };
-
-            const worksheet = workbook.Sheets[sheetName];
-            const rawData = XLSX.utils.sheet_to_json(worksheet, { 
-                header: 1,
-                defval: ''
-            });
-
-            if (rawData.length < 1) {
-                showSnackbar('选中工作表中没有数据', 'error');
-                dom.fileInput.value = '';
-                return;
-            }
-
-            // 智能查找表头行
-            const keyHeaders = ['产品号', '钢种', '卡片号', '炉号'];
-            let headerRowIndex = -1;
-            let headerRow = null;
-
-            for (let i = 0; i < Math.min(rawData.length, 20); i++) {
-                const row = rawData[i];
-                if (row.some(cell => 
-                    typeof cell === 'string' && keyHeaders.some(key => cell.includes(key))
-                )) {
-                    headerRowIndex = i;
-                    headerRow = row.map(cell => String(cell).trim());
-                    break;
-                }
-            }
-
-            if (headerRowIndex === -1) {
-                showSnackbar('未能识别表头行（需包含“产品号”或“钢种”等字段）', 'error');
-                dom.fileInput.value = '';
-                return;
-            }
-
-            // 建立列映射
-            const colIndexMap = {};
-            headerRow.forEach((header, idx) => {
-                const lowerHeader = header.toLowerCase();
-                for (const field in fuzzyMapping) {
-                    if (fuzzyMapping[field].some(keyword => lowerHeader.includes(keyword.toLowerCase()))) {
-                        colIndexMap[field] = idx;
-                        break;
-                    }
-                }
-            });
-
-            if (!colIndexMap.productId && !colIndexMap.cardId && !colIndexMap.furnaceId) {
-                showSnackbar('表头未找到“产品号”“卡片号”或“炉号”列，无法导入', 'error');
-                dom.fileInput.value = '';
-                return;
-            }
-
-            // 读取数据行
-            const dataRows = rawData.slice(headerRowIndex + 1);
-            const formattedData = dataRows
-                .map(row => {
-                    const item = {};
-                    for (const field in colIndexMap) {
-                        const colIdx = colIndexMap[field];
-                        item[field] = (row[colIdx] !== undefined && row[colIdx] !== null) 
-                            ? String(row[colIdx]).trim() 
-                            : '';
-                    }
-                    return item;
-                })
-                .filter(item => item.productId || item.cardId || item.furnaceId);
-
-            if (formattedData.length === 0) {
-                showSnackbar('未找到有效数据行', 'warning');
-                dom.fileInput.value = '';
-                return;
-            }
-
-            // 重复检测
-            const totalImported = formattedData.length;
-            const newData = [];
-            const duplicateEntries = [];
-
-            formattedData.forEach(newItem => {
-                const existingItem = tableData.find(item => 
-                    item.productId && item.productId.trim() !== '' && item.productId === newItem.productId
-                );
-                if (!existingItem) {
-                    newData.push(newItem);
-                } else {
-                    duplicateEntries.push({
-                        productId: newItem.productId,
-                        existingItem: existingItem,
-                        newItem: newItem,
-                        differences: getObjectDifferences(existingItem, newItem)
-                    });
-                }
-            });
-
-            if (duplicateEntries.length > 0) {
-                showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
-            } else {
-                finalizeImport(newData, [], totalImported);
-            }
-
-            // 导入完成后统一清空文件选择（避免重复触发）
-            dom.fileInput.value = '';
-        }
-    };
-
-    reader.readAsArrayBuffer(file);
-}
+		    if (newData.length > 0) tableData = [...tableData, ...newData];
+		    
+		    if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
+		        saveDataToLocalStorage();
+		        currentPage = 1;  // 【新增】导入后重置到第一页
+		        updateTable();
+		    }
+		
+		    let resultMessage = `导入完成！共读取 ${totalImported} 条记录。`;
+		    if (actuallyAdded > 0) resultMessage += ` 成功添加 ${actuallyAdded} 条新数据。`;
+		    if (actuallyOverridden > 0) resultMessage += ` 覆盖 ${actuallyOverridden} 条重复数据。`;
+		    if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
+		    if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
+		    showSnackbar(resultMessage, 'success');
+		}
+		
+		
+		
+		function showDuplicateConfirmationModal(duplicateEntries, newData, totalImported) {
+		    // 临时保存数据供分页使用
+		    window.currentDuplicateEntries = duplicateEntries;
+		
+		    const modalElement = dom.duplicateConfirmationModal;
+		    openCustomModal(modalElement); 
+		    
+		    const listContainer = modalElement.querySelector('#modal-duplicate-list');
+		    const totalCountEl = modalElement.querySelector('#modal-total-count');
+		    const newCountEl = modalElement.querySelector('#modal-new-count');
+		    const duplicateCountEl = modalElement.querySelector('#modal-duplicate-count');
+		
+		    totalCountEl.textContent = totalImported;
+		    newCountEl.textContent = newData.length;
+		    duplicateCountEl.textContent = duplicateEntries.length;
+		
+		    // 初始化分页
+		    duplicateTotalPages = Math.max(1, Math.ceil(duplicateEntries.length / DUPLICATE_PAGE_SIZE));
+		    duplicateCurrentPage = 1;
+		
+		    listContainer.innerHTML = '';
+		    renderDuplicatePage(listContainer);
+		    renderDuplicatePagination(listContainer);
+		
+		    // 全部跳过 / 全部覆盖
+		    document.getElementById('modal-btn-select-all-skip').onclick = () => {
+		        modalElement.querySelectorAll('input[type="radio"][value="skip"]').forEach(radio => radio.checked = true);
+		    };
+		
+		    document.getElementById('modal-btn-select-all-override').onclick = () => {
+		        modalElement.querySelectorAll('input[type="radio"][value="override"]').forEach(radio => radio.checked = true);
+		    };
+		
+		    // 确认导入
+		    document.getElementById('modal-btn-confirm').onclick = () => {
+		        const finalDuplicateData = window.currentDuplicateEntries.map((entry, index) => {
+		            const radio = modalElement.querySelector(`input[name="action-${index}"]:checked`);
+		            return { ...entry, action: radio ? radio.value : 'skip' };
+		        });
+		
+		        closeCustomModal(modalElement);
+		        delete window.currentDuplicateEntries; // 清理
+		        setTimeout(() => finalizeImport(newData, finalDuplicateData, totalImported), 300);
+		    };
+		}
+		
+		function renderDuplicatePage(listContainer) {
+		    listContainer.innerHTML = '';
+		
+		    const entries = window.currentDuplicateEntries || [];
+		    const startIndex = (duplicateCurrentPage - 1) * DUPLICATE_PAGE_SIZE;
+		    const endIndex = Math.min(startIndex + DUPLICATE_PAGE_SIZE, entries.length);
+		    const pageEntries = entries.slice(startIndex, endIndex);
+		
+		    const itemTemplateHtml = document.getElementById('duplicate-item-template').innerHTML;
+		    const differenceTemplateHtml = document.getElementById('difference-row-template').innerHTML;
+		
+		    pageEntries.forEach((entry, pageIndex) => {
+		        const globalIndex = startIndex + pageIndex;
+		        let itemHtml = itemTemplateHtml
+		            .replace(/PRODUCT_ID/g, entry.productId || 'N/A')
+		            .replace(/ITEM_INDEX/g, globalIndex);
+		
+		        const tempDiv = document.createElement('div');
+		        tempDiv.innerHTML = itemHtml;
+		
+		        const tbody = tempDiv.querySelector('.duplicate-differences tbody');
+		        // 修复：新增tbody存在性判断（括号问题导致的核心报错——tbody为null时操作innerHTML）
+		        if (tbody) {
+		            if (entry.differences.length > 0) {
+		                entry.differences.forEach(diff => {
+		                    const rowHtml = differenceTemplateHtml
+		                        .replace('FIELD_NAME', diff.field)
+		                        .replace('OLD_VALUE', diff.existingItem[diff.key] || '-')
+		                        .replace('NEW_VALUE', diff.newValue);
+		                    tbody.innerHTML += rowHtml;
+		                });
+		            } else {
+		                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#757575;font-style:italic;">无关键字段差异</td></tr>';
+		            }
+		        }
+		
+		        // 设置 radio name
+		        tempDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
+		            radio.name = `action-${globalIndex}`;
+		        });
+		
+		        listContainer.appendChild(tempDiv.firstElementChild);
+		    });
+		}
+		
+		function renderDuplicatePagination(listContainer) {
+		    const old = listContainer.parentNode.querySelector('#duplicatePagination');
+		    if (old) old.remove();
+		
+		    if (duplicateTotalPages <= 1) return;
+		
+		    const paginationDiv = document.createElement('div');
+		    paginationDiv.id = 'duplicatePagination';
+		    paginationDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:16px;padding:20px 0;background:var(--surface-color);';
+		
+		    const prevBtn = document.createElement('mdui-button-icon');
+		    prevBtn.icon = 'navigate_before';
+		    prevBtn.disabled = duplicateCurrentPage === 1;
+		
+		    let prevLongTimer = null;
+		    const LONG_PRESS = 500;
+		
+		    prevBtn.addEventListener('click', (e) => {
+		        e.stopPropagation();
+		        if (duplicateCurrentPage > 1) {
+		            duplicateCurrentPage--;
+		            renderDuplicatePage(listContainer);
+		            renderDuplicatePagination(listContainer);
+		        }
+		    });
+		
+		    prevBtn.addEventListener('pointerdown', () => {
+		        if (duplicateCurrentPage === 1) return;
+		        prevLongTimer = setTimeout(() => {
+		            duplicateCurrentPage = 1;
+		            renderDuplicatePage(listContainer);
+		            renderDuplicatePagination(listContainer);
+		        }, LONG_PRESS);
+		    });
+		    prevBtn.addEventListener('pointerup', () => clearTimeout(prevLongTimer));
+		    prevBtn.addEventListener('pointercancel', () => clearTimeout(prevLongTimer));
+		    prevBtn.addEventListener('pointerleave', () => clearTimeout(prevLongTimer));
+		
+		    const pageInfo = document.createElement('span');
+		    pageInfo.textContent = `第 ${duplicateCurrentPage} / ${duplicateTotalPages} 页（共 ${(window.currentDuplicateEntries || []).length} 条重复）`;
+		    pageInfo.style.cssText = 'font-size:0.95rem;color:#757575;';
+		
+		    const nextBtn = document.createElement('mdui-button-icon');
+		    nextBtn.icon = 'navigate_next';
+		    nextBtn.disabled = duplicateCurrentPage === duplicateTotalPages;
+		
+		    let nextLongTimer = null;
+		
+		    nextBtn.addEventListener('click', (e) => {
+		        e.stopPropagation();
+		        if (duplicateCurrentPage < duplicateTotalPages) {
+		            duplicateCurrentPage++;
+		            renderDuplicatePage(listContainer);
+		            renderDuplicatePagination(listContainer);
+		        }
+		    });
+		
+		    nextBtn.addEventListener('pointerdown', () => {
+		        if (duplicateCurrentPage === duplicateTotalPages) return;
+		        nextLongTimer = setTimeout(() => {
+		            duplicateCurrentPage = duplicateTotalPages;
+		            renderDuplicatePage(listContainer);
+		            renderDuplicatePagination(listContainer);
+		        }, LONG_PRESS);
+		    });
+		    nextBtn.addEventListener('pointerup', () => clearTimeout(nextLongTimer));
+		    nextBtn.addEventListener('pointercancel', () => clearTimeout(nextLongTimer));
+		    nextBtn.addEventListener('pointerleave', () => clearTimeout(nextLongTimer));
+		
+		    paginationDiv.appendChild(prevBtn);
+		    paginationDiv.appendChild(pageInfo);
+		    paginationDiv.appendChild(nextBtn);
+		
+		    listContainer.parentNode.appendChild(paginationDiv);
+		}
+		
+		function handleFileImport(e) {
+		    const file = e.target.files[0];
+		    if (!file) return;
+		
+		    if (file.size > 10 * 1024 * 1024) {
+		        showSnackbar('导入失败，文件大小不能超过10MB', 'error');
+		        dom.fileInput.value = '';
+		        return;
+		    }
+		
+		    const reader = new FileReader();
+		    reader.onload = function(e) {
+		        let sheetNames = []; // ← 提前声明，作用域提升到整个 onload 函数
+		
+		        try {
+		            const data = new Uint8Array(e.target.result);
+		            const workbook = XLSX.read(data, { type: 'array' });
+		
+		            // 关键修复：在这里赋值 sheetNames
+		            sheetNames = workbook.SheetNames;
+		
+		            if (sheetNames.length === 0) {
+		                showSnackbar('文件中没有找到工作表', 'error');
+		                return;
+		            }
+		
+		            let selectedSheetName = sheetNames[0];
+		
+		            // 多工作表时弹出选择框
+		            if (sheetNames.length > 1) {
+		                const options = sheetNames.map((name, idx) => 
+		                    `<mdui-menu-item value="\( {name}"> \){name} (Sheet${idx + 1})</mdui-menu-item>`
+		                ).join('');
+		
+		                const selectHTML = `
+		                    <mdui-select variant="outlined" value="${selectedSheetName}" style="width: 100%; margin-bottom: 16px;">
+		                        <mdui-menu-item value="" disabled selected>请选择要导入的工作表</mdui-menu-item>
+		                        ${options}
+		                    </mdui-select>
+		                `;
+		
+		                dom.confirmMessage.innerHTML = `
+		                    <div style="padding: 16px; text-align: center;">
+		                        <div style="font-size: 1.1rem; margin-bottom: 16px;">选择要导入的工作表</div>
+		                        ${selectHTML}
+		                    </div>
+		                `;
+		
+		                openCustomModal(dom.confirmModal);
+		
+		                // 临时覆盖确认按钮行为
+		                dom.confirmActionBtn.textContent = '确认导入';
+		                dom.confirmActionBtn.onclick = () => {
+		                    const selectEl = dom.confirmModal.querySelector('mdui-select');
+		                    selectedSheetName = selectEl.value;
+		                    if (!selectedSheetName) {
+		                        showSnackbar('请先选择一个工作表', 'warning');
+		                        return;
+		                    }
+		                    closeCustomModal(dom.confirmModal);
+		                    proceedWithImport(selectedSheetName);
+		                };
+		
+		                dom.cancelConfirmBtn.onclick = () => {
+		                    closeCustomModal(dom.confirmModal);
+		                    dom.fileInput.value = ''; // 用户取消时也清空
+		                };
+		
+		                return; // 等待用户选择，不继续执行下面的代码
+		            }
+		
+		            // 只有一个工作表，直接导入
+		            proceedWithImport(selectedSheetName);
+		
+		        } catch (error) {
+		            console.error('导入错误:', error);
+		            showSnackbar('导入失败，请检查文件格式是否为有效Excel', 'error');
+		        } finally {
+		            // 修复后安全访问 sheetNames
+		            // 单工作表且没有进入选择流程时自动清空（多工作表已在取消/确认后手动清空）
+		            if (sheetNames.length === 1) {
+		                dom.fileInput.value = '';
+		            }
+		        }
+		
+		        // ==================== 导入核心逻辑（保持不变） ====================
+		        function proceedWithImport(sheetName) {
+		            const fuzzyMapping = {
+		                steelType: ['钢种'],
+		                productId: ['产品号'],
+		                cardId: ['卡片号'],
+		                furnaceId: ['炉号'],
+		                actualDiameter: ['实际直径', '实测直径', '实径'],
+		                diameter: ['直径', '名义直径', '规格', 'φ'],
+		                length: ['长度', '长', '米', 'm'],
+		                weight: ['重量', '重', '吨', 'kg', 'Kg'],
+		                status: ['状态', '表面'],
+		                position: ['位置', '库位'],
+		                hardness: ['硬度', 'HB', 'HRC'],
+		                remarks: ['备注', '说明', '注', '备注信息']
+		            };
+		
+		            const worksheet = workbook.Sheets[sheetName];
+		            const rawData = XLSX.utils.sheet_to_json(worksheet, { 
+		                header: 1,
+		                defval: ''
+		            });
+		
+		            if (rawData.length < 1) {
+		                showSnackbar('选中工作表中没有数据', 'error');
+		                dom.fileInput.value = '';
+		                return;
+		            }
+		
+		            // 智能查找表头行
+		            const keyHeaders = ['产品号', '钢种', '卡片号', '炉号'];
+		            let headerRowIndex = -1;
+		            let headerRow = null;
+		
+		            for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+		                const row = rawData[i];
+		                if (row.some(cell => 
+		                    typeof cell === 'string' && keyHeaders.some(key => cell.includes(key))
+		                )) {
+		                    headerRowIndex = i;
+		                    headerRow = row.map(cell => String(cell).trim());
+		                    break;
+		                }
+		            }
+		
+		            if (headerRowIndex === -1) {
+		                showSnackbar('未能识别表头行（需包含“产品号”或“钢种”等字段）', 'error');
+		                dom.fileInput.value = '';
+		                return;
+		            }
+		
+		            // 建立列映射
+		            const colIndexMap = {};
+		            headerRow.forEach((header, idx) => {
+		                const lowerHeader = header.toLowerCase();
+		                for (const field in fuzzyMapping) {
+		                    if (fuzzyMapping[field].some(keyword => lowerHeader.includes(keyword.toLowerCase()))) {
+		                        colIndexMap[field] = idx;
+		                        break;
+		                    }
+		                }
+		            });
+		
+		            if (!colIndexMap.productId && !colIndexMap.cardId && !colIndexMap.furnaceId) {
+		                showSnackbar('表头未找到“产品号”“卡片号”或“炉号”列，无法导入', 'error');
+		                dom.fileInput.value = '';
+		                return;
+		            }
+		
+		            // 读取数据行
+		            const dataRows = rawData.slice(headerRowIndex + 1);
+		            const formattedData = dataRows
+		                .map(row => {
+		                    const item = {};
+		                    for (const field in colIndexMap) {
+		                        const colIdx = colIndexMap[field];
+		                        item[field] = (row[colIdx] !== undefined && row[colIdx] !== null) 
+		                            ? String(row[colIdx]).trim() 
+		                            : '';
+		                    }
+		                    return item;
+		                })
+		                .filter(item => item.productId || item.cardId || item.furnaceId);
+		
+		            if (formattedData.length === 0) {
+		                showSnackbar('未找到有效数据行', 'warning');
+		                dom.fileInput.value = '';
+		                return;
+		            }
+		
+		            // 重复检测
+		            const totalImported = formattedData.length;
+		            const newData = [];
+		            const duplicateEntries = [];
+		
+		            formattedData.forEach(newItem => {
+		                const existingItem = tableData.find(item => 
+		                    item.productId && item.productId.trim() !== '' && item.productId === newItem.productId
+		                );
+		                if (!existingItem) {
+		                    newData.push(newItem);
+		                } else {
+		                    duplicateEntries.push({
+		                        productId: newItem.productId,
+		                        existingItem: existingItem,
+		                        newItem: newItem,
+		                        differences: getObjectDifferences(existingItem, newItem)
+		                    });
+		                }
+		            });
+		
+		            if (duplicateEntries.length > 0) {
+		                showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
+		            } else {
+		                finalizeImport(newData, [], totalImported);
+		            }
+		
+		            // 导入完成后统一清空文件选择（避免重复触发）
+		            dom.fileInput.value = '';
+		        }
+		    };
+		
+		    reader.readAsArrayBuffer(file);
+		}
 		
 		function exportToExcel() {
 		  const exportData = getFilteredData();
@@ -3950,88 +3882,88 @@ function handleFileImport(e) {
 		    updateAddButtonState();
 		}
 		
-function addSortRule(field = 'productId', order = 'asc') {
-    if (dom.sortRulesContainer.children.length >= 5) {
-        showSnackbar('最多支持5个排序规则', 'warning');
-        return;
-    }
-
-    const ruleDiv = document.createElement('div');
-    ruleDiv.className = 'sort-rule';
-    ruleDiv.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 14px; background-color: var(--background-color); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.06);';
-
-    // === 字段选择 mdui-select ===
-    const fieldSelect = document.createElement('mdui-select');
-    fieldSelect.variant = 'outlined';
-    fieldSelect.value = field;
-    fieldSelect.placeholder = '选择字段';
-    fieldSelect.style.width = '100%';
-
-    sortFieldOptions.forEach(opt => {
-        const option = document.createElement('mdui-menu-item');
-        option.value = opt.value;
-        option.textContent = opt.label;
-        if (opt.value === field) option.selected = true;
-        fieldSelect.appendChild(option);
-    });
-
-    // === 排序方向 mdui-select ===
-    const orderSelect = document.createElement('mdui-select');
-    orderSelect.variant = 'outlined';
-    orderSelect.value = order;
-    orderSelect.style.width = '100%';
-
-    const ascOption = document.createElement('mdui-menu-item');
-    ascOption.value = 'asc';
-    ascOption.textContent = '升序 ↑';
-    if (order === 'asc') ascOption.selected = true;
-
-    const descOption = document.createElement('mdui-menu-item');
-    descOption.value = 'desc';
-    descOption.textContent = '降序 ↓';
-    if (order === 'desc') descOption.selected = true;
-
-    orderSelect.appendChild(ascOption);
-    orderSelect.appendChild(descOption);
-
-    // === 删除按钮 ===
-    const deleteBtn = document.createElement('mdui-button-icon');
-    deleteBtn.icon = 'delete';
-    deleteBtn.variant = 'tonal';
-    deleteBtn.style.flexShrink = '0';
-
-    deleteBtn.addEventListener('click', () => {
-        ruleDiv.remove();
-        updateAddButtonState();
-    });
-
-    // 组装
-    ruleDiv.appendChild(fieldSelect);
-    ruleDiv.appendChild(orderSelect);
-    ruleDiv.appendChild(deleteBtn);
-
-    dom.sortRulesContainer.appendChild(ruleDiv);
-
-    // 【关键】添加后，智能设置每个 select 的 placement
-    setTimeout(() => {
-        const selects = ruleDiv.querySelectorAll('mdui-select');
-        selects.forEach(select => {
-            // 获取元素在视口中的位置
-            const rect = select.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-
-            // 如果下方空间不足 200px（菜单大约高度），则向上展开
-            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-                select.placement = 'top-start';
-            } else {
-                select.placement = 'bottom-start';
-            }
-        });
-    }, 100); // 延迟确保 DOM 已渲染
-
-    updateAddButtonState();
-}
+		function addSortRule(field = 'productId', order = 'asc') {
+		    if (dom.sortRulesContainer.children.length >= 5) {
+		        showSnackbar('最多支持5个排序规则', 'warning');
+		        return;
+		    }
+		
+		    const ruleDiv = document.createElement('div');
+		    ruleDiv.className = 'sort-rule';
+		    ruleDiv.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 14px; background-color: var(--background-color); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.06);';
+		
+		    // === 字段选择 mdui-select ===
+		    const fieldSelect = document.createElement('mdui-select');
+		    fieldSelect.variant = 'outlined';
+		    fieldSelect.value = field;
+		    fieldSelect.placeholder = '选择字段';
+		    fieldSelect.style.width = '100%';
+		
+		    sortFieldOptions.forEach(opt => {
+		        const option = document.createElement('mdui-menu-item');
+		        option.value = opt.value;
+		        option.textContent = opt.label;
+		        if (opt.value === field) option.selected = true;
+		        fieldSelect.appendChild(option);
+		    });
+		
+		    // === 排序方向 mdui-select ===
+		    const orderSelect = document.createElement('mdui-select');
+		    orderSelect.variant = 'outlined';
+		    orderSelect.value = order;
+		    orderSelect.style.width = '100%';
+		
+		    const ascOption = document.createElement('mdui-menu-item');
+		    ascOption.value = 'asc';
+		    ascOption.textContent = '升序 ↑';
+		    if (order === 'asc') ascOption.selected = true;
+		
+		    const descOption = document.createElement('mdui-menu-item');
+		    descOption.value = 'desc';
+		    descOption.textContent = '降序 ↓';
+		    if (order === 'desc') descOption.selected = true;
+		
+		    orderSelect.appendChild(ascOption);
+		    orderSelect.appendChild(descOption);
+		
+		    // === 删除按钮 ===
+		    const deleteBtn = document.createElement('mdui-button-icon');
+		    deleteBtn.icon = 'delete';
+		    deleteBtn.variant = 'tonal';
+		    deleteBtn.style.flexShrink = '0';
+		
+		    deleteBtn.addEventListener('click', () => {
+		        ruleDiv.remove();
+		        updateAddButtonState();
+		    });
+		
+		    // 组装
+		    ruleDiv.appendChild(fieldSelect);
+		    ruleDiv.appendChild(orderSelect);
+		    ruleDiv.appendChild(deleteBtn);
+		
+		    dom.sortRulesContainer.appendChild(ruleDiv);
+		
+		    // 【关键】添加后，智能设置每个 select 的 placement
+		    setTimeout(() => {
+		        const selects = ruleDiv.querySelectorAll('mdui-select');
+		        selects.forEach(select => {
+		            // 获取元素在视口中的位置
+		            const rect = select.getBoundingClientRect();
+		            const spaceBelow = window.innerHeight - rect.bottom;
+		            const spaceAbove = rect.top;
+		
+		            // 如果下方空间不足 200px（菜单大约高度），则向上展开
+		            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+		                select.placement = 'top-start';
+		            } else {
+		                select.placement = 'bottom-start';
+		            }
+		        });
+		    }, 100); // 延迟确保 DOM 已渲染
+		
+		    updateAddButtonState();
+		}
 		
 		function updateAddButtonState() {
 		    const count = dom.sortRulesContainer.children.length;
@@ -4043,24 +3975,24 @@ function addSortRule(field = 'productId', order = 'asc') {
 		
 		function applySort() {
 		    const rules = [];
-    const ruleElements = dom.sortRulesContainer.querySelectorAll('.sort-rule');
-
-    if (ruleElements.length === 0) {
-        showSnackbar('请至少添加一个排序规则', 'warning');
-        return;
-    }
-
-    ruleElements.forEach(el => {
-        const fieldSelect = el.querySelector('mdui-select:first-of-type');
-        const orderSelect = el.querySelector('mdui-select:last-of-type');
-
-        const field = fieldSelect.value;
-        const order = orderSelect.value;
-
-        if (field && order) {
-            rules.push({ field, order });
-        }
-    });
+		    const ruleElements = dom.sortRulesContainer.querySelectorAll('.sort-rule');
+		
+		    if (ruleElements.length === 0) {
+		        showSnackbar('请至少添加一个排序规则', 'warning');
+		        return;
+		    }
+		
+		    ruleElements.forEach(el => {
+		        const fieldSelect = el.querySelector('mdui-select:first-of-type');
+		        const orderSelect = el.querySelector('mdui-select:last-of-type');
+		
+		        const field = fieldSelect.value;
+		        const order = orderSelect.value;
+		
+		        if (field && order) {
+		            rules.push({ field, order });
+		        }
+		    });
 		
 		    // 执行排序
 		    tableData.sort((a, b) => {
@@ -4099,95 +4031,95 @@ function addSortRule(field = 'productId', order = 'asc') {
 		    
 		    }
 		
-function initTableZoom() {
-    const container = document.querySelector('.data-table-container');
-    if (!container) return;
-
-    let initialDistance = 0;
-    let initialScale = 1;
-    let currentScale = 1;
-
-    // 记录表格的原始尺寸（只测量一次，避免 touchmove 时重排卡顿）
-    let naturalWidth = 0;
-    let naturalHeight = 0;
-
-    const measureNaturalSize = () => {
-        const oldTransform = container.style.transform;
-        container.style.transform = 'none';
-        naturalWidth = container.scrollWidth;
-        naturalHeight = container.scrollHeight;
-        container.style.transform = oldTransform;
-    };
-
-    const getDistance = (touches) => {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    };
-
-    const applyScale = (scale) => {
-        // 限制：放大最大1倍，缩小最小0.25倍
-        scale = Math.min(1.0, Math.max(0.25, scale));
-        currentScale = scale;
-
-        // 实时应用缩放 + 容器尺寸（使用预存的原始尺寸，超流畅）
-        container.style.transform = `scale(${scale})`;
-        container.style.width = `${naturalWidth * scale}px`;
-        container.style.height = `${naturalHeight * scale}px`;
-
-        // 底部边距固定60px
-        const outerContainer = document.querySelector('.data-table-container-div');
-        if (outerContainer) {
-            outerContainer.style.paddingBottom = '60px';
-        }
-    };
-
-    container.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            initialDistance = getDistance(e.touches);
-            initialScale = currentScale;
-        }
-    }, { passive: false });
-
-    container.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2 && initialDistance > 0) {
-            e.preventDefault();
-            const currentDistance = getDistance(e.touches);
-            const ratio = currentDistance / initialDistance;
-            const newScale = initialScale * ratio;
-
-            // 实时更新（无测量开销，丝滑）
-            applyScale(newScale);
-        }
-    }, { passive: false });
-
-    container.addEventListener('touchend', () => {
-        initialDistance = 0;
-    });
-
-    // 双击表头恢复到 1 倍
-    const tableHeader = document.querySelector('#dataTable thead');
-    if (tableHeader) {
-        let lastTap = 0;
-        tableHeader.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            if (now - lastTap < 300) {
-                applyScale(1);
-                e.preventDefault();
-            }
-            lastTap = now;
-        });
-    }
-
-    // 页面首次加载：测量一次原始尺寸，然后应用初始缩放
-    measureNaturalSize();
-    applyScale(1);
-
-    // 可选：表格数据更新后（如分页、搜索、导入后）重新测量尺寸，确保准确
-    // 你可以在 updateTable() 函数最后加一句： 
-    // if (typeof initTableZoom === 'function') { measureNaturalSize(); applyScale(currentScale); }
-}
+		function initTableZoom() {
+		    const container = document.querySelector('.data-table-container');
+		    if (!container) return;
+		
+		    let initialDistance = 0;
+		    let initialScale = 1;
+		    let currentScale = 1;
+		
+		    // 记录表格的原始尺寸（只测量一次，避免 touchmove 时重排卡顿）
+		    let naturalWidth = 0;
+		    let naturalHeight = 0;
+		
+		    const measureNaturalSize = () => {
+		        const oldTransform = container.style.transform;
+		        container.style.transform = 'none';
+		        naturalWidth = container.scrollWidth;
+		        naturalHeight = container.scrollHeight;
+		        container.style.transform = oldTransform;
+		    };
+		
+		    const getDistance = (touches) => {
+		        const dx = touches[0].clientX - touches[1].clientX;
+		        const dy = touches[0].clientY - touches[1].clientY;
+		        return Math.sqrt(dx * dx + dy * dy);
+		    };
+		
+		    const applyScale = (scale) => {
+		        // 限制：放大最大1倍，缩小最小0.25倍
+		        scale = Math.min(1.0, Math.max(0.25, scale));
+		        currentScale = scale;
+		
+		        // 实时应用缩放 + 容器尺寸（使用预存的原始尺寸，超流畅）
+		        container.style.transform = `scale(${scale})`;
+		        container.style.width = `${naturalWidth * scale}px`;
+		        container.style.height = `${naturalHeight * scale}px`;
+		
+		        // 底部边距固定60px
+		        const outerContainer = document.querySelector('.data-table-container-div');
+		        if (outerContainer) {
+		            outerContainer.style.paddingBottom = '60px';
+		        }
+		    };
+		
+		    container.addEventListener('touchstart', (e) => {
+		        if (e.touches.length === 2) {
+		            e.preventDefault();
+		            initialDistance = getDistance(e.touches);
+		            initialScale = currentScale;
+		        }
+		    }, { passive: false });
+		
+		    container.addEventListener('touchmove', (e) => {
+		        if (e.touches.length === 2 && initialDistance > 0) {
+		            e.preventDefault();
+		            const currentDistance = getDistance(e.touches);
+		            const ratio = currentDistance / initialDistance;
+		            const newScale = initialScale * ratio;
+		
+		            // 实时更新（无测量开销，丝滑）
+		            applyScale(newScale);
+		        }
+		    }, { passive: false });
+		
+		    container.addEventListener('touchend', () => {
+		        initialDistance = 0;
+		    });
+		
+		    // 双击表头恢复到 1 倍
+		    const tableHeader = document.querySelector('#dataTable thead');
+		    if (tableHeader) {
+		        let lastTap = 0;
+		        tableHeader.addEventListener('touchend', (e) => {
+		            const now = Date.now();
+		            if (now - lastTap < 300) {
+		                applyScale(1);
+		                e.preventDefault();
+		            }
+		            lastTap = now;
+		        });
+		    }
+		
+		    // 页面首次加载：测量一次原始尺寸，然后应用初始缩放
+		    measureNaturalSize();
+		    applyScale(1);
+		
+		    // 可选：表格数据更新后（如分页、搜索、导入后）重新测量尺寸，确保准确
+		    // 你可以在 updateTable() 函数最后加一句： 
+		    // if (typeof initTableZoom === 'function') { measureNaturalSize(); applyScale(currentScale); }
+		}
 		
 		document.addEventListener('DOMContentLoaded', () => {
 		  initTheme();
