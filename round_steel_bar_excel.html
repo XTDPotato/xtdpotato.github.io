@@ -996,7 +996,7 @@ mdui-icon::part(root) {
         </div>
     </div>
     <div class="empty-state" id="emptyState">
-        <span class="material-icons" style="font-size: 48px;margin-Top: 48px">inbox</span>
+        <span class="material-icons" style="font-size: 48px;margin-Top: 120px">inbox</span>
         <p>暂无数据，点击右下角“添加”按钮开始录入。</p>
     </div>
 </div>
@@ -3637,7 +3637,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
                     actualDiameter: ['实际直径', '实测直径', '实径'],
                     diameter: ['直径', '名义直径', '规格', 'φ'],
                     length: ['长度', '长', '米', 'm'],
-                    weight: ['重量', '重', '吨', 'kg', 'Kg'],
+                    weight: ['重量', '理算重量'],
                     status: ['状态', '表面'],
                     position: ['位置', '库位'],
                     hardness: ['硬度', 'HB', 'HRC'],
@@ -3752,13 +3752,19 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
                 ).join('');
 
                 dom.confirmMessage.innerHTML = `
-                    <div style="padding: 16px;">
-                        <div style="font-size: 1.1rem; margin-bottom: 16px; text-align: center;">检测到多个工作表，请选择：</div>
-                        <mdui-select id="sheetSelect" variant="outlined" value="${sheetNames[0]}" style="width: 100%;">
-                            ${options}
-                        </mdui-select>
-                    </div>
-                `;
+    <div style="padding: 16px;">
+        <div style="font-size: 1.1rem; margin-bottom: 16px; text-align: center;">检测到多个工作表，请选择：</div>
+        <mdui-select id="sheetSelect" 
+                     variant="outlined" 
+                     placement="bottom" 
+                     value="${sheetNames[0]}" 
+                     style="width: 100%; max-height: 400px; overflow-y: auto;">
+            ${options}
+        </mdui-select>
+    </div>
+`;
+
+
 
                 openCustomModal(dom.confirmModal);
                 dom.confirmActionBtn.textContent = '开始导入';
