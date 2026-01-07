@@ -11,6 +11,10 @@
 	<script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-saver/2.0.5/FileSaver.min.js"></script>
+	
 <style>
 /* 🎨 全局样式与黑暗模式 */
 :root {
@@ -49,7 +53,7 @@ body.mdui-theme-dark {
 body {
     font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
     margin: 0;
-    padding-bottom: 80px; /* 为底部常驻栏预留空间 */
+    padding-bottom: 80px; /* 预留空间 */
     background-color: var(--background-color);
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
@@ -216,7 +220,7 @@ body {
     z-index: 900;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
     border-top: 1px solid var(--border-color);
-    transition: all 0.3s ease;
+   
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -267,10 +271,7 @@ body {
     display: none;
 }
 
-body:has(#virtualKeyboard[style*="block"]) .bottom-data-summary {
-    bottom: 320px;
-    transition: bottom 0.3s ease;
-}
+
 
 .dark-mode .bottom-data-summary {
     background-color: rgba(30, 30, 30, 0.95);
@@ -790,6 +791,21 @@ body:has(#virtualKeyboard[style*="block"]) .bottom-data-summary {
     color: var(--text-color);
 }
 
+
+.image-col {
+    min-width: 100px;
+    width: 100px;
+    max-width: 100px;
+    height: 80px;
+    padding: 0 !important;
+    vertical-align: middle;
+}
+
+.image-col > div {
+    width: 100%;
+    height: 100%;
+}
+
 /* === 强制全局使用 Google Sans === */
 *,
 *::before,
@@ -974,6 +990,7 @@ mdui-icon::part(root) {
                     <th>位置</th>
                     <th>硬度</th>
                     <th class="remark-col">备注</th>
+                    <th class="image-col">卡片图片</th>
                     <th class="action-col">操作</th>
                 </tr>
             </thead>
@@ -1039,7 +1056,37 @@ mdui-icon::part(root) {
                 <input type="text" id="hardness" class="numeric-input readonly-input">
                 <label for="remarks">备注</label>
                 <textarea rows="5" cols="30" id="remarks"></textarea>
+                
+                <mdui-divider style="margin:20px 0 10px 0"></mdui-divider>
+<mdui-divider style="margin:20px 0 10px 0"></mdui-divider>
+<div style="text-align:center;margin-bottom:16px;">
+    <label style="font-weight:500;color:var(--primary-color);font-size:1.1rem;">卡片图片（可选）</label>
+</div>
+
+<!-- 图片预览区（有图时显示） -->
+<div id="cardImagePreview" style="text-align:center;margin-bottom:20px;display:none;">
+    <img id="previewImg" style="max-height:300px;max-width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);cursor:pointer;" onclick="showFullImage(this.src)">
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:20px;">
+        <mdui-button variant="filled" id="changeImageBtn">
+            <mdui-icon name="photo_camera"></mdui-icon> 重新选择/拍照
+        </mdui-button>
+        <mdui-button variant="outlined" color="error" id="deleteImageBtn">
+            <mdui-icon name="delete"></mdui-icon> 删除图片
+        </mdui-button>
+    </div>
+</div>
+
+<!-- 无图片时显示的上传按钮 -->
+<div id="noImageUploadArea" style="text-align:center;">
+    <input type="file" id="cardImageInput" accept="image/*" capture="environment" style="display:none;">
+    <mdui-button variant="tonal" id="uploadImageBtn" style="min-width:220px;">
+        <mdui-icon name="add_a_photo"></mdui-icon> 拍照或选择卡片图片
+    </mdui-button>
+</div>
+                
+                
             </form>
+            
         </div>
         <div id="dataSheetFooter" class="modal-footer-custom">
             <mdui-button variant="text" id="cancelBtn">取消</mdui-button>
@@ -1223,6 +1270,22 @@ mdui-icon::part(root) {
     <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;"> 关闭 </mdui-button>
 </mdui-dialog>
 
+<!-- 删除图片确认对话框 -->
+<mdui-dialog id="deleteImageConfirmDialog" headline="确认删除" 
+             close-on-overlay-click close-on-esc>
+    <div style="padding:16px 0;font-size:1rem;">确定要删除这张卡片图片吗？删除后不可恢复。</div>
+    <mdui-button slot="action" variant="text" id="cancelDeleteImageBtn">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" color="error" id="confirmDeleteImageBtn">删除</mdui-button>
+</mdui-dialog>
+<!-- 取消编辑确认对话框 -->
+<mdui-dialog id="cancelEditConfirmDialog" headline="确认取消" 
+             close-on-overlay-click close-on-esc>
+    <div style="padding:16px 0;font-size:1rem;">确定要取消操作吗？取消后当前输入的内容可能会丢失。</div>
+    <mdui-button slot="action" variant="text" id="cancelCancelBtn">返回继续编辑</mdui-button>
+    <mdui-button slot="action" variant="filled" color="error" id="confirmCancelBtn">确认取消</mdui-button>
+</mdui-dialog>
+
+
 <!-- 新增：开关显隐逻辑 JS -->
 <script>
 // 初始化开关显隐
@@ -1266,6 +1329,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		    shiftState: 'locked-on',    // 大小写状态：locked-on（大写锁定）、on（临时大写）、off（小写锁定）
 		    inputType: 'text'           // 绑定的输入字段类型，用于决定键盘布局
 		};
+		let suppressVirtualKeyboard = false;  // 新增标志：是否抑制虚拟键盘
 		let currentEditIndex = -1;      // 当前正在编辑的数据项在 tableData 中的索引，-1 表示新增
 		let isMultiSelectMode = false;  // 是否处于多选模式
 		let selectedRows = new Set();   // 存储选中的行在 tableData 中的原始索引
@@ -1385,6 +1449,14 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		  generalSnackbar: document.getElementById('general-snackbar'),
 		  filterMatchRowsSwitch: document.getElementById('filterMatchRowsSwitch'),
 		  
+		  cardImageInput: document.getElementById('cardImageInput'),
+uploadImageBtn: document.getElementById('uploadImageBtn'),
+cardImagePreview: document.getElementById('cardImagePreview'),
+previewImg: document.getElementById('previewImg'),
+changeImageBtn: document.getElementById('changeImageBtn'),
+deleteImageBtn: document.getElementById('deleteImageBtn'),
+		  
+		  
 		  multiSelectMenuText: document.getElementById('multiSelectMenuText'), 
 		  multiSelectMenuItem: document.getElementById('multiSelectMenuItem'), 
 		  
@@ -1456,6 +1528,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		    '备库',
 		    'V478-',
 		    'V15P',
+		    'AUSA502-',
 		    'V2526-',
 		    'V2527-',
 		    'TS',
@@ -1533,6 +1606,69 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		}
 		
 		function initEventListeners() {
+		
+		// 图片上传相关
+dom.uploadImageBtn.addEventListener('click', () => dom.cardImageInput.click());
+dom.cardImageInput.addEventListener('change', handleImageSelect);
+
+dom.changeImageBtn.addEventListener('click', () => dom.cardImageInput.click());
+dom.deleteImageBtn.addEventListener('click', () => {
+    const dialog = document.getElementById('deleteImageConfirmDialog');
+    if (dialog) {
+        dialog.open = true;
+    }
+});
+
+// 确认删除图片按钮（支持编辑弹窗内和预览界面两种场景）
+document.getElementById('confirmDeleteImageBtn').addEventListener('click', () => {
+    // 确定要删除的行索引
+    let indexToDelete = currentEditIndex; // 默认使用当前编辑的行
+
+    // 如果是从放大预览界面触发的，使用临时存储的索引
+    if (typeof window.tempDeleteImageIndex !== 'undefined' && window.tempDeleteImageIndex !== null) {
+        indexToDelete = window.tempDeleteImageIndex;
+        window.tempDeleteImageIndex = null; // 用完清除
+    }
+
+    // 执行删除
+    if (indexToDelete !== -1 && tableData[indexToDelete]) {
+        tableData[indexToDelete].cardImage = '';
+        saveDataToLocalStorage();
+        updateTable(); // 刷新表格显示
+        showSnackbar('图片已删除', 'success');
+    }
+
+    // === 更新当前打开的编辑弹窗预览（如果有）===
+    const previewContainer = document.getElementById('cardImagePreview');
+    const noImageArea = document.getElementById('noImageUploadArea');
+    const previewImg = document.getElementById('previewImg');
+
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+    }
+    if (noImageArea) {
+        noImageArea.style.display = 'block'; // 恢复上传按钮
+    }
+    if (previewImg) {
+        previewImg.src = '';
+    }
+
+    // 关闭确认对话框
+    const dialog = document.getElementById('deleteImageConfirmDialog');
+    if (dialog) {
+        dialog.open = false;
+    }
+});
+
+
+// 取消删除
+document.getElementById('cancelDeleteImageBtn').addEventListener('click', () => {
+    const dialog = document.getElementById('deleteImageConfirmDialog');
+    if (dialog) {
+        dialog.open = false;
+    }
+});
+
 		  dom.openDrawerBtn.addEventListener('click', () => { dom.drawer.open = true; });
 		  dom.themeCollapseContent.querySelectorAll('.theme-option').forEach(item => {
 		      item.addEventListener('click', (e) => {
@@ -1541,13 +1677,42 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		      });
 		  });
 		
-		  dom.closeDataModal.addEventListener('click', () => { closeCustomModal(dom.dataSheet); dom.virtualKeyboard.style.display = 'none'; });
-		  dom.cancelBtn.addEventListener('click', () => {
-		    if (window.confirm('确定要取消操作吗？取消后当前输入的内容可能会丢失。')) {
-		      closeCustomModal(dom.dataSheet); 
-		      dom.virtualKeyboard.style.display = 'none';
-		    }
-		  });
+// === 右上角关闭按钮（×）触发确认对话框 ===
+dom.closeDataModal.addEventListener('click', () => {
+    const dialog = document.getElementById('cancelEditConfirmDialog');
+    if (dialog) {
+        dialog.open = true;  // 打开确认对话框
+    }
+});
+
+
+// 取消按钮（触发确认对话框）
+dom.cancelBtn.addEventListener('click', () => {
+    const dialog = document.getElementById('cancelEditConfirmDialog');
+    if (dialog) {
+        dialog.open = true;
+    }
+});
+
+// === 确认取消按钮 ===
+document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+    closeCustomModal(dom.dataSheet);
+    dom.virtualKeyboard.style.display = 'none';
+
+    const dialog = document.getElementById('cancelEditConfirmDialog');
+    if (dialog) {
+        dialog.open = false;
+    }
+});
+
+// === 返回继续编辑按钮 ===
+document.getElementById('cancelCancelBtn').addEventListener('click', () => {
+    const dialog = document.getElementById('cancelEditConfirmDialog');
+    if (dialog) {
+        dialog.open = false;
+    }
+});
+
 		
 		  dom.closeQuickEdit.addEventListener('click', () => { closeCustomModal(dom.quickEditDialog); dom.virtualKeyboard.style.display = 'none'; 
 		  keyboardState.isQuickEdit = false;
@@ -1692,24 +1857,31 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		  dom.calculatorBtn.addEventListener('click', openCalculatorModal);
 		  dom.calculateAndAddBtn.addEventListener('click', calculateAndAddData);
 		  
-		  dom.tableBody.addEventListener('click', (e) => {
-		    if (isMultiSelectMode) return;
-		    if (e.target.closest('mdui-button-icon') || e.target.closest('mdui-checkbox')) return;
-		    
-		    const row = e.target.closest('tr');
-		    if (!row) return;
-		    
-		    const index = parseInt(row.getAttribute('data-index'));
-		    const cell = e.target.closest('td');
-		    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
-		    
-		    if (targetFieldId) {
-		        if (targetFieldId === 'remarks') openEditModal(index, targetFieldId);
-		        else openQuickEdit(index, targetFieldId);
-		    } else {
-		        openEditModal(index);
-		    }
-		  });
+dom.tableBody.addEventListener('click', (e) => {
+    if (isMultiSelectMode) return;
+
+    // 忽略按钮和图片点击
+    if (e.target.closest('mdui-button-icon') || e.target.closest('.image-col') || e.target.tagName === 'IMG') {
+        return;
+    }
+
+    const row = e.target.closest('tr');
+    if (!row) return;
+
+    const index = parseInt(row.getAttribute('data-index'));
+    const cell = e.target.closest('td');
+    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
+
+    if (targetFieldId && targetFieldId !== 'cardImage') {
+        if (targetFieldId === 'remarks') {
+            openEditModal(index, targetFieldId);
+        } else {
+            openQuickEdit(index, targetFieldId);
+        }
+    } else if (!targetFieldId || targetFieldId !== 'cardImage') {
+        openEditModal(index);
+    }
+});
 		  
 		  // 新增：底部翻页按钮事件
 		    dom.bottomPrevBtn.addEventListener('click', () => {
@@ -1876,7 +2048,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
 		
 		        row.innerHTML = `
-		          <td class="seq-col">
+<td class="seq-col">
 		            ${globalSeq}
 		            <div class="move-buttons">
 		                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
@@ -1890,23 +2062,33 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		          <td class="checkbox-col" style="display:${displayStyle};">
 		            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
 		          </td>
-		          <td data-field="steelType">${item.steelType || '-'}</td>
-		          <td data-field="productId">${item.productId || '-'}</td>
-		          <td data-field="cardId">${item.cardId || '-'}</td>
-		          <td data-field="furnaceId">${item.furnaceId || '-'}</td>
-		          <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
-		          <td data-field="diameter">${item.diameter || '-'}</td>
-		          <td data-field="length">${item.length || '-'}</td>
-		          <td data-field="weight">${item.weight || '-'}</td>
-		          <td data-field="status">${item.status || '-'}</td>
-		          <td data-field="position">${item.position || '-'}</td>
-		          <td data-field="hardness">${item.hardness || '-'}</td>
-		          <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
-		          <td class="action-col">
+  <td data-field="steelType">${item.steelType || '-'}</td>
+  <td data-field="productId">${item.productId || '-'}</td>
+  <td data-field="cardId">${item.cardId || '-'}</td>
+  <td data-field="furnaceId">${item.furnaceId || '-'}</td>
+  <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
+  <td data-field="diameter">${item.diameter || '-'}</td>
+  <td data-field="length">${item.length || '-'}</td>
+  <td data-field="weight">${item.weight || '-'}</td>
+  <td data-field="status">${item.status || '-'}</td>
+  <td data-field="position">${item.position || '-'}</td>
+  <td data-field="hardness">${item.hardness || '-'}</td>
+  <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
+<td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
+    ${item.cardImage ? 
+      `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="showImageManager('${item.cardImage.replace(/'/g, "\\'")}', ${originalIndex}); event.stopPropagation();">
+         <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
+       </div>`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" onclick="openEditModalForImageUpload(${originalIndex}); event.stopPropagation();">
+           <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
+         </div>`
+    }
+  </td>
+          <td class="action-col">
 		            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
 		            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
 		          </td>
-		        `;
+`;
 		
 		        dom.tableBody.appendChild(row);
 		    });
@@ -2451,43 +2633,46 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		  openAddModalWithData({});
 		}
 		
-		function openAddModalWithData(preFilledData) {
-		  if(dom.dataForm) dom.dataForm.reset();
-		  if(dom.modalTitle) dom.modalTitle.textContent = '添加数据';
-		  if(dom.editIndex) dom.editIndex.value = '-1';
-		  
-		  currentEditIndex = -1;
-		  
-		  for(const key in preFilledData) {
-		    if (preFilledData.hasOwnProperty(key) && formElements[key]) {
-		      formElements[key].value = preFilledData[key];
-		    }
-		  }
-		
-		  let inputToFocus = formElements.steelType;
-		  inputFields.forEach(field => {
-		    if(field.id !== 'remarks') {
-		        field.setAttribute('readonly', 'true');
-		        field.classList.add('readonly-input');
-		    } else {
-		        field.removeAttribute('readonly'); 
-		        field.classList.remove('readonly-input');
-		    }
-		    if(field.id === 'steelType') inputToFocus = field;
-		  });
-		  
-		  openCustomModal(dom.dataSheet);
-		  currentInput = inputToFocus;
-		  
-		  if (currentInput.id === 'remarks') {
-		      dom.virtualKeyboard.style.display = 'none';
-		  } else {
-		      updateKeyboardForInput(currentInput);
-		      showVirtualKeyboard();
-		  }
-		  
-		  currentInput.focus();
-		}
+	function openAddModalWithData(preFilledData) {
+    if (dom.dataForm) dom.dataForm.reset();
+    if (dom.modalTitle) dom.modalTitle.textContent = '添加数据';
+    if (dom.editIndex) dom.editIndex.value = '-1';
+
+    currentEditIndex = -1;
+
+    for (const key in preFilledData) {
+        if (preFilledData.hasOwnProperty(key) && formElements[key]) {
+            formElements[key].value = preFilledData[key];
+        }
+    }
+
+    openCustomModal(dom.dataSheet);
+
+setTimeout(() => {
+    const previewContainer = document.getElementById('cardImagePreview');
+    const noImageArea = document.getElementById('noImageUploadArea');
+
+    previewContainer.style.display = 'none';
+    noImageArea.style.display = 'block'; // 新增时显示上传按钮
+
+        // 键盘逻辑
+        let inputToFocus = formElements.steelType;
+        inputFields.forEach(field => {
+            if (field.id !== 'remarks') {
+                field.setAttribute('readonly', 'true');
+                field.classList.add('readonly-input');
+            }
+            if (field.id === 'steelType') inputToFocus = field;
+        });
+
+        currentInput = inputToFocus;
+        if (currentInput.id !== 'remarks') {
+            updateKeyboardForInput(currentInput);
+            showVirtualKeyboard();
+        }
+        currentInput.focus();
+    }, 350);
+}
 		
 		function findDuplicates(newItem) {
 		  const duplicates = [];
@@ -2527,101 +2712,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		  }, 100);
 		}
 		
-		function saveData() {
-		  const formData = {};
-		  for(const key in formElements) {
-		    if (formElements.hasOwnProperty(key)) {
-		      formData[key] = formElements[key] ? formElements[key].value.trim() : '';
-		    }
-		  }
 		
-		  if (!formData.productId && !formData.cardId && !formData.furnaceId) {
-		    showSnackbar('产品号、卡片号、炉号至少填写一项！', 'warning');
-		    return;
-		  }
-		
-		  const isEditMode = currentEditIndex !== -1;
-		  const isProductIdChanged = isEditMode && tableData[currentEditIndex].productId !== formData.productId;
-		
-		  if (!isEditMode || isProductIdChanged) {
-		      const duplicateItems = findDuplicates(formData);
-		      const realDuplicates = duplicateItems.filter(dup => dup.index !== currentEditIndex);
-		      if (realDuplicates.length > 0) {
-		        if (!window.confirm(`发现 ${realDuplicates.length} 条产品号重复的数据！您正在 \( {isEditMode ? '修改为' : '添加产品号'}： \){formData.productId || 'N/A'}\n确定要继续吗？`)) { 
-		          const firstDuplicateIndex = realDuplicates[0].index;
-		          closeCustomModal(dom.dataSheet);
-		          dom.virtualKeyboard.style.display = 'none';
-		          highlightAndScrollToRow(firstDuplicateIndex);
-		          return;
-		        }
-		      }
-		  }
-		
-		  if (!isEditMode) {
-		    tableData.push(formData);
-		  } else {
-		    tableData[currentEditIndex] = formData;
-		  }
-		
-		  saveDataToLocalStorage();
-		  currentPage = 1;
-		  updateTable();
-		  closeCustomModal(dom.dataSheet);
-		  dom.virtualKeyboard.style.display = 'none';
-		
-		  showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
-		}
-		
-		function openEditModal(index, targetFieldId = null) {
-		  currentEditIndex = index;
-		  if (dom.editIndex) dom.editIndex.value = index;
-		
-		  const item = tableData[index];
-		  
-		  for (const key in formElements) {
-		    if (formElements.hasOwnProperty(key)) {
-		      formElements[key].value = item[key] || '';
-		    }
-		  }
-		  
-		  let inputToFocus = formElements.steelType;
-		  inputFields.forEach(field => {
-		    if(field.id !== 'remarks') {
-		        field.setAttribute('readonly', 'true');
-		        field.classList.add('readonly-input');
-		    } else {
-		        field.removeAttribute('readonly'); 
-		        field.classList.remove('readonly-input');
-		    }
-		    if(field.id === 'steelType') inputToFocus = field;
-		  });
-		  
-		  if (targetFieldId && formElements[targetFieldId]) inputToFocus = formElements[targetFieldId];
-		  
-		  dom.modalTitle.textContent = '编辑数据';
-		  openCustomModal(dom.dataSheet); 
-		  
-		  currentInput = inputToFocus;
-		  
-		  if (currentInput.id === 'remarks') {
-		      dom.virtualKeyboard.style.display = 'none';
-		  } else {
-		      updateKeyboardForInput(currentInput);
-		      showVirtualKeyboard();
-		  }
-		
-		  currentInput.focus();
-		  
-		  const modalContent = document.getElementById('dataSheetContent');
-		  if(modalContent) {
-		      setTimeout(() => {
-		          const inputRect = currentInput.getBoundingClientRect();
-		          const modalRect = modalContent.getBoundingClientRect();
-		          const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3; 
-		          modalContent.scrollTo({ top: offset, behavior: 'smooth' });
-		      }, 50);
-		  }
-		}
 		
 		function openQuickEdit(index, fieldId) {
 		    const item = tableData[index];
@@ -2671,7 +2762,31 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		saveKeyboardState();
 		    }
 		}
-		
+		function saveDataToLocalStorage() {
+    try {
+        // 先序列化数据
+        const dataToSave = JSON.stringify(tableData);
+
+        // 写入 localStorage
+        localStorage.setItem('roundBarData', dataToSave);
+
+        // 验证是否写入成功（读取回来对比）
+        const saved = localStorage.getItem('roundBarData');
+        if (saved === dataToSave) {
+            console.log('数据保存成功，共 ' + tableData.length + ' 条');
+        } else {
+            console.warn('数据保存验证失败，可能被截断');
+            showSnackbar('数据保存可能不完整（数据量太大）', 'warning');
+        }
+    } catch (err) {
+        console.error('localStorage 保存失败:', err);
+        if (err.name === 'QuotaExceededError') {
+            showSnackbar('存储空间不足！请删除部分图片或数据', 'error');
+        } else {
+            showSnackbar('保存失败：' + err.message, 'error');
+        }
+    }
+}
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
 		
 		
@@ -2717,6 +2832,80 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		        applySearchHighlight(); // 显示“未找到匹配项”
 		    }
 		}
+		
+		function openEditModal(index, targetFieldId = null) {
+    currentEditIndex = index;
+    if (dom.editIndex) dom.editIndex.value = index;
+
+    const item = tableData[index];
+
+    // 填充表单字段
+    for (const key in formElements) {
+        if (formElements.hasOwnProperty(key)) {
+            formElements[key].value = item[key] || '';
+        }
+    }
+
+    dom.modalTitle.textContent = '编辑数据';
+    openCustomModal(dom.dataSheet);
+
+   setTimeout(() => {
+    const previewContainer = document.getElementById('cardImagePreview');
+    const noImageArea = document.getElementById('noImageUploadArea');
+    const previewImg = document.getElementById('previewImg');
+
+    if (item.cardImage && item.cardImage.startsWith('data:image/')) {
+        previewImg.src = item.cardImage;
+        previewContainer.style.display = 'block';
+        noImageArea.style.display = 'none';  // 隐藏上传按钮
+    } else {
+        previewContainer.style.display = 'none';
+        noImageArea.style.display = 'block'; // 显示上传按钮
+    }
+
+
+        // 输入框和键盘逻辑
+        let inputToFocus = formElements.steelType;
+
+        inputFields.forEach(field => {
+            if (field.id !== 'remarks') {
+                field.setAttribute('readonly', 'true');
+                field.classList.add('readonly-input');
+            } else {
+                field.removeAttribute('readonly');
+                field.classList.remove('readonly-input');
+            }
+            if (field.id === 'steelType') inputToFocus = field;
+        });
+
+        if (targetFieldId && formElements[targetFieldId]) {
+            inputToFocus = formElements[targetFieldId];
+        }
+
+        currentInput = inputToFocus;
+
+        if (currentInput.id === 'remarks') {
+            dom.virtualKeyboard.style.display = 'none';
+        } else {
+            currentInput.setAttribute('readonly', 'true');
+            currentInput.classList.add('readonly-input');
+            updateKeyboardForInput(currentInput);
+            showVirtualKeyboard();
+        }
+
+        currentInput.focus();
+
+        // 平滑滚动到当前输入框
+        const modalContent = document.getElementById('dataSheetContent');
+        if (modalContent) {
+            const inputRect = currentInput.getBoundingClientRect();
+            const modalRect = modalContent.getBoundingClientRect();
+            const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3;
+            modalContent.scrollTo({ top: offset, behavior: 'smooth' });
+        }
+    }, 350);
+}
+		
 		function navigateMatch(direction) {
 		    if (searchMatches.length === 0) return;
 		
@@ -3368,37 +3557,159 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 		  }
 		}
 		
+		
+		
+		
+function saveData() {
+    const formData = {};
+
+    for (const key in formElements) {
+        if (formElements.hasOwnProperty(key)) {
+            formData[key] = formElements[key] ? formElements[key].value.trim() : '';
+        }
+    }
+
+    // 单张图片保存
+    const previewContainer = document.getElementById('cardImagePreview');
+    if (previewContainer && previewContainer.style.display !== 'none') {
+        const previewImg = document.getElementById('previewImg');
+        if (previewImg) {
+            formData.cardImage = previewImg.src;
+        } else {
+            formData.cardImage = '';
+        }
+    } else {
+        formData.cardImage = '';
+    }
+
+    // === 重量四舍五入取整 ===
+    if (formData.weight) {
+        const num = parseFloat(formData.weight);
+        if (!isNaN(num)) {
+            formData.weight = Math.round(num).toString();
+        }
+    }
+
+    // 必填验证
+    if (!formData.productId && !formData.cardId && !formData.furnaceId) {
+        showSnackbar('产品号、卡片号、炉号至少填写一项！', 'warning');
+        return;
+    }
+
+    // 重复检测
+    const isEditMode = currentEditIndex !== -1;
+    const isProductIdChanged = isEditMode && tableData[currentEditIndex].productId !== formData.productId;
+
+    if (!isEditMode || isProductIdChanged) {
+        const duplicateItems = findDuplicates(formData);
+        const realDuplicates = duplicateItems.filter(dup => dup.index !== currentEditIndex);
+        if (realDuplicates.length > 0) {
+            if (!window.confirm(`发现 ${realDuplicates.length} 条产品号重复的数据！您正在 \( {isEditMode ? '修改为' : '添加产品号'}： \){formData.productId || 'N/A'}\n确定要继续吗？`)) {
+                const firstDuplicateIndex = realDuplicates[0].index;
+                closeCustomModal(dom.dataSheet);
+                dom.virtualKeyboard.style.display = 'none';
+                highlightAndScrollToRow(firstDuplicateIndex);
+                return;
+            }
+        }
+    }
+
+    // 保存
+    if (!isEditMode) {
+        tableData.push(formData);
+    } else {
+        tableData[currentEditIndex] = formData;
+    }
+
+    saveDataToLocalStorage();
+    currentPage = 1;
+    updateTable();
+    closeCustomModal(dom.dataSheet);
+    dom.virtualKeyboard.style.display = 'none';
+
+    showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
+}
+
+
+
+
+
 		function showVirtualKeyboard() {
-		  generateVirtualKeyboard();
-		  dom.virtualKeyboard.style.display = 'block';
-		}
+    if (suppressVirtualKeyboard) {
+        return;
+    }
+    generateVirtualKeyboard();
+    dom.virtualKeyboard.style.display = 'block';
+}
 		
 		function loadData() {
 		  const savedData = localStorage.getItem('roundBarData');
 		  if (savedData) tableData = JSON.parse(savedData);
 		}
 		
-		function saveDataToLocalStorage() {
-		  localStorage.setItem('roundBarData', JSON.stringify(tableData));
-		}
-		
-		function getObjectDifferences(oldObj, newObj) {
-		  const differences = [];
-		  const trackableKeys = ['steelType', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
-		  for (const key of trackableKeys) {
-		    const oldValue = (oldObj[key] ?? '').toString().trim();
-		    const newValue = (newObj[key] ?? '').toString().trim();
-		    if (String(oldValue) !== String(newValue)) {
-		      differences.push({
-		        field: fieldLabels[key],
-		        existingItem: oldObj,
-		        newValue: newValue,
-		        key: key
-		      });
-		    }
-		  }
-		  return differences;
-		}
+		function saveData() {
+    const formData = {};
+
+    // 填充表单字段
+    for (const key in formElements) {
+        if (formElements.hasOwnProperty(key)) {
+            formData[key] = formElements[key] ? formElements[key].value.trim() : '';
+        }
+    }
+
+    // 单张图片保存（动态获取）
+    const previewContainer = document.getElementById('cardImagePreview');
+    if (previewContainer && previewContainer.style.display !== 'none') {
+        const previewImg = document.getElementById('previewImg');
+        if (previewImg) {
+            formData.cardImage = previewImg.src;
+        } else {
+            formData.cardImage = '';
+        }
+    } else {
+        formData.cardImage = '';
+    }
+
+    // 必填验证
+    if (!formData.productId && !formData.cardId && !formData.furnaceId) {
+        showSnackbar('产品号、卡片号、炉号至少填写一项！', 'warning');
+        return;
+    }
+
+    // 重复产品号检测
+    const isEditMode = currentEditIndex !== -1;
+    const isProductIdChanged = isEditMode && tableData[currentEditIndex].productId !== formData.productId;
+
+    if (!isEditMode || isProductIdChanged) {
+        const duplicateItems = findDuplicates(formData);
+        const realDuplicates = duplicateItems.filter(dup => dup.index !== currentEditIndex);
+        if (realDuplicates.length > 0) {
+            if (!window.confirm(`发现 ${realDuplicates.length} 条产品号重复的数据！您正在 \( {isEditMode ? '修改为' : '添加产品号'}： \){formData.productId || 'N/A'}\n确定要继续吗？`)) {
+                const firstDuplicateIndex = realDuplicates[0].index;
+                closeCustomModal(dom.dataSheet);
+                dom.virtualKeyboard.style.display = 'none';
+                highlightAndScrollToRow(firstDuplicateIndex);
+                return;
+            }
+        }
+    }
+
+    // 保存到数据数组
+    if (!isEditMode) {
+        tableData.push(formData);
+    } else {
+        tableData[currentEditIndex] = formData;
+    }
+
+    // 持久化并刷新
+    saveDataToLocalStorage();
+    currentPage = 1;
+    updateTable();
+    closeCustomModal(dom.dataSheet);
+    dom.virtualKeyboard.style.display = 'none';
+
+    showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
+}
 		
 		function finalizeImport(newData, duplicateEntries, totalImported) {
 		    let actuallyAdded = newData.length;
@@ -3629,121 +3940,147 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 
             // --- 核心逻辑函数定义 ---
             const proceedWithImport = (sheetName) => {
-                const fuzzyMapping = {
-                    steelType: ['钢种'],
-                    productId: ['产品号'],
-                    cardId: ['卡片号'],
-                    furnaceId: ['炉号'],
-                    actualDiameter: ['实际直径', '实测直径', '实径'],
-                    diameter: ['直径', '名义直径', '规格', 'φ'],
-                    length: ['长度', '长', '米', 'm'],
-                    weight: ['重量', '理算重量'],
-                    status: ['状态', '表面'],
-                    position: ['位置', '库位'],
-                    hardness: ['硬度', 'HB', 'HRC'],
-                    remarks: ['备注', '说明', '注', '备注信息']
-                };
+    // 标准表头关键词映射（简洁可靠）
+    const headerMapping = {
+        '钢种': 'steelType',
+        '产品号': 'productId',
+        '卡片号': 'cardId',
+        '炉号': 'furnaceId',
+        '实际直径': 'actualDiameter',
+        '直径': 'diameter',
+        '长度': 'length',
+        '重量': 'weight',
+        '状态': 'status',
+        '位置': 'position',
+        '硬度': 'hardness',
+        '备注': 'remarks'
+    };
 
-                const worksheet = workbook.Sheets[sheetName];
-                const rawData = XLSX.utils.sheet_to_json(worksheet, { 
-                    header: 1,
-                    defval: ''
-                });
+    // 理算重量优先覆盖
+    const theoreticalWeightKeywords = ['理算重量', '理论重量', '理重'];
 
-                if (rawData.length < 1) {
-                    showSnackbar('选中工作表中没有数据', 'error');
-                    dom.fileInput.value = '';
-                    return;
-                }
+    const worksheet = workbook.Sheets[sheetName];
 
-                // 智能查找表头行
-                const keyHeaders = ['产品号', '钢种', '卡片号', '炉号'];
-                let headerRowIndex = -1;
-                let headerRow = null;
+    // === 手动转换，不使用 header:1，避免跳列 ===
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    const rawData = [];
 
-                for (let i = 0; i < Math.min(rawData.length, 20); i++) {
-                    const row = rawData[i];
-                    if (row && row.some(cell => 
-                        typeof cell === 'string' && keyHeaders.some(key => cell.includes(key))
-                    )) {
-                        headerRowIndex = i;
-                        headerRow = row.map(cell => String(cell || '').trim());
-                        break;
-                    }
-                }
+    for (let r = range.s.r; r <= range.e.r; r++) {
+        const row = [];
+        for (let c = range.s.c; c <= range.e.c; c++) {
+            const cellAddress = XLSX.utils.encode_cell({ r, c });
+            const cell = worksheet[cellAddress];
+            row.push(cell ? cell.v : ''); // 空单元格填 ''
+        }
+        rawData.push(row);
+    }
 
-                if (headerRowIndex === -1) {
-                    showSnackbar('未能识别表头行（需包含“产品号”或“钢种”等字段）', 'error');
-                    dom.fileInput.value = '';
-                    return;
-                }
+    if (rawData.length < 1) {
+        showSnackbar('选中工作表中没有数据', 'error');
+        dom.fileInput.value = '';
+        return;
+    }
 
-                const colIndexMap = {};
-                headerRow.forEach((header, idx) => {
-                    const lowerHeader = header.toLowerCase();
-                    for (const field in fuzzyMapping) {
-                        if (fuzzyMapping[field].some(keyword => lowerHeader.includes(keyword.toLowerCase()))) {
-                            colIndexMap[field] = idx;
-                            break;
-                        }
-                    }
-                });
+    // === 查找表头行 ===
+    let headerRowIndex = -1;
+    let headerRow = [];
 
-                if (!colIndexMap.productId && !colIndexMap.cardId && !colIndexMap.furnaceId) {
-                    showSnackbar('表头未找到“产品号”“卡片号”或“炉号”列', 'error');
-                    dom.fileInput.value = '';
-                    return;
-                }
+    for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+        const row = rawData[i];
+        if (row.some(cell => {
+            const str = String(cell || '');
+            return str.includes('产品号') || str.includes('钢种') || str.includes('炉号') || str.includes('卡片号');
+        })) {
+            headerRowIndex = i;
+            headerRow = row.map(cell => String(cell || '').trim());
+            break;
+        }
+    }
 
-                const dataRows = rawData.slice(headerRowIndex + 1);
-                const formattedData = dataRows
-                    .map(row => {
-                        const item = {};
-                        for (const field in colIndexMap) {
-                            const colIdx = colIndexMap[field];
-                            item[field] = (row[colIdx] !== undefined && row[colIdx] !== null) 
-                                ? String(row[colIdx]).trim() 
-                                : '';
-                        }
-                        return item;
-                    })
-                    .filter(item => item.productId || item.cardId || item.furnaceId);
+    if (headerRowIndex === -1) {
+        showSnackbar('未能找到表头行', 'error');
+        dom.fileInput.value = '';
+        return;
+    }
 
-                if (formattedData.length === 0) {
-                    showSnackbar('未找到有效数据行', 'warning');
-                    dom.fileInput.value = '';
-                    return;
-                }
+    // === 列映射（清理表头后匹配）===
+    const colMapping = {};
+    let theoreticalWeightCol = -1;
 
-                // 重复检测逻辑
-                const totalImported = formattedData.length;
-                const newData = [];
-                const duplicateEntries = [];
+    headerRow.forEach((header, idx) => {
+        if (!header) return;
 
-                formattedData.forEach(newItem => {
-                    // 假设 tableData 是全局变量
-                    const existingItem = (typeof tableData !== 'undefined' ? tableData : []).find(item => 
-                        item.productId && newItem.productId && item.productId.trim() === newItem.productId.trim()
-                    );
-                    if (!existingItem) {
-                        newData.push(newItem);
-                    } else {
-                        duplicateEntries.push({
-                            productId: newItem.productId,
-                            existingItem: existingItem,
-                            newItem: newItem,
-                            differences: getObjectDifferences(existingItem, newItem)
-                        });
-                    }
-                });
+        const cleanHeader = header.replace(/[\s\(\)（）【】\[\]mmkg千克米]/g, '');
 
-                if (duplicateEntries.length > 0) {
-                    showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
-                } else {
-                    finalizeImport(newData, [], totalImported);
-                }
-                dom.fileInput.value = '';
-            };
+        if (headerMapping[cleanHeader]) {
+            colMapping[headerMapping[cleanHeader]] = idx;
+        }
+
+        if (theoreticalWeightKeywords.some(kw => cleanHeader.includes(kw))) {
+            theoreticalWeightCol = idx;
+        }
+    });
+
+    // === 读取数据行 ===
+    const dataRows = rawData.slice(headerRowIndex + 1);
+    const formattedData = dataRows.map(row => {
+        const item = {};
+
+        for (const field in colMapping) {
+            const colIdx = colMapping[field];
+            if (row[colIdx] !== undefined && row[colIdx] !== '') {
+                item[field] = String(row[colIdx]).trim();
+            }
+        }
+
+        // 理算重量覆盖
+        if (theoreticalWeightCol !== -1 && row[theoreticalWeightCol] !== undefined && row[theoreticalWeightCol] !== '') {
+            item.weight = String(row[theoreticalWeightCol]).trim();
+        }
+
+        if (item.productId || item.cardId || item.furnaceId || item.steelType) {
+            return item;
+        }
+        return null;
+    }).filter(item => item !== null);
+
+    if (formattedData.length === 0) {
+        showSnackbar('未找到有效数据行', 'warning');
+        dom.fileInput.value = '';
+        return;
+    }
+
+    // === 重复检测和导入（保持原有）===
+    const totalImported = formattedData.length;
+    const newData = [];
+    const duplicateEntries = [];
+
+    formattedData.forEach(newItem => {
+        const existingItem = tableData.find(existing => 
+            existing.productId && newItem.productId && 
+            existing.productId.trim() === newItem.productId.trim()
+        );
+
+        if (!existingItem) {
+            newData.push(newItem);
+        } else {
+            duplicateEntries.push({
+                productId: newItem.productId,
+                existingItem,
+                newItem,
+                differences: getObjectDifferences(existingItem, newItem)
+            });
+        }
+    });
+
+    if (duplicateEntries.length > 0) {
+        showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
+    } else {
+        finalizeImport(newData, [], totalImported);
+    }
+
+    dom.fileInput.value = '';
+};
 
             // --- 界面触发逻辑 ---
             if (sheetNames.length > 1) {
@@ -3767,7 +4104,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 
 
                 openCustomModal(dom.confirmModal);
-                dom.confirmActionBtn.textContent = '开始导入';
+                dom.confirmActionBtn.textContent = '确定';
                 
                 dom.confirmActionBtn.onclick = () => {
                     const selectEl = dom.confirmModal.querySelector('#sheetSelect');
@@ -3795,36 +4132,165 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', func
 }
 
 		
-		function exportToExcel() {
-		  const exportData = getFilteredData();
-		  if (exportData.length === 0) {
-		    showSnackbar('暂无数据可导出', 'warning');
-		    return;
-		  }
-		  
-		  const formattedExportData = exportData.map((item, index) => ({
-		    '序号': index + 1,
-		    '钢种': item.steelType || '',
-		    '产品号': item.productId || '',
-		    '卡片号': item.cardId || '',
-		    '炉号': item.furnaceId || '',
-		    '实际直径': item.actualDiameter || '',
-		    '直径': item.diameter || '',
-		    '长度': item.length || '', 
-		    '重量': item.weight || '', 
-		    '状态': item.status || '',
-		    '位置': item.position || '',
-		    '硬度': item.hardness || '',
-		    '备注': item.remarks || ''
-		  }));
-		  
-		  const worksheet = XLSX.utils.json_to_sheet(formattedExportData);
-		  const workbook = XLSX.utils.book_new();
-		  XLSX.utils.book_append_sheet(workbook, worksheet, '圆棒入库数据');
-		  
-		  const dateString = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
-		  XLSX.writeFile(workbook, `圆棒入库数据_${dateString}.xlsx`);
-		}
+	async function exportToExcel() {
+    const exportData = getFilteredData();
+    if (exportData.length === 0) {
+        showSnackbar('暂无数据可导出', 'warning');
+        return;
+    }
+
+    // === 1. 显示导出进度模态框 ===
+    const progressModal = document.createElement('div');
+    progressModal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+    `;
+    progressModal.innerHTML = `
+        <div style="width:360px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface-color);border-radius:12px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <h2 style="margin:0 0 20px 0;color:var(--primary-color);font-size:1.2rem;">正在导出 Excel...</h2>
+            <mdui-linear-progress value="0" style="width:85%;height:8px;"></mdui-linear-progress>
+            <p id="progressText" style="margin:12px 0 0 0;color:#757575;font-size:0.95rem;">处理 0 / ${exportData.length} 条数据</p>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    const progressBar = progressModal.querySelector('mdui-linear-progress');
+    const progressText = progressModal.querySelector('#progressText');
+    if (window.mdui?.componentUpgrade) {
+        window.mdui.componentUpgrade(progressBar);
+    }
+
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('圆棒入库数据');
+
+        // === 列配置 ===
+        worksheet.columns = [
+            { header: '序号', key: 'seq', width: 8 },
+            { header: '钢种', key: 'steelType', width: 15 },
+            { header: '产品号', key: 'productId', width: 18 },
+            { header: '卡片号', key: 'cardId', width: 12 },
+            { header: '炉号', key: 'furnaceId', width: 12 },
+            { header: '实际直径', key: 'actualDiameter', width: 12 },
+            { header: '直径', key: 'diameter', width: 10 },
+            { header: '长度', key: 'length', width: 10 },
+            { header: '重量', key: 'weight', width: 10 },
+            { header: '状态', key: 'status', width: 10 },
+            { header: '位置', key: 'position', width: 10 },
+            { header: '硬度', key: 'hardness', width: 10 },
+            { header: '备注', key: 'remarks', width: 20 },
+            { header: '卡片图片', key: 'cardImage', width: 12 }  // 小图列窄一些
+        ];
+
+        // 表头样式 + 冻结首行
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+        worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+        // === 逐行添加数据和单张小图片 ===
+        for (let i = 0; i < exportData.length; i++) {
+            const item = exportData[i];
+
+            const row = worksheet.addRow({
+                seq: i + 1,
+                steelType: item.steelType || '',
+                productId: item.productId || '',
+                cardId: item.cardId || '',
+                furnaceId: item.furnaceId || '',
+                actualDiameter: item.actualDiameter || '',
+                diameter: item.diameter || '',
+                length: item.length || '',
+                weight: item.weight || '',
+                status: item.status || '',
+                position: item.position || '',
+                hardness: item.hardness || '',
+                remarks: item.remarks || '',
+                cardImage: ''
+            });
+
+            // === 单张特别小图片嵌入（高度不超过文字行）===
+            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
+                try {
+                    const base64Data = item.cardImage.split(',')[1];
+                    const match = item.cardImage.match(/data:image\/(jpeg|png|gif|webp);/);
+                    const ext = match ? match[1] : 'jpeg';
+
+                    const imageId = workbook.addImage({
+                        base64: base64Data,
+                        extension: ext,
+                    });
+
+                    // 特别小尺寸：40x30px，像小图标
+                    const tinyWidth = 40;
+                    const tinyHeight = 30;
+
+                    worksheet.addImage(imageId, {
+                        tl: { col: 13, row: i + 1 },           // 第14列，正确行
+                        ext: { width: tinyWidth, height: tinyHeight },
+                        editAs: 'oneCell'                      // 完全嵌入单元格
+                    });
+
+                    // 统一极小行高（与文字高度一致）
+                    row.height = 22;
+
+                } catch (imgErr) {
+                    console.warn(`第${i+1}行图片嵌入失败:`, imgErr);
+                    row.height = 22;
+                }
+            } else {
+                row.height = 22;
+            }
+
+            // === 更新进度条 ===
+            const percent = Math.round(((i + 1) / exportData.length) * 100);
+            progressBar.value = percent;
+            progressText.textContent = `处理 ${i + 1} / \( {exportData.length} 条数据 ( \){percent}%)`;
+
+            // 每20行让出线程，避免卡顿
+            if (i % 20 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+
+        // === 生成并下载文件 ===
+        progressText.textContent = '正在生成文件，请稍等...';
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        const dateString = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+        const fileName = `圆棒入库数据_${dateString}.xlsx`;
+
+        if (window.saveAs) {
+            saveAs(blob, fileName);
+        } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        showSnackbar(`导出成功！共 ${exportData.length} 条数据，小图已嵌入`, 'success');
+
+    } catch (err) {
+        console.error('Excel导出失败:', err);
+        showSnackbar(`导出失败：${err.message || '未知错误'}`, 'error');
+    } finally {
+        setTimeout(() => {
+            if (document.body.contains(progressModal)) {
+                progressModal.remove();
+            }
+        }, 800);
+    }
+}
 		
 		function calculateWeight() {
 		  const diameter1 = parseFloat(dom.calcDiameter1.value) || 0;
@@ -4152,6 +4618,104 @@ function toggleMultiSelectMode() {
 		    
 		    }
 		
+		
+async function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    showSnackbar('正在处理图片，请稍等...', 'info');
+
+ try {
+        const compressedBase64 = await compressImage(file, 1024, 1024, 0.85);
+
+        const previewImg = document.getElementById('previewImg');
+        const previewContainer = document.getElementById('cardImagePreview');
+        const noImageArea = document.getElementById('noImageUploadArea');
+
+        previewImg.src = compressedBase64;
+        previewContainer.style.display = 'block';
+        noImageArea.style.display = 'none';  // 上传成功后隐藏上传按钮
+
+        // 保存到当前编辑项
+        if (currentEditIndex !== -1) {
+            tableData[currentEditIndex].cardImage = compressedBase64;
+        }
+
+        showSnackbar('图片上传成功', 'success');
+    } catch (err) {
+        showSnackbar('图片处理失败', 'error');
+        console.error(err);
+    }
+
+    // 清空input，支持重复选同一张
+    e.target.value = '';
+}
+async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.85) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderCardImagesPreview(images) {
+    const container = dom.cardImagesPreview;
+    container.innerHTML = '';
+
+    if (images.length === 0) {
+        container.innerHTML = '<span style="color:#999;padding:20px;">暂无图片，点击下方按钮添加</span>';
+        return;
+    }
+
+    images.forEach((base64, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:relative;display:inline-block;';
+
+        wrapper.innerHTML = `
+            <img src="${base64}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            <mdui-button-icon icon="delete" style="position:absolute;top:-8px;right:-8px;background:white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"
+                              onclick="deleteSingleImage(${currentEditIndex}, ${idx})"></mdui-button-icon>
+        `;
+
+        // 点击图片放大查看
+        wrapper.querySelector('img').onclick = () => showFullImage(base64);
+
+        container.appendChild(wrapper);
+    });
+}
+		function deleteSingleImage(dataIndex, imageIndex) {
+    if (dataIndex === -1 || !tableData[dataIndex].cardImages) return;
+
+    tableData[dataIndex].cardImages.splice(imageIndex, 1);
+    saveDataToLocalStorage();
+    renderCardImagesPreview(tableData[dataIndex].cardImages);
+    updateTable(); // 刷新表格显示
+    showSnackbar('已删除图片', 'success');
+}
 		function initTableZoom() {
 		    const container = document.querySelector('.data-table-container');
 		    if (!container) return;
@@ -4241,6 +4805,113 @@ function toggleMultiSelectMode() {
 		    // 你可以在 updateTable() 函数最后加一句： 
 		    // if (typeof initTableZoom === 'function') { measureNaturalSize(); applyScale(currentScale); }
 		}
+		
+		
+		function showFullImage(src) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);
+        display:flex;align-items:center;justify-content:center;z-index:9999;
+    `;
+    modal.innerHTML = `
+        <img src="${src}" style="max-width:95%;max-height:95%;object-fit:contain;border-radius:8px;">
+        <mdui-button-icon icon="close" style="position:absolute;top:16px;right:16px;color:white;"
+                          onclick="this.closest('div').remove()"></mdui-button-icon>
+    `;
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+}
+
+
+function openEditModalForImageUpload(dataIndex) {
+    // 临时抑制键盘
+    suppressVirtualKeyboard = true;
+    dom.virtualKeyboard.style.display = 'none';
+
+    // 打开编辑弹窗（不聚焦任何输入框）
+    openEditModal(dataIndex);
+
+    setTimeout(() => {
+        // 滚动到图片上传区（底部）
+        const modalContent = document.getElementById('dataSheetContent');
+        if (modalContent) {
+            modalContent.scrollTop = modalContent.scrollHeight;
+        }
+
+        // 直接触发上传
+        const fileInput = document.getElementById('cardImageInput');
+        if (fileInput) {
+            fileInput.click();
+        }
+
+        // 选择完成后恢复键盘
+        fileInput.addEventListener('change', () => {
+            suppressVirtualKeyboard = false;
+        }, { once: true });
+
+        // 保险：取消选择5秒后恢复
+        setTimeout(() => {
+            suppressVirtualKeyboard = false;
+        }, 5000);
+
+    }, 400);
+}
+
+function showImageManager(src, dataIndex) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        z-index:9999;padding:20px;box-sizing:border-box;
+    `;
+
+    overlay.innerHTML = `
+        <img src="${src}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
+        
+        <div style="margin-top:32px;display:flex;gap:20px;">
+            <mdui-button variant="filled" id="reselectImageBtn">
+                <mdui-icon name="photo_camera"></mdui-icon> 重新拍照/选择
+            </mdui-button>
+            <mdui-button variant="outlined" color="error" id="previewDeleteImageBtn">
+                <mdui-icon name="delete"></mdui-icon> 删除图片
+            </mdui-button>
+        </div>
+        
+        <mdui-button-icon icon="close" style="position:absolute;top:16px;right:16px;color:white;font-size:32px;"
+                          onclick="this.closest('div').remove()"></mdui-button>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // 重新选择（保持原有逻辑）
+    overlay.querySelector('#reselectImageBtn').addEventListener('click', () => {
+        overlay.remove();
+        suppressVirtualKeyboard = true;
+        openEditModal(dataIndex);
+        setTimeout(() => {
+            const modalContent = document.getElementById('dataSheetContent');
+            if (modalContent) modalContent.scrollTop = modalContent.scrollHeight;
+            document.getElementById('cardImageInput').click();
+            document.getElementById('cardImageInput').addEventListener('change', () => {
+                suppressVirtualKeyboard = false;
+            }, { once: true });
+        }, 400);
+    });
+
+// 预览界面删除按钮 → 打开确认对话框并记录行索引
+    overlay.querySelector('#previewDeleteImageBtn').addEventListener('click', () => {
+        overlay.remove();
+        window.tempDeleteImageIndex = dataIndex; // 临时保存要删除的行索引
+        const dialog = document.getElementById('deleteImageConfirmDialog');
+        if (dialog) {
+            dialog.open = true;
+        }
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+}
 		
 		document.addEventListener('DOMContentLoaded', () => {
 		  initTheme();
