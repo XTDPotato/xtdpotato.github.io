@@ -1189,10 +1189,23 @@
 				</div>
 				<div id="modal-duplicate-list"></div>
 			</div>
+			
+		<!-- 固定页码区域（sticky） -->
+<div id="duplicatePagination" style="position: sticky; top: 0; background: var(--surface-color); padding: 12px 0; border-bottom: 1px solid var(--border-color); z-index: 10; display: flex; align-items: center; justify-content: center; gap: 16px;">
+  <mdui-button-icon id="duplicatePrevPage" icon="navigate_before"></mdui-button-icon>
+  <span id="duplicatePageInfo">第 1 / 1 页（共 0 条有差异重复）</span>
+  <input type="number" id="duplicatePageJump" min="1" style="width:60px; padding:4px; text-align:center;" placeholder="跳转">
+  <mdui-button-icon id="duplicateNextPage" icon="navigate_next"></mdui-button-icon>
+</div>
+
+<!-- 原有重复列表容器 -->
+<div id="modal-duplicate-list" style="max-height: calc(60vh - 60px); overflow-y: auto;"></div>
 			<div class="modal-footer-custom">
 				<mdui-button variant="text" id="modal-btn-cancel-import">取消导入</mdui-button>
 				<mdui-button variant="filled" id="modal-btn-confirm">确认处理并完成导入</mdui-button>
 			</div>
+			
+			
 		</div>
 	</div>
 	<!-- 数据排序弹窗 -->
@@ -1305,6 +1318,42 @@
   <mdui-button slot="action" variant="outlined" id="largeImageForceBtn">直接上传（不压缩）</mdui-button>
   <mdui-button slot="action" variant="filled" id="largeImageCompressBtn">压缩后上传</mdui-button>
 </mdui-dialog>
+	
+	
+	<!-- 单条添加时的重复警告弹窗（简单提示） -->
+<mdui-dialog id="singleDuplicateWarnDialog" headline="检测到重复产品号" close-on-overlay-click close-on-esc>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p id="singleDuplicateMessage"></p>
+    <p style="color: #f44336; font-weight: 500; margin-top: 16px;">
+      是否要<strong>覆盖现有数据</strong>？（覆盖后原数据将被替换，不可恢复）
+    </p>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="singleDuplicateCancelBtn">取消添加</mdui-button>
+  <mdui-button slot="action" variant="filled" color="error" id="singleDuplicateOverrideBtn">覆盖保存</mdui-button>
+</mdui-dialog>
+
+<!-- 批量导入时的重复确认弹窗（完整列表 + 差异对比） -->
+<mdui-dialog id="bulkDuplicateConfirmDialog" headline="检测到重复产品号" close-on-overlay-click close-on-esc>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p>总共导入 <span id="modal-total-count">0</span> 条记录。其中：</p>
+    <ul>
+      <li>新数据 <span id="modal-new-count">0</span> 条（将直接添加）</li>
+      <li>重复数据 <span id="modal-duplicate-count">0</span> 条（请处理）</li>
+    </ul>
+    
+    <div style="margin: 16px 0;">
+      <mdui-button variant="outlined" id="modal-btn-select-all-skip">全部跳过</mdui-button>
+      <mdui-button variant="outlined" id="modal-btn-select-all-override">全部覆盖</mdui-button>
+    </div>
+    
+    <div id="modal-duplicate-list" style="max-height: 50vh; overflow-y: auto;"></div>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="modal-btn-cancel-import">取消导入</mdui-button>
+  <mdui-button slot="action" variant="filled" id="modal-btn-confirm">确认处理并完成</mdui-button>
+</mdui-dialog>
+	
 	
 	<mdui-snackbar id="general-snackbar" placement="bottom-center" closeable></mdui-snackbar>
 	<!-- 新增：开关显隐逻辑 JS -->
@@ -3584,6 +3633,10 @@ function findDuplicates(newItem) {
 		  generateVirtualKeyboard();
 		}
 		
+		
+		
+		
+		
 		function insertText(text) {
 		  if (!currentInput) return;
 		  currentInput.focus(); 
@@ -3637,78 +3690,6 @@ function findDuplicates(newItem) {
 		
 		
 		
-		
-async function saveData() {
-    const formData = {};
-
-    // 填充表单字段
-    for (const key in formElements) {
-        if (formElements.hasOwnProperty(key)) {
-            formData[key] = formElements[key] ? formElements[key].value.trim() : '';
-        }
-    }
-
-    // 处理卡片图片
-    const previewContainer = document.getElementById('cardImagePreview');
-    if (previewContainer && previewContainer.style.display !== 'none') {
-        const previewImg = document.getElementById('previewImg');
-        if (previewImg && previewImg.src && previewImg.src.startsWith('data:image/')) {
-            formData.cardImage = previewImg.src;
-        }
-    } else if (window.tempNewCardImage) {
-        formData.cardImage = window.tempNewCardImage;
-        delete window.tempNewCardImage;
-    } else {
-        formData.cardImage = '';
-    }
-
-    // 重量取整
-    if (formData.weight) {
-        const num = parseFloat(formData.weight);
-        if (!isNaN(num)) formData.weight = Math.round(num).toString();
-    }
-
-    // 必填验证
-    if (!formData.productId && !formData.cardId && !formData.furnaceId) {
-        showSnackbar('产品号、卡片号、炉号至少填写一项！', 'warning');
-        return;
-    }
-
-    // ====================== 重复检测（新增模式重点修复） ======================
-    const isEditMode = currentEditIndex !== -1;
-    const isProductIdChanged = isEditMode && tableData[currentEditIndex]?.productId !== formData.productId;
-
-    // 无论编辑还是新增，只要产品号有变化或新增，就检查重复
-    const shouldCheckDuplicate = !isEditMode || isProductIdChanged;
-
-    if (shouldCheckDuplicate && formData.productId?.trim()) {
-        const duplicates = findDuplicates(formData);
-        const realDuplicates = duplicates.filter(dup => dup.index !== currentEditIndex);
-
-        console.log('重复检测结果：', realDuplicates.length, '条'); // 调试日志
-
-        if (realDuplicates.length > 0) {
-            // 有重复 → 弹出确认弹窗（不允许直接添加）
-            showDuplicateConfirmationModal(realDuplicates, [], 0); // 第二个参数是新数据（这里为空），第三个是总导入数（这里是单条）
-            return; // 阻止后续保存
-        }
-    }
-
-    // 无重复或通过确认 → 正常保存
-    if (!isEditMode) {
-        tableData.push(formData);
-    } else {
-        tableData[currentEditIndex] = formData;
-    }
-
-    await saveDataToIndexedDB();
-    currentPage = 1;
-    updateTable();
-    closeCustomModal(dom.dataSheet);
-    dom.virtualKeyboard.style.display = 'none';
-
-    showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
-}
 		
 		// === IndexedDB 初始化和操作 ===
 		const DB_NAME = 'RoundBarDB';
@@ -3839,6 +3820,292 @@ async function saveData() {
 		    updateTable();
 		}
 		
+		
+		/**
+ * 单条添加/编辑时，检测到产品号重复 → 显示简单 mdui-dialog 警告
+ * @param {Object} duplicate - 第一条重复数据对象
+ * @param {Object} newData - 当前要保存的新数据
+ * @param {boolean} isEditMode - 是否编辑模式
+ */
+function showSingleDuplicateWarnDialog(duplicate, newData, isEditMode) {
+    console.log('【单条重复警告】被调用 - 产品号：', newData.productId);
+
+    const dialog = document.getElementById('singleDuplicateWarnDialog');
+    if (!dialog) {
+        console.error('【单条重复警告】找不到弹窗！请检查 HTML id="singleDuplicateWarnDialog"');
+        showSnackbar('重复检测失败，无法显示警告弹窗', 'error');
+        return;
+    }
+
+    // 设置提示消息
+    const messageEl = dialog.querySelector('#singleDuplicateMessage');
+    if (messageEl) {
+        messageEl.innerHTML = `
+            系统中已存在相同的产品号：<strong>${newData.productId || 'N/A'}</strong><br>
+            发现 <strong>1</strong> 条重复数据。<br>
+            您正在<strong>${isEditMode ? '修改为' : '添加'}</strong>该产品号。
+        `;
+    }
+
+    // 绑定“取消添加”按钮
+    const cancelBtn = dialog.querySelector('#singleDuplicateCancelBtn');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            const index = duplicate.index;
+            closeCustomModal(dom.dataSheet);
+            dom.virtualKeyboard.style.display = 'none';
+            highlightAndScrollToRow(index);
+            dialog.open = false;
+            showSnackbar('操作已取消', 'info');
+        };
+    }
+
+    // 绑定“覆盖保存”按钮
+    const overrideBtn = dialog.querySelector('#singleDuplicateOverrideBtn');
+    if (overrideBtn) {
+        overrideBtn.onclick = () => {
+            // 覆盖当前重复项
+            tableData[duplicate.index] = { ...newData };
+            saveDataToIndexedDB();
+            updateTable();
+            dialog.open = false;
+            closeCustomModal(dom.dataSheet);
+            dom.virtualKeyboard.style.display = 'none';
+            showSnackbar('已覆盖保存重复数据', 'success');
+        };
+    }
+
+    // 打开弹窗
+    dialog.open = true;
+    console.log('【单条重复警告】弹窗已打开');
+}
+/**
+ * 显示重复数据确认弹窗（批量导入专用，支持分页，每页50条）
+ * - 无差异的重复项不显示在列表，只在顶部提示
+ * @param {Array} duplicateEntries - 重复项数组
+ * @param {Array} [newData=[]] - 新增的非重复数据
+ * @param {number} [totalImported=1] - 总导入数量
+ */
+function showDuplicateConfirmationModal(duplicateEntries, newData = [], totalImported = 1) {
+    console.log('【重复弹窗】被调用，重复项数量：', duplicateEntries.length);
+
+    const modal = document.getElementById('duplicateConfirmationModalCustom');
+    if (!modal) {
+        console.error('【重复弹窗】找不到弹窗！请检查 HTML id="duplicateConfirmationModalCustom"');
+        showSnackbar('系统错误：重复确认弹窗未找到', 'error');
+        return;
+    }
+
+    console.log('【重复弹窗】弹窗已找到，开始处理...');
+
+    // 填充统计信息
+    const totalEl = modal.querySelector('#modal-total-count');
+    const newEl = modal.querySelector('#modal-new-count');
+    const dupEl = modal.querySelector('#modal-duplicate-count');
+
+    if (totalEl) totalEl.textContent = totalImported;
+    if (newEl) newEl.textContent = newData.length;
+    if (dupEl) dupEl.textContent = duplicateEntries.length;
+
+    // 分离有差异和无差异的重复项
+    const withDiff = duplicateEntries.filter(entry => entry.differences && entry.differences.length > 0);
+    const withoutDiff = duplicateEntries.filter(entry => !entry.differences || entry.differences.length === 0);
+
+    console.log('【重复弹窗】有差异重复：', withDiff.length, '条');
+    console.log('【重复弹窗】无差异重复：', withoutDiff.length, '条');
+
+    // 顶部提示无差异项（如果有）
+    const summaryP = modal.querySelector('.duplicate-summary') || document.createElement('p');
+    summaryP.className = 'duplicate-summary';
+    summaryP.style.marginBottom = '16px';
+    summaryP.style.color = '#757575';
+
+    if (withoutDiff.length > 0) {
+        summaryP.innerHTML = `其中 <strong>${withoutDiff.length}</strong> 条重复项无任何字段差异（将自动跳过）`;
+    } else {
+        summaryP.innerHTML = '';
+    }
+
+    // 插入到弹窗内容顶部（如果已存在则替换）
+    const body = modal.querySelector('.modal-body-custom');
+    if (body) {
+        const firstP = body.querySelector('p');
+        if (firstP) {
+            body.insertBefore(summaryP, firstP.nextSibling);
+        } else {
+            body.prepend(summaryP);
+        }
+    }
+
+    // 只渲染有差异的项（分页基于有差异的项）
+    const itemsToPaginate = withDiff; // 只分页有差异的
+    const PAGE_SIZE = 50;
+    let currentPage = 1;
+    const totalPages = Math.max(1, Math.ceil(itemsToPaginate.length / PAGE_SIZE));
+
+    const listContainer = modal.querySelector('#modal-duplicate-list');
+    if (listContainer) {
+        listContainer.innerHTML = '';
+
+        if (itemsToPaginate.length === 0 && withoutDiff.length > 0) {
+            listContainer.innerHTML = '<p style="color:#757575;text-align:center;padding:40px;">所有重复项均无差异，将自动跳过</p>';
+        } else if (itemsToPaginate.length === 0) {
+            listContainer.innerHTML = '<p style="color:#757575;text-align:center;padding:40px;">无需要处理的重复项</p>';
+        } else {
+            const template = document.getElementById('duplicate-item-template')?.innerHTML || '';
+            if (!template) {
+                listContainer.innerHTML = '<p style="color:red;text-align:center;padding:20px;">模板丢失，无法显示详情</p>';
+            } else {
+                // 渲染当前页
+                function renderPage(page) {
+                    listContainer.innerHTML = '';
+
+                    const start = (page - 1) * PAGE_SIZE;
+                    const end = Math.min(start + PAGE_SIZE, itemsToPaginate.length);
+                    const pageItems = itemsToPaginate.slice(start, end);
+
+                    pageItems.forEach((entry, pageIdx) => {
+                        const globalIdx = start + pageIdx;
+                        let html = template
+                            .replace(/PRODUCT_ID/g, entry.productId || '未知')
+                            .replace(/ITEM_INDEX/g, globalIdx);
+
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+
+                        // radio name 唯一
+                        tempDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
+                            radio.name = `action-${globalIdx}`;
+                            if (entry.action === 'override') {
+                                if (radio.value === 'override') radio.checked = true;
+                            } else {
+                                if (radio.value === 'skip') radio.checked = true;
+                            }
+                        });
+
+                        // 差异表格
+                        const tbody = tempDiv.querySelector('tbody');
+                        if (tbody && entry.differences?.length > 0) {
+                            entry.differences.forEach(diff => {
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <th>${diff.field}</th>
+                                        <td>${diff.existingItem[diff.key] || '-'}</td>
+                                        <td style="color:#f44336;font-weight:bold;">${diff.newValue || '-'}</td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        listContainer.appendChild(tempDiv.firstElementChild);
+                    });
+
+                    updatePageInfo();
+                }
+
+                // 页码信息
+                function updatePageInfo() {
+                    const pageInfo = modal.querySelector('#duplicatePageInfo');
+                    if (pageInfo) {
+                        pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页（共 ${itemsToPaginate.length} 条有差异重复）`;
+                    }
+                }
+
+                // 翻页
+                function changePage(newPage) {
+                    if (newPage < 1 || newPage > totalPages) return;
+                    currentPage = newPage;
+                    renderPage(currentPage);
+                }
+
+                // 绑定翻页按钮（需在 HTML 中添加）
+                const prevBtn = modal.querySelector('#duplicatePrevPage');
+                if (prevBtn) prevBtn.onclick = () => changePage(currentPage - 1);
+
+                const nextBtn = modal.querySelector('#duplicateNextPage');
+                if (nextBtn) nextBtn.onclick = () => changePage(currentPage + 1);
+
+                const pageInput = modal.querySelector('#duplicatePageJump');
+                if (pageInput) {
+                    pageInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const target = parseInt(pageInput.value);
+                            if (!isNaN(target)) changePage(Math.max(1, Math.min(totalPages, target)));
+                        }
+                    });
+                    pageInput.addEventListener('blur', () => {
+                        const target = parseInt(pageInput.value);
+                        if (!isNaN(target)) changePage(Math.max(1, Math.min(totalPages, target)));
+                    });
+                }
+
+                // 初始化第一页
+                renderPage(1);
+            }
+        }
+    }
+
+    // 绑定全部跳过/覆盖（只影响当前显示页，但确认时会收集所有）
+    const skipAllBtn = modal.querySelector('#modal-btn-select-all-skip');
+    if (skipAllBtn) {
+        skipAllBtn.onclick = () => {
+            modal.querySelectorAll('input[value="skip"]').forEach(r => r.checked = true);
+        };
+    }
+
+    const overrideAllBtn = modal.querySelector('#modal-btn-select-all-override');
+    if (overrideAllBtn) {
+        overrideAllBtn.onclick = () => {
+            modal.querySelectorAll('input[value="override"]').forEach(r => r.checked = true);
+        };
+    }
+
+    // 确认处理（收集所有页的选择）
+    const confirmBtn = modal.querySelector('#modal-btn-confirm');
+    if (confirmBtn) {
+        confirmBtn.onclick = () => {
+            // 收集所有重复项的选择（即使翻页了也能获取，因为 radio name 全局唯一）
+            const actions = duplicateEntries.map((_, idx) => {
+                const radio = modal.querySelector(`input[name="action-${idx}"]:checked`);
+                return radio ? radio.value : 'skip';
+            });
+
+            const processedDuplicates = duplicateEntries.map((entry, idx) => ({
+                ...entry,
+                action: actions[idx]
+            }));
+
+            // 无差异的项强制跳过
+            withoutDiff.forEach(entry => {
+                processedDuplicates.push({ ...entry, action: 'skip' });
+            });
+
+            closeCustomModal(modal);
+            finalizeImport(newData, processedDuplicates, totalImported);
+        };
+    }
+
+    // 取消导入
+    const cancelBtn = modal.querySelector('#modal-btn-cancel-import');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            closeCustomModal(modal);
+            showSnackbar('导入已取消', 'info');
+        };
+    }
+
+    // 关闭按钮（右上角 ×）
+    const closeBtn = modal.querySelector('#closeDuplicateModal');
+    if (closeBtn) {
+        closeBtn.onclick = () => closeCustomModal(modal);
+    }
+
+    // 打开弹窗（自定义 modal 使用 display）
+    modal.style.display = 'block';
+    console.log('【重复弹窗】弹窗已打开，渲染完成');
+}
+		
 		/**
  * 保存数据（新增或编辑）
  * - 处理表单数据、图片、重量取整
@@ -3893,59 +4160,10 @@ async function saveData() {
         const duplicates = findDuplicates(formData);
         const realDuplicates = duplicates.filter(dup => dup.index !== currentEditIndex);
 
-        if (realDuplicates.length > 0) {
-            // 有重复 → 使用 mdui-dialog 提示
-            const dialog = document.getElementById('duplicateWarnDialog');
-            if (!dialog) {
-                console.error('找不到重复警告弹窗！请检查 HTML id="duplicateWarnDialog"');
-                showSnackbar('系统错误：重复警告弹窗未找到', 'error');
-                return;
-            }
-
-            // 设置弹窗消息
-            const messageEl = dialog.querySelector('#duplicateWarnMessage');
-            if (messageEl) {
-                messageEl.innerHTML = `
-                    系统中已存在相同的产品号：<strong>${formData.productId || 'N/A'}</strong><br>
-                    发现 <strong>${realDuplicates.length}</strong> 条重复数据。<br>
-                    您正在<strong>${isEditMode ? '修改为' : '添加'}</strong>该产品号。
-                `;
-            }
-
-            // 绑定“取消添加”按钮（保留原逻辑）
-            const cancelBtn = dialog.querySelector('#duplicateWarnCancelBtn');
-            if (cancelBtn) {
-                cancelBtn.onclick = () => {
-                    const firstDuplicateIndex = realDuplicates[0].index;
-                    closeCustomModal(dom.dataSheet);
-                    dom.virtualKeyboard.style.display = 'none';
-                    highlightAndScrollToRow(firstDuplicateIndex);
-                    dialog.open = false;
-                    showSnackbar('操作已取消', 'info');
-                };
-            }
-
-            // 绑定“覆盖保存”按钮
-            const overrideBtn = dialog.querySelector('#duplicateWarnOverrideBtn');
-            if (overrideBtn) {
-                overrideBtn.onclick = () => {
-                    // 覆盖第一条重复项（可扩展为全部覆盖）
-                    const firstDup = realDuplicates[0];
-                    tableData[firstDup.index] = { ...formData };
-
-                    saveDataToIndexedDB();
-                    updateTable();
-                    dialog.open = false;
-                    closeCustomModal(dom.dataSheet);
-                    dom.virtualKeyboard.style.display = 'none';
-                    showSnackbar('已覆盖保存重复数据', 'success');
-                };
-            }
-
-            // 打开 mdui-dialog
-            dialog.open = true;
-            return; // 阻止后续直接保存
-        }
+if (realDuplicates.length > 0) {
+    showSingleDuplicateWarnDialog(realDuplicates[0], formData, isEditMode);
+    return;
+}
     }
 
     // 6. 无重复或通过验证 → 正常保存
@@ -3965,153 +4183,58 @@ async function saveData() {
     showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
 }
 		
-		function finalizeImport(newData, duplicateEntries, totalImported) {
-		    let actuallyAdded = newData.length;
-		    let actuallyOverridden = 0;
-		    let actuallySkipped = 0;
-		
-		    duplicateEntries.forEach(entry => {
-		        const action = entry.action;
-		        const index = tableData.findIndex(item => item.productId && item.productId.trim() !== '' && item.productId === entry.productId);
-		        if (action === 'override' && index !== -1) {
-		            tableData[index] = entry.newItem;
-		            actuallyOverridden++;
-		        } else if (action === 'skip') {
-		            actuallySkipped++;
-		        }
-		    });
-		
-		    if (newData.length > 0) tableData = [...tableData, ...newData];
-		    
-		    if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
-		        saveDataToIndexedDB();
-		        currentPage = 1;  // 【新增】导入后重置到第一页
-		        updateTable();
-		    }
-		
-		    let resultMessage = `导入完成！共读取 ${totalImported} 条记录。`;
-		    if (actuallyAdded > 0) resultMessage += ` 成功添加 ${actuallyAdded} 条新数据。`;
-		    if (actuallyOverridden > 0) resultMessage += ` 覆盖 ${actuallyOverridden} 条重复数据。`;
-		    if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
-		    if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
-		    showSnackbar(resultMessage, 'success');
-		}
-		
-		
-/**
- * 显示重复数据确认弹窗（强制使用 mdui-dialog 方式）
- * @param {Array} duplicateEntries - 重复项数组
- * @param {Array} [newData=[]] - 新增的非重复数据
- * @param {number} [totalImported=1] - 总导入数量
- */
-function showDuplicateConfirmationModal(duplicateEntries, newData = [], totalImported = 1) {
-    console.log('【重复弹窗】被调用，重复项数量：', duplicateEntries.length);
+function finalizeImport(newData, duplicateEntries, totalImported) {
+    let actuallyAdded = newData.length;
+    let actuallyOverridden = 0;
+    let actuallySkipped = 0;
 
-    // 查找 mdui-dialog 元素
-    const dialog = document.getElementById('duplicateConfirmationModalCustom');
-    if (!dialog || dialog.tagName.toLowerCase() !== 'mdui-dialog') {
-        console.error('【重复弹窗】错误：找不到 mdui-dialog 元素！请检查 HTML 是否为 <mdui-dialog id="duplicateConfirmationModalCustom">');
-        showSnackbar('系统错误：重复确认弹窗未正确配置为 mdui-dialog', 'error');
-        return;
-    }
+    duplicateEntries.forEach(entry => {
+        const action = entry.action;
+        const index = tableData.findIndex(item => 
+            item.productId && entry.productId && 
+            item.productId.trim() === entry.productId.trim()
+        );
 
-    console.log('【重复弹窗】mdui-dialog 元素已找到');
-
-    // 填充统计信息
-    const totalEl = dialog.querySelector('#modal-total-count');
-    const newEl = dialog.querySelector('#modal-new-count');
-    const dupEl = dialog.querySelector('#modal-duplicate-count');
-
-    if (totalEl) totalEl.textContent = totalImported;
-    if (newEl) newEl.textContent = newData.length;
-    if (dupEl) dupEl.textContent = duplicateEntries.length;
-
-    // 清空并渲染重复列表
-    const listContainer = dialog.querySelector('#modal-duplicate-list');
-    if (listContainer) {
-        listContainer.innerHTML = '';
-
-        if (duplicateEntries.length === 0) {
-            listContainer.innerHTML = '<p style="color:#757575;text-align:center;padding:20px;">无重复项（异常情况）</p>';
-        } else {
-            const templateEl = document.getElementById('duplicate-item-template');
-            if (!templateEl) {
-                console.error('【重复弹窗】找不到重复项模板！');
-                listContainer.innerHTML = '<p style="color:red;text-align:center;padding:20px;">模板丢失，无法显示详情</p>';
-            } else {
-                const template = templateEl.innerHTML;
-                duplicateEntries.forEach((entry, idx) => {
-                    let html = template
-                        .replace(/PRODUCT_ID/g, entry.productId || '未知')
-                        .replace(/ITEM_INDEX/g, idx);
-
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = html;
-
-                    // 确保 radio name 唯一
-                    tempDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
-                        radio.name = `action-${idx}`;
-                    });
-
-                    listContainer.appendChild(tempDiv.firstElementChild);
-                });
-            }
+        if (action === 'override' && index !== -1) {
+            // 完整替换，包括 cardImage 图片
+            tableData[index] = { ...entry.newItem };
+            actuallyOverridden++;
+            console.log('【导入覆盖】产品号：', entry.productId, '已替换，包括图片');
+        } else if (action === 'skip') {
+            actuallySkipped++;
         }
+    });
+
+    if (newData.length > 0) {
+        tableData = [...tableData, ...newData];
+        console.log('【导入新增】成功添加', newData.length, '条数据，包括图片');
     }
 
-    // 绑定“全部跳过”“全部覆盖”
-    const skipAllBtn = dialog.querySelector('#modal-btn-select-all-skip');
-    if (skipAllBtn) {
-        skipAllBtn.onclick = () => {
-            dialog.querySelectorAll('input[value="skip"]').forEach(r => r.checked = true);
-        };
-    }
-
-    const overrideAllBtn = dialog.querySelector('#modal-btn-select-all-override');
-    if (overrideAllBtn) {
-        overrideAllBtn.onclick = () => {
-            dialog.querySelectorAll('input[value="override"]').forEach(r => r.checked = true);
-        };
-    }
-
-    // 绑定确认按钮（处理所有重复项）
-    const confirmBtn = dialog.querySelector('#modal-btn-confirm');
-    if (confirmBtn) {
-        confirmBtn.onclick = () => {
-            let overrideCount = 0;
-            duplicateEntries.forEach((entry, idx) => {
-                const radio = dialog.querySelector(`input[name="action-${idx}"]:checked`);
-                if (radio?.value === 'override') {
-                    tableData[entry.index] = { ...entry.newItem };
-                    overrideCount++;
-                }
+    if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
+        console.log('【导入】开始持久化保存到 IndexedDB...');
+        saveDataToIndexedDB()
+            .then(() => {
+                console.log('【导入】数据保存成功，开始刷新表格');
+                currentPage = 1;  // 重置到第一页
+                updateTable();    // 强制刷新，确保图片显示
+                console.log('【导入】表格已刷新，图片应正常显示');
+            })
+            .catch(err => {
+                console.error('【导入】保存到 IndexedDB 失败：', err);
+                showSnackbar('导入数据保存失败，请重试', 'error');
             });
-
-            if (overrideCount > 0) {
-                saveDataToIndexedDB();
-                updateTable();
-                showSnackbar(`已覆盖 ${overrideCount} 条重复数据`, 'success');
-            } else {
-                showSnackbar('所有重复项已跳过', 'info');
-            }
-
-            dialog.open = false;  // 关闭 mdui-dialog
-        };
+    } else {
+        console.log('【导入】无任何变更，无需保存');
     }
 
-    // 绑定取消按钮
-    const cancelBtn = dialog.querySelector('#modal-btn-cancel-import');
-    if (cancelBtn) {
-        cancelBtn.onclick = () => {
-            dialog.open = false;
-            showSnackbar('操作已取消', 'info');
-        };
-    }
-
-    // ★★★ 关键：使用 mdui-dialog 的标准打开方式 ★★★
-    dialog.open = true;
-    console.log('【重复弹窗】已调用 dialog.open = true，弹窗应正常显示');
+    let resultMessage = `导入完成！共读取 ${totalImported} 条记录。`;
+    if (actuallyAdded > 0) resultMessage += ` 成功添加 ${actuallyAdded} 条新数据。`;
+    if (actuallyOverridden > 0) resultMessage += ` 覆盖 ${actuallyOverridden} 条重复数据。`;
+    if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
+    if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
+    showSnackbar(resultMessage, 'success');
 }
+
 
 /**
  * 比较两个对象，返回不同的字段列表（用于重复数据确认弹窗显示差异）
@@ -4272,91 +4395,106 @@ function getObjectDifferences(oldObj, newObj) {
 		
 		    listContainer.parentNode.appendChild(paginationDiv);
 		}
-		
-		
-		function handleFileImport(e) {
-		    const file = e.target.files[0];
-		    if (!file) return;
-		
-		    if (file.size > 20 * 1024 * 1024) {
-		        showSnackbar('文件太大（>20MB），请压缩后导入', 'error');
-		        dom.fileInput.value = '';
-		        return;
-		    }
-		
-		    const fileName = file.name.toLowerCase();
-		
-		    if (fileName.endsWith('.zip')) {
-		        showSnackbar('正在解析 ZIP 文件...', 'info');
-		        JSZip.loadAsync(file)
-		            .then(zip => {
-		                let excelEntry = null;
-		                const imageEntries = {};
-		
-		                zip.forEach((relativePath, entry) => {
-		                    const lowerPath = relativePath.toLowerCase();
-		                    if (lowerPath.endsWith('.xlsx') || lowerPath.endsWith('.xls')) {
-		                        excelEntry = entry;
-		                    } else if (/\.(jpg|jpeg|png)$/i.test(lowerPath)) {
-		                        const match = relativePath.match(/[_-]([^_.-]+)\.(jpg|jpeg|png)$/i);
-		                        if (match) {
-		                            imageEntries[match[1].trim()] = entry;
-		                        }
-		                    }
-		                });
-		
-		                if (!excelEntry) {
-		                    showSnackbar('ZIP 中未找到 Excel 文件', 'error');
-		                    dom.fileInput.value = '';
-		                    return;
-		                }
-		
-		                excelEntry.async('arraybuffer').then(buffer => {
-		                    const wb = XLSX.read(buffer, { type: 'array' });
-		                    processWorkbookImport(wb, imageEntries, {});
-		                });
-		            })
-		            .catch(err => {
-		                showSnackbar('ZIP 文件解析失败', 'error');
-		                console.error(err);
-		                dom.fileInput.value = '';
-		            });
-		
-		    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-		        showSnackbar('正在读取 Excel 文件...', 'info');
-		        const reader = new FileReader();
-		        reader.onload = async function(event) {
-		            try {
-		                const data = event.target.result;
-		                const zip = await JSZip.loadAsync(data);
-		                const embeddedImages = [];
-		
-		                let imageId = 1;
-		                for (const fileName in zip.files) {
-		                    if (fileName.match(/xl\/media\/image\d+\.(jpeg|jpg|png)/i)) {
-		                        const base64 = await zip.files[fileName].async('base64');
-		                        const ext = fileName.match(/\.(jpeg|jpg|png)/i)?.[1] || 'jpeg';
-		                        embeddedImages.push(`data:image/${ext};base64,${base64}`);
-		                        imageId++;
-		                    }
-		                }
-		
-		                const wb = XLSX.read(data, { type: 'array' });
-		                processWorkbookImport(wb, {}, embeddedImages);
-		            } catch (err) {
-		                showSnackbar('文件解析失败', 'error');
-		                console.error(err);
-		                dom.fileInput.value = '';
-		            }
-		        };
-		        reader.readAsArrayBuffer(file);
-		    } else {
-		        showSnackbar('仅支持 .xlsx、.xls 或 .zip 文件', 'warning');
-		        dom.fileInput.value = '';
-		    }
-		}
+function handleFileImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    console.log('【导入】文件选择：', file.name, '大小：', (file.size / 1024 / 1024).toFixed(2), 'MB');
+
+    if (file.size > 20 * 1024 * 1024) {
+        showSnackbar('文件太大（>20MB），请压缩后导入', 'error');
+        dom.fileInput.value = '';
+        return;
+    }
+
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.zip')) {
+        showSnackbar('正在解析 ZIP 文件...', 'info');
+        JSZip.loadAsync(file)
+            .then(zip => {
+                let excelEntry = null;
+                const imageEntries = {}; // 产品号 -> zip entry
+
+                zip.forEach((relativePath, entry) => {
+                    const lowerPath = relativePath.toLowerCase();
+                    if (lowerPath.endsWith('.xlsx') || lowerPath.endsWith('.xls')) {
+                        excelEntry = entry;
+                    } else if (/\.(jpg|jpeg|png)$/i.test(lowerPath)) {
+                        // 支持多种命名格式：产品号.jpg、产品号_xxx.jpg、xxx-产品号.png
+                        const match = relativePath.match(/([A-Za-z0-9]+)\.(jpg|jpeg|png)$/i);
+                        if (match && match[1]) {
+                            imageEntries[match[1].trim()] = entry;
+                            console.log('【ZIP】找到图片：产品号', match[1], '路径', relativePath);
+                        }
+                    }
+                });
+
+                if (!excelEntry) {
+                    showSnackbar('ZIP 中未找到 Excel 文件', 'error');
+                    dom.fileInput.value = '';
+                    return;
+                }
+
+                excelEntry.async('arraybuffer').then(buffer => {
+                    const wb = XLSX.read(buffer, { type: 'array' });
+                    processWorkbookImport(wb, imageEntries, []);
+                }).catch(err => {
+                    console.error('【导入 ZIP】Excel 读取失败：', err);
+                    showSnackbar('ZIP 内 Excel 读取失败', 'error');
+                });
+            })
+            .catch(err => {
+                console.error('【导入 ZIP】解析失败：', err);
+                showSnackbar('ZIP 文件解析失败', 'error');
+                dom.fileInput.value = '';
+            });
+    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        showSnackbar('正在读取 Excel 文件（含嵌入图片）...', 'info');
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const data = event.target.result;
+                const zip = await JSZip.loadAsync(data);
+                const embeddedImages = []; // 按行顺序存储嵌入图片 base64
+
+                let imageId = 1;
+                for (const fileName in zip.files) {
+                    if (fileName.match(/xl\/media\/image\d+\.(jpeg|jpg|png)/i)) {
+                        const base64 = await zip.files[fileName].async('base64');
+                        const ext = fileName.match(/\.(jpeg|jpg|png)/i)?.[1] || 'jpeg';
+                        embeddedImages.push(`data:image/${ext};base64,${base64}`);
+                        console.log('【导入】找到嵌入图片 ID:', imageId);
+                        imageId++;
+                    }
+                }
+
+                const wb = XLSX.read(data, { type: 'array' });
+                processWorkbookImport(wb, {}, embeddedImages);
+            } catch (err) {
+                console.error('【导入】Excel + 嵌入图片解析失败：', err);
+                showSnackbar('文件解析失败，请检查是否包含图片', 'error');
+                dom.fileInput.value = '';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        showSnackbar('仅支持 .xlsx、.xls 或 .zip 文件', 'warning');
+        dom.fileInput.value = '';
+    }
+}
 		
 		function processWorkbookImport(workbook, zipImageEntries = {}, embeddedImages = []) {
+		    console.log('【批量导入】函数被调用！当前时间：', new Date().toLocaleString());
+    console.log('【批量导入】工作表数量：', workbook.SheetNames?.length || '未知');
+
+    if (!workbook || !workbook.SheetNames) {
+        console.error('【批量导入】工作簿无效或为空！');
+        showSnackbar('导入文件无效，请检查格式', 'error');
+        return;
+    }
+
+    console.log('【批量导入】开始解析工作表...');
 		    const sheetNames = workbook.SheetNames;
 		
 		    const proceedWithSheet = (sheetName) => {
@@ -4490,11 +4628,11 @@ function getObjectDifferences(oldObj, newObj) {
 		            }
 		        });
 		
-		        if (duplicateEntries.length > 0) {
-		            showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
-		        } else {
-		            finalizeImport(newData, [], totalImported);
-		        }
+		if (duplicateEntries.length > 0) {
+    showDuplicateConfirmationModal(duplicateEntries, newData, totalImported);
+} else {
+    finalizeImport(newData, [], totalImported);
+}
 		    };
 		
 		    if (sheetNames.length > 1) {
@@ -5468,104 +5606,113 @@ function fileToBase64(file) {
 		        if (e.target === overlay) overlay.remove();
 		    };
 		}
-		function initTableZoom() {
-		    const container = document.querySelector('.data-table-container');
-		    if (!container) return;
-		
-		    let scale = 1;
-		    let startDistance = 0;
-		    let startScale = 1;
-		
-		    // 预存原始尺寸（内容更新时重新测量）
-		    let naturalWidth = 0;
-		    let naturalHeight = 0;
-		
-		    const measureNaturalSize = () => {
-		        const oldTransform = container.style.transform;
-		        container.style.transform = 'none';
-		        naturalWidth = container.scrollWidth;
-		        naturalHeight = container.scrollHeight;
-		        container.style.transform = oldTransform || 'scale(1)';
-		    };
-		
-		    // 初始测量
-		    measureNaturalSize();
-		
-		    const MIN_SCALE = 0.5;
-		    const MAX_SCALE = 2.0;
-		
-		    const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
-		
-		    const getDistance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-		
-		    const handlePinch = (e) => {
-		        if (e.touches.length !== 2) {
-		            if (e.type === 'touchend' || e.type === 'touchcancel') startDistance = 0;
-		            return;
-		        }
-		
-		        e.preventDefault();
-		
-		        const currentDist = getDistance(e.touches[0], e.touches[1]);
-		
-		        if (e.type === 'touchstart') {
-		            startDistance = currentDist;
-		            startScale = scale;
-		        } else if (startDistance > 0) {
-		            const ratio = currentDist / startDistance;
-		            scale = clamp(startScale * ratio, MIN_SCALE, MAX_SCALE);
-		
-		            // 实时同步容器实际尺寸
-		            const newWidth = naturalWidth * scale;
-		            const newHeight = naturalHeight * scale;
-		
-		            container.style.width = `${newWidth}px`;
-		            container.style.height = `${newHeight}px`;
-		            container.style.transform = `scale(${scale})`;
-		        }
-		    };
-		
-		    // 绑定事件（防重复）
-		    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev => {
-		        container.removeEventListener(ev, handlePinch, { passive: false });
-		        container.addEventListener(ev, handlePinch, { passive: false });
-		    });
-		
-		    // 双击表头重置为 1x
-		    const thead = document.querySelector('#dataTable thead');
-		    if (thead) {
-		        let lastTap = 0;
-		        thead.addEventListener('touchend', (e) => {
-		            const now = Date.now();
-		            if (now - lastTap < 300) {
-		                e.preventDefault();
-		                scale = 1;
-		                container.style.width = `${naturalWidth}px`;
-		                container.style.height = `${naturalHeight}px`;
-		                container.style.transform = 'scale(1)';
-		            }
-		            lastTap = now;
-		        });
-		    }
-		
-		    // 数据更新后重新测量 + 重置缩放
-		    const origUpdateTable = window.updateTable;
-		    window.updateTable = function (...args) {
-		        origUpdateTable?.apply(this, args);
-		        setTimeout(() => {
-		            measureNaturalSize(); // 重新测真实内容尺寸
-		            scale = 1;
-		            container.style.width = `${naturalWidth}px`;
-		            container.style.height = `${naturalHeight}px`;
-		            container.style.transform = 'scale(1)';
-		        }, 150); // 给 DOM 渲染留点时间
-		    };
-		
-		    // 初始重置
-		    container.style.width = `${naturalWidth}px`;
-		    container.style.height = `${naturalHeight}px`;
-		    container.style.transform = 'scale(1)';
-		}
+	
+	function initTableZoom() {
+    const container = document.querySelector('.data-table-container');
+    if (!container) return;
+
+    // 全局保存当前缩放比例（表格刷新时保持不变）
+    let currentScale = 1;  // 初始 1x
+    const MIN_SCALE = 0.5;
+    const MAX_SCALE = 2.0;
+
+    let startDistance = 0;
+    let startScale = currentScale;
+
+    // 预存原始尺寸（内容更新时重新测量）
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+
+    // 测量原始内容尺寸（去掉 transform 后测量）
+    const measureNaturalSize = () => {
+        const oldTransform = container.style.transform;
+        container.style.transform = 'none';
+        naturalWidth = container.scrollWidth;
+        naturalHeight = container.scrollHeight;
+        // 恢复原有缩放（不丢失）
+        container.style.transform = oldTransform || `scale(${currentScale})`;
+    };
+
+    // 初始测量
+    measureNaturalSize();
+
+    const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+    const getDistance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+    const handlePinch = (e) => {
+        if (e.touches.length !== 2) {
+            if (e.type === 'touchend' || e.type === 'touchcancel') startDistance = 0;
+            return;
+        }
+
+        e.preventDefault();
+
+        const currentDist = getDistance(e.touches[0], e.touches[1]);
+
+        if (e.type === 'touchstart') {
+            startDistance = currentDist;
+            startScale = currentScale;
+        } else if (startDistance > 0) {
+            const ratio = currentDist / startDistance;
+            currentScale = clamp(startScale * ratio, MIN_SCALE, MAX_SCALE);
+
+            // 实时应用缩放
+            applyScale(currentScale);
+        }
+    };
+
+    // 统一应用缩放的函数（供缩放和表格刷新使用）
+    function applyScale(scale) {
+        container.style.width = `${naturalWidth * scale}px`;
+        container.style.height = `${naturalHeight * scale}px`;
+        container.style.transform = `scale(${scale})`;
+        container.style.transformOrigin = 'top left';
+        console.log('【缩放】当前比例已应用：', scale);
+    }
+
+    // 绑定双指事件（防重复）
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev => {
+        container.removeEventListener(ev, handlePinch, { passive: false });
+        container.addEventListener(ev, handlePinch, { passive: false });
+    });
+
+    // 双击表头重置为 1x（可选，如果你不想保留可以删除）
+    const thead = document.querySelector('#dataTable thead');
+    if (thead) {
+        let lastTap = 0;
+        thead.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                e.preventDefault();
+                currentScale = 1;
+                applyScale(currentScale);
+            }
+            lastTap = now;
+        });
+    }
+
+    // 关键修改：表格更新时重新测量尺寸，但**保持当前缩放比例不变**
+    const origUpdateTable = window.updateTable;
+    window.updateTable = function (...args) {
+        // 先执行原表格刷新逻辑
+        origUpdateTable?.apply(this, args);
+
+        setTimeout(() => {
+            // 重新测量原始内容尺寸（表格内容变了）
+            measureNaturalSize();
+
+            // 不重置 scale，继续使用之前的 currentScale
+            applyScale(currentScale);
+            console.log('【updateTable】表格刷新完成，保持原有缩放比例：', currentScale);
+        }, 150); // 留时间让 DOM 渲染完成
+    };
+
+    // 初始应用缩放
+    applyScale(currentScale);
+}
+	
+	
 		document.addEventListener('DOMContentLoaded', () => {
 		  initTheme();
 		  initEventListeners();
