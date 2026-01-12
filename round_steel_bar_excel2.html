@@ -1260,23 +1260,94 @@
     </tr>
 </script>
 	<!-- 关于弹窗 -->
-	<mdui-dialog id="aboutDialog" fullscreen headline="关于 & 操作指南" close-on-overlay-click class="full-height-custom">
-		<div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"> 圆棒入库数据管理 <br><span style="font-size: 12px; font-weight: normal; color: #666;">版本：26.1.06</span>
-		</div>
-		<div style="font-size: 12px; color: #888; margin-bottom: 12px;"> 制作：使用Gemini + Doubao + Grok<br /> 更新：持续修复 bug，优化用户体验 </div>
-		<mdui-divider style="margin-bottom: 12px;"></mdui-divider>
-		<div style="font-size: 13px; line-height: 1.8; color: #333;">
-			<strong>【基础操作】</strong><br /> • <b>添加/编辑数据</b>：点击右下角 + 按钮，或直接点击表格行<br /> • <b>快速编辑</b>：点击表格单元格，可快速修改单个字段<br /> • <b>多选删除</b>：点击右上角 ⋮ → 进入多选模式 → 勾选行 → 批量删除<br />
-			<br />
-			<strong>【数据处理】</strong><br /> • <b>导入/导出 Excel</b>：左侧抽屉菜单 → 导入 Excel / 导出 Excel<br /> • <b>搜索</b>：顶部搜索框输入关键字，支持搜索所有字段<br /> • <b>搜索替换</b>：点击 🔍↔️ 按钮打开替换面板，可替换当前或全部<br /> • <b>计算重量</b>：抽屉菜单 → 计算重量 → 输入参数并填充<br /> • <b>数据排序</b>：抽屉菜单 → 数据排序 → 添加规则并应用<br />
-			<br />
-			<strong>【手势与显示】</strong><br /> • <b>表格缩放</b>：双指捏合缩小，双指张开放大（最大原尺寸）<br /> • <b>移动行序</b>：鼠标悬停在行左侧，使用出现 ↑↓ 按钮拖动<br /> • <b>手机端移动行序</b>：进入多选模式，点击项目出现 ↑↓ 按钮点击操作<br />
-			<br />
-			<strong>【虚拟键盘说明】</strong><br /> • <b>自动弹出</b>：点击输入框自动弹出自定义键盘<br /> • <b>切换字段</b>：点击右下角 <b>▼（完成）</b> 键自动跳转下一项<br /> • <b>关闭键盘</b>：长按 <b>▼</b> 键或在快编模式点击 <b>✔</b> 键<br /> • <b>快捷删除</b>：<b>←✘</b> 清空内容；<b>←</b> 删除前一字符（支持长按）<br /> • <b>快捷输入</b>：首行支持钢种、状态、位置等一键填入<br />
-		</div>
-		<div style="margin-top: 16px; font-size: 12px; color: #999; text-align: center;"> 如有问题或建议，欢迎反馈改进。感谢使用！ </div>
-		<mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;"> 关闭 </mdui-button>
-	</mdui-dialog>
+
+<!-- 关于弹窗（极致紧凑版：去掉所有多余边距） -->
+<mdui-dialog id="aboutDialog" fullscreen headline="关于 & 操作指南" close-on-overlay-click class="full-height-custom">
+  <div style="padding: 16px 20px; font-size: 15px; line-height: 1.65; color: var(--mdui-color-on-surface, #212121);">
+    <!-- 标题 + 版本（紧贴顶部） -->
+    <div style="text-align: center; margin: 0 0 12px 0;">
+      <div style="font-size: 1.45rem; font-weight: 600; color: var(--mdui-color-primary, #00796b);">
+        圆棒入库数据管理
+      </div>
+      <div style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); margin-top: 4px;">
+        版本：2026.01.12
+      </div>
+    </div>
+
+    <!-- 制作者信息（极简） -->
+    <div style="text-align: center; font-size: 0.85rem; color: var(--mdui-color-on-surface-variant, #757575); margin: 0 0 16px 0;">
+      制作：Gemini + Doubao + Grok　持续优化中
+    </div>
+
+    <mdui-divider style="margin: 12px 0;"></mdui-divider>
+
+    <!-- 操作指南（去掉多余间距，使用更紧凑列表） -->
+    <div style="display: grid; gap: 20px;">
+      <!-- 基础操作 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          基础操作
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">• 添加/编辑：右下 + 按钮，或点击表格行</li>
+          <li style="margin-bottom: 4px;">• 快速编辑：直接点表格单元格修改</li>
+          <li>• 多选删除：右上 ⋮ → 多选模式 → 批量删除</li>
+        </ul>
+      </div>
+
+      <!-- 数据处理 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          数据处理
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">• 导入/导出：抽屉菜单 → 导入/导出 Excel</li>
+          <li style="margin-bottom: 4px;">• 搜索：顶部搜索框，支持全字段</li>
+          <li style="margin-bottom: 4px;">• 搜索替换：点击 🔍↔️ 打开替换面板</li>
+          <li style="margin-bottom: 4px;">• 计算重量：抽屉 → 计算重量 → 填充数据</li>
+          <li>• 数据排序：抽屉 → 数据排序 → 应用规则</li>
+        </ul>
+      </div>
+
+      <!-- 手势与显示 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          手势与显示
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">• 表格缩放：双指捏合/张开</li>
+          <li style="margin-bottom: 4px;">• 移动行序：鼠标悬停行左侧 ↑↓ 拖动</li>
+          <li>• 手机移动行序：多选模式下点击 ↑↓ 操作</li>
+        </ul>
+      </div>
+
+      <!-- 虚拟键盘 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          虚拟键盘
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">• 自动弹出：点输入框即显示</li>
+          <li style="margin-bottom: 4px;">• 切换字段：右下 ▼ 键跳转下一项</li>
+          <li style="margin-bottom: 4px;">• 关闭：长按 ▼ 或快编模式点 ✔</li>
+          <li style="margin-bottom: 4px;">• 快捷删除：←✘ 清空；← 删除前一字符</li>
+          <li>• 快捷输入：首行一键填钢种/状态/位置</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 结尾语（紧凑） -->
+    <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575);">
+      如有建议，欢迎反馈。感谢使用！
+    </div>
+  </div>
+
+  <!-- 关闭按钮 -->
+  <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
+    关闭
+  </mdui-button>
+</mdui-dialog>
+
 	<!-- 删除图片确认对话框 -->
 	<mdui-dialog id="deleteImageConfirmDialog" headline="确认删除" close-on-overlay-click close-on-esc>
 		<div style="padding:16px 0;font-size:1rem;">确定要删除这张卡片图片吗？删除后不可恢复。</div>
@@ -1364,30 +1435,7 @@
 	
 	
 	
-	<script>
-		// 初始化开关显隐
-		toggleFilterMatchSwitch();
-		
-		// 搜索替换开关显隐函数
-		function toggleFilterMatchSwitch() {
-		    const switchItem = document.getElementById('filterMatchRowsMenuItem');
-		    const isSearchReplaceOpen = document.getElementById('searchReplaceContainer').style.display !== 'none';
-		    switchItem.style.display = isSearchReplaceOpen ? 'flex' : 'none';
-		}
-		
-		// 绑定搜索替换按钮事件
-		document.getElementById('toggleSearchReplaceBtn').addEventListener('click', function() {
-		    const container = document.getElementById('searchReplaceContainer');
-		    container.style.display = container.style.display === 'none' ? 'block' : 'none';
-		    toggleFilterMatchSwitch();
-		});
-		
-		// 保留原有开关功能逻辑（请替换为你实际的过滤逻辑）
-		document.getElementById('filterMatchRowsSwitch').addEventListener('change', function() {
-		    
-		    
-		});
-	</script>
+
 	<script>
 		/**
 		 * =========================================================================
@@ -1829,6 +1877,18 @@ function initEventListeners() {
         }, 150);
     });
 
+
+document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) => {
+    isFilterMatchRows = e.target.checked;
+    
+    // 持久化开关状态
+    localStorage.setItem('filterMatchRows', isFilterMatchRows);
+    
+    currentPage = 1;           // 重置到第一页
+    updateTable();             // 立即刷新表格（显示/隐藏行）
+    console.log('过滤开关状态：', isFilterMatchRows ? '开启（只显示匹配行）' : '关闭（显示全部）');
+});
+
     dom.quickEditInput.addEventListener('click', (e) => {
         e.stopPropagation();
         currentInput = e.target;
@@ -2061,24 +2121,32 @@ function bindEditImageButtons() {
 		        dom.pageJumpInput.style.display = 'none';
 		        dom.pageInfoText.style.display = 'inline-block';
 		    }
-		function toggleSearchReplaceVisibility() {
-		    isSearchReplaceVisible = !isSearchReplaceVisible;
-		    const container = dom.searchReplaceContainer;
-		    
-		    if (isSearchReplaceVisible) {
-		        container.style.display = 'flex';
-		        dom.toggleSearchReplaceBtn.icon = 'expand_less';
-		        startSearch();
-		    } else {
-		        container.style.display = 'none';
-		        dom.toggleSearchReplaceBtn.icon = 'find_replace';
-		        isSearchActive = false;
-		        searchMatches = [];
-		        currentMatchIndex = -1;
-		        updateTable();
-		    }
-		}
-		
+function toggleSearchReplaceVisibility() {
+    isSearchReplaceVisible = !isSearchReplaceVisible;
+    const container = document.getElementById('searchReplaceContainer');
+    const menuItem = document.getElementById('filterMatchRowsMenuItem');
+    const switchEl = document.getElementById('filterMatchRowsSwitch');
+
+    if (isSearchReplaceVisible) {
+        container.style.display = 'block';
+        document.getElementById('toggleSearchReplaceBtn').icon = 'expand_less';
+
+        // 恢复上次开关状态（从 localStorage 读取）
+        const savedFilter = localStorage.getItem('filterMatchRows') === 'true';
+        isFilterMatchRows = savedFilter;
+        switchEl.checked = savedFilter;
+        menuItem.style.display = 'flex';  // 显示开关
+
+        startSearch();  // 触发搜索（会根据当前开关状态过滤）
+    } else {
+        container.style.display = 'none';
+        document.getElementById('toggleSearchReplaceBtn').icon = 'find_replace';
+        menuItem.style.display = 'none';
+        // 不强制关闭过滤开关，让它保持上次状态
+        // 如果你想关闭时自动关闭过滤，可以加：isFilterMatchRows = false; switchEl.checked = false;
+        updateTable();  // 关闭时刷新（保持当前过滤状态）
+    }
+}
 		function handleSelectAll() {
 		    if (!isMultiSelectMode) return;
 		    selectedRows.clear();
@@ -2118,140 +2186,141 @@ function bindEditImageButtons() {
 		    updateKeyboardForInput(currentInput);
 		}
 		
-		function getFilteredData() {
-		  if (!searchTerm) return [...tableData];
-		  return tableData.filter(item => 
-		    Object.values(item).some(value => 
-		      value !== null && value !== undefined && value.toString().toLowerCase().includes(searchTerm)
-		    )
-		  );
-		}
-		
-		function updateTable() {
-		    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
-		    const displayData = [...tableData];
-		
-		    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
-		    currentPage = Math.min(currentPage, totalPages);
-		
-		    const startIndex = (currentPage - 1) * PAGE_SIZE;
-		    const endIndex = startIndex + PAGE_SIZE;
-		    const pageData = displayData.slice(startIndex, endIndex);
-		
-		    // 更新底部栏信息
-		    dom.totalCountText.textContent = `共 ${tableData.length} 条数据`;
-		    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
-		    dom.pageJumpInput.value = currentPage;
-		    dom.pageJumpInput.max = totalPages;
-		    dom.bottomPrevBtn.disabled = currentPage === 1;
-		    dom.bottomNextBtn.disabled = currentPage === totalPages;
-		
-		    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
-		    dom.selectedCount.textContent = selectedRows.size;
-		
-		    // 多选模式下显示/隐藏复选框列
-		    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
-		    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
-		    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
-		
-		    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
-		    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
-		    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
-		    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
-		
-		    // 全选复选框状态
-		    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
-		        const origIndex = tableData.indexOf(item);
-		        return selectedRows.has(origIndex);
-		    });
-		
-		    // 关键：控制表头、tbody、空状态的显示
-		    const tableHead = document.querySelector('#dataTable thead');
-		    const emptyState = document.getElementById('emptyState');
-		
-		    if (tableData.length === 0) {
-		        // 无数据：隐藏表头和分页，显示空状态
-		        if (tableHead) tableHead.style.display = 'none';
-		        dom.tableBody.innerHTML = ''; // 清空 tbody
-		        emptyState.style.display = 'flex';
-		
-		        // 隐藏底部分页栏和批量删除按钮（美观）
-		        document.querySelector('.bottom-data-summary').style.display = 'none';
-		        document.getElementById('deleteSelectedBtn').style.display = 'none';
-		    } else {
-		        // 有数据：显示表头和分页，隐藏空状态
-		        if (tableHead) tableHead.style.display = 'table-header-group';
-		        emptyState.style.display = 'none';
-		        document.querySelector('.bottom-data-summary').style.display = 'flex';
-		
-		        // 清空并重新渲染表格体
-		        dom.tableBody.innerHTML = '';
-		
-		        pageData.forEach((item, displayIndex) => {
-		            const originalIndex = tableData.indexOf(item);
-		            const globalSeq = originalIndex + 1;
-		
-		            const row = document.createElement('tr');
-		            row.setAttribute('data-index', originalIndex);
-		
-		            if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
-		
-		            row.innerHTML = `
-		                <td class="seq-col">
-		                    ${globalSeq}
-		                    <div class="move-buttons">
-		                        <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
-		                          <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
-		                        </button>
-		                        <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
-		                          <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
-		                        </button>
-		                    </div>
-		                </td>
-		                <td class="checkbox-col" style="display:${displayStyle};">
-		                    <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
-		                </td>
-		                <td data-field="steelType">${item.steelType || '-'}</td>
-		                <td data-field="productId">${item.productId || '-'}</td>
-		                <td data-field="cardId">${item.cardId || '-'}</td>
-		                <td data-field="furnaceId">${item.furnaceId || '-'}</td>
-		                <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
-		                <td data-field="diameter">${item.diameter || '-'}</td>
-		                <td data-field="length">${item.length || '-'}</td>
-		                <td data-field="weight">${item.weight || '-'}</td>
-		                <td data-field="status">${item.status || '-'}</td>
-		                <td data-field="position">${item.position || '-'}</td>
-		                <td data-field="hardness">${item.hardness || '-'}</td>
-		                <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
-		                
-<td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
-    ${item.cardImage ? 
-      `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" 
-            onclick="showImagePreviewByIndex(${originalIndex}); event.stopPropagation();">
-         <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
-       </div>`
-      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" 
-            onclick="startDirectTakePhoto(${originalIndex}); event.stopPropagation();">
-           <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
-         </div>`
+		// 获取当前显示的数据（支持只显示匹配行）
+function getFilteredData() {
+    if (!isSearchActive || !dom.searchInput.value.trim()) {
+        return [...tableData]; // 无搜索词 → 显示全部
     }
-</td>
-		                <td class="action-col">
-		                    <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
-		                    <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
-		                </td>
-		            `;
-		
-		            dom.tableBody.appendChild(row);
-		        });
-		
-		        // 应用搜索高亮
-		        applySearchHighlight();
-		
-		        // 绑定行事件
-		        bindRowEvents();
-		    }
-		}
+
+    if (isFilterMatchRows) {
+        // 只显示有匹配的行（去重）
+        const matchedRows = new Set(searchMatches.map(m => m.rowIndex));
+        return tableData.filter((_, index) => matchedRows.has(index));
+    } else {
+        // 普通模式：显示全部行 + 高亮
+        return [...tableData];
+    }
+}
+		function updateTable() {
+    const displayData = getFilteredData();  // 根据开关过滤数据
+
+    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
+    currentPage = Math.min(currentPage, totalPages);
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = displayData.slice(start, start + PAGE_SIZE);
+
+    // 更新统计
+    dom.totalCountText.textContent = displayData.length === tableData.length
+        ? `共 ${tableData.length} 条数据`
+        : `共 ${displayData.length} 条匹配数据（原 ${tableData.length} 条）`;
+
+    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+    dom.pageJumpInput.value = currentPage;
+    dom.pageJumpInput.max = totalPages;
+    dom.bottomPrevBtn.disabled = currentPage === 1;
+    dom.bottomNextBtn.disabled = currentPage === totalPages;
+
+    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+    dom.selectedCount.textContent = selectedRows.size;
+
+    const tableHead = document.querySelector('#dataTable thead');
+    const tbody = dom.tableBody;
+    const emptyState = document.getElementById('emptyState');
+
+    // 清空现有内容
+    tbody.innerHTML = '';
+
+    if (displayData.length === 0) {
+        if (tableHead) tableHead.style.display = 'none';
+        emptyState.style.display = 'flex';
+        document.querySelector('.bottom-data-summary').style.display = 'none';
+        document.getElementById('deleteSelectedBtn').style.display = 'none';
+        if (isSearchActive && isFilterMatchRows) {
+            emptyState.querySelector('p').textContent = '未找到匹配项，请检查搜索词或关闭“只显示匹配行”';
+        }
+        return;
+    }
+
+    // 有数据：显示表头和分页
+    if (tableHead) tableHead.style.display = 'table-header-group';
+    emptyState.style.display = 'none';
+    document.querySelector('.bottom-data-summary').style.display = 'flex';
+
+    // 判断是否为“只显示匹配行”模式
+    if (isFilterMatchRows && isSearchActive) {
+        // 独立显示匹配结果表格
+        tbody.innerHTML = `
+            <tr style="background: #fff3e0;">
+                <th colspan="16" style="text-align:center; font-size:1.1rem; padding:12px;">
+                    匹配结果（共 ${displayData.length} 条）
+                </th>
+            </tr>
+        `;
+    }
+
+    // 渲染行（与原逻辑一致）
+    pageData.forEach((item, displayIdx) => {
+        const originalIndex = tableData.indexOf(item);
+        const globalSeq = originalIndex + 1;
+
+        const row = document.createElement('tr');
+        row.setAttribute('data-index', originalIndex);
+
+        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
+
+        row.innerHTML = `
+            <td class="seq-col">
+                ${globalSeq}
+                <div class="move-buttons">
+                    <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
+                        <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
+                    </button>
+                    <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
+                        <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
+                    </button>
+                </div>
+            </td>
+            <td class="checkbox-col" style="display:${isMultiSelectMode ? 'table-cell' : 'none'};">
+                <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
+            </td>
+            <td data-field="steelType">${item.steelType || '-'}</td>
+            <td data-field="productId">${item.productId || '-'}</td>
+            <td data-field="cardId">${item.cardId || '-'}</td>
+            <td data-field="furnaceId">${item.furnaceId || '-'}</td>
+            <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
+            <td data-field="diameter">${item.diameter || '-'}</td>
+            <td data-field="length">${item.length || '-'}</td>
+            <td data-field="weight">${item.weight || '-'}</td>
+            <td data-field="status">${item.status || '-'}</td>
+            <td data-field="position">${item.position || '-'}</td>
+            <td data-field="hardness">${item.hardness || '-'}</td>
+            <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
+            <td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
+                ${item.cardImage ? 
+                  `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" 
+                        onclick="showImagePreviewByIndex(${originalIndex}); event.stopPropagation();">
+                     <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
+                   </div>`
+                  : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" 
+                        onclick="startDirectTakePhoto(${originalIndex}); event.stopPropagation();">
+                       <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
+                     </div>`
+                }
+            </td>
+            <td class="action-col">
+                <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+                <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    // 高亮 & 事件绑定
+    applySearchHighlight();
+    bindRowEvents();
+}
 		
 		/**
 		 * 更新搜索结果计数显示（修复占位符暴露问题）
@@ -2372,44 +2441,7 @@ function bindEditImageButtons() {
 		        }
 		    }
 		}
-		function startSearch() {
-		    const query = dom.searchInput.value.trim();
-		    if (!query) {
-		        isSearchActive = false;
-		        searchMatches = [];
-		        currentMatchIndex = -1;
-		        applySearchHighlight(); // 清除高亮
-		        dom.replaceOneBtn.disabled = true;
-		        dom.replaceAllBtn.disabled = true;
-		        return;
-		    }
-		
-		    searchMatches = [];
-		    tableData.forEach((item, index) => {
-		        searchableFields.forEach(field => {
-		            const value = (item[field] || '').toString().toLowerCase();
-		            if (value.includes(query.toLowerCase())) {
-		                searchMatches.push({
-		                    rowIndex: index,
-		                    field: field
-		                });
-		            }
-		        });
-		    });
-		
-		    isSearchActive = true;
-		    currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
-		
-		    dom.replaceOneBtn.disabled = searchMatches.length === 0;
-		    dom.replaceAllBtn.disabled = searchMatches.length === 0;
-		
-		    // 跳转到第一个匹配项（会自动翻页并滚动）
-		    if (searchMatches.length > 0) {
-		        jumpToMatch(0);
-		    } else {
-		        applySearchHighlight();
-		    }
-		}
+	
 		
 		function navigateMatch(direction) {
 		    if (searchMatches.length === 0) {
@@ -2916,48 +2948,49 @@ function findDuplicates(newItem) {
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
 		
 		
-		function startSearch() {
-		    const query = dom.searchInput.value.trim();
-		
-		    // 清空搜索状态
-		    searchMatches = [];
-		    currentMatchIndex = -1;
-		
-		    if (!query) {
-		        isSearchActive = false;
-		        applySearchHighlight(); // 清除高亮
-		        dom.replaceOneBtn.disabled = true;
-		        dom.replaceAllBtn.disabled = true;
-		        return;
-		    }
-		
-		    // 重新构建所有匹配项（全局）
-		    tableData.forEach((item, index) => {
-		        searchableFields.forEach(field => {
-		            const value = (item[field] || '').toString().toLowerCase();
-		            if (value.includes(query.toLowerCase())) {
-		                searchMatches.push({
-		                    rowIndex: index,
-		                    field: field
-		                });
-		            }
-		        });
-		    });
-		
-		    isSearchActive = true;
-		
-		    // 更新替换按钮状态
-		    const hasMatches = searchMatches.length > 0;
-		    dom.replaceOneBtn.disabled = !hasMatches;
-		    dom.replaceAllBtn.disabled = !hasMatches;
-		
-		    if (hasMatches) {
-		        currentMatchIndex = 0;
-		        jumpToMatch(0); // 【关键】自动跳转到第一个匹配项（会翻页 + 滚动）
-		    } else {
-		        applySearchHighlight(); // 显示“未找到匹配项”
-		    }
-		}
+	function startSearch() {
+    const query = dom.searchInput.value.trim().toLowerCase();
+
+    searchMatches = [];
+    currentMatchIndex = -1;
+
+    if (!query) {
+        isSearchActive = false;
+        applySearchHighlight();
+        dom.replaceOneBtn.disabled = true;
+        dom.replaceAllBtn.disabled = true;
+        updateTable(); // 恢复全部显示
+        return;
+    }
+
+    // 构建匹配项
+    tableData.forEach((item, index) => {
+        searchableFields.forEach(field => {
+            const value = (item[field] || '').toString().toLowerCase();
+            if (value.includes(query)) {
+                searchMatches.push({ rowIndex: index, field });
+            }
+        });
+    });
+
+    isSearchActive = true;
+
+    const hasMatches = searchMatches.length > 0;
+    dom.replaceOneBtn.disabled = !hasMatches;
+    dom.replaceAllBtn.disabled = !hasMatches;
+
+    // 每次搜索都刷新表格（根据当前开关状态过滤）
+    currentPage = 1;
+    updateTable();
+
+    if (hasMatches) {
+        currentMatchIndex = 0;
+        jumpToMatch(0);
+    } else {
+        applySearchHighlight();
+        showSnackbar('未找到匹配项', 'info');
+    }
+}
 		
 		function openEditModal(index, targetFieldId = null) {
 		    currentEditIndex = index;
