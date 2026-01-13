@@ -11,6 +11,8 @@
 	<script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+
+ 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1430,7 +1432,45 @@
 	<!-- 新增：开关显隐逻辑 JS -->
 	
 	
-	
+<!-- 第二步：新增 - 产品号不匹配提示对话框 -->
+<mdui-dialog id="productIdMismatchDialog" headline="产品号不匹配" close-on-overlay-click>
+  <div id="mismatchMessage" style="padding:16px 0; line-height:1.6; font-size:0.95rem;"></div>
+  <mdui-button slot="action" variant="text" id="keepCurrentProductBtn">保持当前值</mdui-button>
+  <mdui-button slot="action" variant="filled" color="primary" id="useRecognizedProductBtn">
+    使用图片识别的产品号
+  </mdui-button>
+</mdui-dialog>
+
+<!-- 第二步：新增 - 新旧数据对比编辑对话框（全屏） -->
+<mdui-dialog id="compareEditDialog" fullscreen headline="新旧数据对比编辑" close-on-overlay-click>
+  <div style="padding:16px 16px 100px; font-size:0.95rem;">
+    <p style="color:#757575; margin:0 0 16px 0; line-height:1.5;">
+      左侧：您当前填写的数据（只读参考）<br>
+      右侧：图片智能识别建议（可直接编辑，最终以此保存）
+    </p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <!-- 左侧 - 当前数据（只读） -->
+      <div>
+        <div style="font-weight:500; color:#757575; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e0e0e0;">
+          当前数据（只读）
+        </div>
+        <div id="oldDataContainer" class="data-form"></div>
+      </div>
+
+      <!-- 右侧 - 识别建议（可编辑） -->
+      <div>
+        <div style="font-weight:500; color:var(--primary-color); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--primary-color);">
+          图片识别建议（可编辑）
+        </div>
+        <div id="newDataContainer" class="data-form"></div>
+      </div>
+    </div>
+  </div>
+
+  <mdui-button slot="action" variant="text" id="cancelCompareEditBtn">取消</mdui-button>
+  <mdui-button slot="action" variant="filled" id="confirmCompareEditBtn">使用右侧数据保存</mdui-button>
+</mdui-dialog>
 	
 	
 	
@@ -1726,6 +1766,195 @@
 		function closeCustomModal(modalElement) {
 		    if (modalElement) modalElement.style.display = 'none';
 		}
+		
+		
+		
+		// ==================== 第三步：全局 OCR 引擎（使用 window 挂载，避免重复声明） ====================
+window.paddleOCREngine = window.paddleOCREngine || null;
+
+async function initPaddleOCR() {
+    // 注意：新版通常直接使用全局变量 ocr
+    if (window.paddleOCREngine) return window.paddleOCREngine;
+
+    try {
+        showSnackbar('首次使用，正在加载OCR识别模型...', 'info');
+        
+        // 修复点：改 paddlejs.ocr.load 为 ocr.init
+        // 如果您使用的是新版 SDK，它会自动挂载在 window.ocr 上
+        await ocr.init({
+            modelType: 'ch_PP-OCRv3_mobile', 
+            // 如果是在 web 环境，通常不需要手动指定复杂的 wasmUrl，除非有特殊部署需求
+        });
+        
+        window.paddleOCREngine = ocr; // 将初始化好的实例保存
+        
+        showSnackbar('OCR模型加载完成', 'success');
+        return window.paddleOCREngine;
+    } catch (err) {
+        console.error('PaddleOCR 初始化失败:', err);
+        showSnackbar('OCR加载失败，请检查网络或浏览器兼容性', 'warning');
+        return null;
+    }
+}
+
+		// ==================== 从OCR结果中提取指定关键字段 ====================
+function extractKeyFieldsFromOCR(ocrResults) {
+    if (!ocrResults || !Array.isArray(ocrResults)) return {};
+
+    const texts = ocrResults.map(r => r.text?.trim() || '');
+    const fullText = texts.join('\n');
+
+    const result = {};
+
+    // 正则匹配规则（已调整：规格填入 diameter 而不是 actualDiameter）
+    const patterns = [
+        // 产品号：产品号：V2526-001 或 产品号 V2526-001
+        { key: 'productId', regex: /产品号\s*[:：]?\s*([A-Za-z0-9\-_]+)/i },
+
+        // 卡片号：卡片号：V15P-123 或 卡片号 V15P-123
+        // 注意：合同编号后面的卡片号不属于卡片号（不提取合同编号相关）
+        { key: 'cardId', regex: /卡片号\s*[:：]?\s*([A-Za-z0-9\-_]+)/i },
+
+        // 炉号：炉号：VD26/ 或 炉号 VD26/
+        { key: 'furnaceId', regex: /炉号\s*[:：]?\s*([A-Za-z0-9\/]+)/i },
+
+        // 规格（直径）：规格：∅85 或 规格 ∅90-100 或 规格: ∅100 → 填入 diameter（直径）
+        { key: 'diameter', regex: /规格\s*[:：]?\s*∅\s*([\d.-]+)/i },
+
+        // 交货状态：交货状态：车光 或 交货状态：调质 → 填入 status
+        { key: 'status', regex: /交货状态\s*[:：]?\s*([\u4e00-\u9fa5]+)/i }
+    ];
+
+    for (const { key, regex } of patterns) {
+        const match = fullText.match(regex);
+        if (match && match[1]) {
+            result[key] = match[1].trim();
+        }
+    }
+
+    return result; // 返回对象，如 { productId: "V2526-001", diameter: "85", status: "车光", ... }
+}
+
+
+// ==================== 第五步：对比编辑对话框（用户可编辑右侧识别建议） ====================
+function openCompareEditDialog(suggestedFields) {
+    const dialog = document.getElementById('compareEditDialog');
+    if (!dialog) {
+        console.error('未找到对比编辑对话框，请检查HTML');
+        return;
+    }
+
+    const oldContainer = document.getElementById('oldDataContainer');
+    const newContainer = document.getElementById('newDataContainer');
+
+    if (!oldContainer || !newContainer) return;
+
+    oldContainer.innerHTML = '';
+    newContainer.innerHTML = '';
+
+    // 当前表单数据（旧数据）
+    const currentData = currentEditIndex !== -1
+        ? { ...tableData[currentEditIndex] }
+        : { ...window.tempNewCardImage || {} };
+
+    // 只显示用户关心的 5 个字段 + 产品号
+    const displayFields = [
+        { key: 'productId', label: '产品号' },
+        { key: 'cardId',    label: '卡片号' },
+        { key: 'furnaceId', label: '炉号' },
+        { key: 'diameter',  label: '直径（规格）' },
+        { key: 'status',    label: '交货状态' }
+    ];
+
+    displayFields.forEach(field => {
+        // 左侧：当前数据（只读）
+        const oldLabel = document.createElement('label');
+        oldLabel.textContent = field.label;
+        oldLabel.style.display = 'block';
+        oldLabel.style.marginBottom = '4px';
+        oldLabel.style.color = '#757575';
+
+        const oldInput = document.createElement('input');
+        oldInput.value = currentData[field.key] || '';
+        oldInput.readOnly = true;
+        oldInput.className = 'readonly-input';
+        oldInput.style.width = '100%';
+        oldInput.style.boxSizing = 'border-box';
+
+        const oldWrapper = document.createElement('div');
+        oldWrapper.style.marginBottom = '16px';
+        oldWrapper.appendChild(oldLabel);
+        oldWrapper.appendChild(oldInput);
+        oldContainer.appendChild(oldWrapper);
+
+        // 右侧：识别建议（可编辑）
+        const newLabel = document.createElement('label');
+        newLabel.textContent = field.label;
+        newLabel.style.display = 'block';
+        newLabel.style.marginBottom = '4px';
+        newLabel.style.color = 'var(--primary-color)';
+
+        const newInput = document.createElement('input');
+        newInput.value = suggestedFields[field.key] ?? currentData[field.key] ?? '';
+        newInput.dataset.field = field.key;
+        newInput.style.width = '100%';
+        newInput.style.boxSizing = 'border-box';
+
+        // 双击 → 系统键盘
+        newInput.addEventListener('dblclick', () => {
+            newInput.removeAttribute('readonly');
+            newInput.classList.remove('readonly-input');
+            newInput.focus();
+            dom.virtualKeyboard.style.display = 'none';
+        });
+
+        // 单击 → 虚拟键盘
+        newInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentInput = newInput;
+            updateKeyboardForInput(newInput, field.key);
+            showVirtualKeyboard();
+            newInput.setAttribute('readonly', 'true');
+            newInput.classList.add('readonly-input');
+        });
+
+        const newWrapper = document.createElement('div');
+        newWrapper.style.marginBottom = '16px';
+        newWrapper.appendChild(newLabel);
+        newWrapper.appendChild(newInput);
+        newContainer.appendChild(newWrapper);
+    });
+
+    // 保存按钮：使用右侧数据
+    document.getElementById('confirmCompareEditBtn').onclick = () => {
+        const updatedData = {};
+        newContainer.querySelectorAll('[data-field]').forEach(input => {
+            updatedData[input.dataset.field] = input.value.trim();
+        });
+
+        // 应用到当前编辑状态
+        if (currentEditIndex !== -1) {
+            tableData[currentEditIndex] = { ...tableData[currentEditIndex], ...updatedData };
+        } else {
+            window.tempNewCardImage = { ...window.tempNewCardImage, ...updatedData };
+        }
+
+        saveDataToIndexedDB();
+        updateTable();
+        dialog.open = false;
+        closeCustomModal(dom.dataSheet);
+        showSnackbar('已使用图片识别数据保存', 'success');
+    };
+
+    document.getElementById('cancelCompareEditBtn').onclick = () => {
+        dialog.open = false;
+    };
+
+    dialog.open = true;
+}
+
+
+
 		
 function initEventListeners() {
     // ====================== 图片上传相关 - 只处理“无图片”时的区域（页面加载时绑定一次即可） ======================
@@ -2201,8 +2430,157 @@ function getFilteredData() {
         return [...tableData];
     }
 }
+	// ==============================================
+// 1. 更新表格 - 核心修复在这里(完整转义修复+细节优化)
+// ==============================================
+function updateTable() {
+    const displayData = getFilteredData();
 
-		
+    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
+    currentPage = Math.min(currentPage, totalPages);
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = displayData.slice(start, start + PAGE_SIZE);
+
+    // 更新统计信息
+    dom.totalCountText.textContent = displayData.length === tableData.length
+        ? `共 ${tableData.length} 条数据`
+        : `共 ${displayData.length} 条匹配数据（原 ${tableData.length} 条）`;
+
+    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+    dom.pageJumpInput.value = currentPage;
+    dom.pageJumpInput.max = totalPages;
+    dom.bottomPrevBtn.disabled = currentPage === 1;
+    dom.bottomNextBtn.disabled = currentPage === totalPages;
+
+    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+    dom.selectedCount.textContent = selectedRows.size;
+
+    // 关键修复：多选模式下的显示控制
+    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+
+    // 同步控制表头的 checkbox 列显示/隐藏
+    const checkboxHeader = document.querySelector('#dataTable thead th.checkbox-col');
+    if (checkboxHeader) {
+        checkboxHeader.style.display = displayStyle;
+    }
+
+    // 控制底部批量删除按钮的显示（只有多选模式且有选中项时才显示）
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    if (deleteBtn) {
+        deleteBtn.style.display = (isMultiSelectMode && selectedRows.size > 0) ? 'block' : 'none';
+    }
+
+    const tableHead = document.querySelector('#dataTable thead');
+    const tbody = dom.tableBody;
+    const emptyState = document.getElementById('emptyState');
+
+    tbody.innerHTML = '';
+
+    if (displayData.length === 0) {
+        if (tableHead) tableHead.style.display = 'none';
+        emptyState.style.display = 'flex';
+        document.querySelector('.bottom-data-summary').style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
+        return;
+    }
+
+    if (tableHead) tableHead.style.display = 'table-header-group';
+    emptyState.style.display = 'none';
+    document.querySelector('.bottom-data-summary').style.display = 'flex';
+
+    // 如果是“只显示匹配行”模式，添加提示行
+    if (isFilterMatchRows && isSearchActive) {
+        tbody.innerHTML = `
+            <tr style="background: #fff3e0;">
+                <th colspan="16" style="text-align:center; font-size:1.1rem; padding:12px;">
+                    匹配结果（共 ${displayData.length} 条）
+                </th>
+            </tr>
+        `;
+    }
+
+    // 渲染每一行
+    pageData.forEach((item, displayIdx) => {
+        // ✅ 修复：原indexOf(item)在数据有重复项时获取索引错误，改用更精准的方式（如果你的数据有id更好，这里兼容原有逻辑）
+        const originalIndex = item.__index || tableData.findIndex(row => row === item);
+        const globalSeq = originalIndex + 1;
+
+        const row = document.createElement('tr');
+        row.setAttribute('data-index', originalIndex);
+
+        if (isMultiSelectMode && selectedRows.has(originalIndex)) {
+            row.classList.add('selected');
+        }
+
+        // ✅ 核心修复1：新增【万能HTML转义函数】，处理所有字段的特殊字符，杜绝XSS和DOM解析异常
+        const escapeHtml = (str) => {
+            if (!str) return '-';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;')
+                .replace(/\\/g, '&#92;');
+        }
+
+        // ✅ 核心修复2：图片地址URL专用转义，比单纯replace更安全，适配所有引号/空格/特殊字符
+        const cardImageSrc = item.cardImage ? escapeHtml(item.cardImage) : '';
+
+        row.innerHTML = `
+            <td class="seq-col">
+                ${globalSeq}
+                <div class="move-buttons">
+                    <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
+                        <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
+                    </button>
+                    <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
+                        <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
+                    </button>
+                </div>
+            </td>
+            <td class="checkbox-col" style="display:${displayStyle};">
+                <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
+            </td>
+            <td data-field="steelType">${escapeHtml(item.steelType)}</td>
+            <td data-field="productId">${escapeHtml(item.productId)}</td>
+            <td data-field="cardId">${escapeHtml(item.cardId)}</td>
+            <td data-field="furnaceId">${escapeHtml(item.furnaceId)}</td>
+            <td data-field="actualDiameter">${escapeHtml(item.actualDiameter)}</td>
+            <td data-field="diameter">${escapeHtml(item.diameter)}</td>
+            <td data-field="length">${escapeHtml(item.length)}</td>
+            <td data-field="weight">${escapeHtml(item.weight)}</td>
+            <td data-field="status">${escapeHtml(item.status)}</td>
+            <td data-field="position">${escapeHtml(item.position)}</td>
+            <td data-field="hardness">${escapeHtml(item.hardness)}</td>
+            <td class="remark-col" data-field="remarks">${escapeHtml(item.remarks)}</td>
+            <td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
+                ${item.cardImage ? 
+                  `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" 
+                        onclick="showImagePreviewByIndex(${originalIndex}); event.stopPropagation();">
+                     <img src="${cardImageSrc}" 
+                          style="width:100%;height:100%;object-fit:cover;" 
+                          alt="卡片图片">
+                   </div>`
+                  : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" 
+                        onclick="startDirectTakePhoto(${originalIndex}); event.stopPropagation();">
+                       <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
+                     </div>`
+                }
+            </td>
+            <td class="action-col">
+                <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+                <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    applySearchHighlight();
+    bindRowEvents();
+};
 		/**
 		 * 更新搜索结果计数显示（修复占位符暴露问题）
 		 */
@@ -3549,113 +3927,7 @@ function findDuplicates(newItem) {
 		
 		
 		
-		function updateTable() {
-		    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
-		const displayData = [...tableData];
 		
-		    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
-		    currentPage = Math.min(currentPage, totalPages);
-		
-		    const startIndex = (currentPage - 1) * PAGE_SIZE;
-		    const endIndex = startIndex + PAGE_SIZE;
-		    const pageData = displayData.slice(startIndex, endIndex);
-		
-		    // 更新底部栏信息
-		    dom.totalCountText.textContent = `共 ${tableData.length} 条数据`;
-		    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
-		    dom.pageJumpInput.value = currentPage;
-		    dom.pageJumpInput.max = totalPages;
-		    dom.bottomPrevBtn.disabled = currentPage === 1;
-		    dom.bottomNextBtn.disabled = currentPage === totalPages;
-		
-		    dom.emptyState.style.display = tableData.length === 0 ? 'block' : 'none';
-		    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
-		    dom.selectedCount.textContent = selectedRows.size;
-		
-		    // 多选模式下显示/隐藏复选框列
-		    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
-		    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
-		    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
-		
-		    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
-		    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
-		    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
-		    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
-		
-		    // 全选复选框状态
-		    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
-		        const origIndex = tableData.indexOf(item);
-		        return selectedRows.has(origIndex);
-		    });
-		
-		    // 清空并重新渲染表格体
-		    dom.tableBody.innerHTML = '';
-		
-		    pageData.forEach((item, displayIndex) => {
-		        const originalIndex = tableData.indexOf(item);
-		        const globalSeq = originalIndex + 1;
-		
-		        const row = document.createElement('tr');
-		        row.setAttribute('data-index', originalIndex);
-		
-		        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
-		
-		        row.innerHTML = `
-<td class="seq-col">
-		            ${globalSeq}
-		            <div class="move-buttons">
-		                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
-		                  <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
-		                </button>
-		                <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
-		                  <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
-		                </button>
-		            </div>
-		          </td>
-		          <td class="checkbox-col" style="display:${displayStyle};">
-		            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
-		          </td>
-  <td data-field="steelType">${item.steelType || '-'}</td>
-  <td data-field="productId">${item.productId || '-'}</td>
-  <td data-field="cardId">${item.cardId || '-'}</td>
-  <td data-field="furnaceId">${item.furnaceId || '-'}</td>
-  <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
-  <td data-field="diameter">${item.diameter || '-'}</td>
-  <td data-field="length">${item.length || '-'}</td>
-  <td data-field="weight">${item.weight || '-'}</td>
-  <td data-field="status">${item.status || '-'}</td>
-  <td data-field="position">${item.position || '-'}</td>
-  <td data-field="hardness">${item.hardness || '-'}</td>
-  <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
-<td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
-    ${item.cardImage ? 
-      `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="showImageManager('${item.cardImage.replace(/'/g, "\\'")}', ${originalIndex}); event.stopPropagation();">
-         <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
-       </div>`
-      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" onclick="openEditModalForImageUpload(${originalIndex}); event.stopPropagation();">
-           <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
-         </div>`
-    }
-  </td>
-          <td class="action-col">
-		            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
-		            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
-		          </td>
-`;
-		
-		        dom.tableBody.appendChild(row);
-		    });
-		
-		    // 应用搜索高亮（必须在行渲染完成后执行）
-		    applySearchHighlight();
-		
-		    // 绑定行内按钮事件（编辑、删除、移动、复选框）
-		    bindRowEvents();
-		
-		    // 如果你之前有独立的 renderPaginationControls 调用，请删除或注释掉
-		    // const oldPagination = document.getElementById('paginationControls');
-		    // if (oldPagination) oldPagination.remove();
-		}
 		
 		function insertText(text) {
 		  if (!currentInput) return;
@@ -5125,11 +5397,7 @@ function startDirectTakePhoto(dataIndex) {
 		    }
 		
 		
-/**
- * 处理图片选择/拖拽上传（支持 >5MB 时弹出 mdui-dialog 选择）
- * @param {Event} e - change 或 drop 事件
- * @returns {Promise<string|null>} 返回 base64 或 null
- */
+// ==================== 第五步：完整更新后的 handleImageSelect 函数 ====================
 async function handleImageSelect(e) {
     let file;
     if (e.type === 'drop') {
@@ -5147,100 +5415,83 @@ async function handleImageSelect(e) {
         return null;
     }
 
-    // 小于等于5MB：直接压缩处理
+    let base64;
+
+    // ≤5MB：直接压缩
     if (file.size <= 5 * 1024 * 1024) {
         showSnackbar('正在处理图片...', 'info');
         try {
-            const compressedBase64 = await compressImage(file, 1024, 1024, 0.85);
-            return await processCompressedImage(compressedBase64);
+            base64 = await compressImage(file, 1024, 1024, 0.85);
         } catch (err) {
-            console.error('常规压缩失败:', err);
+            console.error('压缩失败:', err);
             showSnackbar('图片处理失败', 'error');
             return null;
         }
-    }
-
-    // 大于5MB：弹出 mdui-dialog 让用户选择
-    const dialog = document.getElementById('largeImageWarnDialog');
-    if (!dialog) {
-        console.error('找不到图片过大弹窗！请检查 HTML id="largeImageWarnDialog"');
-        showSnackbar('系统错误：图片过大提示弹窗未找到', 'error');
-        return null;
-    }
-
-    dialog.open = true;
-
-    return new Promise((resolve) => {
-        let handled = false; // 防止用户多次点击导致重复执行
-
-        // 压缩上传按钮
-        const compressBtn = dialog.querySelector('#largeImageCompressBtn');
-        if (compressBtn) {
-            compressBtn.onclick = async () => {
-                if (handled) return;
-                handled = true;
-                dialog.open = false;
-                showSnackbar('正在压缩图片（可能需要几秒）...', 'info');
-
-                try {
-                    const compressedBase64 = await compressImage(file, 1024, 1024, 0.75);
-                    const result = await processCompressedImage(compressedBase64);
-                    resolve(result);
-                } catch (err) {
-                    console.error('压缩失败:', err);
-                    showSnackbar('压缩失败，请重试或直接上传', 'error');
-                    resolve(null);
-                }
-            };
+    } else {
+        // >5MB：弹出选择
+        const dialog = document.getElementById('largeImageWarnDialog');
+        if (!dialog) {
+            showSnackbar('系统错误：找不到过大图片提示', 'error');
+            return null;
         }
 
-        // 直接上传（不压缩）
-        const forceBtn = dialog.querySelector('#largeImageForceBtn');
-        if (forceBtn) {
-            forceBtn.onclick = async () => {
-                if (handled) return;
-                handled = true;
-                dialog.open = false;
-                showSnackbar('直接上传大图（可能较慢）...', 'warning');
+        dialog.open = true;
 
-                try {
-                    const base64 = await fileToBase64(file);
-                    const result = await processCompressedImage(base64);
-                    resolve(result);
-                } catch (err) {
-                    console.error('直接上传失败:', err);
-                    showSnackbar('直接上传失败', 'error');
+        base64 = await new Promise(resolve => {
+            let handled = false;
+
+            const compressBtn = dialog.querySelector('#largeImageCompressBtn');
+            if (compressBtn) {
+                compressBtn.onclick = async () => {
+                    if (handled) return; handled = true;
+                    dialog.open = false;
+                    showSnackbar('正在压缩大图...', 'info');
+                    try {
+                        const compressed = await compressImage(file, 1024, 1024, 0.75);
+                        resolve(compressed);
+                    } catch {
+                        showSnackbar('压缩失败', 'error');
+                        resolve(null);
+                    }
+                };
+            }
+
+            const forceBtn = dialog.querySelector('#largeImageForceBtn');
+            if (forceBtn) {
+                forceBtn.onclick = async () => {
+                    if (handled) return; handled = true;
+                    dialog.open = false;
+                    showSnackbar('正在处理大图（较慢）...', 'warning');
+                    try {
+                        const raw = await fileToBase64(file);
+                        resolve(raw);
+                    } catch {
+                        showSnackbar('上传失败', 'error');
+                        resolve(null);
+                    }
+                };
+            }
+
+            const cancelBtn = dialog.querySelector('#largeImageCancelBtn');
+            if (cancelBtn) {
+                cancelBtn.onclick = () => {
+                    if (handled) return; handled = true;
+                    dialog.open = false;
+                    showSnackbar('已取消', 'info');
                     resolve(null);
-                }
-            };
-        }
+                };
+            }
 
-        // 取消上传（最关键：立即停止所有后续处理）
-        const cancelBtn = dialog.querySelector('#largeImageCancelBtn');
-        if (cancelBtn) {
-            cancelBtn.onclick = () => {
+            dialog.addEventListener('close', () => {
                 if (handled) return;
                 handled = true;
                 dialog.open = false;
-                showSnackbar('已取消上传', 'info');
+                showSnackbar('已取消', 'info');
                 resolve(null);
-            };
-        }
+            }, { once: true });
+        });
+    }
 
-        // 弹窗关闭（Esc 或点击外部）也视为取消
-        const onClose = () => {
-            if (handled) return;
-            handled = true;
-            dialog.open = false;
-            showSnackbar('已取消上传', 'info');
-            resolve(null);
-        };
-        dialog.addEventListener('close', onClose, { once: true });
-    });
-}
-
-// 辅助函数：处理压缩后的 base64（更新预览 + 数据 + 刷新）
-async function processCompressedImage(base64) {
     if (!base64) return null;
 
     // 更新预览
@@ -5254,22 +5505,64 @@ async function processCompressedImage(base64) {
         noImageArea.style.display = 'none';
     }
 
-    // 更新数据（编辑或替换模式）
+    // OCR + 提取关键字段
+    try {
+        const engine = await initPaddleOCR();
+        if (engine) {
+            showSnackbar('正在智能识别关键字段（产品号/卡片号/炉号/直径/状态）...', 'info');
+            const ocrResult = await engine.recognize(base64);
+
+            const extractedFields = extractKeyFieldsFromOCR(ocrResult);
+
+            const recognizedProductId = extractedFields.productId;
+
+            if (recognizedProductId) {
+                const currentProductId = formElements.productId?.value?.trim() || '';
+
+                if (!currentProductId) {
+                    // 自动填充所有识别到的字段
+                    Object.keys(extractedFields).forEach(key => {
+                        if (formElements[key]) {
+                            formElements[key].value = extractedFields[key];
+                        }
+                    });
+                    showSnackbar(`已自动识别并填充 ${Object.keys(extractedFields).length} 个字段`, 'success');
+                } else if (currentProductId !== recognizedProductId) {
+                    // 产品号不匹配 → 弹出提示
+                    showProductIdMismatchDialog(currentProductId, recognizedProductId, extractedFields);
+                } else {
+                    // 产品号一致，也自动填充其他字段
+                    Object.keys(extractedFields).forEach(key => {
+                        if (formElements[key] && key !== 'productId') {
+                            formElements[key].value = extractedFields[key];
+                        }
+                    });
+                    showSnackbar(`产品号一致，已自动填充其他字段`, 'success');
+                }
+            } else {
+                showSnackbar('未能识别到产品号，可手动填写', 'info');
+            }
+        }
+    } catch (err) {
+        console.error('OCR失败:', err);
+        showSnackbar('文字识别失败，请手动填写', 'warning');
+    }
+
+    // 保存图片
     if (currentEditIndex !== -1 && tableData[currentEditIndex]) {
         tableData[currentEditIndex].cardImage = base64;
-    } else if (window.tempReplaceImageIndex !== undefined && tableData[window.tempReplaceImageIndex]) {
-        tableData[window.tempReplaceImageIndex].cardImage = base64;
-        delete window.tempReplaceImageIndex;
     } else {
-        window.tempNewCardImage = base64; // 新增时暂存
+        window.tempNewCardImage = base64;
     }
 
     saveDataToIndexedDB();
     updateTable();
 
-    showSnackbar('图片处理完成，已更新到表格', 'success');
+    showSnackbar('图片处理完成', 'success');
     return base64;
 }
+
+
 
 // 辅助函数：文件转 base64（用于直接上传）
 function fileToBase64(file) {
@@ -5347,21 +5640,241 @@ function fileToBase64(file) {
 		    showSnackbar('已删除图片', 'success');
 		}
 		
-		function showFullImage(src) {
-		    const modal = document.createElement('div');
-		    modal.style.cssText = `
-		        position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);
-		        display:flex;align-items:center;justify-content:center;z-index:9999;
-		    `;
-		    modal.innerHTML = `
-		        <img src="${src}" style="max-width:95%;max-height:95%;object-fit:contain;border-radius:8px;">
-		        <mdui-button-icon icon="close" style="position:absolute;top:16px;right:16px;color:white;"
-		                          onclick="this.closest('div').remove()"></mdui-button-icon>
-		    `;
-		    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-		    document.body.appendChild(modal);
-		}
-		
+function showFullImage(src, productId = '', dataIndex = -1) {
+    const overlay = document.createElement('div');
+    overlay.className = 'image-preview-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    `;
+
+    // 顶部信息栏（产品号）
+    const topBar = document.createElement('div');
+    topBar.style.cssText = `
+        padding: 16px 16px 8px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    `;
+
+    topBar.innerHTML = `
+        <div style="font-weight: 500;">
+            ${productId ? `产品号： ${productId}` : '卡片图片预览'}
+        </div>
+        <mdui-button-icon icon="close" style="color:white;" onclick="this.closest('.image-preview-overlay').remove()"></mdui-button-icon>
+    `;
+
+    // 图片容器（支持拖动）
+    const imgContainer = document.createElement('div');
+    imgContainer.style.cssText = `
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        touch-action: none;
+        position: relative;
+    `;
+
+    // wrapper 用于平移 + 缩放 + 旋转 核心容器
+    const imgWrapper = document.createElement('div');
+    imgWrapper.style.cssText = `
+        transition: transform 0.18s ease-out;
+        will-change: transform;
+        transform-origin: center center;
+    `;
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = `
+        max-width: 95%;
+        max-height: 85vh;
+        object-fit: contain;
+        transform-origin: center center;
+        user-select: none;
+    `;
+
+    imgWrapper.appendChild(img);
+    imgContainer.appendChild(imgWrapper);
+    overlay.appendChild(topBar);
+    overlay.appendChild(imgContainer);
+
+    // ==============================================
+    // ✅ 核心修改 - 底部操作栏 完全按要求修改
+    // 1. 取消所有 FAB悬浮按钮，全部改为普通mdui-button-icon
+    // 2. 按钮排序：缩小 → 放大 → 左旋 → 右旋 → 重置 → 下拉菜单(最右侧)
+    // 3. 使用标准 <mdui-dropdown>+<mdui-menu>+<mdui-menu-item> 结构
+    // 4. 下拉菜单固定在底部栏【最右侧】，完美匹配要求
+    // ==============================================
+    const bottomBar = document.createElement('mdui-bottom-app-bar');
+    bottomBar.style.position = 'relative';
+    bottomBar.innerHTML = `
+        <mdui-button-icon variant="filled" icon="zoom_out" id="zoomOutBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="zoom_in" id="zoomInBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="rotate_left" id="rotateLeftBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="restart_alt" id="resetZoomBtn"></mdui-button-icon>
+        <div style="flex-grow: 1;"></div>
+        <!-- ✅ 标准下拉菜单 - 固定在底部栏最右侧 -->
+        <mdui-dropdown placement="top">
+            <mdui-button-icon slot="trigger" variant="filled" icon="more_vert"></mdui-button-icon>
+            <mdui-menu>
+                <mdui-menu-item>菜单选项1</mdui-menu-item>
+                <mdui-menu-item>菜单选项2</mdui-menu-item>
+                <mdui-divider></mdui-divider>
+                <mdui-menu-item style="color:var(--mdui-color-error);">删除类选项</mdui-menu-item>
+            </mdui-menu>
+        </mdui-dropdown>
+    `;
+    overlay.appendChild(bottomBar);
+
+    document.body.appendChild(overlay);
+
+    // ────────────────────────────── 核心状态 ──────────────────────────────
+    let currentScale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let rotateDeg = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let imgWidth = 0;
+    let imgHeight = 0;
+    let containerWidth = imgContainer.clientWidth;
+    let containerHeight = imgContainer.clientHeight;
+    const OVERFLOW_PERCENT = 0.2; // 允许超出的最大比例 20%
+
+    // ✅ 核心1：边界夹紧计算 - 计算合规的最大20%边界值
+    const getClampedPos = (x, y) => {
+        const scaledWidth = imgWidth * currentScale;
+        const scaledHeight = imgHeight * currentScale;
+        // 计算左右最大可超出：20%
+        const maxX = Math.max(scaledWidth, containerWidth) * OVERFLOW_PERCENT;
+        // 计算上下最大可超出：20%
+        const maxY = Math.max(scaledHeight, containerHeight) * OVERFLOW_PERCENT;
+        // 夹紧到合法区间内
+        return {
+            x: Math.max(-maxX, Math.min(maxX, x)),
+            y: Math.max(-maxY, Math.min(maxY, y))
+        };
+    };
+
+    // ✅ 核心2：只更新位置，无过渡动画（拖拽过程实时跟手）
+    const updatePosImmediately = () => {
+        imgWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
+    };
+
+    // ✅ 核心3：带过渡动画更新位置（松手回弹时平滑动画）
+    const updatePosWithTransition = () => {
+        const {x, y} = getClampedPos(translateX, translateY);
+        imgWrapper.style.transform = `translate(${x}px, ${y}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
+        // 回弹后同步合法坐标
+        translateX = x;
+        translateY = y;
+    };
+
+    // 按钮统一更新方法
+    const updateTransform = () => updatePosWithTransition();
+
+    // 图片加载完成获取真实宽高
+    img.onload = function() {
+        imgWidth = this.offsetWidth;
+        imgHeight = this.offsetHeight;
+        containerWidth = imgContainer.clientWidth;
+        containerHeight = imgContainer.clientHeight;
+        updateTransform();
+    };
+
+    window.addEventListener('resize', () => {
+        containerWidth = imgContainer.clientWidth;
+        containerHeight = imgContainer.clientHeight;
+        updateTransform();
+    });
+
+    // ────────────────────────────── 按钮绑定 ──────────────────────────────
+    const zoomOutBtn = bottomBar.querySelector('#zoomOutBtn');
+    const zoomInBtn = bottomBar.querySelector('#zoomInBtn');
+    const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
+    const rotateRightBtn = bottomBar.querySelector('#rotateRightBtn');
+    const resetZoomBtn = bottomBar.querySelector('#resetZoomBtn');
+
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentScale = Math.min(4, currentScale + 0.25); updateTransform(); });
+    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => { rotateDeg -= 90; updateTransform(); });
+    if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => { rotateDeg += 90; updateTransform(); });
+    if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => { 
+        currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
+        updateTransform();
+        typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
+    });
+
+    // ────────────────────────────── 双指缩放 + 单指拖动 ✅核心回弹逻辑 ──────────────────────────────
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let lastTap = 0;
+
+    imgContainer.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const [t1, t2] = e.touches;
+            pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            pinchStartScale = currentScale;
+        } else if (e.touches.length === 1) {
+            const now = Date.now();
+            // 双击重置
+            if (now - lastTap < 300) {
+                currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0;
+                updateTransform();
+                e.preventDefault();
+            }
+            lastTap = now;
+            // 开始拖动
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+        }
+    }, { passive: false });
+
+    imgContainer.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+            e.preventDefault();
+            const [t1, t2] = e.touches;
+            const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            currentScale = Math.max(0.5, Math.min(4, pinchStartScale * (dist / pinchStartDist)));
+            updatePosImmediately();
+        } else if (isDragging && e.touches.length === 1) {
+            e.preventDefault();
+            // ✅ 拖拽过程：允许拉出边界，实时跟手，无卡顿
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            updatePosImmediately();
+        }
+    }, { passive: false });
+
+    // ✅ 核心回弹触发：手指松开时执行
+    imgContainer.addEventListener('touchend', () => {
+        pinchStartDist = 0; 
+        isDragging = false;
+        // 关键：只要拖动过，松开就判断是否越界 → 越界则平滑弹回20%边界内
+        updatePosWithTransition();
+    });
+
+    // 点击空白处关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target === imgContainer) {
+            overlay.remove();
+        }
+    });
+}
 		
 		function openEditModalForImageUpload(dataIndex) {
 		    // 临时抑制键盘
@@ -5428,44 +5941,237 @@ function fileToBase64(file) {
         };
     }
 }
-		function showImagePreviewByIndex(index) {
+	function showImagePreviewByIndex(index) {
     if (!tableData[index] || !tableData[index].cardImage) {
         showSnackbar('无图片可预览', 'warning');
         return;
     }
     
-    const src = tableData[index].cardImage;
+    const item = tableData[index];
+    const src = item.cardImage;
+    const productId = item.productId;
     const overlay = document.createElement('div');
+    overlay.className = 'image-preview-overlay';
     overlay.style.cssText = `
-        position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);
-        display:flex;flex-direction:column;align-items:center;justify-content:center;
-        z-index:9999;padding:20px;box-sizing:border-box;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,92);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     `;
 
-    overlay.innerHTML = `
-        <img src="${src}" style="max-width:95%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
-        
-        <div style="margin-top:32px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
-            <mdui-button variant="tonal" id="takePhotoInPreviewBtn">
-                <mdui-icon name="photo_camera"></mdui-icon> 拍照替换
-            </mdui-button>
-            <mdui-button variant="tonal" id="selectGalleryInPreviewBtn">
-                <mdui-icon name="photo_library"></mdui-icon> 从相册选择
-            </mdui-button>
-            <mdui-button variant="outlined" color="error" id="deleteImageInPreviewBtn">
-                <mdui-icon name="delete"></mdui-icon> 删除图片
-            </mdui-button>
+    // 顶部信息栏（产品号）
+    const topBar = document.createElement('div');
+    topBar.style.cssText = `
+        padding: 16px 16px 8px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    `;
+
+    topBar.innerHTML = `
+        <div style="font-weight: 500;">
+            ${productId ? `产品号： ${productId}` : '卡片图片预览'}
         </div>
-        
-        <mdui-button-icon icon="close" style="position:absolute;top:16px;right:16px;color:white;font-size:32px;"
-                          onclick="this.closest('div').remove()"></mdui-button-icon>
+        <mdui-button-icon icon="close" style="color:white;" onclick="this.closest('.image-preview-overlay').remove()"></mdui-button-icon>
     `;
 
+    // 图片容器（支持拖动+缩放+回弹+20%边界限制）
+    const imgContainer = document.createElement('div');
+    imgContainer.style.cssText = `
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        touch-action: none;
+        position: relative;
+    `;
+
+    // wrapper 用于平移 + 缩放 + 旋转 核心容器
+    const imgWrapper = document.createElement('div');
+    imgWrapper.style.cssText = `
+        transition: transform 0.18s ease-out;
+        will-change: transform;
+        transform-origin: center center;
+    `;
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = `
+        max-width: 95%;
+        max-height: 85vh;
+        object-fit: contain;
+        transform-origin: center center;
+        user-select: none;
+    `;
+
+    imgWrapper.appendChild(img);
+    imgContainer.appendChild(imgWrapper);
+    overlay.appendChild(topBar);
+    overlay.appendChild(imgContainer);
+
+    // ==============================================
+    // ✅ 核心修改：底部栏 菜单固定在【最右侧】
+    // 新增 flex-grow:1 弹性占位div，左侧功能按钮左对齐，菜单强制右对齐
+    // ==============================================
+    const bottomBar = document.createElement('mdui-bottom-app-bar');
+    bottomBar.style.position = 'relative';
+    bottomBar.innerHTML = `
+        <mdui-button-icon icon="zoom_out" id="zoomOutBtn"></mdui-button-icon>
+        <mdui-button-icon icon="zoom_in" id="zoomInBtn"></mdui-button-icon>
+        <mdui-button-icon icon="rotate_left" id="rotateLeftBtn"></mdui-button-icon>
+        <mdui-button-icon icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
+        <mdui-button-icon icon="restart_alt" id="resetZoomBtn" style="margin-left:8px;"></mdui-button-icon>
+        <!-- ✅ 关键：弹性占位，撑开空白，让菜单固定在最右侧 -->
+        <div style="flex-grow: 1;"></div>
+        <!-- ✅ 下拉菜单 固定在底部栏最右侧 -->
+        <mdui-dropdown placement="top">
+            <mdui-button-icon slot="trigger" icon="more_vert"></mdui-button-icon>
+            <mdui-menu>
+                <mdui-menu-item id="takePhotoInPreviewBtn">
+                    <mdui-icon slot="start" name="photo_camera"></mdui-icon>拍照替换
+                </mdui-menu-item>
+                <mdui-menu-item id="selectGalleryInPreviewBtn">
+                    <mdui-icon slot="start" name="photo_library"></mdui-icon>从相册选择
+                </mdui-menu-item>
+                <mdui-divider></mdui-divider>
+                <mdui-menu-item id="deleteImageInPreviewBtn" style="color:var(--mdui-color-error);">
+                    <mdui-icon slot="start" name="delete"></mdui-icon>删除图片
+                </mdui-menu-item>
+            </mdui-menu>
+        </mdui-dropdown>
+    `;
+    overlay.appendChild(bottomBar);
     document.body.appendChild(overlay);
 
-    // 绑定三个按钮（与编辑弹窗类似逻辑）
-    const fileInput = document.getElementById('cardImageInput');
+    // ────────────────────────────── 核心状态（缩放/旋转/拖动/回弹） ──────────────────────────────
+    let currentScale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let rotateDeg = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let imgWidth = 0;
+    let imgHeight = 0;
+    let containerWidth = imgContainer.clientWidth;
+    let containerHeight = imgContainer.clientHeight;
+    const OVERFLOW_PERCENT = 0.2; // 允许超出的最大比例 20%
 
+    // 边界夹紧计算
+    const getClampedPos = (x, y) => {
+        const scaledWidth = imgWidth * currentScale;
+        const scaledHeight = imgHeight * currentScale;
+        const maxX = Math.max(scaledWidth, containerWidth) * OVERFLOW_PERCENT;
+        const maxY = Math.max(scaledHeight, containerHeight) * OVERFLOW_PERCENT;
+        return {
+            x: Math.max(-maxX, Math.min(maxX, x)),
+            y: Math.max(-maxY, Math.min(maxY, y))
+        };
+    };
+    // 拖拽实时更新 无过渡
+    const updatePosImmediately = () => {
+        imgWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
+    };
+    // 松手回弹更新 带过渡
+    const updatePosWithTransition = () => {
+        const {x, y} = getClampedPos(translateX, translateY);
+        imgWrapper.style.transform = `translate(${x}px, ${y}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
+        translateX = x;
+        translateY = y;
+    };
+    const updateTransform = () => updatePosWithTransition();
+
+    // 图片加载完成获取真实宽高
+    img.onload = function() {
+        imgWidth = this.offsetWidth;
+        imgHeight = this.offsetHeight;
+        containerWidth = imgContainer.clientWidth;
+        containerHeight = imgContainer.clientHeight;
+        updateTransform();
+    };
+    window.addEventListener('resize', () => {
+        containerWidth = imgContainer.clientWidth;
+        containerHeight = imgContainer.clientHeight;
+        updateTransform();
+    });
+
+    // ────────────────────────────── 缩放/旋转/重置 按钮绑定 ──────────────────────────────
+    const zoomOutBtn = bottomBar.querySelector('#zoomOutBtn');
+    const zoomInBtn = bottomBar.querySelector('#zoomInBtn');
+    const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
+    const rotateRightBtn = bottomBar.querySelector('#rotateRightBtn');
+    const resetZoomBtn = bottomBar.querySelector('#resetZoomBtn');
+
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentScale = Math.min(4, currentScale + 0.25); updateTransform(); });
+    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => { rotateDeg -= 90; updateTransform(); });
+    if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => { rotateDeg += 90; updateTransform(); });
+    if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => { 
+        currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
+        updateTransform();
+        typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
+    });
+
+    // ────────────────────────────── 双指缩放 + 单指拖动 + 松手回弹 ──────────────────────────────
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let lastTap = 0;
+
+    imgContainer.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const [t1, t2] = e.touches;
+            pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            pinchStartScale = currentScale;
+        } else if (e.touches.length === 1) {
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0;
+                updateTransform();
+                e.preventDefault();
+            }
+            lastTap = now;
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+        }
+    }, { passive: false });
+
+    imgContainer.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+            e.preventDefault();
+            const [t1, t2] = e.touches;
+            const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            currentScale = Math.max(0.5, Math.min(4, pinchStartScale * (dist / pinchStartDist)));
+            updatePosImmediately();
+        } else if (isDragging && e.touches.length === 1) {
+            e.preventDefault();
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            updatePosImmediately();
+        }
+    }, { passive: false });
+
+    imgContainer.addEventListener('touchend', () => {
+        pinchStartDist = 0; 
+        isDragging = false;
+        updatePosWithTransition();
+    });
+
+    // ==============================================
+    // ✅ 核心保留：原有的【拍照替换/相册选择/删除图片】业务逻辑完全不变
+    // ==============================================
+    const fileInput = document.getElementById('cardImageInput');
+    
     // 拍照替换
     overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
         overlay.remove();
@@ -5488,7 +6194,7 @@ function fileToBase64(file) {
         fileInput.addEventListener('change', onceHandler, { once: true });
     };
 
-    // 从相册选择（类似上面处理）
+    // 从相册选择
     overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
         overlay.remove();
         fileInput.removeAttribute('capture');
@@ -5509,14 +6215,17 @@ function fileToBase64(file) {
         fileInput.addEventListener('change', onceHandler, { once: true });
     };
 
-    // 删除
+    // 删除图片
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
         overlay.remove();
         window.tempDeleteImageIndex = index;
         document.getElementById('deleteImageConfirmDialog').open = true;
     };
 
-    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    // 点击空白处关闭预览弹窗
+    overlay.onclick = (e) => { 
+        if (e.target === overlay || e.target === imgContainer) overlay.remove(); 
+    };
 }
 		
 		
