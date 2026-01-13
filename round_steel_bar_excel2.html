@@ -2201,126 +2201,7 @@ function getFilteredData() {
         return [...tableData];
     }
 }
-		function updateTable() {
-    const displayData = getFilteredData();  // 根据开关过滤数据
 
-    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
-    currentPage = Math.min(currentPage, totalPages);
-
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageData = displayData.slice(start, start + PAGE_SIZE);
-
-    // 更新统计
-    dom.totalCountText.textContent = displayData.length === tableData.length
-        ? `共 ${tableData.length} 条数据`
-        : `共 ${displayData.length} 条匹配数据（原 ${tableData.length} 条）`;
-
-    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
-    dom.pageJumpInput.value = currentPage;
-    dom.pageJumpInput.max = totalPages;
-    dom.bottomPrevBtn.disabled = currentPage === 1;
-    dom.bottomNextBtn.disabled = currentPage === totalPages;
-
-    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
-    dom.selectedCount.textContent = selectedRows.size;
-
-    const tableHead = document.querySelector('#dataTable thead');
-    const tbody = dom.tableBody;
-    const emptyState = document.getElementById('emptyState');
-
-    // 清空现有内容
-    tbody.innerHTML = '';
-
-    if (displayData.length === 0) {
-        if (tableHead) tableHead.style.display = 'none';
-        emptyState.style.display = 'flex';
-        document.querySelector('.bottom-data-summary').style.display = 'none';
-        document.getElementById('deleteSelectedBtn').style.display = 'none';
-        if (isSearchActive && isFilterMatchRows) {
-            emptyState.querySelector('p').textContent = '未找到匹配项，请检查搜索词或关闭“只显示匹配行”';
-        }
-        return;
-    }
-
-    // 有数据：显示表头和分页
-    if (tableHead) tableHead.style.display = 'table-header-group';
-    emptyState.style.display = 'none';
-    document.querySelector('.bottom-data-summary').style.display = 'flex';
-
-    // 判断是否为“只显示匹配行”模式
-    if (isFilterMatchRows && isSearchActive) {
-        // 独立显示匹配结果表格
-        tbody.innerHTML = `
-            <tr style="background: #fff3e0;">
-                <th colspan="16" style="text-align:center; font-size:1.1rem; padding:12px;">
-                    匹配结果（共 ${displayData.length} 条）
-                </th>
-            </tr>
-        `;
-    }
-
-    // 渲染行（与原逻辑一致）
-    pageData.forEach((item, displayIdx) => {
-        const originalIndex = tableData.indexOf(item);
-        const globalSeq = originalIndex + 1;
-
-        const row = document.createElement('tr');
-        row.setAttribute('data-index', originalIndex);
-
-        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
-
-        row.innerHTML = `
-            <td class="seq-col">
-                ${globalSeq}
-                <div class="move-buttons">
-                    <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
-                        <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
-                    </button>
-                    <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
-                        <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
-                    </button>
-                </div>
-            </td>
-            <td class="checkbox-col" style="display:${isMultiSelectMode ? 'table-cell' : 'none'};">
-                <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
-            </td>
-            <td data-field="steelType">${item.steelType || '-'}</td>
-            <td data-field="productId">${item.productId || '-'}</td>
-            <td data-field="cardId">${item.cardId || '-'}</td>
-            <td data-field="furnaceId">${item.furnaceId || '-'}</td>
-            <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
-            <td data-field="diameter">${item.diameter || '-'}</td>
-            <td data-field="length">${item.length || '-'}</td>
-            <td data-field="weight">${item.weight || '-'}</td>
-            <td data-field="status">${item.status || '-'}</td>
-            <td data-field="position">${item.position || '-'}</td>
-            <td data-field="hardness">${item.hardness || '-'}</td>
-            <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
-            <td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
-                ${item.cardImage ? 
-                  `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" 
-                        onclick="showImagePreviewByIndex(${originalIndex}); event.stopPropagation();">
-                     <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
-                   </div>`
-                  : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" 
-                        onclick="startDirectTakePhoto(${originalIndex}); event.stopPropagation();">
-                       <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
-                     </div>`
-                }
-            </td>
-            <td class="action-col">
-                <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
-                <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    });
-
-    // 高亮 & 事件绑定
-    applySearchHighlight();
-    bindRowEvents();
-}
 		
 		/**
 		 * 更新搜索结果计数显示（修复占位符暴露问题）
@@ -3668,7 +3549,113 @@ function findDuplicates(newItem) {
 		
 		
 		
+		function updateTable() {
+		    // 始终显示全部数据（不过滤，除非你以后想加过滤逻辑）
+		const displayData = [...tableData];
 		
+		    totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
+		    currentPage = Math.min(currentPage, totalPages);
+		
+		    const startIndex = (currentPage - 1) * PAGE_SIZE;
+		    const endIndex = startIndex + PAGE_SIZE;
+		    const pageData = displayData.slice(startIndex, endIndex);
+		
+		    // 更新底部栏信息
+		    dom.totalCountText.textContent = `共 ${tableData.length} 条数据`;
+		    dom.pageInfoText.textContent = `第 ${currentPage} / ${totalPages} 页`;
+		    dom.pageJumpInput.value = currentPage;
+		    dom.pageJumpInput.max = totalPages;
+		    dom.bottomPrevBtn.disabled = currentPage === 1;
+		    dom.bottomNextBtn.disabled = currentPage === totalPages;
+		
+		    dom.emptyState.style.display = tableData.length === 0 ? 'block' : 'none';
+		    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+		    dom.selectedCount.textContent = selectedRows.size;
+		
+		    // 多选模式下显示/隐藏复选框列
+		    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+		    const checkboxColHeader = document.querySelector('#dataTable th.checkbox-col');
+		    const allCheckboxColCells = document.querySelectorAll('#dataTable td.checkbox-col');
+		
+		    dom.deleteSelectedBtn.style.display = isMultiSelectMode ? 'inline-flex' : 'none';
+		    if (checkboxColHeader) checkboxColHeader.style.display = displayStyle;
+		    dom.selectAllCheckbox.style.display = isMultiSelectMode ? 'block' : 'none';
+		    allCheckboxColCells.forEach(cell => cell.style.display = displayStyle);
+		
+		    // 全选复选框状态
+		    dom.selectAllCheckbox.checked = pageData.length > 0 && pageData.every(item => {
+		        const origIndex = tableData.indexOf(item);
+		        return selectedRows.has(origIndex);
+		    });
+		
+		    // 清空并重新渲染表格体
+		    dom.tableBody.innerHTML = '';
+		
+		    pageData.forEach((item, displayIndex) => {
+		        const originalIndex = tableData.indexOf(item);
+		        const globalSeq = originalIndex + 1;
+		
+		        const row = document.createElement('tr');
+		        row.setAttribute('data-index', originalIndex);
+		
+		        if (isMultiSelectMode && selectedRows.has(originalIndex)) row.classList.add('selected');
+		
+		        row.innerHTML = `
+<td class="seq-col">
+		            ${globalSeq}
+		            <div class="move-buttons">
+		                <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''}>
+		                  <i class="material-icons" style="font-size: 14px;">arrow_upward</i>
+		                </button>
+		                <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex === tableData.length - 1 ? 'disabled' : ''}>
+		                  <i class="material-icons" style="font-size: 14px;">arrow_downward</i>
+		                </button>
+		            </div>
+		          </td>
+		          <td class="checkbox-col" style="display:${displayStyle};">
+		            <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${isMultiSelectMode && selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
+		          </td>
+  <td data-field="steelType">${item.steelType || '-'}</td>
+  <td data-field="productId">${item.productId || '-'}</td>
+  <td data-field="cardId">${item.cardId || '-'}</td>
+  <td data-field="furnaceId">${item.furnaceId || '-'}</td>
+  <td data-field="actualDiameter">${item.actualDiameter || '-'}</td>
+  <td data-field="diameter">${item.diameter || '-'}</td>
+  <td data-field="length">${item.length || '-'}</td>
+  <td data-field="weight">${item.weight || '-'}</td>
+  <td data-field="status">${item.status || '-'}</td>
+  <td data-field="position">${item.position || '-'}</td>
+  <td data-field="hardness">${item.hardness || '-'}</td>
+  <td class="remark-col" data-field="remarks">${item.remarks || '-'}</td>
+<td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
+    ${item.cardImage ? 
+      `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="showImageManager('${item.cardImage.replace(/'/g, "\\'")}', ${originalIndex}); event.stopPropagation();">
+         <img src="${item.cardImage}" style="width:100%;height:100%;object-fit:cover;">
+       </div>`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" onclick="openEditModalForImageUpload(${originalIndex}); event.stopPropagation();">
+           <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
+         </div>`
+    }
+  </td>
+          <td class="action-col">
+		            <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+		            <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
+		          </td>
+`;
+		
+		        dom.tableBody.appendChild(row);
+		    });
+		
+		    // 应用搜索高亮（必须在行渲染完成后执行）
+		    applySearchHighlight();
+		
+		    // 绑定行内按钮事件（编辑、删除、移动、复选框）
+		    bindRowEvents();
+		
+		    // 如果你之前有独立的 renderPaginationControls 调用，请删除或注释掉
+		    // const oldPagination = document.getElementById('paginationControls');
+		    // if (oldPagination) oldPagination.remove();
+		}
 		
 		function insertText(text) {
 		  if (!currentInput) return;
