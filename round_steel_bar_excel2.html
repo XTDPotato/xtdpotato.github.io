@@ -473,15 +473,35 @@
 		
 		
 		/* 父容器：固定高度 + 底部固定 80px 留白 */
-		.data-table-container-div {
-		    width: 100%;
-		    height: calc(100vh - 200px);           /* 调整为你的实际布局 */
-		    overflow: auto;
-		    -webkit-overflow-scrolling: touch;
-		    position: relative;
-		    box-sizing: border-box;
-		    padding-bottom: 80px;                   /* 固定底部留白 80px */
-		}
+	/* 滚动容器：必须有 overflow: auto / scroll */
+.data-table-container-div {
+    overflow: auto;
+    height: calc(100vh - 200px);  /* 根据你的布局调整 */
+    position: relative;
+    -webkit-overflow-scrolling: touch;  /* iOS 平滑滚动 */
+}
+
+/* 表头冻结：核心 */
+#dataTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 100;  /* 必须大于其他元素，确保不被盖住 */
+    background-color: var(--surface-color);  /* 背景色防止透明 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);  /* 可选：加阴影增加立体感 */
+}
+
+/* 增强：表头第一行整体背景（防列错位） */
+#dataTable thead {
+    background-color: var(--surface-color);
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+
+/* 防止 transform 干扰（如果还有缩放需求） */
+.data-table-container-div table {
+    transform: none !important;  /* 强制移除可能残留的 transform */
+}
 		
 		/* 子容器：宽度/高度实时随 scale 变化（关键！） */
 		.data-table-container {
@@ -501,17 +521,7 @@
 		    border-collapse: collapse;
 		}
 		
-		/* 表头 sticky 不受缩放影响 */
-		#dataTable thead th {
-		    position: sticky;
-		    top: 0;
-		    z-index: 50;
-		    background-color: var(--surface-color);
-		    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
-		    transform: none !important;
-		    font-weight: 500;
-		    border-bottom: 2px solid var(--border-color);
-		}
+	
 		
 		/* 其他单元格、选中、高亮等样式保持不变 */
 		#dataTable th, #dataTable td {
@@ -2280,30 +2290,62 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) 
     dom.calculatorBtn.addEventListener('click', openCalculatorModal);
     dom.calculateAndAddBtn.addEventListener('click', calculateAndAddData);
 
-    dom.tableBody.addEventListener('click', (e) => {
-        if (isMultiSelectMode) return;
 
-        if (e.target.closest('mdui-button-icon') || e.target.closest('.image-col') || e.target.tagName === 'IMG') {
-            return;
+dom.tableBody.addEventListener('dblclick', (e) => {
+    if (isMultiSelectMode) return;
+
+    const row = e.target.closest('tr');
+    if (!row) return;
+
+    const index = parseInt(row.getAttribute('data-index'));
+    const cell = e.target.closest('td');
+    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
+
+    // 双击任何地方都打开完整编辑（可指定字段）
+    openEditModal(index, targetFieldId);
+});
+
+
+ dom.tableBody.addEventListener('click', (e) => {
+    // 多选模式下不处理点击编辑
+    if (isMultiSelectMode) return;
+
+    // 阻止事件冒泡，避免父元素或其他监听器重复触发
+    e.stopPropagation();
+
+    const row = e.target.closest('tr');
+    if (!row) return;
+
+    const index = parseInt(row.getAttribute('data-index'));
+    const cell = e.target.closest('td');
+    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
+
+    // 特殊列不处理（图片、操作列、序号列等）
+    if (!targetFieldId || 
+        targetFieldId === 'cardImage' || 
+        targetFieldId === 'seq' || 
+        cell.classList.contains('action-col') || 
+        cell.classList.contains('image-col') || 
+        cell.classList.contains('checkbox-col')) {
+        return;
+    }
+
+    // 关键：只有点击有 data-field 的单元格时，才打开快速编辑
+    // 并且立即 return，阻止后续完整编辑
+    if (targetFieldId) {
+        if (targetFieldId === 'remarks') {
+            // 备注字段特殊处理：直接打开完整编辑（因为备注是长文本）
+            openEditModal(index, targetFieldId);
+        } else {
+            // 其他字段：只打开快速编辑
+            openQuickEdit(index, targetFieldId);
         }
+        return;  // ← 这一行非常关键！阻止后续代码执行
+    }
 
-        const row = e.target.closest('tr');
-        if (!row) return;
-
-        const index = parseInt(row.getAttribute('data-index'));
-        const cell = e.target.closest('td');
-        const targetFieldId = cell ? cell.getAttribute('data-field') : null;
-
-        if (targetFieldId && targetFieldId !== 'cardImage') {
-            if (targetFieldId === 'remarks') {
-                openEditModal(index, targetFieldId);
-            } else {
-                openQuickEdit(index, targetFieldId);
-            }
-        } else if (!targetFieldId || targetFieldId !== 'cardImage') {
-            openEditModal(index);
-        }
-    });
+    // 如果点击的是行空白处（没有 data-field），才打开完整编辑（可选，如果你不需要可删除这部分）
+    // openEditModal(index);
+});
 
     // 底部翻页
     dom.bottomPrevBtn.addEventListener('click', () => {
@@ -3197,9 +3239,6 @@ function escapeHtml(text) {
 		}
 		
 // ==============================================
-// 绑定表格行事件 - 完整修复版 (根治✅ 补上缺失的复选框勾选事件，批量删除按钮必现)
-// ==============================================
-// ==============================================
 // 绑定表格行所有事件 - 完整修复版 (包含上移/下移按钮点击事件，必替换)
 // ==============================================
 function bindRowEvents() {
@@ -3226,7 +3265,7 @@ function bindRowEvents() {
                 return;
             }
             // 普通模式：点击行打开编辑弹窗
-            openEditModal(idx);
+            //openEditModal(idx);
         };
 
         // ✅ 复选框勾选事件 (原有保留)
@@ -3455,7 +3494,7 @@ function moveRowToAssignPosition(sourceIndex, direction) {
   tableData.forEach((item, idx) => {
     if (idx !== sourceIndex) { // 排除当前行，禁止移动到自己位置
       // ✅ 新增：当前行的原始序号+分页兼容的显示文本
-      const rowLabel = `第 ${idx+1} 行 (${item.productId || '无编号'})`;
+      const rowLabel = `第 ${idx+1} 行 (${item.productId || '无编号'})(${item.cardId || '无卡片号'})(${item.steelType || '无钢种'})`;
       rowOptionsHtml += `
         <div class="row-option-item" data-target-index="${idx}" style="padding:8px 12px; cursor:pointer; border-radius:6px; margin:2px 0; transition:all 0.2s;">
           <span style="font-weight:500; font-size:0.95rem;">${rowLabel}</span>
@@ -5999,10 +6038,10 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         <mdui-dropdown placement="top">
             <mdui-button-icon slot="trigger" variant="filled" icon="more_vert"></mdui-button-icon>
             <mdui-menu>
-                <mdui-menu-item>菜单选项1</mdui-menu-item>
-                <mdui-menu-item>菜单选项2</mdui-menu-item>
+                <mdui-menu-item></mdui-menu-item>
+                <mdui-menu-item></mdui-menu-item>
                 <mdui-divider></mdui-divider>
-                <mdui-menu-item style="color:var(--mdui-color-error);">删除类选项</mdui-menu-item>
+                <mdui-menu-item style="color:var(--mdui-color-error);"></mdui-menu-item>
             </mdui-menu>
         </mdui-dropdown>
     `;
@@ -6021,15 +6060,15 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     let imgHeight = 0;
     let containerWidth = imgContainer.clientWidth;
     let containerHeight = imgContainer.clientHeight;
-    const OVERFLOW_PERCENT = 0.2; // 允许超出的最大比例 20%
+    const OVERFLOW_PERCENT = 0.5; // 允许超出的最大比例
 
     // ✅ 核心1：边界夹紧计算 - 计算合规的最大20%边界值
     const getClampedPos = (x, y) => {
         const scaledWidth = imgWidth * currentScale;
         const scaledHeight = imgHeight * currentScale;
-        // 计算左右最大可超出：20%
+        // 计算左右最大可超
         const maxX = Math.max(scaledWidth, containerWidth) * OVERFLOW_PERCENT;
-        // 计算上下最大可超出：20%
+        // 计算上下最大可超
         const maxY = Math.max(scaledHeight, containerHeight) * OVERFLOW_PERCENT;
         // 夹紧到合法区间内
         return {
