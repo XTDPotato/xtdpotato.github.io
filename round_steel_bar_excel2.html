@@ -2678,10 +2678,11 @@ function updateTable() {
                      </div>`
                 }
             </td>
-            <td class="action-col">
-                <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
-                <mdui-button-icon icon="delete" class="delete-btn" data-index="${originalIndex}"></mdui-button-icon>
-            </td>
+         
+<td class="action-col">
+    <mdui-button-icon icon="edit" class="edit-btn" data-index="${originalIndex}"></mdui-button-icon>
+    <mdui-button-icon icon="delete" class="delete-row-btn" data-index="${originalIndex}"></mdui-button-icon>
+</td>
         `;
 
         tbody.appendChild(row);
@@ -3295,12 +3296,27 @@ function bindRowEvents() {
             };
         }
 
+document.querySelectorAll('.delete-row-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(e.currentTarget.getAttribute('data-index'));
+        
+        // 调用你的原有确认删除整行函数
+        confirmDeleteRow(index);
+        
+        // 确保在 confirmDeleteRow 内部处理弹窗关闭
+        // （见下面第3步的 confirmDeleteRow 修改）
+    });
+});
+
+
         // ✅ 删除按钮事件 (原有保留)
         const deleteBtn = row.querySelector('.delete-btn');
         if (deleteBtn) {
             deleteBtn.onclick = (e) => {
                 e.stopPropagation();
                 window.tempDeleteImageIndex = idx;
+                
                 document.getElementById('deleteImageConfirmDialog').open = true;
             };
         }
@@ -3404,77 +3420,133 @@ if (downBtn) {
     }
 };
 		
+
 		function confirmDeleteRow(index) {
-		    const itemToDelete = tableData[index];
-		    
-		    // 增强版确认消息：显示更多字段，布局清晰美观
-		    const message = `
-		        <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
-		            <div style="margin-bottom: 6px; font-weight: 500;">
-		                您确定要删除以下数据吗？
-		            </div>
-		            
-		            <div style="padding: 4px; background-color: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
-		                <div style="display: grid; grid-template-columns: max-content 1fr; gap: 6px 10px; align-items: center;">
-		                    <strong style="color: #757575;">产品号：</strong>
-		                    <strong style="color: var(--primary-color); font-size: 1.1em; word-break: break-all;">
-		                        ${itemToDelete.productId || 'N/A'}
-		                    </strong>
-		
-		                    <strong style="color: #757575;">钢种：</strong>
-		                    <span>${itemToDelete.steelType || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">卡片号：</strong>
-		                    <span>${itemToDelete.cardId || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">炉号：</strong>
-		                    <span>${itemToDelete.furnaceId || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">实际直径：</strong>
-		                    <span>${itemToDelete.actualDiameter || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">直径：</strong>
-		                    <span>${itemToDelete.diameter || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">长度：</strong>
-		                    <span>${itemToDelete.length || 'N/A'} mm</span>
-		
-		                    <strong style="color: #757575;">重量：</strong>
-		                    <span style="font-weight: 600;">${itemToDelete.weight || 'N/A'} Kg</span>
-		
-		                    <strong style="color: #757575;">状态：</strong>
-		                    <span>${itemToDelete.status || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">位置：</strong>
-		                    <span>${itemToDelete.position || 'N/A'}</span>
-		
-		                    <strong style="color: #757575;">硬度：</strong>
-		                    <span>${itemToDelete.hardness || 'N/A'}</span>
-		
-		                    ${itemToDelete.remarks ? 
-		                        `<strong style="color: #757575; grid-column: 1;">备注：</strong>
-		                         <span style="grid-column: 2; word-break: break-all; color: #e91e63;">${itemToDelete.remarks}</span>` 
-		                        : ''
-		                    }
-		                </div>
-		            </div>
-		        </div>
-		    `;
-		
-		    dom.confirmMessage.innerHTML = message;
-		    openCustomModal(dom.confirmModal); 
-		    
-		    dom.confirmActionBtn.onclick = () => {
-		        tableData.splice(index, 1);
-		        selectedRows.clear();
-		        saveDataToIndexedDB();
-		        updateTable();
-		        closeCustomModal(dom.confirmModal); 
-		        dom.confirmActionBtn.onclick = null;
-		        showSnackbar('数据已删除', 'success');
-		    };
-		}
-		
+    // 使用深拷贝备份整条数据（确保图片等复杂字段完整）
+    const itemToDelete = structuredClone(tableData[index]); // 现代浏览器原生深拷贝
+    // 如果浏览器不支持 structuredClone，可替换为：JSON.parse(JSON.stringify(tableData[index]))
+    
+    const deletedIndex = index;
+
+    // 增强版确认消息：显示更多字段 + 二次确认复选框
+    const message = `
+        <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
+            <div style="margin-bottom: 6px; font-weight: 500;">
+                您确定要删除以下数据吗？（此操作不可逆）
+            </div>
+            
+            <div style="padding: 4px; background-color: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: grid; grid-template-columns: max-content 1fr; gap: 6px 10px; align-items: center;">
+                    <strong style="color: #757575;">产品号：</strong>
+                    <strong style="color: var(--primary-color); font-size: 1.1em; word-break: break-all;">
+                        ${itemToDelete.productId || 'N/A'}
+                    </strong>
+
+                    <strong style="color: #757575;">钢种：</strong>
+                    <span>${itemToDelete.steelType || 'N/A'}</span>
+
+                    <strong style="color: #757575;">卡片号：</strong>
+                    <span>${itemToDelete.cardId || 'N/A'}</span>
+
+                    <strong style="color: #757575;">炉号：</strong>
+                    <span>${itemToDelete.furnaceId || 'N/A'}</span>
+
+                    <strong style="color: #757575;">实际直径：</strong>
+                    <span>${itemToDelete.actualDiameter || 'N/A'}</span>
+
+                    <strong style="color: #757575;">直径：</strong>
+                    <span>${itemToDelete.diameter || 'N/A'}</span>
+
+                    <strong style="color: #757575;">长度：</strong>
+                    <span>${itemToDelete.length || 'N/A'} mm</span>
+
+                    <strong style="color: #757575;">重量：</strong>
+                    <span style="font-weight: 600;">${itemToDelete.weight || 'N/A'} Kg</span>
+
+                    <strong style="color: #757575;">状态：</strong>
+                    <span>${itemToDelete.status || 'N/A'}</span>
+
+                    <strong style="color: #757575;">位置：</strong>
+                    <span>${itemToDelete.position || 'N/A'}</span>
+
+                    <strong style="color: #757575;">硬度：</strong>
+                    <span>${itemToDelete.hardness || 'N/A'}</span>
+
+                    ${itemToDelete.remarks ? 
+                        `<strong style="color: #757575; grid-column: 1;">备注：</strong>
+                         <span style="grid-column: 2; word-break: break-all; color: #e91e63;">${itemToDelete.remarks}</span>` 
+                        : ''
+                    }
+                </div>
+            </div>
+
+            <!-- 二次确认复选框 -->
+            <div style="margin-top: 16px; padding: 12px; background: rgba(var(--primary-color-rgb), 0.08); border-radius: 8px;">
+                <mdui-checkbox id="confirmDeleteCheck">
+                    我确认要永久删除这条数据（不可恢复）
+                </mdui-checkbox>
+            </div>
+        </div>
+    `;
+
+    dom.confirmMessage.innerHTML = message;
+    openCustomModal(dom.confirmModal);
+
+    // 确认按钮逻辑
+    document.getElementById('confirmActionBtn').onclick = () => {
+        const check = document.getElementById('confirmDeleteCheck');
+        if (!check || !check.checked) {
+            showSnackbar('请先勾选“我确认要永久删除”', 'warning');
+            return;
+        }
+
+        // 执行删除
+        tableData.splice(index, 1);
+        selectedRows.clear();
+        saveDataToIndexedDB();
+        updateTable();
+
+        // 关闭确认弹窗
+        closeCustomModal(dom.confirmModal);
+
+        // 清空复选框状态，防止下次误勾
+        if (check) check.checked = false;
+
+        // 显示带“撤销”按钮的 Snackbar
+        const snackbar = document.getElementById('general-snackbar');
+        snackbar.innerHTML = `
+            已删除 <strong>${itemToDelete.productId || '未知'}</strong>
+            <mdui-button variant="text" style="margin-left:16px; color: var(--primary-color);" id="undoDeleteBtn">
+                点击撤销图片外的数据
+            </mdui-button>
+        `;
+        snackbar.open = true;
+
+        // 8秒后自动关闭（时间更宽容，可自行调整）
+        setTimeout(() => {
+            snackbar.open = false;
+        }, 8000);
+
+        // 撤销按钮：使用深拷贝恢复（图片也会回来）
+        document.getElementById('undoDeleteBtn')?.addEventListener('click', () => {
+            // 插入回原位置，使用深拷贝确保完整
+            tableData.splice(deletedIndex, 0, structuredClone(itemToDelete));
+            saveDataToIndexedDB();
+            updateTable();
+            showSnackbar('已撤销删除，数据（含图片）已恢复', 'success');
+            snackbar.open = false;
+        }, { once: true }); // 只监听一次，避免重复绑定
+    };
+
+    // 取消按钮：直接关闭弹窗
+    document.getElementById('cancelConfirmBtn').onclick = () => {
+        closeCustomModal(dom.confirmModal);
+        const check = document.getElementById('confirmDeleteCheck');
+        if (check) check.checked = false;
+    };
+}
+
+
 
 // ========== 表格行【短按】上移/下移核心函数 (无提示，保留不变) ==========
 function moveRow(rowIndex, direction) {
@@ -5260,8 +5332,12 @@ function handleFileImport(e) {
 		            proceedWithSheet(selectedSheet);
 		        };
 		
+		
+		
+		
 		        dom.cancelConfirmBtn.onclick = () => {
 		            closeCustomModal(dom.confirmModal);
+		            
 		            dom.fileInput.value = '';
 		        };
 		    } else {
