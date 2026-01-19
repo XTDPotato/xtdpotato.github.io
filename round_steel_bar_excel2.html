@@ -1809,72 +1809,7 @@
 		
 		
 		
-		// ==================== 第三步：全局 OCR 引擎（使用 window 挂载，避免重复声明） ====================
-window.paddleOCREngine = window.paddleOCREngine || null;
-
-async function initPaddleOCR() {
-    // 注意：新版通常直接使用全局变量 ocr
-    if (window.paddleOCREngine) return window.paddleOCREngine;
-
-    try {
-        showSnackbar('首次使用，正在加载OCR识别模型...', 'info');
-        
-        // 修复点：改 paddlejs.ocr.load 为 ocr.init
-        // 如果您使用的是新版 SDK，它会自动挂载在 window.ocr 上
-        await ocr.init({
-            modelType: 'ch_PP-OCRv3_mobile', 
-            // 如果是在 web 环境，通常不需要手动指定复杂的 wasmUrl，除非有特殊部署需求
-        });
-        
-        window.paddleOCREngine = ocr; // 将初始化好的实例保存
-        
-        showSnackbar('OCR模型加载完成', 'success');
-        return window.paddleOCREngine;
-    } catch (err) {
-        console.error('PaddleOCR 初始化失败:', err);
-        showSnackbar('OCR加载失败，请检查网络或浏览器兼容性', 'warning');
-        return null;
-    }
-}
-
-		// ==================== 从OCR结果中提取指定关键字段 ====================
-function extractKeyFieldsFromOCR(ocrResults) {
-    if (!ocrResults || !Array.isArray(ocrResults)) return {};
-
-    const texts = ocrResults.map(r => r.text?.trim() || '');
-    const fullText = texts.join('\n');
-
-    const result = {};
-
-    // 正则匹配规则（已调整：规格填入 diameter 而不是 actualDiameter）
-    const patterns = [
-        // 产品号：产品号：V2526-001 或 产品号 V2526-001
-        { key: 'productId', regex: /产品号\s*[:：]?\s*([A-Za-z0-9\-_]+)/i },
-
-        // 卡片号：卡片号：V15P-123 或 卡片号 V15P-123
-        // 注意：合同编号后面的卡片号不属于卡片号（不提取合同编号相关）
-        { key: 'cardId', regex: /卡片号\s*[:：]?\s*([A-Za-z0-9\-_]+)/i },
-
-        // 炉号：炉号：VD26/ 或 炉号 VD26/
-        { key: 'furnaceId', regex: /炉号\s*[:：]?\s*([A-Za-z0-9\/]+)/i },
-
-        // 规格（直径）：规格：∅85 或 规格 ∅90-100 或 规格: ∅100 → 填入 diameter（直径）
-        { key: 'diameter', regex: /规格\s*[:：]?\s*∅\s*([\d.-]+)/i },
-
-        // 交货状态：交货状态：车光 或 交货状态：调质 → 填入 status
-        { key: 'status', regex: /交货状态\s*[:：]?\s*([\u4e00-\u9fa5]+)/i }
-    ];
-
-    for (const { key, regex } of patterns) {
-        const match = fullText.match(regex);
-        if (match && match[1]) {
-            result[key] = match[1].trim();
-        }
-    }
-
-    return result; // 返回对象，如 { productId: "V2526-001", diameter: "85", status: "车光", ... }
-}
-
+		
 
 // ==================== 第五步：对比编辑对话框（用户可编辑右侧识别建议） ====================
 function openCompareEditDialog(suggestedFields) {
@@ -3680,45 +3615,67 @@ function moveRowToBottom(rowIndex) {
 		}
 		
 			function openAddModalWithData(preFilledData) {
-		    if (dom.dataForm) dom.dataForm.reset();
-		    if (dom.modalTitle) dom.modalTitle.textContent = '添加数据';
-		    if (dom.editIndex) dom.editIndex.value = '-1';
-		
-		    currentEditIndex = -1;
-		
-		    for (const key in preFilledData) {
-		        if (preFilledData.hasOwnProperty(key) && formElements[key]) {
-		            formElements[key].value = preFilledData[key];
-		        }
-		    }
-		
-		    openCustomModal(dom.dataSheet);
-		
-		setTimeout(() => {
-		    const previewContainer = document.getElementById('cardImagePreview');
-		    const noImageArea = document.getElementById('noImageUploadArea');
-		
-		    previewContainer.style.display = 'none';
-		    noImageArea.style.display = 'block'; // 新增时显示上传按钮
-		
-		        // 键盘逻辑
-		        let inputToFocus = formElements.steelType;
-		        inputFields.forEach(field => {
-		            if (field.id !== 'remarks') {
-		                field.setAttribute('readonly', 'true');
-		                field.classList.add('readonly-input');
-		            }
-		            if (field.id === 'steelType') inputToFocus = field;
-		        });
-		
-		        currentInput = inputToFocus;
-		        if (currentInput.id !== 'remarks') {
-		            updateKeyboardForInput(currentInput);
-		            showVirtualKeyboard();
-		        }
-		        currentInput.focus();
-		    }, 350);
-		}
+    if (dom.dataForm) dom.dataForm.reset();
+    if (dom.modalTitle) dom.modalTitle.textContent = '添加数据';
+    if (dom.editIndex) dom.editIndex.value = '-1';
+
+    currentEditIndex = -1;
+
+    // ★★★ 新增：彻底清理所有图片相关状态 ★★★
+    const previewImg = document.getElementById('previewImg');
+    if (previewImg) {
+        previewImg.src = '';                    // 清空 src，防止闪现
+        previewImg.removeAttribute('src');      // 双保险
+    }
+
+    const previewContainer = document.getElementById('cardImagePreview');
+    const noImageArea = document.getElementById('noImageUploadArea');
+    if (previewContainer && noImageArea) {
+        previewContainer.style.display = 'none';
+        noImageArea.style.display = 'block';
+    }
+
+    // 清理临时图片变量（防止保存时带入旧图）
+    delete window.tempNewCardImage;
+
+    // 填充预设数据（如果有）
+    for (const key in preFilledData) {
+        if (preFilledData.hasOwnProperty(key) && formElements[key]) {
+            formElements[key].value = preFilledData[key];
+        }
+    }
+
+    openCustomModal(dom.dataSheet);
+
+    setTimeout(() => {
+        // 再次确保图片区干净（防止 DOM 渲染延迟导致闪现）
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.removeAttribute('src');
+        }
+        if (previewContainer && noImageArea) {
+            previewContainer.style.display = 'none';
+            noImageArea.style.display = 'block';
+        }
+
+        // 键盘逻辑保持不变...
+        let inputToFocus = formElements.steelType;
+        inputFields.forEach(field => {
+            if (field.id !== 'remarks') {
+                field.setAttribute('readonly', 'true');
+                field.classList.add('readonly-input');
+            }
+            if (field.id === 'steelType') inputToFocus = field;
+        });
+
+        currentInput = inputToFocus;
+        if (currentInput.id !== 'remarks') {
+            updateKeyboardForInput(currentInput);
+            showVirtualKeyboard();
+        }
+        currentInput.focus();
+    }, 350);
+}
 		
 function findDuplicates(newItem) {
     const duplicates = [];
@@ -4779,35 +4736,56 @@ function showDuplicateConfirmationModal(duplicateEntries, newData = [], totalImp
     console.log('【重复弹窗】弹窗已打开，渲染完成');
 }
 		
-		/**
- * 保存数据（新增或编辑）
- * - 处理表单数据、图片、重量取整
- * - 重复产品号检测使用 mdui-dialog 美观弹窗
- * - 支持覆盖保存或取消
- */
 async function saveData() {
     const formData = {};
 
-    // 1. 填充表单字段
+    // ★★★ 清理旧残留（仅新增时，且只清理预览区，不碰临时变量） ★★★
+    if (currentEditIndex === -1) {
+        const previewImgClean = document.getElementById('previewImg');
+        if (previewImgClean) {
+            previewImgClean.src = '';
+            previewImgClean.removeAttribute('src');
+        }
+        console.log('[SAVE] 新增模式 - 已清理预览区图片（src置空）');
+        // 注意：这里不再 delete window.tempNewCardImage
+        // 临时变量留到保存成功后再清理
+    }
+
+    // 1. 填充所有文本字段
     for (const key in formElements) {
         if (formElements.hasOwnProperty(key)) {
             formData[key] = formElements[key] ? formElements[key].value.trim() : '';
         }
     }
 
-    // 2. 处理卡片图片（优先预览区，其次临时变量）
-    const previewContainer = document.getElementById('cardImagePreview');
-    if (previewContainer && previewContainer.style.display !== 'none') {
-        const previewImg = document.getElementById('previewImg');
-        if (previewImg && previewImg.src && previewImg.src.startsWith('data:image/')) {
-            formData.cardImage = previewImg.src;
-        }
-    } else if (window.tempNewCardImage) {
-        formData.cardImage = window.tempNewCardImage;
-        delete window.tempNewCardImage; // 使用后清理
-    } else {
-        formData.cardImage = '';
-    }
+    
+
+// 2. 【核心修复】处理图片 - 多重来源强制捕获 + 优先级明确
+let finalImage = '';
+
+// 来源1：优先使用临时变量（上传后已强制存入，最可靠，不会受弹窗关闭影响）
+if (window.tempNewCardImage && window.tempNewCardImage.startsWith('data:image/')) {
+    finalImage = window.tempNewCardImage;
+    console.log('[SAVE] 从 window.tempNewCardImage 读取到图片（优先），长度：' + finalImage.length);
+}
+// 来源2：预览区的 img 标签（用户当前看到的图，备用）
+else if (previewImg && previewImg.src && previewImg.src.startsWith('data:image/') && previewImg.src.length > 200) {
+    finalImage = previewImg.src;
+    console.log('[SAVE] 从 previewImg.src 捕获图片（备用），长度：' + finalImage.length);
+}
+// 来源3：编辑时保留旧图（如果没新上传）
+else if (currentEditIndex !== -1 && tableData[currentEditIndex]?.cardImage) {
+    finalImage = tableData[currentEditIndex].cardImage;
+    console.log('[SAVE] 编辑模式 - 保留原有图片');
+}
+
+// 强制赋值
+formData.cardImage = finalImage || '';
+console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图片（长度 ' + finalImage.length + ')' : '空'));
+
+    // 强制赋值（防止后续被覆盖）
+    formData.cardImage = finalImage || '';
+    console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图片（长度 ' + finalImage.length + ')' : '空'));
 
     // 3. 重量四舍五入取整
     if (formData.weight) {
@@ -4823,7 +4801,7 @@ async function saveData() {
         return;
     }
 
-    // 5. 重复产品号检测（使用 mdui-dialog 替换 window.confirm）
+    // 5. 重复产品号检测
     const isEditMode = currentEditIndex !== -1;
     const isProductIdChanged = isEditMode && tableData[currentEditIndex]?.productId !== formData.productId;
 
@@ -4833,17 +4811,25 @@ async function saveData() {
         const duplicates = findDuplicates(formData);
         const realDuplicates = duplicates.filter(dup => dup.index !== currentEditIndex);
 
-if (realDuplicates.length > 0) {
-    showSingleDuplicateWarnDialog(realDuplicates[0], formData, isEditMode);
-    return;
-}
+        if (realDuplicates.length > 0) {
+            showSingleDuplicateWarnDialog(realDuplicates[0], formData, isEditMode);
+            return;
+        }
     }
 
-    // 6. 无重复或通过验证 → 正常保存
+    // 6. 执行保存
     if (!isEditMode) {
         tableData.push(formData);
+        console.log('[SAVE] 新增完成 - 新记录已推入 tableData，图片状态：' + (formData.cardImage ? '有图' : '无图'));
     } else {
         tableData[currentEditIndex] = formData;
+        console.log('[SAVE] 编辑完成 - 索引 ' + currentEditIndex + ' 已更新，图片状态：' + (formData.cardImage ? '有图' : '无图'));
+    }
+
+    // ★★★ 保存成功后再清理临时变量（关键！） ★★★
+    if (currentEditIndex === -1 && window.tempNewCardImage) {
+        delete window.tempNewCardImage;
+        console.log('[SAVE] 新增保存完成 - 已清理 tempNewCardImage');
     }
 
     // 7. 持久化 & 刷新
@@ -4856,6 +4842,7 @@ if (realDuplicates.length > 0) {
     showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
 }
 		
+
 function finalizeImport(newData, duplicateEntries, totalImported) {
     let actuallyAdded = newData.length;
     let actuallyOverridden = 0;
@@ -5478,7 +5465,7 @@ function startDirectTakePhoto(dataIndex) {
                     tableData[dataIndex].cardImage = compressedBase64;
                     saveDataToIndexedDB();
                     updateTable();  // 关键：立即刷新表格显示新图片
-                    showSnackbar('拍照成功，已填入表格', 'success');
+                    showSnackbar('上传成功，已填入表格', 'success');
                 }
             } catch (err) {
                 showSnackbar('图片处理失败', 'error');
@@ -5780,10 +5767,46 @@ function startDirectTakePhoto(dataIndex) {
 		showSnackbar('排序已应用：' + msgParts.join(' → '), 'success');
 		    
 		    }
+		async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.85) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
 		
-		
-// ==================== 第五步：完整更新后的 handleImageSelect 函数 ====================
+// ==================== 图片上传处理函数（完整版，无 OCR） ====================
 async function handleImageSelect(e) {
+    // 新增模式下：每次选择新图都先清理旧临时变量
+    if (currentEditIndex === -1) {
+        delete window.tempNewCardImage;
+        console.log('[上传] 新增模式 - 已清理旧 tempNewCardImage');
+    }
+
     let file;
     if (e.type === 'drop') {
         e.preventDefault();
@@ -5879,68 +5902,32 @@ async function handleImageSelect(e) {
 
     if (!base64) return null;
 
-    // 更新预览
+    // 更新预览（仅用于用户看到）
     const previewImg = document.getElementById('previewImg');
     const previewContainer = document.getElementById('cardImagePreview');
     const noImageArea = document.getElementById('noImageUploadArea');
 
-    if (previewImg) previewImg.src = base64;
+    if (previewImg) {
+        previewImg.src = base64;
+        console.log('[上传] 预览区已设置 src，长度：' + base64.length);
+    }
     if (previewContainer && noImageArea) {
         previewContainer.style.display = 'block';
         noImageArea.style.display = 'none';
     }
 
-    // OCR + 提取关键字段
-    try {
-        const engine = await initPaddleOCR();
-        if (engine) {
-            showSnackbar('正在智能识别关键字段（产品号/卡片号/炉号/直径/状态）...', 'info');
-            const ocrResult = await engine.recognize(base64);
+    // ★★★ 关键：上传成功后立即存入临时变量（保存时优先用这个） ★★★
+    window.tempNewCardImage = base64;
+    console.log('[上传] 图片已强制存入 window.tempNewCardImage，长度：' + base64.length);
 
-            const extractedFields = extractKeyFieldsFromOCR(ocrResult);
-
-            const recognizedProductId = extractedFields.productId;
-
-            if (recognizedProductId) {
-                const currentProductId = formElements.productId?.value?.trim() || '';
-
-                if (!currentProductId) {
-                    // 自动填充所有识别到的字段
-                    Object.keys(extractedFields).forEach(key => {
-                        if (formElements[key]) {
-                            formElements[key].value = extractedFields[key];
-                        }
-                    });
-                    showSnackbar(`已自动识别并填充 ${Object.keys(extractedFields).length} 个字段`, 'success');
-                } else if (currentProductId !== recognizedProductId) {
-                    // 产品号不匹配 → 弹出提示
-                    showProductIdMismatchDialog(currentProductId, recognizedProductId, extractedFields);
-                } else {
-                    // 产品号一致，也自动填充其他字段
-                    Object.keys(extractedFields).forEach(key => {
-                        if (formElements[key] && key !== 'productId') {
-                            formElements[key].value = extractedFields[key];
-                        }
-                    });
-                    showSnackbar(`产品号一致，已自动填充其他字段`, 'success');
-                }
-            } else {
-                showSnackbar('未能识别到产品号，可手动填写', 'info');
-            }
-        }
-    } catch (err) {
-        console.error('OCR失败:', err);
-        showSnackbar('文字识别失败，请手动填写', 'warning');
-    }
-
-    // 保存图片
+    // 编辑模式下直接写回 tableData
     if (currentEditIndex !== -1 && tableData[currentEditIndex]) {
         tableData[currentEditIndex].cardImage = base64;
-    } else {
-        window.tempNewCardImage = base64;
+        console.log('[上传] 编辑模式 - 已直接写入 tableData');
     }
 
-    saveDataToIndexedDB();
+    // 实时持久化一次（防止意外丢失）
+    await saveDataToIndexedDB();
     updateTable();
 
     showSnackbar('图片处理完成', 'success');
@@ -5948,83 +5935,6 @@ async function handleImageSelect(e) {
 }
 
 
-
-// 辅助函数：文件转 base64（用于直接上传）
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-		async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.85) {
-		    return new Promise((resolve) => {
-		        const img = new Image();
-		        const reader = new FileReader();
-		
-		        reader.onload = (e) => {
-		            img.src = e.target.result;
-		        };
-		
-		        img.onload = () => {
-		            const canvas = document.createElement('canvas');
-		            let width = img.width;
-		            let height = img.height;
-		
-		            if (width > maxWidth || height > maxHeight) {
-		                const ratio = Math.min(maxWidth / width, maxHeight / height);
-		                width *= ratio;
-		                height *= ratio;
-		            }
-		
-		            canvas.width = width;
-		            canvas.height = height;
-		            const ctx = canvas.getContext('2d');
-		            ctx.drawImage(img, 0, 0, width, height);
-		
-		            resolve(canvas.toDataURL('image/jpeg', quality));
-		        };
-		
-		        reader.readAsDataURL(file);
-		    });
-		}
-		
-		function renderCardImagesPreview(images) {
-		    const container = dom.cardImagesPreview;
-		    container.innerHTML = '';
-		
-		    if (images.length === 0) {
-		        container.innerHTML = '<span style="color:#999;padding:20px;">暂无图片，点击下方按钮添加</span>';
-		        return;
-		    }
-		
-		    images.forEach((base64, idx) => {
-		        const wrapper = document.createElement('div');
-		        wrapper.style.cssText = 'position:relative;display:inline-block;';
-		
-		        wrapper.innerHTML = `
-		            <img src="${base64}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-		            <mdui-button-icon icon="delete" style="position:absolute;top:-8px;right:-8px;background:white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"
-		                              onclick="deleteSingleImage(${currentEditIndex}, ${idx})"></mdui-button-icon>
-		        `;
-		
-		        // 点击图片放大查看
-		        wrapper.querySelector('img').onclick = () => showFullImage(base64);
-		
-		        container.appendChild(wrapper);
-		    });
-		}
-		function deleteSingleImage(dataIndex, imageIndex) {
-		    if (dataIndex === -1 || !tableData[dataIndex].cardImages) return;
-		
-		    tableData[dataIndex].cardImages.splice(imageIndex, 1);
-		    saveDataToIndexedDB();
-		    renderCardImagesPreview(tableData[dataIndex].cardImages);
-		    updateTable(); // 刷新表格显示
-		    showSnackbar('已删除图片', 'success');
-		}
-		
 function showFullImage(src, productId = '', dataIndex = -1) {
     const overlay = document.createElement('div');
     overlay.className = 'image-preview-overlay';
@@ -6094,13 +6004,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     overlay.appendChild(topBar);
     overlay.appendChild(imgContainer);
 
-    // ==============================================
-    // ✅ 核心修改 - 底部操作栏 完全按要求修改
-    // 1. 取消所有 FAB悬浮按钮，全部改为普通mdui-button-icon
-    // 2. 按钮排序：缩小 → 放大 → 左旋 → 右旋 → 重置 → 下拉菜单(最右侧)
-    // 3. 使用标准 <mdui-dropdown>+<mdui-menu>+<mdui-menu-item> 结构
-    // 4. 下拉菜单固定在底部栏【最右侧】，完美匹配要求
-    // ==============================================
+    // 底部操作栏（按钮排序：缩小 → 放大 → 左旋 → 右旋 → 重置 → 下拉菜单最右侧）
     const bottomBar = document.createElement('mdui-bottom-app-bar');
     bottomBar.style.position = 'relative';
     bottomBar.innerHTML = `
@@ -6110,14 +6014,26 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         <mdui-button-icon variant="filled" icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
         <mdui-button-icon variant="filled" icon="restart_alt" id="resetZoomBtn"></mdui-button-icon>
         <div style="flex-grow: 1;"></div>
-        <!-- ✅ 标准下拉菜单 - 固定在底部栏最右侧 -->
+        <!-- 下拉菜单（现在包含拍照、从相册选择、删除） -->
         <mdui-dropdown placement="top">
             <mdui-button-icon slot="trigger" variant="filled" icon="more_vert"></mdui-button-icon>
             <mdui-menu>
-                <mdui-menu-item></mdui-menu-item>
-                <mdui-menu-item></mdui-menu-item>
+                <!-- 拍照替换 -->
+                <mdui-menu-item id="takePhotoInPreviewBtn">
+                    <mdui-icon slot="start" name="photo_camera"></mdui-icon>
+                    拍照替换
+                </mdui-menu-item>
+                <!-- 从相册选择 -->
+                <mdui-menu-item id="selectGalleryInPreviewBtn">
+                    <mdui-icon slot="start" name="photo_library"></mdui-icon>
+                    从相册选择
+                </mdui-menu-item>
                 <mdui-divider></mdui-divider>
-                <mdui-menu-item style="color:var(--mdui-color-error);"></mdui-menu-item>
+                <!-- 删除图片（红色警示） -->
+                <mdui-menu-item id="deleteImageInPreviewBtn" style="color:var(--mdui-color-error);">
+                    <mdui-icon slot="start" name="delete"></mdui-icon>
+                    删除图片
+                </mdui-menu-item>
             </mdui-menu>
         </mdui-dropdown>
     `;
@@ -6136,41 +6052,32 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     let imgHeight = 0;
     let containerWidth = imgContainer.clientWidth;
     let containerHeight = imgContainer.clientHeight;
-    const OVERFLOW_PERCENT = 0.5; // 允许超出的最大比例
+    const OVERFLOW_PERCENT = 0.5;
 
-    // ✅ 核心1：边界夹紧计算 - 计算合规的最大20%边界值
     const getClampedPos = (x, y) => {
         const scaledWidth = imgWidth * currentScale;
         const scaledHeight = imgHeight * currentScale;
-        // 计算左右最大可超
         const maxX = Math.max(scaledWidth, containerWidth) * OVERFLOW_PERCENT;
-        // 计算上下最大可超
         const maxY = Math.max(scaledHeight, containerHeight) * OVERFLOW_PERCENT;
-        // 夹紧到合法区间内
         return {
             x: Math.max(-maxX, Math.min(maxX, x)),
             y: Math.max(-maxY, Math.min(maxY, y))
         };
     };
 
-    // ✅ 核心2：只更新位置，无过渡动画（拖拽过程实时跟手）
     const updatePosImmediately = () => {
         imgWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
     };
 
-    // ✅ 核心3：带过渡动画更新位置（松手回弹时平滑动画）
     const updatePosWithTransition = () => {
         const {x, y} = getClampedPos(translateX, translateY);
         imgWrapper.style.transform = `translate(${x}px, ${y}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
-        // 回弹后同步合法坐标
         translateX = x;
         translateY = y;
     };
 
-    // 按钮统一更新方法
     const updateTransform = () => updatePosWithTransition();
 
-    // 图片加载完成获取真实宽高
     img.onload = function() {
         imgWidth = this.offsetWidth;
         imgHeight = this.offsetHeight;
@@ -6185,7 +6092,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         updateTransform();
     });
 
-    // ────────────────────────────── 按钮绑定 ──────────────────────────────
+    // ────────────────────────────── 缩放/旋转/重置按钮绑定 ──────────────────────────────
     const zoomOutBtn = bottomBar.querySelector('#zoomOutBtn');
     const zoomInBtn = bottomBar.querySelector('#zoomInBtn');
     const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
@@ -6202,7 +6109,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
     });
 
-    // ────────────────────────────── 双指缩放 + 单指拖动 ✅核心回弹逻辑 ──────────────────────────────
+    // ────────────────────────────── 双指缩放 + 单指拖动 ──────────────────────────────
     let pinchStartDist = 0;
     let pinchStartScale = 1;
     let lastTap = 0;
@@ -6215,14 +6122,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             pinchStartScale = currentScale;
         } else if (e.touches.length === 1) {
             const now = Date.now();
-            // 双击重置
             if (now - lastTap < 300) {
                 currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0;
                 updateTransform();
                 e.preventDefault();
             }
             lastTap = now;
-            // 开始拖动
             isDragging = true;
             startX = e.touches[0].clientX - translateX;
             startY = e.touches[0].clientY - translateY;
@@ -6238,20 +6143,82 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             updatePosImmediately();
         } else if (isDragging && e.touches.length === 1) {
             e.preventDefault();
-            // ✅ 拖拽过程：允许拉出边界，实时跟手，无卡顿
             translateX = e.touches[0].clientX - startX;
             translateY = e.touches[0].clientY - startY;
             updatePosImmediately();
         }
     }, { passive: false });
 
-    // ✅ 核心回弹触发：手指松开时执行
     imgContainer.addEventListener('touchend', () => {
         pinchStartDist = 0; 
         isDragging = false;
-        // 关键：只要拖动过，松开就判断是否越界 → 越界则平滑弹回20%边界内
         updatePosWithTransition();
     });
+
+    // ────────────────────────────── 新增：下拉菜单三个按钮的业务逻辑 ──────────────────────────────
+    const fileInput = document.getElementById('cardImageInput');
+
+    // 1. 拍照替换
+    overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
+        overlay.remove();
+        fileInput.setAttribute('capture', 'environment');
+        fileInput.click();
+
+        const onceHandler = async (e) => {
+            if (e.target.files?.[0]) {
+                const base64 = await handleImageSelect(e);
+                if (base64) {
+                    // 更新当前预览图片
+                    img.src = base64;
+                    // 如果有 dataIndex，更新 tableData
+                    if (dataIndex !== -1 && tableData[dataIndex]) {
+                        tableData[dataIndex].cardImage = base64;
+                        saveDataToIndexedDB();
+                        updateTable();
+                    }
+                    showSnackbar('图片已通过拍照替换', 'success');
+                }
+            }
+            fileInput.removeAttribute('capture');
+            fileInput.value = '';
+        };
+        fileInput.addEventListener('change', onceHandler, { once: true });
+    };
+
+    // 2. 从相册选择
+    overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
+        overlay.remove();
+        fileInput.removeAttribute('capture');
+        fileInput.click();
+
+        const onceHandler = async (e) => {
+            if (e.target.files?.[0]) {
+                const base64 = await handleImageSelect(e);
+                if (base64) {
+                    img.src = base64;
+                    if (dataIndex !== -1 && tableData[dataIndex]) {
+                        tableData[dataIndex].cardImage = base64;
+                        saveDataToIndexedDB();
+                        updateTable();
+                    }
+                    showSnackbar('图片已替换', 'success');
+                }
+            }
+            fileInput.value = '';
+        };
+        fileInput.addEventListener('change', onceHandler, { once: true });
+    };
+
+    // 3. 删除图片
+    overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
+        overlay.remove();
+        if (dataIndex !== -1) {
+            window.tempDeleteImageIndex = dataIndex;
+            document.getElementById('deleteImageConfirmDialog').open = true;
+        } else {
+            showSnackbar('无法删除（无记录索引）', 'error');
+        }
+    };
 
     // 点击空白处关闭
     overlay.addEventListener('click', (e) => {
@@ -6327,27 +6294,28 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     }
 }
 	function showImagePreviewByIndex(index) {
-    if (!tableData[index] || !tableData[index].cardImage) {
-        showSnackbar('无图片可预览', 'warning');
-        return;
+    // 边界检查：如果 index 无效，从 0 开始
+    if (index < 0 || index >= tableData.length) {
+        index = 0;
     }
-    
-    const item = tableData[index];
-    const src = item.cardImage;
-    const productId = item.productId;
+
+    const currentItem = tableData[index];
+    let productId = currentItem?.productId || '无产品号'; // ✅ 修改为 let 支持后续更新
+    const hasImage = currentItem?.cardImage && currentItem.cardImage.startsWith('data:image/');
+
     const overlay = document.createElement('div');
     overlay.className = 'image-preview-overlay';
     overlay.style.cssText = `
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,92);
+        background: rgba(0,0,0,0.92);
         z-index: 9999;
         display: flex;
         flex-direction: column;
         overflow: hidden;
     `;
 
-    // 顶部信息栏（产品号）
+    // 顶部信息栏（显示产品号 + 当前第几条/总共多少条）
     const topBar = document.createElement('div');
     topBar.style.cssText = `
         padding: 16px 16px 8px;
@@ -6361,14 +6329,17 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         -webkit-backdrop-filter: blur(10px);
     `;
 
-    topBar.innerHTML = `
-        <div style="font-weight: 500;">
-            ${productId ? `产品号： ${productId}` : '卡片图片预览'}
-        </div>
-        <mdui-button-icon icon="close" style="color:white;" onclick="this.closest('.image-preview-overlay').remove()"></mdui-button-icon>
-    `;
+    const updateTopBar = () => {
+        topBar.innerHTML = `
+            <div style="font-weight: 500;">
+                产品号：${productId} (${index + 1} / ${tableData.length})
+            </div>
+            <mdui-button-icon icon="close" style="color:white;" onclick="this.closest('.image-preview-overlay').remove()"></mdui-button-icon>
+        `;
+    };
+    updateTopBar();
 
-    // 图片容器（支持拖动+缩放+回弹+20%边界限制）
+    // 图片容器
     const imgContainer = document.createElement('div');
     imgContainer.style.cssText = `
         flex: 1;
@@ -6378,51 +6349,75 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         overflow: hidden;
         touch-action: none;
         position: relative;
+        background: #111;
     `;
 
-    // wrapper 用于平移 + 缩放 + 旋转 核心容器
     const imgWrapper = document.createElement('div');
     imgWrapper.style.cssText = `
         transition: transform 0.18s ease-out;
         will-change: transform;
         transform-origin: center center;
+        text-align: center;
     `;
 
-    const img = document.createElement('img');
-    img.src = src;
-    img.style.cssText = `
-        max-width: 95%;
-        max-height: 85vh;
-        object-fit: contain;
-        transform-origin: center center;
-        user-select: none;
-    `;
+    let img = null;
+    if (hasImage) {
+        img = document.createElement('img');
+        img.src = currentItem.cardImage;
+        img.style.cssText = `
+            max-width: 95%;
+            max-height: 85vh;
+            object-fit: contain;
+            transform-origin: center center;
+            user-select: none;
+        `;
+        imgWrapper.appendChild(img);
+    } else {
+        // 无图片时的占位文字
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = `
+            color: #aaa;
+            font-size: 1.4rem;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            max-width: 80%;
+        `;
+        placeholder.innerHTML = '当前没有图片<br><br>点击右下角菜单进行上传<br></br>提示：底部栏是可以左右滚动的';
+        imgWrapper.appendChild(placeholder);
+    }
 
-    imgWrapper.appendChild(img);
     imgContainer.appendChild(imgWrapper);
     overlay.appendChild(topBar);
     overlay.appendChild(imgContainer);
 
-    // ==============================================
-    // ✅ 核心修改：底部栏 菜单固定在【最右侧】
-    // 新增 flex-grow:1 弹性占位div，左侧功能按钮左对齐，菜单强制右对齐
-    // ==============================================
+    // 底部栏（可横向滚动）
     const bottomBar = document.createElement('mdui-bottom-app-bar');
     bottomBar.style.position = 'relative';
+    bottomBar.style.overflowX = 'auto';
+    bottomBar.style.whiteSpace = 'nowrap';
+    bottomBar.style.padding = '0 16px';
     bottomBar.innerHTML = `
-        <mdui-button-icon icon="zoom_out" id="zoomOutBtn"></mdui-button-icon>
-        <mdui-button-icon icon="zoom_in" id="zoomInBtn"></mdui-button-icon>
-        <mdui-button-icon icon="rotate_left" id="rotateLeftBtn"></mdui-button-icon>
-        <mdui-button-icon icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
-        <mdui-button-icon icon="restart_alt" id="resetZoomBtn" style="margin-left:8px;"></mdui-button-icon>
-        <!-- ✅ 关键：弹性占位，撑开空白，让菜单固定在最右侧 -->
-        <div style="flex-grow: 1;"></div>
-        <!-- ✅ 下拉菜单 固定在底部栏最右侧 -->
+        <!-- 放大在前，缩小在后 -->
+        <mdui-button-icon variant="filled" icon="zoom_in" id="zoomInBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="zoom_out" id="zoomOutBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="rotate_left" id="rotateLeftBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
+        <!-- 重置无底色 -->
+        <mdui-button-icon variant="text" icon="restart_alt" id="resetZoomBtn"></mdui-button-icon>
+
+        <!-- 上一个 / 下一个 -->
+        <mdui-button-icon variant="filled" icon="chevron_left" id="prevImageBtn" title="上一条记录"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="chevron_right" id="nextImageBtn" title="下一条记录"></mdui-button-icon>
+
+        <div style="flex-grow: 1; min-width: 100px;"></div>
+
         <mdui-dropdown placement="top">
-            <mdui-button-icon slot="trigger" icon="more_vert"></mdui-button-icon>
+            <mdui-button-icon slot="trigger" variant="filled" icon="more_vert"></mdui-button-icon>
             <mdui-menu>
                 <mdui-menu-item id="takePhotoInPreviewBtn">
-                    <mdui-icon slot="start" name="photo_camera"></mdui-icon>拍照替换
+                    <mdui-icon slot="start" name="photo_camera"></mdui-icon>拍照
                 </mdui-menu-item>
                 <mdui-menu-item id="selectGalleryInPreviewBtn">
                     <mdui-icon slot="start" name="photo_library"></mdui-icon>从相册选择
@@ -6437,7 +6432,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     overlay.appendChild(bottomBar);
     document.body.appendChild(overlay);
 
-    // ────────────────────────────── 核心状态（缩放/旋转/拖动/回弹） ──────────────────────────────
+    // ────────────────────────────── 核心状态（仅有图片时才启用缩放/旋转/拖动） ──────────────────────────────
     let currentScale = 1;
     let translateX = 0;
     let translateY = 0;
@@ -6449,9 +6444,8 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     let imgHeight = 0;
     let containerWidth = imgContainer.clientWidth;
     let containerHeight = imgContainer.clientHeight;
-    const OVERFLOW_PERCENT = 0.2; // 允许超出的最大比例 20%
+    const OVERFLOW_PERCENT = 0.05;
 
-    // 边界夹紧计算
     const getClampedPos = (x, y) => {
         const scaledWidth = imgWidth * currentScale;
         const scaledHeight = imgHeight * currentScale;
@@ -6462,56 +6456,147 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             y: Math.max(-maxY, Math.min(maxY, y))
         };
     };
-    // 拖拽实时更新 无过渡
+
     const updatePosImmediately = () => {
         imgWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
     };
-    // 松手回弹更新 带过渡
+
     const updatePosWithTransition = () => {
         const {x, y} = getClampedPos(translateX, translateY);
         imgWrapper.style.transform = `translate(${x}px, ${y}px) scale(${currentScale}) rotate(${rotateDeg}deg)`;
         translateX = x;
         translateY = y;
     };
+
     const updateTransform = () => updatePosWithTransition();
 
-    // 图片加载完成获取真实宽高
-    img.onload = function() {
-        imgWidth = this.offsetWidth;
-        imgHeight = this.offsetHeight;
-        containerWidth = imgContainer.clientWidth;
-        containerHeight = imgContainer.clientHeight;
-        updateTransform();
-    };
+    if (hasImage) {
+        img.onload = function() {
+            imgWidth = this.offsetWidth;
+            imgHeight = this.offsetHeight;
+            containerWidth = imgContainer.clientWidth;
+            containerHeight = imgContainer.clientHeight;
+            updateTransform();
+        };
+    }
+
     window.addEventListener('resize', () => {
         containerWidth = imgContainer.clientWidth;
         containerHeight = imgContainer.clientHeight;
-        updateTransform();
+        if (hasImage) updateTransform();
     });
 
-    // ────────────────────────────── 缩放/旋转/重置 按钮绑定 ──────────────────────────────
+    // ────────────────────────────── 按钮绑定（无图片时部分禁用） ──────────────────────────────
     const zoomOutBtn = bottomBar.querySelector('#zoomOutBtn');
     const zoomInBtn = bottomBar.querySelector('#zoomInBtn');
     const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
     const rotateRightBtn = bottomBar.querySelector('#rotateRightBtn');
     const resetZoomBtn = bottomBar.querySelector('#resetZoomBtn');
+    const prevBtn = bottomBar.querySelector('#prevImageBtn');
+    const nextBtn = bottomBar.querySelector('#nextImageBtn');
 
-    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
-    if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentScale = Math.min(4, currentScale + 0.25); updateTransform(); });
-    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => { rotateDeg -= 90; updateTransform(); });
-    if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => { rotateDeg += 90; updateTransform(); });
-    if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => { 
-        currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
-        updateTransform();
-        typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
-    });
+    // 缩放/旋转/重置只有有图片时才有效
+    const enableTransformBtns = hasImage;
+    if (zoomOutBtn) zoomOutBtn.disabled = !enableTransformBtns;
+    if (zoomInBtn) zoomInBtn.disabled = !enableTransformBtns;
+    if (rotateLeftBtn) rotateLeftBtn.disabled = !enableTransformBtns;
+    if (rotateRightBtn) rotateRightBtn.disabled = !enableTransformBtns;
+    if (resetZoomBtn) resetZoomBtn.disabled = !enableTransformBtns;
 
-    // ────────────────────────────── 双指缩放 + 单指拖动 + 松手回弹 ──────────────────────────────
+    if (enableTransformBtns) {
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
+        if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentScale = Math.min(4, currentScale + 0.25); updateTransform(); });
+        if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => { rotateDeg -= 90; updateTransform(); });
+        if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => { rotateDeg += 90; updateTransform(); });
+        if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => { 
+            currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
+            updateTransform();
+            typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
+        });
+    }
+
+    // 上一个 / 下一个（始终可用，边界禁用）
+    if (prevBtn) prevBtn.addEventListener('click', () => switchImage(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => switchImage(1));
+
+    const updatePrevNext = () => {
+        if (prevBtn) prevBtn.disabled = index === 0;
+        if (nextBtn) nextBtn.disabled = index === tableData.length - 1;
+    };
+    updatePrevNext();
+
+    // 切换到上一条/下一条记录
+    const switchImage = (direction) => {
+        index = Math.max(0, Math.min(tableData.length - 1, index + direction));
+        const newItem = tableData[index];
+        const newHasImage = newItem?.cardImage && newItem.cardImage.startsWith('data:image/');
+
+        // 更新顶部
+        productId = newItem?.productId || '无产品号';
+        updateTopBar();
+        updatePrevNext();
+
+        // 清空原有图片/占位
+        imgWrapper.innerHTML = '';
+
+        if (newHasImage) {
+            img = document.createElement('img');
+            img.src = newItem.cardImage;
+            img.style.cssText = `
+                max-width: 95%;
+                max-height: 85vh;
+                object-fit: contain;
+                transform-origin: center center;
+                user-select: none;
+            `;
+            imgWrapper.appendChild(img);
+
+            // 重新加载宽高并更新变换
+            img.onload = function() {
+                imgWidth = this.offsetWidth;
+                imgHeight = this.offsetHeight;
+                containerWidth = imgContainer.clientWidth;
+                containerHeight = imgContainer.clientHeight;
+                currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0;
+                updateTransform();
+            };
+            
+            // 有图片时启用变换按钮
+            if (zoomOutBtn) zoomOutBtn.disabled = false;
+            if (zoomInBtn) zoomInBtn.disabled = false;
+            if (rotateLeftBtn) rotateLeftBtn.disabled = false;
+            if (rotateRightBtn) rotateRightBtn.disabled = false;
+            if (resetZoomBtn) resetZoomBtn.disabled = false;
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.style.cssText = `
+                color: #aaa;
+                font-size: 1.4rem;
+                text-align: center;
+                padding: 20px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 12px;
+                max-width: 80%;
+            `;
+            placeholder.innerHTML = '当前没有图片<br><br>点击右下角菜单进行上传<br></br>提示：底部栏是可以左右滚动的';
+            imgWrapper.appendChild(placeholder);
+
+            // 无图片时禁用变换按钮状态
+            if (zoomOutBtn) zoomOutBtn.disabled = true;
+            if (zoomInBtn) zoomInBtn.disabled = true;
+            if (rotateLeftBtn) rotateLeftBtn.disabled = true;
+            if (rotateRightBtn) rotateRightBtn.disabled = true;
+            if (resetZoomBtn) resetZoomBtn.disabled = true;
+        }
+    };
+
+    // ────────────────────────────── 双指缩放 + 单指拖动（仅有图片时有效） ──────────────────────────────
     let pinchStartDist = 0;
     let pinchStartScale = 1;
     let lastTap = 0;
 
     imgContainer.addEventListener('touchstart', e => {
+        if (!hasImage) return;
         if (e.touches.length === 2) {
             e.preventDefault();
             const [t1, t2] = e.touches;
@@ -6532,6 +6617,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     }, { passive: false });
 
     imgContainer.addEventListener('touchmove', e => {
+        if (!hasImage) return;
         if (e.touches.length === 2 && pinchStartDist > 0) {
             e.preventDefault();
             const [t1, t2] = e.touches;
@@ -6549,15 +6635,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     imgContainer.addEventListener('touchend', () => {
         pinchStartDist = 0; 
         isDragging = false;
-        updatePosWithTransition();
+        if (hasImage) updatePosWithTransition();
     });
 
-    // ==============================================
-    // ✅ 核心保留：原有的【拍照替换/相册选择/删除图片】业务逻辑完全不变
-    // ==============================================
+    // ────────────────────────────── 拍照/相册/删除业务逻辑 ──────────────────────────────
     const fileInput = document.getElementById('cardImageInput');
-    
-    // 拍照替换
+
     overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
         overlay.remove();
         fileInput.setAttribute('capture', 'environment');
@@ -6579,7 +6662,6 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         fileInput.addEventListener('change', onceHandler, { once: true });
     };
 
-    // 从相册选择
     overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
         overlay.remove();
         fileInput.removeAttribute('capture');
@@ -6600,126 +6682,17 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         fileInput.addEventListener('change', onceHandler, { once: true });
     };
 
-    // 删除图片
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
         overlay.remove();
         window.tempDeleteImageIndex = index;
         document.getElementById('deleteImageConfirmDialog').open = true;
     };
 
-    // 点击空白处关闭预览弹窗
+    // 点击空白处关闭
     overlay.onclick = (e) => { 
         if (e.target === overlay || e.target === imgContainer) overlay.remove(); 
     };
 }
-		
-		
-		function showImageManager(src, dataIndex) {
-		    overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
-    overlay.remove();
-    const fileInput = document.getElementById('cardImageInput');
-    fileInput.setAttribute('capture', 'environment');
-    fileInput.click();
-
-    const onceHandler = (e) => {
-        if (e.target.files?.[0]) {
-            handleImageSelect(e).then(compressedBase64 => {
-                if (compressedBase64) {
-                    tableData[dataIndex].cardImage = compressedBase64;
-                    saveDataToIndexedDB();
-                    updateTable();
-                    showSnackbar('图片已通过拍照替换', 'success');
-                }
-            });
-        }
-        fileInput.removeAttribute('capture');
-        fileInput.value = '';
-    };
-    fileInput.addEventListener('change', onceHandler, { once: true });
-};
-		
-		    overlay.innerHTML = `
-		        <img src="${src}" style="max-width:95%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
-		        
-		        <div style="margin-top:32px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
-		            <mdui-button variant="tonal" id="takePhotoInPreviewBtn">
-		                <mdui-icon name="photo_camera"></mdui-icon> 拍照替换
-		            </mdui-button>
-		            <mdui-button variant="tonal" id="selectGalleryInPreviewBtn">
-		                <mdui-icon name="photo_library"></mdui-icon> 从相册选择
-		            </mdui-button>
-		            <mdui-button variant="outlined" color="error" id="deleteImageInPreviewBtn">
-		                <mdui-icon name="delete"></mdui-icon> 删除图片
-		            </mdui-button>
-		        </div>
-		        
-		        <mdui-button-icon icon="close" style="position:absolute;top:16px;right:16px;color:white;font-size:32px;"
-		                          onclick="this.closest('div').remove()"></mdui-button-icon>
-		    `;
-		
-		    document.body.appendChild(overlay);
-		
-		    // 绑定三个按钮事件
-		    const fileInput = document.getElementById('cardImageInput');
-		
-		    // 拍照替换
-		    overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
-		        overlay.remove();
-		        fileInput.setAttribute('capture', 'environment');
-		        fileInput.click();
-		
-		        const onceHandler = (e) => {
-		            if (e.target.files?.[0]) {
-		                handleImageSelect(e).then(compressedBase64 => {
-		                    if (compressedBase64) {
-		                        tableData[dataIndex].cardImage = compressedBase64;
-		                        saveDataToIndexedDB();
-		                        updateTable();
-		                        showSnackbar('图片已通过拍照替换', 'success');
-		                    }
-		                });
-		            }
-		            fileInput.removeAttribute('capture');
-		            fileInput.value = '';
-		            fileInput.removeEventListener('change', onceHandler);
-		        };
-		        fileInput.addEventListener('change', onceHandler, { once: true });
-		    };
-		
-		    // 从相册选择替换
-		    overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
-		        overlay.remove();
-		        fileInput.removeAttribute('capture');
-		        fileInput.click();
-		
-		        const onceHandler = (e) => {
-		            if (e.target.files?.[0]) {
-		                handleImageSelect(e).then(compressedBase64 => {
-		                    if (compressedBase64) {
-		                        tableData[dataIndex].cardImage = compressedBase64;
-		                        saveDataToIndexedDB();
-		                        updateTable();
-		                        showSnackbar('图片已替换', 'success');
-		                    }
-		                });
-		            }
-		            fileInput.value = '';
-		            fileInput.removeEventListener('change', onceHandler);
-		        };
-		        fileInput.addEventListener('change', onceHandler, { once: true });
-		    };
-		
-		    // 删除图片
-		    overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
-		        overlay.remove();
-		        window.tempDeleteImageIndex = dataIndex;
-		        document.getElementById('deleteImageConfirmDialog').open = true;
-		    };
-		
-		    overlay.onclick = (e) => {
-		        if (e.target === overlay) overlay.remove();
-		    };
-		}
 	
 	function initTableZoom() {
     const container = document.querySelector('.data-table-container');
