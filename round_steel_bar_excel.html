@@ -369,8 +369,8 @@
 		/* 虚拟键盘样式 */
 		#virtualKeyboard {
 		    position: fixed;
-		    bottom: 10px; 
-		    padding-bottom: 15px;
+		    bottom: 0; 
+		    padding-bottom: 2px;
 		    left: 0;
 		    width: 100%;
 		    background-color: var(--surface-color);
@@ -383,10 +383,11 @@
 		
 		.keyboard-row {
 		    display: flex;
-		    padding: 2px 4px; /* Reduced padding */
+		    padding: 0; /* Remove padding completely to eliminate dead zones */
 		    justify-content: center;
 		    margin: 0;
-		    gap: 0; /* Remove gap to eliminate dead space */
+		    gap: 0; /* No gap */
+		    width: 100%; /* Stretch full width */
 		}
 		
 		.keyboard-key {
@@ -401,14 +402,13 @@
 		    border-radius: 0;
 		    box-shadow: none;
 		    
-		    /* Height control */
-		    height: 48px; 
+		    /* Height control - reduced */
+		    height: 40px; 
 		    
 		    text-align: center;
 		    font-size: 16px;
 		    cursor: pointer;
 		    user-select: none;
-		    /* Transition moved to ::before */
 		    
 		    display: flex;
 		    align-items: center;
@@ -429,8 +429,8 @@
 		    right: 2px;
 		    
 		    background-color: var(--background-color);
-		    border-radius: 6px;
-		    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		    border-radius: 4px; /* Slightly smaller radius */
+		    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 		    transition: background-color 0.1s, transform 0.1s;
 		    z-index: -1; /* Behind text */
 		}
@@ -485,29 +485,41 @@
 		.system-keyboard::before { background-color: #2196f3 !important; }
 		
 		#shortcutContainer {
-		    padding: 5px 0;
+		    padding: 0;
+		    height: 44px; /* Fixed height for shortcuts */
 		    border-bottom: 1px solid var(--border-color);
-		    margin-bottom: 5px;
+		    margin-bottom: 0;
 		    overflow-x: auto;
 		    white-space: nowrap;
+		    display: flex;
+		    align-items: center;
 		}
 		
 		#shortcutContainer .keyboard-row {
 		    flex-wrap: nowrap;
 		    justify-content: flex-start;
-		    gap: 4px; /* 快捷键边距也小一点 */
-		    padding: 5px 8px;
+		    gap: 0; 
+		    padding: 0;
+		    width: auto; /* Let it grow naturally */
 		}
 		
-		#shortcutContainer .keyboard-key {
-		    margin-left: 2px;
-		    margin-right: 2px;
-		}
-		
+		/* Shortcut keys specific styles */
 		.shortcut-key, .status-key {
-		    flex: none;
-		    padding: 6px 10px;
-		    margin: 2px;
+		    /* Override default keyboard key styles for shortcuts */
+		    flex: none; /* Don't stretch */
+		    width: auto;
+		    min-width: 40px;
+		    height: 40px; /* Match container height */
+		    padding: 0 12px; /* Add horizontal padding for adaptive text width */
+		}
+		
+		/* Shortcut visuals */
+		.shortcut-key::before, .status-key::before {
+		    top: 4px;
+		    bottom: 4px;
+		    left: 4px;
+		    right: 4px;
+		    border-radius: 16px; /* Pill shape for shortcuts */
 		}
 		
 		
@@ -1183,20 +1195,21 @@
 	</div>
 	<!-- 快速编辑弹窗 (Top Aligned) -->
 	<mdui-dialog id="quickEditDialog" close-on-esc close-on-overlay-click class="quick-edit-dialog-top">
-		<div slot="headline">
-			<div style="display:flex; justify-content:space-between; align-items:center;">
-				<span>快速编辑</span>
-				<mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon>
-			</div>
-		</div>
-		<div style="padding: 16px;">
-			<label id="quickEditLabel" style="display:block; margin-bottom:8px; color:var(--primary-color); font-weight:500;">字段名</label>
+		
+		<mdui-top-app-bar slot="header" style="padding: 16px;">
+            <mdui-top-app-bar-title id="quickEditLabel" style="color:var(--primary-color);"></mdui-top-app-bar-title>
+            <mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon>
+        </mdui-top-app-bar>
+	
+		
+		<div style="padding: 16px; margin-top: 8px;">
+			
 			<input type="text" id="quickEditInput" class="readonly-input" style="width:100%; padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color);">
 			<input type="hidden" id="quickEditIndex">
 			<input type="hidden" id="quickEditField">
 		</div>
 		<div slot="action">
-			<mdui-button variant="text" id="openFullEditBtn">打开完整编辑界面</mdui-button>
+			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
 			<mdui-button variant="filled" id="saveQuickEditBtn">保存</mdui-button>
 		</div>
 	</mdui-dialog>
@@ -1572,7 +1585,7 @@
             <mdui-top-app-bar-title>虚拟键盘设置</mdui-top-app-bar-title>
             <mdui-button-icon icon="close" id="closeKeyboardSettingsModal"></mdui-button-icon>
         </mdui-top-app-bar>
-        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+        <div style="padding: 0px; overflow-y: auto; height: 100%; box-sizing: border-box;">
             <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
                 在此编辑快捷短语。每行一个。<br>
                 可用变量：<code>${year}</code> (如24), <code>${lastYear}</code> (如23)
@@ -1609,9 +1622,9 @@
             </div>
         </div>
         <div slot="action">
-            <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
-            <div style="flex-grow: 1"></div>
+            
             <mdui-button variant="tonal" id="cancelKeyboardConfigBtn">取消</mdui-button>
+            <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
             <mdui-button variant="filled" id="saveKeyboardConfigBtn">保存</mdui-button>
         </div>
     </mdui-dialog>
@@ -3509,7 +3522,7 @@ if (downBtn) {
     document.getElementById('confirmActionBtn').onclick = () => {
         const check = document.getElementById('confirmDeleteCheck');
         if (!check || !check.checked) {
-            showSnackbar('请先勾选“我确认要永久删除”', 'warning');
+            showSnackbar('滑动到底部勾选“我确认要永久删除”再确认', 'warning');
             return;
         }
 
@@ -3530,7 +3543,7 @@ if (downBtn) {
         snackbar.innerHTML = `
             已删除 <strong>${itemToDelete.productId || '未知'}</strong>
             <mdui-button variant="text" style="margin-left:16px; color: var(--primary-color);" id="undoDeleteBtn">
-                点击撤销图片外的数据
+                撤销
             </mdui-button>
         `;
         snackbar.open = true;
@@ -3547,7 +3560,7 @@ if (downBtn) {
             saveDataToIndexedDB();
             updateTable();
             showSnackbar('已撤销删除，数据（含图片）已恢复', 'success');
-            snackbar.open = false;
+            //snackbar.open = false;
         }, { once: true }); // 只监听一次，避免重复绑定
     };
 
@@ -4028,9 +4041,10 @@ const DEFAULT_KEYBOARD_CONFIG = {
     ],
     productIdTemplates: ['TH', 'TH5', 'TH6'],
     cardIdTemplates: [
-        '无备', 
         '备库', 
         'V478-', 
+        'SG505', 
+        'SG506', 
         'V15P', 
         'AUSA502-', 
         'V2526-', 
@@ -4048,9 +4062,7 @@ const DEFAULT_KEYBOARD_CONFIG = {
         'S355J2G3', 
         '16/20MnCrS5', 
         '1.2714', 
-        '18CrMo4', 
-        '18NiCrMo5+A', 
-        'S355J2+N', 
+        '1.2344', 
         '4145', 
         'A105/LF2'
     ],
@@ -4242,7 +4254,7 @@ function generateVirtualKeyboard() {
 		      keyRows = [
 		        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
 		        [...lettersRow1],
-		        ['', ...lettersRow2, '+','-'],
+		        [...lettersRow2, '+','-'],
 		        ['shift', ...lettersRow3, 'backspace'],
 		        ['symbol',',','space', '.', 'clear','done']
 		      ];
@@ -4293,7 +4305,7 @@ function generateVirtualKeyboard() {
 		  // 特殊功能键 - 必须尽早处理并 return，避免进入通用逻辑
 		  if (key === 'shift') {
 		    keyElement.className += ' special wide';
-		    keyElement.innerHTML = keyboardState.shiftState === 'locked-on' ? '⇪' : '⇧';
+		    keyElement.innerHTML = keyboardState.shiftState === 'locked-on' ? '小写' : '大写';
 		    keyElement.addEventListener('click', toggleShift);
 		    return keyElement;
 		  }
@@ -6681,7 +6693,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     let imgHeight = 0;
     let containerWidth = imgContainer.clientWidth;
     let containerHeight = imgContainer.clientHeight;
-    const OVERFLOW_PERCENT = 0.05;
+    const OVERFLOW_PERCENT = 0.5;
 
     const getClampedPos = (x, y) => {
         const scaledWidth = imgWidth * currentScale;
