@@ -1442,7 +1442,7 @@
           <li style="margin-bottom: 4px;">• 自动唤出：点击单元格输入框，虚拟键盘自动弹出</li>
           <li style="margin-bottom: 4px;">• 字段跳转：点击键盘右下 ▼ 键，一键跳转下一个输入项</li>
           <li style="margin-bottom: 4px;">• 快速关闭：长按 ▼ 键 或 快编模式点击 ✔ 完成按钮</li>
-          <li style="margin-bottom: 4px;">• 快捷删除：←✘ 一键清空内容 | ← 单删前一字符</li>
+          <li style="margin-bottom: 4px;">• 快捷删除：清空 一键清空内容 | ← 单删前一字符</li>
           <li>• 批量填充：首行快捷按钮，一键填入钢种/状态/库位等公共数据</li>
         </ul>
       </div>
@@ -4283,7 +4283,7 @@ function generateVirtualKeyboard() {
 		      keyRows = [
 		        ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
 		        ['_', '+', '=', '|', '\\', ':', '"', '<', '>', '?', ','],
-		        ['`', '}', '[', ']', '{', '(', ')', '.', '/', ''],
+		        ['`', '}', '[', ']', '{', '(', ')', '.', '/', 'system'],
 		        ['ABC', 'space', 'backspace','clear', 'done'] 
 		      ];
 		      break;
@@ -4418,7 +4418,7 @@ function generateVirtualKeyboard() {
 
 		  if (key === 'clear') {
 		    keyElement.className += ' clear-key wide';
-		    keyElement.textContent = '←✘';
+		    keyElement.textContent = '清空';
 		    keyElement.addEventListener('click', clearInput);
 		    return keyElement;
 		  }
@@ -4433,6 +4433,28 @@ function generateVirtualKeyboard() {
 		    });
 		    return keyElement;
 		  }
+
+    // 系统键盘键（新添加）
+  if (key === 'system') {
+    keyElement.className += ' system-key wide';
+    keyElement.textContent = '⌨️';  
+    keyElement.addEventListener('click', () => {
+      if (currentInput) {
+        
+        currentInput.removeAttribute('readonly');
+        currentInput.classList.remove('readonly-input');
+
+        // 2. 关闭虚拟键盘
+        dom.virtualKeyboard.style.display = 'none';
+
+        // 3. 焦点回到输入框，触发系统键盘弹出
+        currentInput.focus();
+
+
+      }
+    });
+    return keyElement;
+  }
 
 		  if (key === 'ABC') {
 		    keyElement.className += ' special wide';
