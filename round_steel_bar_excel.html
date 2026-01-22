@@ -1009,13 +1009,14 @@
 					</mdui-list>
 				</mdui-collapse-item>
 			</mdui-collapse>
-			<mdui-list-item id="importItem" icon="file_upload" headline="导入 Excel"></mdui-list-item>
-			<mdui-list-item id="exportItem" icon="file_download" headline="导出 Excel"></mdui-list-item>
-			<mdui-list-item id="calculatorBtn" icon="calculate" headline="计算重量"></mdui-list-item>
 			<mdui-divider></mdui-divider>
-			<mdui-list-item id="sortItem" icon="sort" headline="数据排序"></mdui-list-item>
-			<mdui-divider></mdui-divider>
-			<mdui-list-item id="openKeyboardSettingsBtn" icon="keyboard" headline="虚拟键盘设置"></mdui-list-item>
+			<mdui-list-item id="importItem" icon="file_upload" rounded headline="导入 Excel"></mdui-list-item>
+			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出 Excel"></mdui-list-item>
+			<mdui-list-item id="calculatorBtn" icon="calculate" rounded headline="计算重量"></mdui-list-item>
+		
+			<mdui-list-item id="sortItem" icon="sort" rounded headline="数据排序"></mdui-list-item>
+			
+			<mdui-list-item id="openKeyboardSettingsBtn" rounded icon="keyboard" headline="虚拟键盘设置"></mdui-list-item>
 		</mdui-list>
 	</mdui-navigation-drawer>
 	<div class="top-fixed-area">
@@ -1027,7 +1028,9 @@
 				<span class="material-icons search-clear-btn" id="searchClearBtn">clear</span>
 			</div>
 			<div class="top-action-buttons">
+			<mdui-tooltip content="替换">
 				<mdui-button-icon icon="find_replace" id="toggleSearchReplaceBtn" style="margin-right: -8px;"></mdui-button-icon>
+			</mdui-tooltip>
 				<mdui-dropdown placement="bottom-end">
 					<mdui-button-icon slot="trigger" icon="more_vert" id="topMenuBtn"></mdui-button-icon>
 					<mdui-menu>
@@ -1049,8 +1052,12 @@
 				<div class="search-replace-top-row">
 					<input type="text" id="replaceQuery" placeholder="替换为">
 					<div class="search-replace-nav-buttons">
+					<mdui-tooltip content="上一个">
 						<mdui-button-icon icon="arrow_upward" id="prevMatchBtn"></mdui-button-icon>
+						</mdui-tooltip>
+						<mdui-tooltip content="下一个">
 						<mdui-button-icon icon="arrow_downward" id="nextMatchBtn"></mdui-button-icon>
+						</mdui-tooltip>
 					</div>
 				</div>
 				<div class="search-replace-button-row">
