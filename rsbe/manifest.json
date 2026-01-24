@@ -2,20 +2,20 @@
   "name": "圆棒入库数据管理",
   "short_name": "圆棒入库",
   "description": "钢材圆棒入库记录、搜索替换、图片管理、离线可用",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "theme_color": "#00796b",
   "background_color": "#f5f5f5",
   "orientation": "any",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

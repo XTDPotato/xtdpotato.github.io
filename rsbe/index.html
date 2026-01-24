@@ -4,11 +4,11 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no,viewport-fit=cover">
 	<title>圆棒入库数据管理</title>
-	<link rel="manifest" href="./manifest.json">
+	<link rel="manifest" href="/manifest.json">
 	<meta name="theme-color" content="#00796b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 	
 	
 	
@@ -7021,17 +7021,15 @@ function showFullImage(src, productId = '', dataIndex = -1) {
           
           
           
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('Service Worker 注册成功，范围：', registration.scope);
-            })
-            .catch(error => {
-                console.error('Service Worker 注册失败：', error);
-            });
-    });
-}
+if('serviceWorker' in navigator){       // 判断浏览器支不支持 service worker
+        // 注册 service worker，sw.js 就是 service worker 的应用程序逻辑代码
+        navigator.serviceWorker.register('/sw.js')
+            // 注册好后，会返回一个 promise，数据是 woker 上下文运行环境对象
+            .then(resitration => {
+                console.log("register" , resitration);
+            }).catch(err => console.error(err));
+    }
+
 		});
 	</script>
 </body>
