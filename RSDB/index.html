@@ -67,6 +67,83 @@
 		.search-bar {
 		    background-color: var(--background-color); 
 		}
+
+        #virtualCursor {
+            position: absolute;
+            width: 2px;
+            background-color: var(--primary-color);
+            display: none;
+            pointer-events: none;
+            z-index: 9999;
+            animation: cursorBlink 1s infinite;
+        }
+        
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* 虚拟键盘增强样式 */
+        .keyboard-key {
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .key-inner {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            pointer-events: none; 
+        }
+        
+        .key-symbol {
+            font-size: 0.75rem; 
+            opacity: 0.6;
+            position: absolute;
+            top: 2px;
+            pointer-events: none;
+            font-weight: bold;
+        }
+        
+        .key-char {
+            font-size: 1.3rem;
+            position: absolute;
+            bottom: 4px;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        /* Swipe Up Visual Feedback */
+        .swipe-active .key-symbol {
+            color: #4caf50; /* Green */
+            font-weight: 900;
+            opacity: 1;
+            transform: scale(1.3);
+            transition: all 0.1s ease;
+            z-index: 10;
+        }
+        .swipe-active .key-char {
+            opacity: 0.2;
+        }
+
+        .clear-mode-indicator {
+            color: #f44336; 
+            font-size: 0.8rem;
+            position: absolute;
+            top: 2px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        
+        .keyboard-key mdui-icon {
+            pointer-events: none;
+            font-size: 24px;
+        }
 		
 		body {
 		    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
@@ -325,6 +402,12 @@
 		    box-sizing: border-box;
 		    max-width: 100% !important; /* 修复：限制输入框最大宽度 */
 		}
+
+        .data-form input:focus {
+            border: 2px solid var(--success-color) !important; /* Green border on focus */
+            outline: none;
+            padding: 9px; /* Adjust padding to prevent layout shift due to border width change */
+        }
 		
 		/* 修复：备注文本框宽度溢出问题 */
 		#remarks {
@@ -411,15 +494,17 @@
 		    border-radius: 0;
 		    box-shadow: none;
 		    
-		    /* Height control - reduced */
-		    height: 40px; 
+		    /* Height control - increased */
+		    height: 42px; 
 		    
 		    text-align: center;
-		    font-size: 16px;
+		    font-size: 18px; /* Slightly larger */
 		    cursor: pointer;
-		    user-select: none;
-		    
-		    display: flex;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; /* Prevent browser scrolling/zooming on keys */
+    
+    display: flex;
 		    align-items: center;
 		    justify-content: center;
 		    
@@ -494,22 +579,26 @@
 		.system-keyboard::before { background-color: #2196f3 !important; }
 		
 		#shortcutContainer {
-		    padding: 0;
-		    height: 44px; /* Fixed height for shortcuts */
+		    padding: 4px 0;
+		    height: auto;
+		    min-height: 44px;
+            max-height: 100px;
 		    border-bottom: 1px solid var(--border-color);
 		    margin-bottom: 0;
 		    overflow-x: auto;
 		    white-space: nowrap;
 		    display: flex;
-		    align-items: center;
+            flex-direction: column;
+		    align-items: flex-start; /* Align to start for scrolling */
 		}
 		
 		#shortcutContainer .keyboard-row {
+            display: flex;
 		    flex-wrap: nowrap;
 		    justify-content: flex-start;
 		    gap: 0; 
-		    padding: 0;
-		    width: auto; /* Let it grow naturally */
+		    padding: 0 4px;
+		    width: max-content; /* Ensure row takes necessary width */
 		}
 		
 		/* Shortcut keys specific styles */
@@ -536,9 +625,12 @@
 	/* 滚动容器：必须有 overflow: auto / scroll */
 .data-table-container-div {
     overflow: auto;
-    height: calc(100vh - 200px);  /* 根据你的布局调整 */
+    height: calc(100vh - 180px);
     position: relative;
-    -webkit-overflow-scrolling: touch;  /* iOS 平滑滚动 */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 150px; /* Ensure space for FAB */
+    box-sizing: border-box;
+    background-color: var(--background-color);
 }
 
 /* 表头冻结：核心 */
@@ -606,15 +698,16 @@
 		.highlight { background-color: rgba(255,193,7,0.3) !important; transition: background-color 0.5s ease-out; }
 		
 		.empty-state {
-		    position: absolute;
+		    position: fixed;
 		    inset: 0;
+            top: 56px; /* Avoid header */
 		    display: none;
 		    flex-direction: column;
 		    align-items: center;
 		    justify-content: center;
 		    background: var(--background-color);
 		    z-index: 10;
-		    color: #757575;
+		    color: var(--text-color);
 		}
 		
 		
@@ -860,12 +953,12 @@
 		}
 		
 		/* 顶部菜单开关样式适配 */
-		#filterMatchRowsMenuItem {
-		    display: none; /* 默认隐藏，搜索替换激活时显示 */
-		    align-items: center;
-		    justify-content: space-between;
-		    padding: 0 16px;
-		}
+#filterMatchRowsMenuItem {
+    /* display: none; Removed to make it always visible in the menu */
+    align-items: center;
+    /* justify-content: space-between; Removed as we use standard menu item layout now */
+    /* padding: 0 16px; Standard padding is fine */
+}
 		
 		#mainFab {
 		    position: fixed;
@@ -1026,6 +1119,7 @@
 			<mdui-list-item id="sortItem" icon="sort" rounded headline="数据排序"></mdui-list-item>
 			
 			<mdui-list-item id="openKeyboardSettingsBtn" rounded icon="keyboard" headline="虚拟键盘设置"></mdui-list-item>
+			<mdui-list-item id="installPwaBtn" rounded icon="download" headline="安装应用" style="display: none;"></mdui-list-item>
 		</mdui-list>
 	</mdui-navigation-drawer>
 	<div class="top-fixed-area">
@@ -1038,19 +1132,25 @@
 			</div>
 			<div class="top-action-buttons">
 			<mdui-tooltip content="替换">
-				<mdui-button-icon icon="find_replace" id="toggleSearchReplaceBtn" style="margin-right: -8px;"></mdui-button-icon>
+				<mdui-button-icon icon="find_replace" id="toggleSearchReplaceBtn"></mdui-button-icon>
 			</mdui-tooltip>
 				<mdui-dropdown placement="bottom-end">
-					<mdui-button-icon slot="trigger" icon="more_vert" id="topMenuBtn"></mdui-button-icon>
-					<mdui-menu>
-						<mdui-menu-item id="multiSelectMenuItem" icon="check_box_outline_blank">
+			<mdui-button-icon slot="trigger" icon="more_vert" id="topMenuBtn"></mdui-button-icon>
+			<mdui-menu>
+						<mdui-menu-item id="multiSelectMenuItem">
+						<div style="display: flex; align-items: center; width: 100%;">
+							<mdui-checkbox id="multiSelectCheckbox" style="pointer-events: none; margin-right: 12px;"></mdui-checkbox>
 							<span id="multiSelectMenuText">进入多选模式</span>
-						</mdui-menu-item>
-						<!-- 新增：只显示匹配行开关（移至顶部菜单） -->
-						<mdui-menu-item id="filterMatchRowsMenuItem" style="text-align: center;display: flex; align-items: center; justify-content: space-between;">
+						</div>
+					</mdui-menu-item>
+					<!-- 新增：只显示匹配行开关（移至顶部菜单） -->
+					<mdui-menu-item id="filterMatchRowsMenuItem">
+						<div style="display: flex; align-items: center; width: 100%;">
+							<mdui-checkbox id="filterMatchRowsCheckbox" style="pointer-events: none; margin-right: 12px;"></mdui-checkbox>
 							<span>只显示匹配行</span>
-							<mdui-switch id="filterMatchRowsSwitch"></mdui-switch>
-						</mdui-menu-item>
+						</div>
+					</mdui-menu-item>
+                    <mdui-menu-item id="resetFabPositionItem" icon="restore">重置按钮位置</mdui-menu-item>
 						<mdui-menu-item id="aboutItem" icon="info">关于</mdui-menu-item>
 					</mdui-menu>
 				</mdui-dropdown>
@@ -1144,31 +1244,67 @@
 				<form id="dataForm" class="data-form">
 					<input type="hidden" id="editIndex" value="-1">
 					<label for="steelType">钢种</label>
-					<input type="text" id="steelType" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="steelType" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="steelType"></mdui-button-icon>
+					</div>
 					<label for="productId">产品号</label>
-					<input type="text" id="productId" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="productId" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="productId"></mdui-button-icon>
+					</div>
 					<label for="cardId">卡片号</label>
-					<input type="text" id="cardId" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="cardId" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="cardId"></mdui-button-icon>
+					</div>
 					<label for="furnaceId">炉号</label>
-					<input type="text" id="furnaceId" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="furnaceId" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="furnaceId"></mdui-button-icon>
+					</div>
 					<mdui-divider style="margin-bottom:10px"></mdui-divider>
 					<label for="actualDiameter">实际直径</label>
-					<input type="text" id="actualDiameter" class="numeric-input readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="actualDiameter" class="numeric-input readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="actualDiameter"></mdui-button-icon>
+					</div>
 					<label for="diameter">直径</label>
-					<input type="text" id="diameter" class="numeric-input readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="diameter" class="numeric-input readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="diameter"></mdui-button-icon>
+					</div>
 					<label for="length">长度</label>
-					<input type="text" id="length" class="numeric-input readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="length" class="numeric-input readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="length"></mdui-button-icon>
+					</div>
 					<label for="weight">重量</label>
-					<input type="text" id="weight" class="numeric-input readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="weight" class="numeric-input readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="weight"></mdui-button-icon>
+					</div>
 					<mdui-divider style="margin-bottom:10px"></mdui-divider>
 					<label for="status">状态</label>
-					<input type="text" id="status" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="status" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="status"></mdui-button-icon>
+					</div>
 					<label for="position">位置</label>
-					<input type="text" id="position" class="readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="position" class="readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="position"></mdui-button-icon>
+					</div>
 					<label for="hardness">硬度</label>
-					<input type="text" id="hardness" class="numeric-input readonly-input">
+					<div style="position:relative; display:flex; align-items:center;">
+						<input type="text" id="hardness" class="numeric-input readonly-input" style="flex:1;">
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="hardness"></mdui-button-icon>
+					</div>
 					<label for="remarks">备注</label>
-					<textarea rows="5" cols="30" id="remarks"></textarea>
+					<div style="position:relative; display:flex; align-items:center;">
+						<textarea rows="5" cols="30" id="remarks" style="flex:1;"></textarea>
+						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="remarks"></mdui-button-icon>
+					</div>
 					<!-- 图片上传与管理区域 -->
 					<mdui-divider style="margin:20px 0 10px 0"></mdui-divider>
 					<div style="text-align:center;margin-bottom:16px;">
@@ -1220,7 +1356,10 @@
 		
 		<div style="padding: 16px; margin-top: 8px;">
 			
-			<input type="text" id="quickEditInput" class="readonly-input" style="width:100%; padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color);">
+			<div style="position:relative; display:flex; align-items:center;">
+				<input type="text" id="quickEditInput" class="readonly-input" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1;">
+				<mdui-button-icon icon="edit" class="edit-input-btn" data-target="quickEditInput"></mdui-button-icon>
+			</div>
 			<input type="hidden" id="quickEditIndex">
 			<input type="hidden" id="quickEditField">
 		</div>
@@ -1384,7 +1523,7 @@
 
     <!-- 制作者信息（极简） -->
     <div style="text-align: center; font-size: 0.85rem; color: var(--mdui-color-on-surface-variant, #757575); margin: 0 0 16px 0;">
-      制作：Gemini + Doubao + Grok　持续优化中 | 功能全覆盖·双端适配
+      制作：Trae (Gemini-3-Pro-Preview) | 功能全覆盖·双端适配
     </div>
 
     <mdui-divider style="margin: 12px 0;"></mdui-divider>
@@ -1636,12 +1775,48 @@
                 <label style="display:block; margin-bottom:8px; font-weight:500;">位置 (Position)</label>
                 <mdui-text-field id="positionConfigInput" rows="3" autosize style="width:100%;"></mdui-text-field>
             </div>
+
+            <mdui-divider style="margin: 16px 0;"></mdui-divider>
+            
+            <div class="input-group" style="margin-bottom: 16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:500;">高级配置 (Advanced JSON)</label>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0;">
+                    在此完全自定义键盘布局、键位大小、符号映射等。
+                </p>
+                <mdui-text-field id="advancedJsonConfigInput" rows="2" autosize readonly style="width:100%; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.05);"></mdui-text-field>
+                <div style="display:flex; gap:8px; margin-top: 8px;">
+                     <mdui-button variant="tonal" id="openAdvancedJsonEditorBtn" icon="edit" style="flex:1">打开完整编辑器</mdui-button>
+                </div>
+            </div>
         </div>
         <div slot="action">
+            <input type="file" id="importKeyboardConfigInput" accept=".json" style="display:none">
+            <mdui-button variant="outlined" id="exportKeyboardConfigBtn" style="margin-right:auto">导出JSON</mdui-button>
+            <mdui-button variant="outlined" id="importKeyboardConfigBtn" style="margin-right:8px">导入JSON</mdui-button>
             
             <mdui-button variant="tonal" id="cancelKeyboardConfigBtn">取消</mdui-button>
             <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
             <mdui-button variant="filled" id="saveKeyboardConfigBtn">保存</mdui-button>
+        </div>
+    </mdui-dialog>
+
+    <!-- Advanced JSON Editor Dialog -->
+    <mdui-dialog id="advancedJsonEditorDialog" style="max-width: 90vw; width: 800px; max-height: 90vh; height: 800px;">
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <span style="font-size: 1.25rem; font-weight: 500;">编辑 JSON 配置</span>
+                <mdui-button-icon icon="close" id="closeAdvancedJsonEditorBtn"></mdui-button-icon>
+            </div>
+            <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 16px 24px;">
+                 <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 8px;">
+                    请确保 JSON 格式正确。支持自定义 layouts (布局), symbolMap (符号映射), templates (模板)。
+                </p>
+                <mdui-text-field id="fullJsonEditorInput" rows="20" style="width:100%; flex: 1; font-family: monospace; font-size: 13px; overflow-y: auto;"></mdui-text-field>
+            </div>
+            <div style="padding: 16px 24px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <mdui-button variant="text" id="cancelJsonEditorBtn">取消</mdui-button>
+                <mdui-button variant="filled" id="applyJsonEditorBtn">应用并关闭</mdui-button>
+            </div>
         </div>
     </mdui-dialog>
 
@@ -1674,7 +1849,8 @@
 		let duplicateCurrentPage = 1;
 		        const DUPLICATE_PAGE_SIZE = 10;  
 		        let duplicateTotalPages = 1;
-		        let isFilterMatchRows = false;  
+		        let isFilterMatchRows = false;
+                let deferredPrompt; // PWA install prompt  
 
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
@@ -1771,7 +1947,8 @@
 		  duplicateConfirmationModal: document.getElementById('duplicateConfirmationModalCustom'), 
 		  closeDuplicateModal: document.getElementById('closeDuplicateModal'),
 		  generalSnackbar: document.getElementById('general-snackbar'),
-		  filterMatchRowsSwitch: document.getElementById('filterMatchRowsSwitch'),
+		  filterMatchRowsCheckbox: document.getElementById('filterMatchRowsCheckbox'),
+		  filterMatchRowsMenuItem: document.getElementById('filterMatchRowsMenuItem'),
 
 		  cardImageInput: document.getElementById('cardImageInput'),
 		uploadImageBtn: document.getElementById('uploadImageBtn'),
@@ -1782,6 +1959,7 @@
 
 		  multiSelectMenuText: document.getElementById('multiSelectMenuText'), 
 		  multiSelectMenuItem: document.getElementById('multiSelectMenuItem'), 
+          multiSelectCheckbox: document.getElementById('multiSelectCheckbox'), 
 
 		  toggleSearchReplaceBtn: document.getElementById('toggleSearchReplaceBtn'),
 		  searchReplaceContainer: document.getElementById('searchReplaceContainer'),
@@ -1802,6 +1980,7 @@
 
 		  aboutDialog: document.getElementById('aboutDialog'),
 		  aboutItem: document.getElementById('aboutItem'),
+		  installPwaBtn: document.getElementById('installPwaBtn'),
 		  totalCountText: document.getElementById('totalCountText'),
 		  bottomPrevBtn: document.getElementById('bottomPrevBtn'),    
 		            bottomNextBtn: document.getElementById('bottomNextBtn'),     
@@ -1992,6 +2171,9 @@ const ZoomManager = {
 
 		function closeCustomModal(modalElement) {
 		    if (modalElement) modalElement.style.display = 'none';
+            // If virtual keyboard is open and associated with an input in this modal, close it?
+            // Or just update cursor
+            updateVirtualCursor();
 		}
 
 function openCompareEditDialog(suggestedFields) {
@@ -2103,7 +2285,215 @@ function openCompareEditDialog(suggestedFields) {
     dialog.open = true;
 }
 
+// === Virtual Cursor Logic ===
+function updateVirtualCursor() {
+    const virtualCursor = document.getElementById('virtualCursor');
+    if (!virtualCursor) return;
+
+    if (!currentInput || !currentInput.classList.contains('readonly-input') || dom.virtualKeyboard.style.display === 'none') {
+        virtualCursor.style.display = 'none';
+        return;
+    }
+
+    const rect = currentInput.getBoundingClientRect();
+    const style = window.getComputedStyle(currentInput);
+    const paddingLeft = parseFloat(style.paddingLeft);
+    const paddingTop = parseFloat(style.paddingTop);
+    const borderLeft = parseFloat(style.borderLeftWidth);
+    const borderTop = parseFloat(style.borderTopWidth);
+    
+    const textBeforeCursor = currentInput.value.substring(0, currentInput.selectionStart);
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const textWidth = context.measureText(textBeforeCursor).width;
+
+    const cursorHeight = parseFloat(style.fontSize) * 1.2;
+    
+    virtualCursor.style.height = cursorHeight + 'px';
+    virtualCursor.style.left = (rect.left + paddingLeft + borderLeft + textWidth) + 'px';
+    // Center vertically in the input
+    virtualCursor.style.top = (rect.top + borderTop + paddingTop + (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2) + 'px';
+    
+    // Fallback if height calculation fails (e.g. flex centering)
+    if (isNaN(parseFloat(virtualCursor.style.top))) {
+         virtualCursor.style.top = (rect.top + (rect.height - cursorHeight) / 2) + 'px';
+    }
+
+    virtualCursor.style.display = 'block';
+}
+
 function initEventListeners() {
+    // Init Virtual Cursor Element
+    if (!document.getElementById('virtualCursor')) {
+        const vc = document.createElement('div');
+        vc.id = 'virtualCursor';
+        document.body.appendChild(vc);
+    }
+    
+    window.addEventListener('resize', updateVirtualCursor);
+    window.addEventListener('scroll', updateVirtualCursor, true);
+
+    // Edit Buttons Logic
+    document.querySelectorAll('.edit-input-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (targetInput) {
+                const isReadonly = targetInput.hasAttribute('readonly');
+                const isVirtualKeyboardVisible = dom.virtualKeyboard.style.display !== 'none';
+                const isCurrentInput = currentInput === targetInput;
+
+                // Toggle Logic: 
+                // If it's already in Virtual Mode (readonly) AND Virtual Keyboard is showing AND it's the current input
+                // Then -> Switch to System Mode (remove readonly, hide VK)
+                if (isReadonly && isVirtualKeyboardVisible && isCurrentInput) {
+                    targetInput.removeAttribute('readonly');
+                    targetInput.classList.remove('readonly-input');
+                    dom.virtualKeyboard.style.display = 'none';
+                    const virtualCursor = document.getElementById('virtualCursor');
+                    if (virtualCursor) virtualCursor.style.display = 'none';
+                    targetInput.focus(); // Trigger system keyboard
+                } else {
+                    // Otherwise -> Switch to/Ensure Virtual Mode
+                    // If not readonly, make it readonly (System -> Virtual)
+                    if (!isReadonly) {
+                        targetInput.setAttribute('readonly', 'true');
+                        targetInput.classList.add('readonly-input');
+                    }
+                    currentInput = targetInput;
+                    updateKeyboardForInput(targetInput);
+                    showVirtualKeyboard();
+                    targetInput.focus();
+                    setTimeout(updateVirtualCursor, 50); 
+                }
+            }
+        });
+    });
+
+    // Special listener for Remarks to trigger System Keyboard and Close Virtual Keyboard
+    const remarksInput = document.getElementById('remarks');
+    if (remarksInput) {
+        remarksInput.addEventListener('click', (e) => {
+             // 1. Force System Mode (remove readonly)
+             remarksInput.removeAttribute('readonly');
+             remarksInput.classList.remove('readonly-input');
+             
+             // 2. Close Virtual Keyboard
+             dom.virtualKeyboard.style.display = 'none';
+             const virtualCursor = document.getElementById('virtualCursor');
+             if (virtualCursor) virtualCursor.style.display = 'none';
+             
+             // 3. Focus to bring up system keyboard
+             currentInput = remarksInput;
+             remarksInput.focus(); 
+        });
+    }
+
+    // FAB Draggable Logic & Reset
+    const mainFab = document.getElementById('mainFab');
+    if (mainFab) {
+        // Load saved position
+        const savedPos = localStorage.getItem('fabPosition');
+        if (savedPos) {
+            try {
+                const { right, bottom } = JSON.parse(savedPos);
+                mainFab.style.right = right;
+                mainFab.style.bottom = bottom;
+            } catch(e) {}
+        }
+
+        let isDragging = false;
+        let startX, startY;
+        let initialRight, initialBottom;
+
+        mainFab.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+            isDragging = false;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            
+            const style = window.getComputedStyle(mainFab);
+            initialRight = parseFloat(style.right);
+            initialBottom = parseFloat(style.bottom);
+        }, {passive: false});
+
+        mainFab.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            const deltaX = startX - touch.clientX; // Drag left increases right
+            const deltaY = startY - touch.clientY; // Drag up increases bottom
+
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                isDragging = true;
+                if(e.cancelable) e.preventDefault();
+                
+                let newRight = initialRight + deltaX;
+                let newBottom = initialBottom + deltaY;
+                
+                const maxRight = window.innerWidth - 50;
+                const maxBottom = window.innerHeight - 50;
+                
+                newRight = Math.max(10, Math.min(newRight, maxRight));
+                newBottom = Math.max(10, Math.min(newBottom, maxBottom));
+
+                mainFab.style.right = `${newRight}px`;
+                mainFab.style.bottom = `${newBottom}px`;
+            }
+        }, {passive: false});
+
+        mainFab.addEventListener('touchend', (e) => {
+            if (isDragging) {
+                const pos = {
+                    right: mainFab.style.right,
+                    bottom: mainFab.style.bottom
+                };
+                localStorage.setItem('fabPosition', JSON.stringify(pos));
+            }
+        });
+    }
+
+    // Reset FAB Menu Item
+    const resetFabBtn = document.getElementById('resetFabPositionItem');
+    if (resetFabBtn) {
+        resetFabBtn.addEventListener('click', () => {
+            localStorage.removeItem('fabPosition');
+            if (mainFab) {
+                mainFab.style.right = '16px';
+                mainFab.style.bottom = '76px';
+            }
+            showSnackbar('按钮位置已重置', 'success');
+        });
+    }
+
+    // Add click listeners to all form inputs to trigger virtual keyboard
+    if (typeof inputFields !== 'undefined') {
+        inputFields.forEach(input => {
+            // Remove any existing click listeners (if possible, but since we use anonymous functions, we can't easily)
+            // But we can ensure we only add logic that respects the state.
+            
+            // NOTE: We are relying on the fact that this script runs once.
+            input.addEventListener('click', (e) => {
+                // If it's a readonly input (Virtual Mode)
+                if (input.hasAttribute('readonly')) {
+                    e.stopPropagation();
+                    currentInput = input;
+                    updateKeyboardForInput(input);
+                    showVirtualKeyboard();
+                    updateVirtualCursor();
+                } else {
+                    // System Mode: Explicitly Close Virtual Keyboard
+                    // This handles the case where user was using VK, then tapped a system-mode input
+                    dom.virtualKeyboard.style.display = 'none';
+                    const virtualCursor = document.getElementById('virtualCursor');
+                    if (virtualCursor) virtualCursor.style.display = 'none';
+                }
+            });
+        });
+    }
 
     const selectGalleryBtn = document.getElementById('selectFromGalleryBtn');
     const takePhotoBtn = document.getElementById('takePhotoBtn');
@@ -2205,18 +2595,56 @@ function initEventListeners() {
     });
 
     dom.closeDataModal.addEventListener('click', () => {
-        const dialog = document.getElementById('cancelEditConfirmDialog');
-        if (dialog) dialog.open = true;
+        if (!hasDataChanged()) {
+            closeCustomModal(dom.dataSheet);
+            dom.virtualKeyboard.style.display = 'none';
+            const virtualCursor = document.getElementById('virtualCursor');
+            if (virtualCursor) virtualCursor.style.display = 'none';
+        } else {
+            const dialog = document.getElementById('cancelEditConfirmDialog');
+            if (dialog) dialog.open = true;
+        }
     });
 
+    // Helper: Check if data has changed
+    const hasDataChanged = () => {
+        for (const key in formElements) {
+            if (formElements.hasOwnProperty(key)) {
+                const input = formElements[key];
+                const currentVal = input.value.trim();
+                
+                if (currentEditIndex === -1) {
+                    // New Mode: Check if any field is non-empty
+                    if (currentVal !== '') return true;
+                } else {
+                    // Edit Mode: Check against original data
+                    const originalVal = (tableData[currentEditIndex][key] || '').toString().trim();
+                    if (currentVal !== originalVal) return true;
+                }
+            }
+        }
+        return false;
+    };
+
     dom.cancelBtn.addEventListener('click', () => {
-        const dialog = document.getElementById('cancelEditConfirmDialog');
-        if (dialog) dialog.open = true;
+        if (!hasDataChanged()) {
+            // No changes, close directly
+            closeCustomModal(dom.dataSheet);
+            dom.virtualKeyboard.style.display = 'none';
+            const virtualCursor = document.getElementById('virtualCursor');
+            if (virtualCursor) virtualCursor.style.display = 'none';
+        } else {
+            // Show confirmation
+            const dialog = document.getElementById('cancelEditConfirmDialog');
+            if (dialog) dialog.open = true;
+        }
     });
 
     document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
         closeCustomModal(dom.dataSheet);
         dom.virtualKeyboard.style.display = 'none';
+        const virtualCursor = document.getElementById('virtualCursor');
+        if (virtualCursor) virtualCursor.style.display = 'none';
         const dialog = document.getElementById('cancelEditConfirmDialog');
         if (dialog) dialog.open = false;
     });
@@ -2229,6 +2657,8 @@ function initEventListeners() {
     dom.closeQuickEdit.addEventListener('click', () => { 
         closeCustomModal(dom.quickEditDialog); 
         dom.virtualKeyboard.style.display = 'none'; 
+        const virtualCursor = document.getElementById('virtualCursor');
+        if (virtualCursor) virtualCursor.style.display = 'none';
         keyboardState.isQuickEdit = false;
         saveKeyboardState();
     });
@@ -2247,8 +2677,9 @@ function initEventListeners() {
         }, 150);
     });
 
-document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) => {
-    isFilterMatchRows = e.target.checked;
+dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
+    isFilterMatchRows = !isFilterMatchRows;
+    dom.filterMatchRowsCheckbox.checked = isFilterMatchRows;
 
     localStorage.setItem('filterMatchRows', isFilterMatchRows);
 
@@ -2259,14 +2690,29 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) 
 
     dom.quickEditInput.addEventListener('click', (e) => {
         e.stopPropagation();
+        
+        // Check if currently in System Mode (no readonly)
+        if (!e.target.hasAttribute('readonly')) {
+             dom.virtualKeyboard.style.display = 'none';
+             const virtualCursor = document.getElementById('virtualCursor');
+             if (virtualCursor) virtualCursor.style.display = 'none';
+             return;
+        }
+
         currentInput = e.target;
         const realFieldId = dom.quickEditField.value;
         updateKeyboardForInput(currentInput, realFieldId);
         showVirtualKeyboard();
     });
 
-    dom.closeConfirmModal.addEventListener('click', () => closeCustomModal(dom.confirmModal));
-    dom.cancelConfirmBtn.addEventListener('click', () => closeCustomModal(dom.confirmModal));
+    dom.closeConfirmModal.addEventListener('click', () => {
+        closeCustomModal(dom.confirmModal);
+        dom.virtualKeyboard.style.display = 'none';
+    });
+    dom.cancelConfirmBtn.addEventListener('click', () => {
+        closeCustomModal(dom.confirmModal);
+        dom.virtualKeyboard.style.display = 'none';
+    });
 
     dom.closeCalculatorModal.addEventListener('click', () => { 
         closeCustomModal(dom.calculatorModal); 
@@ -2280,16 +2726,26 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) 
 
     dom.clearCalcBtn.addEventListener('click', clearCalculatorInputs);
 
-    dom.closeDuplicateModal.addEventListener('click', () => closeCustomModal(dom.duplicateConfirmationModal));
+    dom.closeDuplicateModal.addEventListener('click', () => {
+        closeCustomModal(dom.duplicateConfirmationModal);
+        dom.virtualKeyboard.style.display = 'none';
+    });
 
     document.getElementById('modal-btn-cancel-import')?.addEventListener('click', () => {
         closeCustomModal(dom.duplicateConfirmationModal);
+        dom.virtualKeyboard.style.display = 'none';
         showSnackbar('导入操作已取消', 'warning');
     });
 
     dom.sortItem.addEventListener('click', openSortModal);
-    dom.closeSortModal.addEventListener('click', () => closeCustomModal(dom.sortModal));
-    dom.cancelSortBtn.addEventListener('click', () => closeCustomModal(dom.sortModal));
+    dom.closeSortModal.addEventListener('click', () => {
+        closeCustomModal(dom.sortModal);
+        dom.virtualKeyboard.style.display = 'none';
+    });
+    dom.cancelSortBtn.addEventListener('click', () => {
+        closeCustomModal(dom.sortModal);
+        dom.virtualKeyboard.style.display = 'none';
+    });
     dom.applySortBtn.addEventListener('click', applySort);
     dom.addSortRuleBtn.addEventListener('click', () => addSortRule());
 
@@ -2324,53 +2780,7 @@ document.getElementById('filterMatchRowsSwitch').addEventListener('change', (e) 
     dom.replaceOneBtn.addEventListener('click', replaceOne);
     dom.replaceAllBtn.addEventListener('click', confirmReplaceAll);
 
-    inputFields.forEach(field => {
-        field.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentInput = e.target;
-
-            if (currentInput.id === 'remarks') {
-                currentInput.removeAttribute('readonly');
-                currentInput.classList.remove('readonly-input');
-                dom.virtualKeyboard.style.display = 'none';
-                currentInput.focus();
-                return; 
-            }
-
-            currentInput.setAttribute('readonly', 'true');
-            currentInput.classList.add('readonly-input');
-            updateKeyboardForInput(currentInput);
-            showVirtualKeyboard();
-
-            setTimeout(() => {
-                const modalContent = document.getElementById('dataSheetContent');
-                if (modalContent) {
-                    const inputRect = currentInput.getBoundingClientRect();
-                    const modalRect = modalContent.getBoundingClientRect();
-                    const offset = inputRect.top - modalRect.top + modalContent.scrollTop - modalRect.height * 0.3;
-                    modalContent.scrollTo({ top: offset, behavior: 'smooth' });
-                }
-            }, 100);
-        });
-
-        field.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            currentInput = e.target;
-            if (currentInput.id === 'remarks') return;
-
-            if (currentInput.hasAttribute('readonly')) {
-                currentInput.removeAttribute('readonly');
-                currentInput.classList.remove('readonly-input');
-                dom.virtualKeyboard.style.display = 'none';
-                currentInput.focus();
-            } else {
-                currentInput.setAttribute('readonly', 'true');
-                currentInput.classList.add('readonly-input');
-                updateKeyboardForInput(currentInput);
-                showVirtualKeyboard();
-            }
-        });
-    });
+    // Removed input click listeners as per user request (only edit button triggers edit mode)
 
     dom.importItem.addEventListener('click', () => { dom.drawer.open = false; dom.fileInput.click(); });
     dom.exportItem.addEventListener('click', () => { dom.drawer.open = false; exportToExcel(); });
@@ -2466,6 +2876,47 @@ dom.tableBody.addEventListener('dblclick', (e) => {
     });
 
     dom.pageJumpInput.addEventListener('blur', jumpToPage);
+
+    // PWA Install Logic
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Update UI notify the user they can install the PWA
+        if (dom.installPwaBtn) {
+            dom.installPwaBtn.style.display = 'block';
+        }
+    });
+
+    if (dom.installPwaBtn) {
+        dom.installPwaBtn.addEventListener('click', async () => {
+            dom.drawer.open = false;
+            if (!deferredPrompt) return;
+            // Show the install prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // We've used the prompt, and can't use it again, throw it away
+            deferredPrompt = null;
+            
+            if (outcome === 'accepted') {
+                dom.installPwaBtn.style.display = 'none';
+            }
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        // Hide the app-provided install promotion
+        if (dom.installPwaBtn) {
+            dom.installPwaBtn.style.display = 'none';
+        }
+        // Clear the deferredPrompt so it can be garbage collected
+        deferredPrompt = null;
+        console.log('PWA was installed');
+        showSnackbar('应用已安装', 'success');
+    });
 }
 
 function confirmDeleteSelected() {
@@ -2544,8 +2995,7 @@ function bindEditImageButtons() {
 function toggleSearchReplaceVisibility() {
     isSearchReplaceVisible = !isSearchReplaceVisible;
     const container = document.getElementById('searchReplaceContainer');
-    const menuItem = document.getElementById('filterMatchRowsMenuItem');
-    const switchEl = document.getElementById('filterMatchRowsSwitch');
+    // menuItem visibility is now handled by CSS (always visible)
 
     if (isSearchReplaceVisible) {
         container.style.display = 'block';
@@ -2553,14 +3003,16 @@ function toggleSearchReplaceVisibility() {
 
         const savedFilter = localStorage.getItem('filterMatchRows') === 'true';
         isFilterMatchRows = savedFilter;
-        switchEl.checked = savedFilter;
-        menuItem.style.display = 'flex';   
+        
+        // Sync Checkbox
+        if (dom.filterMatchRowsCheckbox) {
+            dom.filterMatchRowsCheckbox.checked = savedFilter;
+        }
 
         startSearch();   
     } else {
         container.style.display = 'none';
         document.getElementById('toggleSearchReplaceBtn').icon = 'find_replace';
-        menuItem.style.display = 'none';
 
         updateTable();   
     }
@@ -4012,6 +4464,7 @@ function startSearch() {
 		function closeVirtualKeyboardAndKeepReadOnly() {
 		    dom.virtualKeyboard.style.display = 'none';
 		    currentInput = null;
+            updateVirtualCursor();
 		}
 
 		/* ==================== 虚拟键盘核心逻辑 ==================== */
@@ -4037,23 +4490,38 @@ function startSearch() {
 		}
 
 		function createShortcutKeys(options, keyClass) {
-		  const shortcutRow = document.createElement('div');
-		  shortcutRow.className = 'keyboard-row';
+		  // Clear existing content if it's not empty (though generateVirtualKeyboard clears it)
+		  // dom.shortcutContainer.innerHTML = ''; 
 
-		  options.forEach(option => {
-		    const keyElement = document.createElement('div');
-		    keyElement.className = `keyboard-key ${keyClass}`;
-		    keyElement.textContent = option;
-		    keyElement.addEventListener('click', () => {
-		      if (currentInput) {
-		        insertText(option);
-		        currentInput.focus();
-		      }
+		  // Split options into two roughly equal parts
+		  const mid = Math.ceil(options.length / 2);
+		  const firstRowOptions = options.slice(0, mid);
+		  const secondRowOptions = options.slice(mid);
+
+		  const createRow = (opts) => {
+		    const row = document.createElement('div');
+		    row.className = 'keyboard-row';
+		    opts.forEach(option => {
+		      const keyElement = document.createElement('div');
+		      keyElement.className = `keyboard-key ${keyClass}`;
+		      keyElement.textContent = option;
+		      keyElement.addEventListener('click', () => {
+		        if (currentInput) {
+		          insertText(option);
+		          currentInput.focus();
+		        }
+		      });
+		      row.appendChild(keyElement);
 		    });
-		    shortcutRow.appendChild(keyElement);
-		  });
+		    return row;
+		  };
 
-		  dom.shortcutContainer.appendChild(shortcutRow);
+		  if (firstRowOptions.length > 0) {
+		    dom.shortcutContainer.appendChild(createRow(firstRowOptions));
+		  }
+		  if (secondRowOptions.length > 0) {
+		    dom.shortcutContainer.appendChild(createRow(secondRowOptions));
+		  }
 		}
 
 		
@@ -4107,13 +4575,60 @@ const DEFAULT_KEYBOARD_CONFIG = {
         'A105/LF2'
     ],
     statusTemplates: ['车光', '调车', '花皮', '黑皮', '黑调', '花调'],
-    positionTemplates: ['外', '过道', '立车', '打卡机','校直机']
+    positionTemplates: ['外', '过道', '立车', '打卡机','校直机'],
+    
+    // Default Layouts
+    layouts: {
+        number: [
+            ['%', '1', '2', '3','+', 'clear'],
+            [':', '4', '5', '6', '-', 'backspace'],
+            ['#', '7', '8', '9','*', 'esc'], 
+            ['_', '.', '0', '/','、', 'done']
+        ],
+        status: [
+            ['clear', 'backspace', 'esc', 'done']
+        ],
+        text: [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            ['q','w','e','r','t','y','u','i','o','p'],
+            ['a','s','d','f','g','h','j','k','l', '+','-'],
+            ['shift', 'z','x','c','v','b','n','m', 'backspace'],
+            ['symbol',',','space', '.', 'clear','done']
+        ],
+        textShift: [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            ['Q','W','E','R','T','Y','U','I','O','P'],
+            ['A','S','D','F','G','H','J','K','L', '+','-'],
+            ['shift', 'Z','X','C','V','B','N','M', 'backspace'],
+            ['symbol',',','space', '.', 'clear','done']
+        ],
+        position: [
+            ['%', '1', '2', '3', 'A'],
+            ['/', '4', '5', '6', 'B'],
+            ['+', '7', '8', '9', 'C'],
+            ['*', '/','0', '-','D'],
+            ['clear', 'backspace','esc','done'] 
+        ],
+        symbol: [
+            ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
+            ['_', '+', '=', '|', '\\', ':', '"', '<', '>', '?', ','],
+            ['`', '}', '[', ']', '{', '(', ')', '.', '/', 'system'],
+            ['ABC', 'space', 'backspace','clear', 'done'] 
+        ]
+    },
+    
+    // Symbol Map
+    symbolMap: {
+        'q': '1', 'w': '2', 'e': '3', 'r': '4', 't': '5', 'y': '6', 'u': '7', 'i': '8', 'o': '9', 'p': '0',
+        'a': '~', 's': '!', 'd': '@', 'f': '#', 'g': '%', 'h': '“', 'j': '”', 'k': '*', 'l': '？',
+        'z': '(', 'x': ')', 'c': '-', 'v': '_', 'b': ':', 'n': ';', 'm': '/'
+    }
 };
 
 // 配置管理器
 const KeyboardConfigManager = {
     config: { ...DEFAULT_KEYBOARD_CONFIG },
-    STORAGE_KEY: 'steel_bar_keyboard_config',
+    STORAGE_KEY: 'steel_bar_keyboard_config_v2', // Upgraded key
 
     init() {
         this.load();
@@ -4124,13 +4639,33 @@ const KeyboardConfigManager = {
         try {
             const saved = localStorage.getItem(this.STORAGE_KEY);
             if (saved) {
-                // 合并保存的配置，确保新字段也能有默认值
-                const parsed = JSON.parse(saved);
-                this.config = { ...DEFAULT_KEYBOARD_CONFIG, ...parsed };
-                // 确保数组存在
-                ['furnaceIdTemplates', 'productIdTemplates', 'cardIdTemplates', 'steelTypeTemplates', 'statusTemplates', 'positionTemplates'].forEach(key => {
-                    if (!this.config[key]) this.config[key] = DEFAULT_KEYBOARD_CONFIG[key];
-                });
+                try {
+                    const parsed = JSON.parse(saved);
+                    // Basic validation: check if it has at least one expected key or is an object
+                    if (parsed && typeof parsed === 'object') {
+                        this.config = { ...DEFAULT_KEYBOARD_CONFIG, ...parsed };
+                    } else {
+                        throw new Error('Invalid config structure');
+                    }
+                    
+                    // Fallback for missing keys (already handled by spread, but ensure layouts exist)
+                    if (!this.config.layouts) this.config.layouts = DEFAULT_KEYBOARD_CONFIG.layouts;
+                    
+                } catch (parseError) {
+                    console.error('Config parse error, resetting to default:', parseError);
+                    this.reset(); // Auto-reset on corruption
+                }
+            } else {
+                // Try migration from v1
+                const oldSaved = localStorage.getItem('steel_bar_keyboard_config');
+                if (oldSaved) {
+                    try {
+                        const parsed = JSON.parse(oldSaved);
+                        this.config = { ...DEFAULT_KEYBOARD_CONFIG, ...parsed };
+                    } catch(e) {
+                         // ignore old config error
+                    }
+                }
             }
         } catch (e) {
             console.error('加载键盘配置失败', e);
@@ -4140,11 +4675,11 @@ const KeyboardConfigManager = {
     save() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.config));
         showSnackbar('键盘配置已保存', 'success');
-        generateVirtualKeyboard(); // 立即刷新
+        generateVirtualKeyboard();
     },
 
     reset() {
-        this.config = { ...DEFAULT_KEYBOARD_CONFIG };
+        this.config = JSON.parse(JSON.stringify(DEFAULT_KEYBOARD_CONFIG)); // Deep copy
         this.save();
         showSnackbar('已恢复默认配置', 'success');
     },
@@ -4163,19 +4698,23 @@ const KeyboardConfigManager = {
             cardId: document.getElementById('cardIdConfigInput'),
             steelType: document.getElementById('steelTypeConfigInput'),
             status: document.getElementById('statusConfigInput'),
-            position: document.getElementById('positionConfigInput')
+            position: document.getElementById('positionConfigInput'),
+            advancedJson: document.getElementById('advancedJsonConfigInput')
+        };
+
+        const updateInputsFromConfig = () => {
+            inputs.furnaceId.value = this.config.furnaceIdTemplates.join('\n');
+            inputs.productId.value = this.config.productIdTemplates.join('\n');
+            inputs.cardId.value = (this.config.cardIdTemplates || []).join('\n');
+            inputs.steelType.value = (this.config.steelTypeTemplates || []).join('\n');
+            inputs.status.value = (this.config.statusTemplates || []).join('\n');
+            inputs.position.value = (this.config.positionTemplates || []).join('\n');
+            inputs.advancedJson.value = JSON.stringify(this.config);
         };
 
         if (openBtn) {
             openBtn.addEventListener('click', () => {
-                // 填充当前配置
-                inputs.furnaceId.value = this.config.furnaceIdTemplates.join('\n');
-                inputs.productId.value = this.config.productIdTemplates.join('\n');
-                inputs.cardId.value = (this.config.cardIdTemplates || []).join('\n');
-                inputs.steelType.value = (this.config.steelTypeTemplates || []).join('\n');
-                inputs.status.value = (this.config.statusTemplates || []).join('\n');
-                inputs.position.value = (this.config.positionTemplates || []).join('\n');
-                
+                updateInputsFromConfig();
                 modal.open = true;
                 dom.drawer.open = false;
             });
@@ -4199,9 +4738,44 @@ const KeyboardConfigManager = {
                 this.config.steelTypeTemplates = processInput(inputs.steelType);
                 this.config.statusTemplates = processInput(inputs.status);
                 this.config.positionTemplates = processInput(inputs.position);
-
+                
                 this.save();
                 closeModal();
+            });
+        }
+        
+        // Advanced JSON Editor Logic
+        const openEditorBtn = document.getElementById('openAdvancedJsonEditorBtn');
+        const editorDialog = document.getElementById('advancedJsonEditorDialog');
+        const editorInput = document.getElementById('fullJsonEditorInput');
+        const cancelEditorBtn = document.getElementById('cancelJsonEditorBtn');
+        const closeEditorBtn = document.getElementById('closeAdvancedJsonEditorBtn');
+        const applyEditorBtn = document.getElementById('applyJsonEditorBtn');
+
+        if (openEditorBtn) {
+            openEditorBtn.addEventListener('click', () => {
+                editorInput.value = JSON.stringify(this.config, null, 2);
+                editorDialog.open = true;
+            });
+        }
+
+        const closeEditor = () => {
+            editorDialog.open = false;
+        };
+        
+        [cancelEditorBtn, closeEditorBtn].forEach(btn => btn?.addEventListener('click', closeEditor));
+
+        if (applyEditorBtn) {
+            applyEditorBtn.addEventListener('click', () => {
+                try {
+                    const newConfig = JSON.parse(editorInput.value);
+                    this.config = newConfig;
+                    updateInputsFromConfig();
+                    showSnackbar('JSON配置已应用 (需点击保存生效)', 'success');
+                    closeEditor();
+                } catch (e) {
+                    alert('JSON 格式错误: ' + e.message);
+                }
             });
         }
 
@@ -4209,13 +4783,49 @@ const KeyboardConfigManager = {
             resetBtn.addEventListener('click', () => {
                 if (confirm('确定要恢复默认配置吗？')) {
                     this.reset();
-                    inputs.furnaceId.value = this.config.furnaceIdTemplates.join('\n');
-                    inputs.productId.value = this.config.productIdTemplates.join('\n');
-                    inputs.cardId.value = this.config.cardIdTemplates.join('\n');
-                    inputs.steelType.value = this.config.steelTypeTemplates.join('\n');
-                    inputs.status.value = this.config.statusTemplates.join('\n');
-                    inputs.position.value = this.config.positionTemplates.join('\n');
+                    updateInputsFromConfig();
                 }
+            });
+        }
+
+        // Import/Export Logic (JSON)
+        const importBtn = document.getElementById('importKeyboardConfigBtn');
+        const exportBtn = document.getElementById('exportKeyboardConfigBtn');
+        const fileInput = document.getElementById('importKeyboardConfigInput');
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                const content = JSON.stringify(this.config, null, 2);
+                const blob = new Blob([content], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'keyboard_config.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        if (importBtn && fileInput) {
+            importBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const newConfig = JSON.parse(e.target.result);
+                        this.config = { ...DEFAULT_KEYBOARD_CONFIG, ...newConfig };
+                        updateInputsFromConfig();
+                        showSnackbar('配置已导入，请点击保存生效', 'success');
+                    } catch (err) {
+                        alert('导入失败: 无效的 JSON 文件');
+                    }
+                    fileInput.value = ''; // reset
+                };
+                reader.readAsText(file);
             });
         }
         
@@ -4240,21 +4850,18 @@ function generateVirtualKeyboard() {
               );
           };
 
+          const layouts = KeyboardConfigManager.config.layouts;
+
 		  switch(keyboardState.inputType) {
 		    case 'number':
 		    case 'numeric-input':
-		      keyRows = [
-		        ['%', '1', '2', '3','+', 'clear'],
-		        [':', '4', '5', '6', '-', 'backspace'],
-		        ['#', '7', '8', '9','*', 'esc'], 
-		        ['_', '.', '0', '/','、', 'done'] 
-		      ];
+		      keyRows = layouts.number;
 		      break;
 
 		    case 'status':
               const statusShortcuts = processTemplates(KeyboardConfigManager.config.statusTemplates);
 		      createShortcutKeys(statusShortcuts, 'status-key');
-		      keyRows = [['clear', 'backspace', 'esc', 'done']];
+		      keyRows = layouts.status;
 		      break;
 
 		    case 'cardId':
@@ -4263,12 +4870,6 @@ function generateVirtualKeyboard() {
               // fallthrough to text keyboard
 
 		    case 'steelType':
-              // Only process if it wasn't cardId falling through? 
-              // No, switch jumps to the matching case. 
-              // If inputType is 'cardId', it executes cardId case then falls through to steelType case.
-              // BUT we don't want to create shortcuts for steelType if we are in cardId mode!
-              // The original code had `if (keyboardState.inputType === 'steelType')` inside the case.
-              // I must restore that check if I use fallthrough.
               if (keyboardState.inputType === 'steelType') {
                   const steelShortcuts = processTemplates(KeyboardConfigManager.config.steelTypeTemplates);
                   createShortcutKeys(steelShortcuts, 'shortcut-key');
@@ -4288,37 +4889,17 @@ function generateVirtualKeyboard() {
               // Fallthrough to text keyboard for all above IDs
 		    case 'text':
 		    default:
-		      const lettersRow1 = isUpperCase ? ['Q','W','E','R','T','Y','U','I','O','P'] : ['q','w','e','r','t','y','u','i','o','p'];
-		      const lettersRow2 = isUpperCase ? ['A','S','D','F','G','H','J','K','L'] : ['a','s','d','f','g','h','j','k','l'];
-		      const lettersRow3 = isUpperCase ? ['Z','X','C','V','B','N','M'] : ['z','x','c','v','b','n','m'];
-		      keyRows = [
-		        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-		        [...lettersRow1],
-		        [...lettersRow2, '+','-'],
-		        ['shift', ...lettersRow3, 'backspace'],
-		        ['symbol',',','space', '.', 'clear','done']
-		      ];
+		      keyRows = isUpperCase ? layouts.textShift : layouts.text;
 		      break;
 
 		    case 'position':
               const positionShortcuts = processTemplates(KeyboardConfigManager.config.positionTemplates);
 		      createShortcutKeys(positionShortcuts, 'shortcut-key');
-		      keyRows = [
-		        ['%', '1', '2', '3', 'A'],
-		        ['/', '4', '5', '6', 'B'],
-		        ['+', '7', '8', '9', 'C'],
-		        ['*', '/','0', '-','D'],
-		        ['clear', 'backspace','esc','done'] 
-		      ];
+		      keyRows = layouts.position;
 		      break;
 
 		    case 'symbol':
-		      keyRows = [
-		        ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
-		        ['_', '+', '=', '|', '\\', ':', '"', '<', '>', '?', ','],
-		        ['`', '}', '[', ']', '{', '(', ')', '.', '/', 'system'],
-		        ['ABC', 'space', 'backspace','clear', 'done'] 
-		      ];
+		      keyRows = layouts.symbol;
 		      break;
 		  }
 
@@ -4332,9 +4913,35 @@ function generateVirtualKeyboard() {
 		  });
 		}
 
-		function createKeyElement(key) {
+
+
+		function createKeyElement(keyData) {
 		  const keyElement = document.createElement('div');
 		  keyElement.className = 'keyboard-key';
+          
+          let key = keyData;
+          let customSwipe = null;
+          let customSwipeLabel = null;
+          let customStyles = {};
+          let customLabel = null;
+          let swipeColor = '#4caf50'; // Default green
+
+          // Support object definition for custom size/style/swipe via JSON
+          if (typeof keyData === 'object' && keyData !== null) {
+              key = keyData.key || '';
+              if (keyData.flex) keyElement.style.flex = `${keyData.flex} 1 0`;
+              if (keyData.width) keyElement.classList.add(keyData.width);
+              if (keyData.cls) keyElement.classList.add(keyData.cls);
+              
+              if (keyData.swipe) customSwipe = keyData.swipe;
+              if (keyData.swipeLabel) customSwipeLabel = keyData.swipeLabel;
+              if (keyData.label) customLabel = keyData.label;
+              if (keyData.swipeColor) swipeColor = keyData.swipeColor;
+              
+              if (keyData.style) {
+                  Object.assign(keyElement.style, keyData.style);
+              }
+          }
 
 		  // 首先处理空占位键
 		  if (key === '') {
@@ -4342,10 +4949,22 @@ function generateVirtualKeyboard() {
 		    return keyElement;
 		  }
 
-		  // 特殊功能键 - 必须尽早处理并 return，避免进入通用逻辑
+		  // 特殊功能键 - Shift
 		  if (key === 'shift') {
 		    keyElement.className += ' special wide';
-		    keyElement.innerHTML = keyboardState.shiftState === 'locked-on' ? '小写' : '大写';
+            
+            // MDUI Icons for Shift States
+            let iconName = 'keyboard_arrow_up'; 
+            
+            if (keyboardState.shiftState === 'locked-on') {
+                iconName = 'vertical_align_top';
+            } else if (keyboardState.shiftState === 'on') {
+                iconName = 'arrow_upward'; 
+            } else {
+                iconName = 'keyboard_arrow_up';
+            }
+            
+            keyElement.innerHTML = `<mdui-icon name="${iconName}"></mdui-icon>`;
 		    keyElement.addEventListener('click', toggleShift);
 		    return keyElement;
 		  }
@@ -4357,25 +4976,56 @@ function generateVirtualKeyboard() {
 		    let deleteInterval = null;
 		    const DELETE_DELAY = 500;
 		    const DELETE_SPEED = 80;
+            let startY = 0;
+            let isClearMode = false;
 
 		    keyElement.addEventListener('pointerdown', (e) => {
 		      e.preventDefault();
+              startY = e.clientY;
+              isClearMode = false;
+              
 		      handleBackspace();
-
 		      deleteInterval = setTimeout(() => {
-		        deleteInterval = setInterval(handleBackspace, DELETE_SPEED);
+		        deleteInterval = setInterval(() => {
+                   if (!isClearMode) handleBackspace();
+                }, DELETE_SPEED);
 		      }, DELETE_DELAY);
+              
+              keyElement.setPointerCapture(e.pointerId);
 		    });
+            
+            keyElement.addEventListener('pointermove', (e) => {
+                if (deleteInterval) { 
+                    const currentY = e.clientY;
+                    if (currentY - startY < -50) { // Swiped Up
+                        if (!isClearMode) {
+                            isClearMode = true;
+                            keyElement.classList.add('clear-mode');
+                            keyElement.innerHTML = '<span class="clear-mode-indicator">清空</span><span style="opacity:0.3">←</span>';
+                        }
+                    } else if (isClearMode && (currentY - startY > -30)) {
+                        isClearMode = false;
+                        keyElement.classList.remove('clear-mode');
+                        keyElement.innerHTML = '←';
+                    }
+                }
+            });
 
-		    const stopDeleting = () => {
+		    const stopDeleting = (e) => {
+              if (isClearMode) {
+                  clearInput();
+                  isClearMode = false;
+                  keyElement.classList.remove('clear-mode');
+                  keyElement.innerHTML = '←';
+              }
 		      clearTimeout(deleteInterval);
 		      clearInterval(deleteInterval);
 		      deleteInterval = null;
+              if (e && e.pointerId) keyElement.releasePointerCapture(e.pointerId);
 		    };
 
 		    keyElement.addEventListener('pointerup', stopDeleting);
 		    keyElement.addEventListener('pointercancel', stopDeleting);
-		    keyElement.addEventListener('pointerleave', stopDeleting);
 		    keyElement.addEventListener('click', (e) => e.preventDefault());
 
 		    return keyElement;
@@ -4390,61 +5040,85 @@ function generateVirtualKeyboard() {
 
 		  if (key === 'esc') {
 		    keyElement.className += ' system-keyboard wide';
-		    keyElement.textContent = '✔';  // 正确显示对勾
+		    keyElement.textContent = '✔';  
 		    keyElement.addEventListener('click', closeVirtualKeyboardAndKeepReadOnly);
-		    return keyElement;  // 必须 return！
+		    return keyElement;  
 		  }
 		if(key === 'done') {
 		    keyElement.className += ' special wide';
 		    keyElement.style.position = 'relative';
 
-		    // 快速编辑模式下：显示“完成”，点击直接关闭键盘
 		    if (keyboardState.isQuickEdit) {
 		        keyElement.textContent = '✔'; 
 		    } else {
 		        keyElement.textContent = '▼';
 		    }
 
-		    let longPressTimer = null;
-		    const LONG_PRESS_DURATION = 600;
+            let startY = 0;
+            let isSwipe = false;
+            let touchStartTime = 0;
+            const originalText = keyElement.textContent;
 
-		    keyElement.addEventListener('pointerdown', (e) => {
-		        e.preventDefault();
+            keyElement.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                keyElement.setPointerCapture(e.pointerId);
+                
+                startY = e.clientY;
+                isSwipe = false;
+                touchStartTime = Date.now();
+                keyElement.classList.add('active');
+            });
 
-		        // 长按仍保留关闭功能（备用）
-		        longPressTimer = setTimeout(() => {
-		            closeVirtualKeyboardAndKeepReadOnly();
-		            showSnackbar('键盘已关闭（长按完成）', 'success');
-		        }, 300);
-		    });
+            keyElement.addEventListener('pointermove', (e) => {
+                if (!keyElement.hasPointerCapture(e.pointerId)) return;
+                
+                const currentY = e.clientY;
+                
+                // Visual Feedback for Swipe Up
+                if (startY - currentY > 30) {
+                    if (!isSwipe) {
+                        isSwipe = true;
+                        keyElement.classList.add('swipe-close'); // Yellow warning style
+                        keyElement.textContent = '关闭'; // Change text
+                    }
+                } else {
+                    if (isSwipe) {
+                        isSwipe = false;
+                        keyElement.classList.remove('swipe-close');
+                        keyElement.textContent = originalText;
+                    }
+                }
+            });
 
-		    keyElement.addEventListener('pointerup', (e) => {
-		        if (longPressTimer) {
-		            clearTimeout(longPressTimer);
-		            longPressTimer = null;
+            const handlePointerUp = (e) => {
+                keyElement.classList.remove('active');
+                keyElement.classList.remove('swipe-close');
+                keyElement.textContent = originalText; // Restore text
+                keyElement.releasePointerCapture(e.pointerId);
+                
+                const endY = e.clientY;
+                
+                // Swipe Up -> Close
+                if (isSwipe || (startY - endY > 30)) { 
+                    closeVirtualKeyboardAndKeepReadOnly();
+                    return;
+                }
+                
+                // Tap -> Done/Next
+                if (keyboardState.isQuickEdit) {
+                    closeVirtualKeyboardAndKeepReadOnly();
+                } else {
+                    handleNextInput();
+                }
+            };
 
-		            if (keyboardState.isQuickEdit) {
-		                // 快速编辑：短按 = 关闭键盘（不跳转）
-		                closeVirtualKeyboardAndKeepReadOnly();
-		            } else {
-		                // 完整编辑：短按 = 跳转下一个
-		                handleNextInput();
-		            }
-		        }
-		    });
+            keyElement.addEventListener('pointerup', handlePointerUp);
+            keyElement.addEventListener('pointercancel', handlePointerUp);
 
-		    keyElement.addEventListener('pointercancel', () => {
-		        if (longPressTimer) clearTimeout(longPressTimer);
-		    });
-
-		    keyElement.addEventListener('pointerleave', () => {
-		        if (longPressTimer) clearTimeout(longPressTimer);
-		    });
-
-		    keyElement.addEventListener('click', (e) => {
-		        e.preventDefault();
-		        e.stopPropagation();
-		    });
+            keyElement.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
 
 		    return keyElement;
 		}
@@ -4493,23 +5167,141 @@ function generateVirtualKeyboard() {
 		    keyElement.className += ' special wide';
 		    keyElement.textContent = 'ABC';
 		    keyElement.addEventListener('click', () => {
-		      keyboardState.inputType = 'text';
-		      saveKeyboardState();
-		      generateVirtualKeyboard();
+		      // 修复：返回时根据当前输入框自动判断键盘类型，而不是强制设为 text
+		      if (currentInput) {
+		          updateKeyboardForInput(currentInput);
+		      } else {
+		          keyboardState.inputType = 'text';
+		          saveKeyboardState();
+		          generateVirtualKeyboard();
+		      }
 		    });
 		    return keyElement;
 		  }
 
 		  // 普通字符键（最后处理）
-		  keyElement.textContent = key;
-		  keyElement.addEventListener('click', () => {
-		    insertText(key);
-		    if (keyboardState.shiftState === 'on') {
-		      keyboardState.shiftState = 'off';
-		      saveKeyboardState();
-		      generateVirtualKeyboard();
-		    }
-		  });
+          const lowerKey = key.toLowerCase();
+          const symbol = customSwipe || KeyboardConfigManager.config.symbolMap[lowerKey];
+          const displayLabel = customLabel || key;
+          
+          if ((symbol && key.length === 1 && /[a-zA-Z]/.test(key)) || customSwipe) {
+              // Character Key with Symbol OR Custom Swipe Key
+              keyElement.innerHTML = `
+                  <div class="key-inner">
+                      <span class="key-symbol" style="color: ${customSwipe ? swipeColor : ''}">${customSwipeLabel || symbol}</span>
+                      <span class="key-char">${displayLabel}</span>
+                  </div>
+              `;
+              
+              let startY = 0;
+              let isSwipe = false;
+              let lastInputType = null; // 'key' or 'symbol'
+              
+              keyElement.addEventListener('pointerdown', (e) => {
+                  e.preventDefault();
+                  keyElement.setPointerCapture(e.pointerId);
+                  
+                  startY = e.clientY;
+                  isSwipe = false;
+                  
+                  // Visual feedback only
+                  keyElement.classList.add('active');
+                  // REMOVED: Immediate insertText(key) to avoid double input on swipe
+              });
+
+              keyElement.addEventListener('pointermove', (e) => {
+                  if (!keyElement.hasPointerCapture(e.pointerId)) return;
+                  
+                  const currentY = e.clientY;
+                  
+                  // Check for Swipe Up (Threshold 30px)
+                  if (startY - currentY > 30) {
+                      if (!isSwipe) {
+                          isSwipe = true;
+                          // Visual Feedback: Turn Symbol Green (or custom color)
+                          keyElement.classList.add('swipe-active'); 
+                          // Apply custom color to symbol dynamically if needed, 
+                          // but inline style handles static color. 
+                          // The class .swipe-active scales it up.
+                          const symbolEl = keyElement.querySelector('.key-symbol');
+                          if (symbolEl) symbolEl.style.color = swipeColor;
+                      }
+                  } else {
+                      if (isSwipe) {
+                          isSwipe = false;
+                          keyElement.classList.remove('swipe-active');
+                          // Revert color if it was custom? 
+                          // If it was custom static, we keep it. 
+                          // If it was default grey and turned green, we revert.
+                          const symbolEl = keyElement.querySelector('.key-symbol');
+                          if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                      }
+                  }
+              });
+              
+              const handlePointerUp = (e) => {
+                  keyElement.classList.remove('active');
+                  keyElement.classList.remove('swipe-active');
+                  keyElement.releasePointerCapture(e.pointerId);
+                  
+                  // Revert color cleanup
+                  const symbolEl = keyElement.querySelector('.key-symbol');
+                  if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                  
+                  if (e.type === 'pointercancel') return;
+
+                  const endY = e.clientY;
+                  
+                  // Check if final state is Swipe Up
+                  if (isSwipe || (startY - endY > 30)) { 
+                      // Swipe Up Action: Input Symbol
+                      insertText(symbol);
+                  } else {
+                      // Tap Action: Input Character
+                      insertText(key);
+                  }
+                  
+                  // Handle Shift Toggle
+                  if (keyboardState.shiftState === 'on') {
+                      keyboardState.shiftState = 'off';
+                      saveKeyboardState();
+                      generateVirtualKeyboard();
+                  }
+              };
+
+              keyElement.addEventListener('pointerup', handlePointerUp);
+              keyElement.addEventListener('pointercancel', handlePointerUp);
+              
+              keyElement.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+              });
+              
+              return keyElement;
+          }
+          
+		  keyElement.textContent = displayLabel;
+		  
+          // Use pointerdown for immediate input, but allow swipe cancellation logic if needed (though plain keys don't swipe)
+          // For plain keys, input immediately on touchstart/pointerdown
+          keyElement.addEventListener('pointerdown', (e) => {
+             e.preventDefault(); // Prevent focus loss or other defaults
+             // Prevent double firing if click is also bound? 
+             // We will not bind click if we bind pointerdown.
+             
+             insertText(key);
+             if (keyboardState.shiftState === 'on') {
+                keyboardState.shiftState = 'off';
+                saveKeyboardState();
+                generateVirtualKeyboard();
+             }
+          });
+          
+          // Disable default click to prevent double input
+          keyElement.addEventListener('click', (e) => {
+             e.preventDefault();
+             e.stopPropagation();
+          });
 
 		  return keyElement;
 		}
@@ -4575,8 +5367,13 @@ function generateVirtualKeyboard() {
 		function updateKeyboardForInput(input, overrideId = null) {
 		  if (!input) return;
 
+		  // Handle Quick Edit Input redirection
+		  let currentId = overrideId || input.id;
+		  if (currentId === 'quickEditInput' && dom.quickEditField && dom.quickEditField.value) {
+		      currentId = dom.quickEditField.value;
+		  }
+
 		  const numericFields = ['actualDiameter', 'diameter', 'length', 'weight', 'hardness', 'calcDiameter1', 'calcDiameter2', 'calcLength', 'calcDensity'];
-		  const currentId = overrideId || input.id;
 		  const isNumeric = numericFields.includes(currentId);
 
 		  if (isNumeric) keyboardState.inputType = 'number';
@@ -4608,6 +5405,8 @@ function generateVirtualKeyboard() {
 
 		  if (currentInput.closest('#calculatorForm')) calculateWeight();
 		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
+          
+          updateVirtualCursor();
 		}
 
 		function handleBackspace() {
@@ -4631,6 +5430,8 @@ function generateVirtualKeyboard() {
 
 		  if (currentInput.closest('#calculatorForm')) calculateWeight();
 		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
+          
+          updateVirtualCursor();
 		}
 
 		function clearInput() {
@@ -4640,6 +5441,7 @@ function generateVirtualKeyboard() {
 		    const event = new Event('input', { bubbles: true });
 		    currentInput.dispatchEvent(event);
 		    if (currentInput.closest('#calculatorForm')) calculateWeight();
+            updateVirtualCursor();
 		  }
 		}
 
@@ -4753,6 +5555,7 @@ async function saveDataToIndexedDB() {
 		    }
 		    generateVirtualKeyboard();
 		    dom.virtualKeyboard.style.display = 'block';
+            updateVirtualCursor();
 		}
 
 		function loadData() {
@@ -5829,14 +6632,18 @@ function startDirectTakePhoto(dataIndex) {
 		function toggleMultiSelectMode() {
 		  isMultiSelectMode = !isMultiSelectMode;
 		  selectedRows.clear();
+          
+          // Sync Checkbox
+          if (dom.multiSelectCheckbox) {
+              dom.multiSelectCheckbox.checked = isMultiSelectMode;
+          }
 
 		  const menuText = dom.multiSelectMenuText;
 		  if (isMultiSelectMode) {
 		    menuText.textContent = '退出多选模式';
-		    dom.multiSelectMenuItem.icon = 'check_box';
+            // Icon handling removed/not needed if using checkbox, but keeping logic just in case
 		  } else {
 		    menuText.textContent = '进入多选模式';
-		    dom.multiSelectMenuItem.icon = 'check_box_outline_blank';
 		  }
 
 		  updateTable();
@@ -5848,10 +6655,11 @@ function startDirectTakePhoto(dataIndex) {
 		    if (input) {
 		      input.setAttribute('readonly', 'true');
 		      input.classList.add('readonly-input');
-
+              // Removed triple-click and double-click logic for input
+              // Only simple click remains which focuses and shows virtual keyboard if readonly
+              
 		      input.addEventListener('click', (e) => {
 		          if (input.hasAttribute('readonly')) {
-		            e.stopPropagation();
 		            currentInput = e.target;
 		            updateKeyboardForInput(currentInput);
 		            showVirtualKeyboard();
@@ -5866,23 +6674,6 @@ function startDirectTakePhoto(dataIndex) {
 		                    modalContent.scrollTo({ top: offset, behavior: 'smooth' });
 		                }, 50);
 		            }
-		          }
-		      });
-
-		      input.addEventListener('dblclick', (e) => {
-		          e.stopPropagation();
-		          if (dom.calculatorModal.style.display !== 'block') return;
-		          if (input.hasAttribute('readonly')) {
-		            input.removeAttribute('readonly');
-		            input.classList.remove('readonly-input');
-		            dom.virtualKeyboard.style.display = 'none';
-		            input.focus();
-		          } else {
-		            input.setAttribute('readonly', 'true');
-		            input.classList.add('readonly-input');
-		            currentInput = input;
-		            updateKeyboardForInput(currentInput);
-		            showVirtualKeyboard();
 		          }
 		      });
 		    }
@@ -6137,14 +6928,19 @@ async function handleImageSelect(e) {
 
     let base64;
 
-    // ≤5MB：直接压缩
+    // ≤5MB：原图上传
     if (file.size <= 5 * 1024 * 1024) {
-        showSnackbar('正在处理图片...', 'info');
+        showSnackbar('图片小于5MB，原图上传中...', 'info');
         try {
-            base64 = await compressImage(file, 1024, 1024, 0.85);
+            base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
         } catch (err) {
-            console.error('压缩失败:', err);
-            showSnackbar('图片处理失败', 'error');
+            console.error('读取失败:', err);
+            showSnackbar('图片读取失败', 'error');
             return null;
         }
     } else {

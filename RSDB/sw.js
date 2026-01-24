@@ -1,6 +1,6 @@
 // sw.js - 简单高效的缓存策略（2025-2026 推荐 Cache-First + Network-Fallback）
 
-const CACHE_NAME = 'roundbar-app-v1.0';  // 改版本号会强制更新缓存
+const CACHE_NAME = 'roundbar-app-v1.8';  // 改版本号会强制更新缓存
 const urlsToCache = [
     './',
     './index.html',
