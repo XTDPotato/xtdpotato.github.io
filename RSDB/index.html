@@ -578,20 +578,35 @@
 		.system-keyboard { color: white !important; background-color: transparent !important; }
 		.system-keyboard::before { background-color: #2196f3 !important; }
 		
-		#shortcutContainer {
-		    padding: 4px 0;
-		    height: auto;
-		    min-height: 44px;
-            max-height: 100px;
-		    border-bottom: 1px solid var(--border-color);
-		    margin-bottom: 0;
-		    overflow-x: auto;
-		    white-space: nowrap;
-		    display: flex;
-            flex-direction: column;
-		    align-items: flex-start; /* Align to start for scrolling */
-		}
-		
+	#shortcutContainer {
+    padding: 4px 0;
+    height: auto;
+    min-height: 44px;
+    max-height: 100px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+
+    /* 必须的横向滚动设置 */
+    overflow-x: auto !important;
+    overflow-y: hidden;                      /* 防止纵向干扰 */
+
+    /* 关键：让内容真正横向溢出 */
+    white-space: nowrap !important;
+    display: block !important;               /* 改成 block 是最可靠的方式 */
+
+    /* 移动端必须加这两行，否则滑不动 */
+    touch-action: pan-x !important;          /* 允许横向拖动 */
+    -webkit-overflow-scrolling: touch !important;  /* iOS Safari 丝滑滚动 */
+
+    /* 可选：让滚动条更明显（调试用，可删） */
+    scrollbar-width: thin;
+}
+		#shortcutContainer,
+#shortcutContainer *,
+#virtualKeyboard {
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+}
 		#shortcutContainer .keyboard-row {
             display: flex;
 		    flex-wrap: nowrap;
