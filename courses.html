@@ -1,142 +1,484 @@
 <!doctype html>
-<html class="mdui-theme-auto">
-
-</html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="mdui-theme-auto">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
-    <meta name="renderer" content="webkit"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
+    />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
-
-
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css" />
     <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 
-<!-- Filled -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 
-<!-- Outlined -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-
-<!-- Rounded -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-
-<!-- Sharp -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
-
-<!-- Two Tone -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+    <link rel="stylesheet" href="css/markdown.css" />
 
     <title>教程</title>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      .page {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--mdui-color-surface, #fff);
+      }
+
+      .content {
+        padding: 12px;
+        box-sizing: border-box;
+        max-width: 980px;
+        margin: 0 auto;
+        width: 100%;
+        padding-bottom: 24px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .course-card {
+        overflow: hidden;
+      }
+
+      .course-cover {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        background: #eee;
+      }
+
+      .course-body {
+        padding: 12px;
+      }
+
+      .course-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .course-desc {
+        margin: 8px 0 0 0;
+        opacity: 0.86;
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .course-dialog::part(panel) {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+      }
+
+      .course-dialog-layout {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .course-doc-wrap {
+        width: 100%;
+        flex: 1;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .course-hero {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        display: block;
+        background: #eee;
+      }
+
+      .course-doc {
+        padding: 14px;
+        box-sizing: border-box;
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      .favorites-desktop {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+      }
+      @media (max-width: 900px), (pointer: coarse) {
+        .favorites-desktop {
+          display: none;
+        }
+      }
+
+      .favorites-sheet::part(panel) {
+        padding: 0;
+        width: min(720px, 100%);
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        border-radius: 16px 16px 0 0;
+      }
+
+      .favorites-header {
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .favorites-title {
+        font-weight: 700;
+      }
+
+      .favorites-list {
+        padding: 6px 8px 12px;
+      }
+    </style>
   </head>
-<body>
-<!--  内容 -->
-<mdui-list>
-  <mdui-list-subheader>教程</mdui-list-subheader>
-  
- <mdui-card clickable variant="outlined" style="width: 100%;height: 150px" id="course1" class="course_item">
- <div class="mdui-prose" style="padding:14px;">
-  <h4 style="font-weight:bold;">MC基岩版自定义界面UI</h4>
-  <mdui-divider insert></mdui-divider>
-  <p>关于如何给指定对话dialogue进行绑定视图以及ServerForm的显示自定义UI</p>
-  <table>
 
-  </table>
-</div>
-  </mdui-card>
-  
+  <body>
+    <div class="page">
+      <div class="content">
+        <div class="favorites-desktop">
+          <mdui-button id="favoritesBtnDesktop" variant="text" icon="bookmarks">收藏夹</mdui-button>
+        </div>
+        <div class="grid" id="courseGrid"></div>
+      </div>
+    </div>
 
-  
-  
-</mdui-list>
+    <mdui-snackbar id="coursesSnackbar" closeable>提示</mdui-snackbar>
 
+    <mdui-dialog id="courseDialog" fullscreen class="course-dialog" close-on-esc close-on-overlay-click>
+      <div class="course-dialog-layout">
+        <div class="course-doc-wrap">
+          <img id="courseHeroImg" class="course-hero" src="" alt="教程封面" style="display: none" />
+          <div id="courseDoc" class="course-doc markdown-body"></div>
+        </div>
+      </div>
+    </mdui-dialog>
 
+    <mdui-dialog id="favoritesSheet" class="favorites-sheet" close-on-overlay-click>
+      <div class="favorites-header">
+        <mdui-icon name="bookmarks"></mdui-icon>
+        <div class="favorites-title">收藏夹</div>
+        <div style="flex-grow: 1"></div>
+        <mdui-button-icon id="favoritesCloseBtn" icon="close"></mdui-button-icon>
+      </div>
+      <div class="favorites-list">
+        <mdui-list id="favoritesList"></mdui-list>
+      </div>
+    </mdui-dialog>
 
+    <script src="js/markdown.js"></script>
+    <script>
+      const PRIMARY_KEY = "xtd_theme_primary";
 
+      function applyColorScheme(color) {
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+      }
 
+      const savedPrimary = localStorage.getItem(PRIMARY_KEY);
+      if (savedPrimary) applyColorScheme(savedPrimary);
 
-</body>
+      window.addEventListener("message", (event) => {
+        const data = event?.data;
+        if (!data || data.type !== "theme:primary") return;
+        const color = data.color;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        localStorage.setItem(PRIMARY_KEY, color);
+        applyColorScheme(color);
+      });
 
-<!-- SnackBar -->
-<mdui-snackbar class="snackbar_no_action">提示</mdui-snackbar>
-<!-- 教程对话框 -->
-	<mdui-dialog stacked-actions fullscreen id="course_dialog" class="course_dialog"
-	height="100%">
-		<iframe src="" id="course_frame" style="border:0px;display:none;"
-		width="100%" height="600px">
-		</iframe>
+      window.addEventListener("storage", (event) => {
+        if (event.key !== PRIMARY_KEY) return;
+        const color = event.newValue;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        applyColorScheme(color);
+      });
 
-		<mdui-circular-progress id="course_loading_progress"></mdui-circular-progress>
-		
+      const STORAGE_KEY = "xtd_courses_favorites_v1";
 
-	</mdui-dialog>
+      const courses = [
+        {
+          id: "course1",
+          title: "MC 基岩版自定义界面 UI",
+          desc: "绑定 dialogue 视图、ServerForm 显示自定义 UI 等内容。",
+          icon: "view_quilt",
+          cover: "RSDB/icon-192.png",
+          md: `
+## 你将学到什么
 
+- 认识「对话（Dialogue）」与「表单（Form）」两套 UI 思路的区别
+- 用一套可维护的方式组织 UI：资源文件、命名规则、版本管理
+- 服务端在合适的时机打开 UI，并处理玩家选择结果
 
-<script>
-var course_items = document.querySelectorAll(".course_item");
-var course_loading_progress = document.getElementById("course_loading_progress");
-var course_dialog = document.querySelector(".course_dialog");
-var course_frame = document.getElementById("course_frame");
+## 示例图
 
+![自定义界面示例](RSDB/icon-192.png)
 
+## 准备工作
 
+1. 下载并导入示例包（mcaddon）
+2. 确保你的开发环境能打包并部署到世界（资源包 / 行为包）
 
+[下载示例（mcaddon）](https://d.feiliupan.com/t/83696425556250624/xtdpotato/%E8%87%AA%E5%AE%9A%E4%B9%89NPC%E7%95%8C%E9%9D%A2%E7%BB%91%E5%AE%9A.mcaddon.zip)
 
-//教程项目点击事件
-// 遍历列表项，给每个列表项添加点击事件
-for (let course_item of course_items) {
-	course_item.addEventListener("click", () =>{
-		course_dialog.open = true;
+## Part A：对话（Dialogue）绑定入口
 
-		//course_dialog.headline = course_item.textContent;
+- 做一个最小可用对话：欢迎词 + 两个按钮（打开菜单 / 关闭）
+- 关键是“按钮点击 → 触发脚本/指令”，把 UI 打开的逻辑从对话树里抽出来
 
-		// 获取 <iframe> 元素
-		var course_frame = document.getElementById("course_frame");
+## Part B：ServerForm 显示自定义 UI
 
-		//内容需要用其他方法展现
-		let course_id = "courses/" + course_item.id + ".html";
-		course_frame.src = course_id;
+建议封装成一个统一入口函数：
 
-		course_frame.style = "border:0px;display:none;";
-		course_loading_progress.style = "border:0px;display:block;";
+\`\`\`
+openMainMenu(player)
+\`\`\`
 
-		// 定义要执行的函数
-		function frame_loaded() {
+内部负责：
 
-			course_frame = document.getElementById("course_frame");
-			course_loading_progress = document.getElementById("course_loading_progress");
+- 组装 UI 的数据
+- 调用框架 API 发送给玩家
+- 在回调里根据按钮索引分发到下一页
 
-			course_frame.style = "border:0px;display:block;";
+## 常见坑（排错清单）
 
-			course_loading_progress.style = "border:0px;display:none;";
+- UI 点了没反应：检查事件名是否一致、回调是否被覆盖
+- 只有部分玩家能打开：检查权限判断与 player 对象是否为空
+- 文本乱码：统一 UTF-8，避免混用编码
+`,
+        },
+      ];
 
-		}
-		// 使用 setTimeout 函数等待 500ms
-		setTimeout(frame_loaded, 500);
+      const dom = {
+        grid: document.getElementById("courseGrid"),
+        snackbar: document.getElementById("coursesSnackbar"),
+        favoritesSheet: document.getElementById("favoritesSheet"),
+        favoritesList: document.getElementById("favoritesList"),
+        favoritesCloseBtn: document.getElementById("favoritesCloseBtn"),
+        favoritesBtnDesktop: document.getElementById("favoritesBtnDesktop"),
+        dialog: document.getElementById("courseDialog"),
+        heroImg: document.getElementById("courseHeroImg"),
+        doc: document.getElementById("courseDoc"),
+      };
 
-	})
-}
+      let activeCourseId = null;
+      let favorites = [];
 
+      function showToast(text) {
+        if (!dom.snackbar) return;
+        dom.snackbar.textContent = text;
+        dom.snackbar.open = true;
+      }
 
+      function loadFavorites() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const parsed = JSON.parse(raw || "[]");
+          favorites = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          favorites = [];
+        }
+      }
 
-// 监听来自iframe的消息
-course_frame.onload = function() {
-window.addEventListener('message', function(event) {
-var course_frame = document.getElementById("course_frame");
-    // 确保消息来自预期的iframe
-    if (event.source !== course_frame.contentWindow) return;
+      function saveFavorites() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+      }
 
-    // 确保消息是你期望的类型
-    if (event.data.type === 'courseOC') {
-        // 更新父页面中的文本
-        	course_dialog.open = false;
-    }
-}, false);
-};
+      function isFavorite(id) {
+        return favorites.includes(id);
+      }
 
+      function toggleFavorite(id) {
+        if (!id) return;
+        if (isFavorite(id)) favorites = favorites.filter((x) => x !== id);
+        else favorites = [...favorites, id];
+        saveFavorites();
+        renderFavorites();
+        notifyTopbar();
+      }
 
-</script>
+      function updateDialogFavButton() {
+        return;
+      }
 
+      function renderGrid() {
+        if (!dom.grid) return;
+        dom.grid.innerHTML = "";
+        for (const course of courses) {
+          const card = document.createElement("mdui-card");
+          card.setAttribute("clickable", "");
+          card.setAttribute("variant", "outlined");
+          card.className = "course-card";
+          card.addEventListener("click", () => openCourse(course.id));
+
+          const img = document.createElement("img");
+          img.className = "course-cover";
+          img.alt = course.title;
+          img.src = course.cover;
+
+          const body = document.createElement("div");
+          body.className = "course-body";
+          body.innerHTML = `
+            <div class="mdui-prose">
+              <h3 class="course-title">${course.title}</h3>
+              <p class="course-desc">${course.desc}</p>
+            </div>
+          `;
+
+          card.appendChild(img);
+          card.appendChild(body);
+          dom.grid.appendChild(card);
+        }
+      }
+
+      function openCourse(courseId) {
+        const course = courses.find((c) => c.id === courseId);
+        if (!course || !dom.dialog || !dom.doc || !window.XTDMarkdown?.renderMarkdown) return;
+        activeCourseId = courseId;
+
+        if (dom.heroImg) dom.heroImg.src = course.cover;
+        if (dom.heroImg) dom.heroImg.style.display = course.cover ? "block" : "none";
+        dom.doc.innerHTML = window.XTDMarkdown.renderMarkdown(course.md || "");
+        dom.dialog.open = true;
+        notifyTopbar();
+      }
+
+      function renderFavorites() {
+        if (!dom.favoritesList) return;
+        dom.favoritesList.innerHTML = "";
+
+        const favCourses = favorites
+          .map((id) => courses.find((c) => c.id === id))
+          .filter(Boolean);
+
+        if (favCourses.length === 0) {
+          const empty = document.createElement("mdui-list-item");
+          empty.setAttribute("headline", "收藏夹还是空的");
+          empty.setAttribute("description", "在教程详情里点右上角收藏按钮");
+          dom.favoritesList.appendChild(empty);
+          return;
+        }
+
+        for (const course of favCourses) {
+          const item = document.createElement("mdui-list-item");
+          item.setAttribute("rounded", "");
+          item.setAttribute("headline", course.title);
+          item.setAttribute("description", "点击打开");
+          const icon = document.createElement("mdui-icon");
+          icon.setAttribute("slot", "icon");
+          icon.setAttribute("name", course.icon || "menu_book");
+          item.appendChild(icon);
+          item.addEventListener("click", () => {
+            if (dom.favoritesSheet) dom.favoritesSheet.open = false;
+            openCourse(course.id);
+          });
+          dom.favoritesList.appendChild(item);
+        }
+      }
+
+      dom.favoritesBtnDesktop?.addEventListener("click", () => {
+        if (!dom.favoritesSheet) return;
+        renderFavorites();
+        dom.favoritesSheet.open = true;
+      });
+
+      dom.favoritesCloseBtn?.addEventListener("click", () => {
+        if (dom.favoritesSheet) dom.favoritesSheet.open = false;
+      });
+
+      function notifyTopbar() {
+        const course = courses.find((c) => c.id === activeCourseId) || null;
+        if (!course || !dom.dialog?.open) {
+          window.parent?.postMessage(
+            {
+              type: "app:topbar",
+              tab: "courses",
+              title: "教程",
+              actions: [{ id: "courses:favorites", icon: "bookmarks", text: "收藏夹" }],
+            },
+            "*",
+          );
+          return;
+        }
+        const favIcon = isFavorite(course.id) ? "bookmark" : "bookmark_add";
+        window.parent?.postMessage(
+          {
+            type: "app:topbar",
+            tab: "courses",
+            title: course.title,
+            actions: [
+              { id: "courses:fav", icon: favIcon, text: "收藏" },
+              { id: "courses:collapse", icon: "unfold_less", text: "收起" },
+            ],
+          },
+          "*",
+        );
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event?.data;
+        if (!data || data.type !== "app:action") return;
+        const id = data.id;
+        if (id === "courses:collapse") {
+          if (dom.dialog) dom.dialog.open = false;
+          activeCourseId = null;
+          notifyTopbar();
+          return;
+        }
+        if (id === "courses:fav") {
+          if (!activeCourseId) return;
+          toggleFavorite(activeCourseId);
+          showToast(isFavorite(activeCourseId) ? "已加入收藏夹" : "已移出收藏夹");
+          notifyTopbar();
+          return;
+        }
+        if (id === "courses:favorites") {
+          if (!dom.favoritesSheet) return;
+          renderFavorites();
+          dom.favoritesSheet.open = true;
+          return;
+        }
+      });
+
+      dom.dialog?.addEventListener("close", () => {
+        activeCourseId = null;
+        notifyTopbar();
+      });
+
+      loadFavorites();
+      renderGrid();
+      renderFavorites();
+      notifyTopbar();
+    </script>
+  </body>
 </html>

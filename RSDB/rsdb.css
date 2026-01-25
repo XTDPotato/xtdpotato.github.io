@@ -1,0 +1,47 @@
+:root {
+  --rsdb-toolbar-max: 540px;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-bar {
+  flex: 1 1 var(--rsdb-toolbar-max);
+  max-width: var(--rsdb-toolbar-max);
+  min-width: 140px;
+}
+
+.search-bar input {
+  width: 100%;
+  min-width: 0;
+}
+
+.top-action-buttons {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --rsdb-toolbar-max: 100%;
+  }
+
+  .action-bar {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .search-bar {
+    min-width: 0;
+  }
+
+  .search-bar input::placeholder {
+    font-size: 12px;
+  }
+}

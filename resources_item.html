@@ -1,119 +1,378 @@
 <!doctype html>
-<html class="mdui-theme-auto">
-
-</html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="mdui-theme-auto">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
-    <meta name="renderer" content="webkit"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
+    />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
-
-
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css" />
     <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 
-<!-- Filled -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 
-<!-- Outlined -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <title>导航</title>
 
-<!-- Rounded -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
 
-<!-- Sharp -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+      .page {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
 
-<!-- Two Tone -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+      .content {
+        padding: 12px;
+        box-sizing: border-box;
+        max-width: 980px;
+        margin: 0 auto;
+        width: 100%;
+        padding-bottom: 24px;
+      }
 
-    <title>资源项目</title>
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .res-card {
+        overflow: hidden;
+      }
+
+      .res-cover {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        background: #eee;
+      }
+
+      .res-body {
+        padding: 12px;
+      }
+
+      .res-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .res-desc {
+        margin: 8px 0 0 0;
+        opacity: 0.86;
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .res-expand {
+        border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .res-links {
+        padding: 6px 8px 10px;
+      }
+
+      .mors-dialog::part(panel) {
+        padding: 0;
+      }
+
+      .mors-sheet::part(panel) {
+        padding: 0;
+        width: min(720px, 100%);
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        border-radius: 16px 16px 0 0;
+        max-height: min(85vh, 720px);
+        overflow: hidden;
+      }
+
+      .mors-sheet-header {
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .mors-sheet-title {
+        font-weight: 700;
+      }
+
+      .mors-sheet-body {
+        padding: 8px 8px 14px;
+        overflow: auto;
+        max-height: min(85vh, 720px);
+        box-sizing: border-box;
+      }
+    </style>
   </head>
-<body>
 
-
-
-<mdui-list>
-  <mdui-list-subheader>资源</mdui-list-subheader>
-  <mdui-collapse class="item-1">
-  <!--  第一个列表项目 -->
-    <mdui-collapse-item value="item-1">
-      <mdui-list-item slot="header" icon="near_me">Moonlight+Sunhine串流<mdui-icon slot="end-icon" class="example-trigger" name="keyboard_arrow_down"></mdui-icon></mdui-list-item>
-      <div style="margin-left: 2.5rem">
-        <mdui-list-item href="https://www.123pan.com/s/RzbrVv-0qdKd.html" target="_blank" id="co_m_or_s_123pan">123盘(包含改版等)</mdui-list-item>
-        <mdui-list-item id="co_m_or_s_official">官网</mdui-list-item>
+  <body>
+    <div class="page">
+      <div class="content">
+        <mdui-list-subheader id="pageSubheader">导航</mdui-list-subheader>
+        <div class="grid" id="resourcesGrid"></div>
       </div>
-    </mdui-collapse-item>
-    <!--  第二个列表项目 -->
-    <mdui-collapse-item value="item-2">
-      <mdui-list-item slot="header" icon="near_me">Minecraft基岩版<mdui-icon slot="end-icon" mdui-panel-item-arrow class="example-trigger" name="keyboard_arrow_down"></mdui-icon></mdui-list-item>
-      <div style="margin-left: 2.5rem">
-        <mdui-list-item href="https://www.minecraft.net" target="_blank">官网</mdui-list-item>
-        <mdui-list-item href="https://play.google.com/store/apps/details?id=com.mojang.minecraftpe&utm_source=mcnet" target="_blank">谷歌商店(需要魔法)</mdui-list-item>
-        <mdui-list-item href="https://www.microsoft.com/zh-sg/p/minecraft-for-windows/9nblggh2jhxj?activetab=pivot:overviewtab" target="_blank">微软商店</mdui-list-item>
-        <mdui-list-item href="https://klpbbs.com/xz" target="_blank">苦力怕论坛 KlpBBS(仅供体验)</mdui-list-item>
+    </div>
+
+    <mdui-snackbar id="resourcesSnackbar" closeable>提示</mdui-snackbar>
+
+    <mdui-dialog id="morsSheet" class="mors-sheet" close-on-overlay-click close-on-esc>
+      <div class="mors-sheet-header">
+        <mdui-icon name="public"></mdui-icon>
+        <div class="mors-sheet-title">串流仓库（Releases）</div>
+        <div style="flex-grow: 1"></div>
+        <mdui-button-icon id="morsSheetCloseBtn" icon="close"></mdui-button-icon>
       </div>
-    </mdui-collapse-item>
-    <!--  第三个列表项目 -->
-        <mdui-collapse-item value="item-3">
-      <mdui-list-item slot="header" icon="near_me">MC基岩版Addon<mdui-icon slot="end-icon" mdui-panel-item-arrow class="example-trigger" name="keyboard_arrow_down"></mdui-icon></mdui-list-item>
-      <div style="margin-left: 2.5rem">
-        <mdui-list-item href="https://www.123pan.com/s/RzbrVv-HIdKd.html" target="_blank">[123云盘]猫鼠夏日游轮20240101</mdui-list-item>
+      <div class="mors-sheet-body">
+        <div class="mdui-prose" style="opacity: 0.86; padding: 6px 8px 8px">
+          原版在下，改版在上。建议优先从 Releases 下载。
+        </div>
 
+        <mdui-list>
+          <mdui-list-subheader>客户端（改版）</mdui-list-subheader>
+          <mdui-list-item
+            rounded
+            icon="android"
+            href="https://github.com/Axixi2233/moonlight-android/releases"
+            target="_blank"
+            headline="月光·阿西西 Android（改版）"
+            description="Axixi2233 / moonlight-android"
+          ></mdui-list-item>
+          <mdui-list-item
+            rounded
+            icon="computer"
+            href="https://github.com/Axixi2233/moonlight-qt/releases/tag/250306"
+            target="_blank"
+            headline="月光·阿西西 PC（改版）"
+            description="Axixi2233 / moonlight-qt"
+          ></mdui-list-item>
+          <mdui-list-item
+            rounded
+            icon="android"
+            href="https://github.com/ClassicOldSong/moonlight-android/releases/tag/v20.2.6"
+            target="_blank"
+            headline="黑月光 Artemis Android（改版）"
+            description="ClassicOldSong / moonlight-android"
+          ></mdui-list-item>
+
+          <mdui-list-subheader>客户端（原版）</mdui-list-subheader>
+          <mdui-list-item
+            rounded
+            icon="android"
+            href="https://github.com/moonlight-stream/moonlight-android/releases"
+            target="_blank"
+            headline="Moonlight Android（原版）"
+            description="moonlight-stream / moonlight-android"
+          ></mdui-list-item>
+          <mdui-list-item
+            rounded
+            icon="computer"
+            href="https://github.com/moonlight-stream/moonlight-qt/releases"
+            target="_blank"
+            headline="Moonlight PC（原版）"
+            description="moonlight-stream / moonlight-qt"
+          ></mdui-list-item>
+
+          <mdui-list-subheader>服务端（改版）</mdui-list-subheader>
+          <mdui-list-item
+            rounded
+            icon="dns"
+            href="https://github.com/ClassicOldSong/Apollo/releases"
+            target="_blank"
+            headline="Sunshine Apollo（改版）"
+            description="ClassicOldSong / Apollo"
+          ></mdui-list-item>
+
+          <mdui-list-subheader>服务端（原版）</mdui-list-subheader>
+          <mdui-list-item
+            rounded
+            icon="dns"
+            href="https://github.com/LizardByte/Sunshine/releases"
+            target="_blank"
+            headline="Sunshine（原版）"
+            description="LizardByte / Sunshine"
+          ></mdui-list-item>
+        </mdui-list>
       </div>
-    </mdui-collapse-item>
-    
-    
-    
-    
-  </mdui-collapse>
-  </mdui-list>
-  
-  
-  
-  
-</body>
-<!-- Moonlight与Sunshine的官网选择 -->
-<mdui-dialog stacked-actions fullscreen headline="选择Github仓库" class="m_or_s_dialog">
-<span slot="description">选择一个你要前往的Github仓库进行下载，release那一栏找到对应文件进行下载</span>
-  <div>
-  <mdui-button slot="action" href="https://github.com/moonlight-stream/moonlight-qt/releases" target="_blank" variant="text" full-width>Moonlight PC客户端</mdui-button>
-  <mdui-button slot="action" href="https://github.com/moonlight-stream/moonlight-android/releases" target="_blank" variant="text" full-width>Moonlight 安卓客户端</mdui-button>
-  <mdui-button slot="action" href="https://github.com/moonlight-stream/moonlight-qt/releases" target="_blank" variant="text" full-width>Moonlight iOS客户端</mdui-button>
-  <mdui-button slot="action" href="https://github.com/LizardByte/Sunshine/releases" target="_blank" variant="text" full-width>Sunhine PC服务端</mdui-button>
-  <mdui-button id="close_btn" slot="action" variant="tonal" full-width>关闭</mdui-button>
-  </div>
-</mdui-dialog>
+    </mdui-dialog>
 
+    <script>
+      const PRIMARY_KEY = "xtd_theme_primary";
+      const savedPrimary = localStorage.getItem(PRIMARY_KEY);
+      if (savedPrimary && /^#[0-9a-fA-F]{6}$/.test(savedPrimary) && window.mdui?.setColorScheme) {
+        window.mdui.setColorScheme(savedPrimary);
+      }
 
+      window.addEventListener("message", (event) => {
+        const data = event?.data;
+        if (!data || data.type !== "theme:primary") return;
+        const color = data.color;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        localStorage.setItem(PRIMARY_KEY, color);
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+      });
 
-<!-- SnackBar -->
-<mdui-snackbar class="snackbar_no_action">提示</mdui-snackbar>
+      window.addEventListener("storage", (event) => {
+        if (event.key !== PRIMARY_KEY) return;
+        const color = event.newValue;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+      });
 
-<script>
-let co_m_or_s_123pan = document.getElementById("co_m_or_s_123pan");
-let co_m_or_s_official = document.getElementById("co_m_or_s_official");
-let m_or_s_dialog = document.querySelector(".m_or_s_dialog");
-let m_or_s_123pan_dialog = document.querySelector(".m_or_s_dialog");
-let close_btn = document.getElementById("close_btn");
-let main_snackbar = document.querySelector(".snackbar_no_action");
+      const subheader = document.getElementById("pageSubheader");
+      try {
+        const parentTopbar = window.parent?.document?.querySelector(".mobile-topbar");
+        if (parentTopbar) {
+          const style = window.parent.getComputedStyle(parentTopbar);
+          if (style.display !== "none") subheader.style.display = "none";
+        }
+      } catch (e) {}
 
-//MorS官网点击事件
-co_m_or_s_official.addEventListener("click", () =>{
-  if (m_or_s_dialog) { // 检查元素是否存在
-    m_or_s_dialog.open = true;
-  }
-});
+      const dom = {
+        grid: document.getElementById("resourcesGrid"),
+        snackbar: document.getElementById("resourcesSnackbar"),
+        morsSheet: document.getElementById("morsSheet"),
+        morsSheetCloseBtn: document.getElementById("morsSheetCloseBtn"),
+      };
 
-//关闭菜单点击事件
-close_btn.addEventListener("click", () =>{
-  if (m_or_s_dialog) { // 检查元素是否存在
-    m_or_s_dialog.open = false;
-  }
-});
+      const resources = [
+        {
+          id: "mors",
+          title: "Moonlight + Sunshine 串流",
+          desc: "客户端 Moonlight + 服务端 Sunshine，低延迟串流。",
+          cover: "RSDB/icon-192.png",
+          links: [
+            { title: "123 盘（包含改版等）", icon: "cloud_download", href: "https://www.123pan.com/s/RzbrVv-0qdKd.html" },
+            { title: "Github Releases（原版/改版）", icon: "public", action: "open-mors" },
+          ],
+        },
+        {
+          id: "minecraft",
+          title: "Minecraft 基岩版",
+          desc: "官方渠道下载与常用入口。",
+          cover: "RSDB/icon-192.png",
+          links: [
+            { title: "官网", icon: "public", href: "https://www.minecraft.net" },
+            {
+              title: "谷歌商店（需要魔法）",
+              icon: "shop",
+              href: "https://play.google.com/store/apps/details?id=com.mojang.minecraftpe&utm_source=mcnet",
+            },
+            {
+              title: "微软商店",
+              icon: "shop",
+              href: "https://www.microsoft.com/zh-sg/p/minecraft-for-windows/9nblggh2jhxj?activetab=pivot:overviewtab",
+            },
+            { title: "苦力怕论坛 KlpBBS（仅供体验）", icon: "forum", href: "https://klpbbs.com/xz" },
+          ],
+        },
+        {
+          id: "addon",
+          title: "MC 基岩版 Addon",
+          desc: "个人整理的一些 Addon 资源。",
+          cover: "RSDB/icon-192.png",
+          links: [
+            {
+              title: "猫鼠夏日游轮 20240101（123 盘）",
+              icon: "cloud_download",
+              href: "https://www.123pan.com/s/RzbrVv-HIdKd.html",
+            },
+          ],
+        },
+      ];
 
-</script>
+      function showToast(text) {
+        if (!dom.snackbar) return;
+        dom.snackbar.textContent = text;
+        dom.snackbar.open = true;
+      }
 
+      function render() {
+        if (!dom.grid) return;
+        dom.grid.innerHTML = "";
+
+        for (const item of resources) {
+          const card = document.createElement("mdui-card");
+          card.setAttribute("variant", "outlined");
+          card.className = "res-card";
+          card.dataset.expanded = "1";
+
+          const img = document.createElement("img");
+          img.className = "res-cover";
+          img.alt = item.title;
+          img.src = item.cover;
+
+          const body = document.createElement("div");
+          body.className = "res-body";
+          body.innerHTML = `
+            <div class="mdui-prose">
+              <h3 class="res-title">${item.title}</h3>
+              <p class="res-desc">${item.desc}</p>
+            </div>
+          `;
+
+          const expand = document.createElement("div");
+          expand.className = "res-expand";
+          const linksWrap = document.createElement("div");
+          linksWrap.className = "res-links";
+
+          const list = document.createElement("mdui-list");
+          for (const link of item.links) {
+            const li = document.createElement("mdui-list-item");
+            li.setAttribute("rounded", "");
+            li.setAttribute("headline", link.title);
+            const icon = document.createElement("mdui-icon");
+            icon.setAttribute("slot", "icon");
+            icon.setAttribute("name", link.icon || "link");
+            li.appendChild(icon);
+            li.addEventListener("click", (e) => {
+              e.stopPropagation();
+              if (link.href) {
+                window.open(link.href, "_blank", "noopener,noreferrer");
+                return;
+              }
+              if (link.action === "open-mors" && dom.morsSheet) {
+                dom.morsSheet.open = true;
+                return;
+              }
+              showToast("暂未配置该入口");
+            });
+            list.appendChild(li);
+          }
+          linksWrap.appendChild(list);
+          expand.appendChild(linksWrap);
+
+          card.appendChild(img);
+          card.appendChild(body);
+          card.appendChild(expand);
+
+          dom.grid.appendChild(card);
+        }
+      }
+
+      dom.morsSheetCloseBtn?.addEventListener("click", () => {
+        if (dom.morsSheet) dom.morsSheet.open = false;
+      });
+
+      render();
+    </script>
+  </body>
 </html>

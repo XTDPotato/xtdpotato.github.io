@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="mdui-theme-auto">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no,viewport-fit=cover">
@@ -45,19 +45,32 @@
         }
 		
 		body.dark-mode {
-		    --primary-color: #80cbc4; 
 		    --background-color: #121212; 
 		    --surface-color: #1e1e1e; 
 		    --text-color: #ffffff;
 		    --border-color: #333333;
 		}
 		
-		body.mdui-theme-dark {
+		html.mdui-theme-dark {
 		    --mdui-theme-color-surface: var(--surface-color);
 		    --mdui-theme-color-background: var(--background-color);
 		    --mdui-theme-color-primary: var(--primary-color);
 		    --mdui-top-app-bar-background-color: var(--surface-color);
 		}
+
+        #themeFlash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            background: var(--theme-flash-color, transparent);
+            transition: opacity 260ms ease;
+            z-index: 99999;
+        }
+
+        body.theme-flash #themeFlash {
+            opacity: 0.18;
+        }
 		
 		.data-form input, .data-form select, .search-bar input {
 		    background-color: var(--background-color);
@@ -1110,7 +1123,10 @@
 		
 		
 	</style>
+	<link rel="stylesheet" href="rsdb.css">
+	<script src="rsdb.js"></script>
 <body>
+    <div id="themeFlash"></div>
 	<mdui-navigation-drawer id="drawer" close-on-overlay-click placement="left" close-on-esc>
 		<mdui-top-app-bar slot="header">
 			<mdui-top-app-bar-title>功能菜单</mdui-top-app-bar-title>
@@ -1841,6 +1857,8 @@
 
 	<script>
 
+		const PRIMARY_KEY = "xtd_theme_primary";
+		const themeFlash = document.getElementById("themeFlash");
 		let tableData = [];              
 		let currentInput = null;         
 		let keyboardState = JSON.parse(localStorage.getItem('keyboardState')) || {
@@ -2149,14 +2167,32 @@ const ZoomManager = {
 		    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 		}
 
+		function applyColorScheme(color) {
+		    if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+		    document.documentElement.style.setProperty("--primary-color", color);
+		    if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+		}
+
+        function flashTheme(color) {
+            if (!themeFlash) return;
+            themeFlash.style.setProperty("--theme-flash-color", color || "transparent");
+            document.body.classList.add("theme-flash");
+            setTimeout(() => document.body.classList.remove("theme-flash"), 280);
+        }
+
 		function initTheme() {
-		  let mode = selectedTheme === 'auto' ? (isSystemDarkMode() ? 'dark' : 'light') : selectedTheme;
+		  const root = document.documentElement;
+		  root.classList.remove("mdui-theme-auto", "mdui-theme-light", "mdui-theme-dark");
+
+		  if (selectedTheme === "auto") root.classList.add("mdui-theme-auto");
+		  else if (selectedTheme === "dark") root.classList.add("mdui-theme-dark");
+		  else root.classList.add("mdui-theme-light");
+
+		  const effective = selectedTheme === "auto" ? (isSystemDarkMode() ? "dark" : "light") : selectedTheme;
 		  const body = document.body;
-		  if (mode === 'dark') {
-		    body.classList.add('dark-mode', 'mdui-theme-dark');
-		  } else {
-		    body.classList.remove('dark-mode', 'mdui-theme-dark');
-		  }
+		  if (effective === "dark") body.classList.add("dark-mode");
+		  else body.classList.remove("dark-mode");
+
 		  updateThemeSelectionInDrawer();
 		}
 
@@ -2168,19 +2204,33 @@ const ZoomManager = {
 		}
 
 		function updateThemeSelectionInDrawer() {
-		    const themeOptions = dom.themeCollapseContent.querySelectorAll('.theme-option');
-		    themeOptions.forEach(item => item.removeAttribute('selected'));
+		    if (!dom.themeCollapseContent) return;
+		    const themeOptions = dom.themeCollapseContent.querySelectorAll(".theme-option");
+		    themeOptions.forEach((item) => {
+		        item.removeAttribute("selected");
+		        item.removeAttribute("active");
+		        const oldCheck = item.querySelector('mdui-icon[slot="end-icon"][data-theme-check="1"]');
+		        oldCheck?.remove();
+		    });
 		    const current = dom.themeCollapseContent.querySelector(`.theme-option[data-theme="${selectedTheme}"]`);
-		    if (current) current.setAttribute('selected', 'true');
+		    if (current) {
+		        current.setAttribute("selected", "");
+		        current.setAttribute("active", "");
+		        const check = document.createElement("mdui-icon");
+		        check.setAttribute("slot", "end-icon");
+		        check.setAttribute("data-theme-check", "1");
+		        check.setAttribute("name", "check");
+		        current.appendChild(check);
+		    }
 
-		    const headerItem = dom.themeCollapse.querySelector('mdui-list-item[slot="header"]');
+		    const headerItem = dom.themeCollapse?.querySelector('mdui-list-item[slot="header"]');
 		    let headlineText = "主题模式 (当前: 自动)";
 		    let iconName = "brightness_auto";
-		    if (selectedTheme === 'light') { headlineText = "主题模式 (当前: 日间)"; iconName = "light_mode"; }
-		    else if (selectedTheme === 'dark') { headlineText = "主题模式 (当前: 夜间)"; iconName = "dark_mode"; }
+		    if (selectedTheme === "light") { headlineText = "主题模式 (当前: 日间)"; iconName = "light_mode"; }
+		    else if (selectedTheme === "dark") { headlineText = "主题模式 (当前: 夜间)"; iconName = "dark_mode"; }
 		    if (headerItem) {
-		        headerItem.setAttribute('headline', headlineText);
-		        headerItem.setAttribute('icon', iconName);
+		        headerItem.setAttribute("headline", headlineText);
+		        headerItem.setAttribute("icon", iconName);
 		    }
 		}
 
@@ -3895,6 +3945,7 @@ if (upBtn) {
         }, 500);
     };
     const handleEnd = (e) => {
+        if (!isPressed) return;
         e.stopPropagation();
         e.preventDefault();
         isPressed = false;
@@ -3932,6 +3983,7 @@ if (downBtn) {
         }, 500);
     };
     const handleEnd = (e) => {
+        if (!isPressed) return;
         e.stopPropagation();
         e.preventDefault();
         isPressed = false;
@@ -7846,8 +7898,61 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 
 
 		document.addEventListener('DOMContentLoaded', () => {
+		  const savedPrimary = localStorage.getItem(PRIMARY_KEY);
+		  if (savedPrimary) {
+		    applyColorScheme(savedPrimary);
+		  } else {
+		    applyColorScheme("#00796b");
+		  }
+
 		  initTheme();
 		  initEventListeners();
+
+		  window.addEventListener("message", (event) => {
+		    const data = event?.data;
+		    if (!data) return;
+		    if (data.type === "theme:primary") {
+		      const color = data.color;
+		      if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+		      localStorage.setItem(PRIMARY_KEY, color);
+		      applyColorScheme(color);
+		      flashTheme(color);
+		      return;
+		    }
+		    if (data.type === "theme:mode") {
+		      const mode = data.mode;
+		      if (mode !== "auto" && mode !== "light" && mode !== "dark") return;
+		      selectedTheme = mode;
+		      localStorage.setItem("theme", selectedTheme);
+		      initTheme();
+		      flashTheme(savedPrimary || "#00796b");
+		    }
+		  });
+
+		  window.addEventListener("storage", (event) => {
+		    if (event.key === PRIMARY_KEY) {
+		      const color = event.newValue;
+		      if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+		      applyColorScheme(color);
+		      flashTheme(color);
+		      return;
+		    }
+		    if (event.key === "theme") {
+		      const mode = event.newValue;
+		      if (mode !== "auto" && mode !== "light" && mode !== "dark") return;
+		      selectedTheme = mode;
+		      initTheme();
+		    }
+		  });
+
+		  if (window.matchMedia) {
+		    const media = window.matchMedia("(prefers-color-scheme: dark)");
+		    try {
+		      media.addEventListener("change", () => {
+		        if (selectedTheme === "auto") initTheme();
+		      });
+		    } catch (e) {}
+		  }
 
 		  loadDataFromIndexedDB();
 		  updateTable();

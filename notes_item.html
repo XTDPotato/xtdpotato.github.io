@@ -1,72 +1,259 @@
 <!doctype html>
-<html class="mdui-theme-auto"></html>
+<html lang="zh-CN" class="mdui-theme-auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
+    />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-</html>
-<html lang="zh-CN">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
-		/>
-		<meta name="renderer" content="webkit" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-		<link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
-		<script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
-		<!-- Filled -->
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-		<!-- Outlined -->
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
-		rel="stylesheet">
-		<!-- Rounded -->
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"
-		rel="stylesheet">
-		<!-- Sharp -->
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp"
-		rel="stylesheet">
-		<!-- Two Tone -->
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone"
-		rel="stylesheet">
-		<title>
-			笔记项目
-		</title>
-	</head>
-	<body>
-		<mdui-list>
-			<mdui-list-subheader>
-				笔记
-			</mdui-list-subheader>
-				<mdui-list-item class="btn_note" id="note1" description="点击打开查看笔记内容">
-					已经修好了
-				</mdui-list-item>
-				<mdui-list-item class="btn_note" id="note2" description="修好了笔记！">
-					笔记
-				</mdui-list-item>
-				<mdui-list-item class="btn_note" id="note3" description="点击打开查看笔记内容">
-					测试条目3
-				</mdui-list-item>
-		</mdui-list>
-	</body>
-	<!-- 查看笔记内容以及复制 -->
-	<mdui-dialog stacked-actions fullscreen headline="笔记名称" class="note_copy_dialog"
-	height="100%">
-		<iframe src="" class="note_frame" id="note_frame" style="border:0px;display:none;"
-		width="100%" height="30%">
-		</iframe>
-		<iframe src="" id="note_frame_qq" style="border:0px;display:none;" width="100%"
-		height="100%">
-		</iframe>
-		<mdui-circular-progress id="note_loading_progress"></mdui-circular-progress>
-		<mdui-text-field class="copy_content" id="copy_content" rows="30" max-rows="30"
-		style="display:none;margin:5px;width:100%;height:100%;" label="笔记内容">
-		</mdui-text-field>
-		
-		<mdui-button id="copy_btn" slot="action" variant="text">
-			复制全文
-		</mdui-button>
-		<mdui-button id="close_btn" slot="action" variant="tonal">
-			关闭
-		</mdui-button>
-		
-	</mdui-dialog>
-	<script type="text/javascript" src="js/notes_item.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css" />
+    <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone"
+      rel="stylesheet"
+    />
+
+    <title>笔记</title>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      .notes-app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      mdui-top-app-bar {
+        position: sticky !important;
+        top: 0;
+        z-index: 10;
+        background: var(--mdui-color-surface, #fff);
+      }
+
+      .notes-content {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+
+      .notes-list {
+        width: 300px;
+        max-width: 40vw;
+        border-right: 1px solid rgba(0, 0, 0, 0.12);
+        overflow: auto;
+      }
+
+      .notes-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .notes-toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .notes-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+
+      .notes-editor,
+      .notes-preview {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 10px;
+      }
+
+      #noteEditor {
+        width: 100%;
+        height: 100%;
+      }
+
+      .markdown-body {
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .markdown-body pre {
+        padding: 12px;
+        overflow: auto;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.06);
+      }
+
+      .markdown-body code {
+        padding: 0 6px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.06);
+      }
+
+      .markdown-body pre code {
+        padding: 0;
+        background: transparent;
+      }
+
+      #backBtn {
+        display: none;
+      }
+
+      @media (max-width: 720px) {
+        .notes-list {
+          width: 100%;
+          max-width: none;
+          border-right: none;
+        }
+
+        .notes-main {
+          width: 100%;
+        }
+
+        #notesApp[data-view="list"] .notes-main {
+          display: none;
+        }
+
+        #notesApp[data-view="detail"] .notes-list {
+          display: none;
+        }
+
+        #notesApp[data-view="detail"] #backBtn {
+          display: inline-flex;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .notes-list {
+          width: 220px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="notes-app" id="notesApp" data-view="list">
+      <mdui-top-app-bar>
+        <mdui-button-icon style="display: none;" id="newNoteBtn" icon="add"></mdui-button-icon>
+        <mdui-button-icon style="display: none;"id="renameNoteBtn" icon="edit"></mdui-button-icon>
+        <mdui-button-icon style="display: none;"id="deleteNoteBtn" icon="delete"></mdui-button-icon>
+
+        <div style="flex: 1"></div>
+
+        <mdui-text-field
+          id="searchInput"
+          variant="outlined"
+          placeholder="搜索笔记"
+          
+        ></mdui-text-field>
+      </mdui-top-app-bar>
+
+      <div class="notes-content">
+        <div class="notes-list">
+          <mdui-list id="noteList"></mdui-list>
+        </div>
+
+        <div class="notes-main">
+          <div class="notes-toolbar">
+            <mdui-button-icon id="backBtn" icon="arrow_back"></mdui-button-icon>
+            <div id="activeTitle" class="notes-title"></div>
+            <mdui-segmented-button-group id="modeGroup" selects="single" value="preview">
+              <mdui-segmented-button value="edit" id="modeEditBtn">编辑</mdui-segmented-button>
+              <mdui-segmented-button value="preview" id="modePreviewBtn"
+                >预览</mdui-segmented-button
+              >
+            </mdui-segmented-button-group>
+            <mdui-button-icon id="undoBtn" icon="undo"></mdui-button-icon>
+            <mdui-button-icon id="redoBtn" icon="redo"></mdui-button-icon>
+            <mdui-button-icon id="copyBtn" icon="content_copy"></mdui-button-icon>
+            <mdui-button-icon id="insertBtn" icon="add_link"></mdui-button-icon>
+          </div>
+
+          <div class="notes-editor" id="editorContainer">
+            <mdui-text-field
+              id="noteEditor"
+              rows="18"
+              max-rows="9999"
+              autosize
+              variant="outlined"
+              label="Markdown 内容"
+            ></mdui-text-field>
+          </div>
+
+          <div class="notes-preview" id="previewContainer" style="display: none">
+            <div id="previewBody" class="markdown-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <mdui-dialog id="editTitleDialog" close-on-overlay-click>
+      <span slot="headline" id="editTitleHeadline">新建笔记</span>
+      <mdui-text-field id="titleInput" label="标题" variant="outlined"></mdui-text-field>
+      <mdui-button slot="action" variant="text" id="titleCancelBtn">取消</mdui-button>
+      <mdui-button slot="action" variant="tonal" id="titleOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="deleteConfirmDialog" close-on-overlay-click>
+      <span slot="headline">删除笔记</span>
+      <div style="padding: 12px 0">确定要删除当前笔记吗？</div>
+      <mdui-button slot="action" variant="text" id="deleteCancelBtn">取消</mdui-button>
+      <mdui-button slot="action" variant="filled" color="error" id="deleteOkBtn">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-snackbar id="notesSnackbar" closeable>提示</mdui-snackbar>
+
+    <script>
+      const PRIMARY_KEY = "xtd_theme_primary";
+
+      function applyColorScheme(color) {
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+      }
+
+      const saved = localStorage.getItem(PRIMARY_KEY);
+      if (saved) applyColorScheme(saved);
+
+      window.addEventListener("message", (event) => {
+        const data = event?.data;
+        if (!data || data.type !== "theme:primary") return;
+        const color = data.color;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        localStorage.setItem(PRIMARY_KEY, color);
+        applyColorScheme(color);
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== PRIMARY_KEY) return;
+        const color = event.newValue;
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        applyColorScheme(color);
+      });
+    </script>
+    <script type="text/javascript" src="js/notes_item.js"></script>
+  </body>
 </html>
