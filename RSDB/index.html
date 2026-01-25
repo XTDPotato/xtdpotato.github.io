@@ -1532,7 +1532,7 @@
         圆棒入库数据管理
       </div>
       <div style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); margin-top: 4px;">
-        版本：2026.01.13 【最新版】
+        版本：2026.01.25 【最新版】
       </div>
     </div>
 
@@ -1602,11 +1602,15 @@
           虚拟键盘 【快捷录入】
         </div>
         <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
-          <li style="margin-bottom: 4px;">• 自动唤出：点击单元格输入框，虚拟键盘自动弹出</li>
-          <li style="margin-bottom: 4px;">• 字段跳转：点击键盘右下 ▼ 键，一键跳转下一个输入项</li>
-          <li style="margin-bottom: 4px;">• 快速关闭：长按 ▼ 键 或 快编模式点击 ✔ 完成按钮</li>
-          <li style="margin-bottom: 4px;">• 快捷删除：清空 一键清空内容 | ← 单删前一字符</li>
-          <li>• 批量填充：首行快捷按钮，一键填入钢种/状态/库位等公共数据</li>
+          <li style="margin-bottom: 4px;">• 自动唤出：点击编辑框/编辑按钮进入输入状态，虚拟键盘自动弹出</li>
+          <li style="margin-bottom: 4px;">• 自动定位：键盘弹出时自动滚动到当前编辑框，避免被遮挡</li>
+          <li style="margin-bottom: 4px;">• 光标重置：切换/点击字段后，光标默认定位到内容末尾，继续追加输入</li>
+          <li style="margin-bottom: 4px;">• 光标同步：窗口/弹窗打开、滚动、尺寸变化后延迟刷新光标位置，避免错位</li>
+          <li style="margin-bottom: 4px;">• 字段跳转：轻触右下 ▼ 键，跳转下一个输入项并自动定位</li>
+          <li style="margin-bottom: 4px;">• 关闭方式：按住右下 ▼ 键向上滑动后松开 = 关闭虚拟键盘（会显示“关闭”提示）</li>
+          <li style="margin-bottom: 4px;">• 快编模式：右下键显示 ✔，轻触即可关闭虚拟键盘</li>
+          <li style="margin-bottom: 4px;">• 删除键：按住 ← 连续删除；按住 ← 向上滑动后松开 = 清空当前字段</li>
+          <li>• 字符滑动：部分字符键支持“轻触输入字母/数字，向上滑动松开输入符号”</li>
         </ul>
       </div>
     </div>
@@ -2339,6 +2343,19 @@ function updateVirtualCursor() {
     virtualCursor.style.display = 'block';
 }
 
+function resetCursorToEnd(input) {
+    if (!input) return;
+    const value = input.value || '';
+    const pos = value.length;
+    try {
+        input.setSelectionRange(pos, pos);
+    } catch (e) {}
+    try {
+        input.selectionStart = pos;
+        input.selectionEnd = pos;
+    } catch (e) {}
+}
+
 function initEventListeners() {
     // Init Virtual Cursor Element
     if (!document.getElementById('virtualCursor')) {
@@ -2382,7 +2399,8 @@ function initEventListeners() {
                     updateKeyboardForInput(targetInput);
                     showVirtualKeyboard();
                     targetInput.focus();
-                    setTimeout(updateVirtualCursor, 50); 
+                    resetCursorToEnd(targetInput);
+                    setTimeout(updateVirtualCursor, 150); 
                 }
             }
         });
@@ -2496,9 +2514,11 @@ function initEventListeners() {
                 if (input.hasAttribute('readonly')) {
                     e.stopPropagation();
                     currentInput = input;
+                    input.focus();
+                    resetCursorToEnd(input);
+                    
                     updateKeyboardForInput(input);
                     showVirtualKeyboard();
-                    updateVirtualCursor();
                 } else {
                     // System Mode: Explicitly Close Virtual Keyboard
                     // This handles the case where user was using VK, then tapped a system-mode input
@@ -4463,6 +4483,7 @@ function startSearch() {
 		        }
 
 		        currentInput.focus();
+		        resetCursorToEnd(currentInput);
 
 		        // 平滑滚动到当前输入框
 		        const modalContent = document.getElementById('dataSheetContent');
@@ -5368,6 +5389,7 @@ function generateVirtualKeyboard() {
 		  }
 
 		  currentInput.focus();
+		  resetCursorToEnd(currentInput);
 		  const modalContent = currentInput.closest('.modal-body-custom'); 
 		  if(modalContent) {
 		      setTimeout(() => {
@@ -5570,7 +5592,12 @@ async function saveDataToIndexedDB() {
 		    }
 		    generateVirtualKeyboard();
 		    dom.virtualKeyboard.style.display = 'block';
-            updateVirtualCursor();
+		    if (currentInput) {
+		        setTimeout(() => {
+		            currentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		        }, 100);
+		    }
+		    setTimeout(updateVirtualCursor, 150);
 		}
 
 		function loadData() {
