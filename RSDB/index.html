@@ -82,7 +82,7 @@
 		}
 
         #virtualCursor {
-            position: absolute;
+            position: fixed;
             width: 2px;
             background-color: var(--primary-color);
             display: none;
@@ -2382,7 +2382,6 @@ function updateVirtualCursor() {
     
     virtualCursor.style.height = cursorHeight + 'px';
     virtualCursor.style.left = (rect.left + paddingLeft + borderLeft + textWidth) + 'px';
-    // Center vertically in the input
     virtualCursor.style.top = (rect.top + borderTop + paddingTop + (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2) + 'px';
     
     // Fallback if height calculation fails (e.g. flex centering)
@@ -2403,6 +2402,34 @@ function resetCursorToEnd(input) {
     try {
         input.selectionStart = pos;
         input.selectionEnd = pos;
+    } catch (e) {}
+}
+
+function moveCursorToClick(input, event) {
+    if (!input) return;
+    const rect = input.getBoundingClientRect();
+    const style = window.getComputedStyle(input);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const x = event.clientX - rect.left - paddingLeft - borderLeft;
+    const value = input.value || "";
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    let acc = 0;
+    let pos = 0;
+    for (let i = 0; i < value.length; i++) {
+        const ch = value[i];
+        const w = context.measureText(ch).width;
+        if (acc + w / 2 >= x) {
+            pos = i;
+            break;
+        }
+        acc += w;
+        pos = i + 1;
+    }
+    try {
+        input.setSelectionRange(pos, pos);
     } catch (e) {}
 }
 
@@ -2555,23 +2582,15 @@ function initEventListeners() {
     // Add click listeners to all form inputs to trigger virtual keyboard
     if (typeof inputFields !== 'undefined') {
         inputFields.forEach(input => {
-            // Remove any existing click listeners (if possible, but since we use anonymous functions, we can't easily)
-            // But we can ensure we only add logic that respects the state.
-            
-            // NOTE: We are relying on the fact that this script runs once.
             input.addEventListener('click', (e) => {
-                // If it's a readonly input (Virtual Mode)
                 if (input.hasAttribute('readonly')) {
                     e.stopPropagation();
                     currentInput = input;
                     input.focus();
-                    resetCursorToEnd(input);
-                    
+                    moveCursorToClick(input, e);
                     updateKeyboardForInput(input);
                     showVirtualKeyboard();
                 } else {
-                    // System Mode: Explicitly Close Virtual Keyboard
-                    // This handles the case where user was using VK, then tapped a system-mode input
                     dom.virtualKeyboard.style.display = 'none';
                     const virtualCursor = document.getElementById('virtualCursor');
                     if (virtualCursor) virtualCursor.style.display = 'none';
@@ -2776,7 +2795,6 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     dom.quickEditInput.addEventListener('click', (e) => {
         e.stopPropagation();
         
-        // Check if currently in System Mode (no readonly)
         if (!e.target.hasAttribute('readonly')) {
              dom.virtualKeyboard.style.display = 'none';
              const virtualCursor = document.getElementById('virtualCursor');
@@ -2786,6 +2804,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
 
         currentInput = e.target;
         const realFieldId = dom.quickEditField.value;
+        moveCursorToClick(currentInput, e);
         updateKeyboardForInput(currentInput, realFieldId);
         showVirtualKeyboard();
     });
