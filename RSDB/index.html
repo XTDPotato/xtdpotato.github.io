@@ -88,8 +88,33 @@
             background-color: var(--primary-color);
             display: none;
             pointer-events: none;
-            z-index: 9999;
+            z-index: 100000;
             animation: cursorBlink 1s infinite;
+        }
+
+        #virtualCursorHandle {
+            position: fixed;
+            width: 16px;
+            height: 16px;
+            background: var(--primary-color);
+            display: none;
+            z-index: 100000;
+            border-radius: 999px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+            touch-action: none;
+        }
+
+        #virtualCursorHandle::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: -6px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 8px solid var(--primary-color);
         }
         
         @keyframes cursorBlink {
@@ -615,54 +640,17 @@
 		    position: relative;
 		}
 
-		/* 让工具栏脱离文档流，浮在快捷短语区域右上角 */
+/* 快捷短语悬浮工具栏（可长按拖动） */
 #shortcutToolbarWrap {
-    position: absolute !important;
-    top: 4px;                    /* 贴近快捷短语顶部 */
-    right: 6px;                  /* 右边距保持原样 */
-    z-index: 10;                 /* 确保在快捷短语文字上面 */
-    pointer-events: auto;        /* 自己能被点击 */
-    background: transparent;     /* 去掉背景，让它更像浮动按钮 */
+    position: absolute;
+    top: -48px;
+    right: 6px;
+    z-index: 12;
+    pointer-events: none;
+    touch-action: none;
+    background: transparent;
 }
 
-/* 工具栏本体：小一点、半透、圆角更柔和 */
-#shortcutToolbar {
-    display: flex;
-    gap: 4px;                    /* 按钮间距更紧凑 */
-    padding: 4px 6px;
-    border-radius: 12px;
-    background: rgba(var(--surface-color-rgb), 0.92); /* 半透主色背景 */
-    backdrop-filter: blur(10px); /* 毛玻璃效果，更现代 */
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-    border: 1px solid rgba(var(--border-color-rgb), 0.4);
-}
-
-/* 拖动时的视觉反馈 */
-#shortcutToolbarWrap.dragging #shortcutToolbar {
-    background: rgba(var(--primary-color-rgb), 0.25) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    transform: scale(1.08);
-    transition: all 0.12s ease;
-}
-
-/* 当快捷短语区域为空时，工具栏也跟着更靠上（可选优化） */
-#shortcutContainer:empty ~ #shortcutToolbarWrap {
-    top: 0;
-}
-
-/* 工具栏容器：悬浮在上方 16px，绝对定位，不占文档流 */
-#shortcutToolbarWrap {
-    position: absolute !important;
-    top: -48px !important;              /* 悬浮在上方 16px */
-    right: 6px !important;
-    z-index: 12 !important;
-    
-    /* 关键修复：容器本身不拦截 touch 事件 */
-    pointer-events: none !important;
-    touch-action: none !important;
-}
-
-/* 工具栏本体：只让按钮区域可交互 */
 #shortcutToolbar {
     display: flex;
     gap: 4px;
@@ -672,21 +660,25 @@
     backdrop-filter: blur(10px);
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     border: 1px solid rgba(var(--border-color-rgb), 0.4);
-    
-    /* 恢复交互能力 */
-    pointer-events: auto !important;
-    touch-action: manipulation !important;  /* 只允许点击，不滚动 */
+    pointer-events: auto;
+    touch-action: none;
 }
 
-/* 拖动时的视觉反馈 */
 #shortcutToolbarWrap.dragging {
-    pointer-events: auto !important;
+    pointer-events: auto;
     opacity: 0.92;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     transform: scale(1.06);
-    background: rgba(var(--primary-color-rgb), 0.25) !important;
+    background: rgba(var(--primary-color-rgb), 0.25);
     backdrop-filter: blur(12px);
     z-index: 10001;
+}
+
+#shortcutToolbarWrap.dragging #shortcutToolbar {
+    background: rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transform: scale(1.08);
+    transition: all 0.12s ease;
 }
 
 /* 快捷短语容器：核心滚动修复 */
@@ -1552,7 +1544,7 @@
 					</div>
 					<!-- 有图片时的预览 + 三个按钮 -->
 					<div id="cardImagePreview" style="text-align:center;margin-bottom:20px;display:none;">
-						<img id="previewImg" style="max-height:300px;max-width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);cursor:pointer;" onclick="showFullImage(this.src)">
+						<img id="previewImg" style="max-height:300px;max-width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);cursor:pointer;" onclick="showFullImage(this.src, document.getElementById('productId')?.value || '', (typeof currentEditIndex === 'number' ? currentEditIndex : -1))">
 						<div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
 							<mdui-button variant="tonal" id="takePhotoInEditBtn">
 								<mdui-icon name="photo_camera"></mdui-icon> 拍照 </mdui-button>
@@ -2184,6 +2176,7 @@
                 <mdui-list-subheader>快捷短语</mdui-list-subheader>
                 <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="快捷短语设置" description="编辑各字段快捷短语与布局"></mdui-list-item>
                 <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
+                <mdui-list-item id="settingsShortcutToolbarResetItem" icon="restart_alt" headline="重置快捷短语工具栏位置" description="拖到屏幕外点不到时，可用此项重置"></mdui-list-item>
                 <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
                     <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
                 </mdui-list-item>
@@ -2248,7 +2241,7 @@
         </div>
     </mdui-dialog>
 
-    <mdui-dialog id="shortcutActionDialog" fullscreen close-on-esc close-on-overlay-click>
+    <mdui-dialog id="shortcutActionDialog" close-on-esc close-on-overlay-click>
         <mdui-top-app-bar slot="header">
             <mdui-top-app-bar-title id="shortcutActionTitle">快捷短语</mdui-top-app-bar-title>
             <div style="flex: 1"></div>
@@ -2527,6 +2520,7 @@
 		let shortcutDragState = null;
 		let duplicateShortcutContext = null;
 		let shortcutEditSession = null;
+		let shortcutInlineAddState = null;
 		let suppressVirtualKeyboard = false;   
 		let currentEditIndex = -1;       
 		let isMultiSelectMode = false;   
@@ -2608,6 +2602,10 @@
 		    recordInputStat('productId', formData.productId);
 		    recordInputStat('cardId', formData.cardId);
 		    recordInputStat('steelType', formData.steelType);
+		    recordInputStat('actualDiameter', formData.actualDiameter);
+		    recordInputStat('diameter', formData.diameter);
+		    recordInputStat('length', formData.length);
+		    recordInputStat('weight', formData.weight);
 		    recordInputStat('status', formData.status);
 		    recordInputStat('position', formData.position);
 		    saveInputStats();
@@ -2714,6 +2712,7 @@
 		    if (!keyElement?.dataset?.value) return;
 		    const container = document.getElementById('shortcutKeysContainer');
 		    if (!container) return;
+		    const scroller = document.getElementById('shortcutContainer') || container;
 		    const rect = keyElement.getBoundingClientRect();
 		    const ghost = keyElement.cloneNode(true);
 		    ghost.style.position = 'fixed';
@@ -2737,15 +2736,66 @@
 		    shortcutDragState = {
 		        pointerId: e.pointerId,
 		        container,
+		        scroller,
 		        ghost,
 		        placeholder,
 		        dragged: keyElement,
 		        offsetX: e.clientX - rect.left,
-		        offsetY: e.clientY - rect.top
+		        offsetY: e.clientY - rect.top,
+		        lastX: e.clientX,
+		        lastY: e.clientY,
+		        scrollDir: 0,
+		        scrollRaf: 0
 		    };
 		    try {
 		        keyElement.setPointerCapture(e.pointerId);
 		    } catch (err) {}
+		}
+
+		function reorderShortcutPlaceholderAtPoint(clientX, clientY) {
+		    const s = shortcutDragState;
+		    if (!s) return;
+		    const el = document.elementFromPoint(clientX, clientY);
+		    const target = el?.closest?.('.shortcut-draggable');
+		    if (!target) return;
+		    if (target === s.dragged) return;
+		    if (target.parentElement !== s.container) return;
+		    const r = target.getBoundingClientRect();
+		    const before = clientX < r.left + r.width / 2;
+		    s.container.insertBefore(s.placeholder, before ? target : target.nextSibling);
+		}
+
+		function stopShortcutAutoScroll() {
+		    const s = shortcutDragState;
+		    if (!s) return;
+		    if (s.scrollRaf) cancelAnimationFrame(s.scrollRaf);
+		    s.scrollRaf = 0;
+		    s.scrollDir = 0;
+		}
+
+		function stepShortcutAutoScroll() {
+		    const s = shortcutDragState;
+		    if (!s || !s.scroller || !s.scrollDir) {
+		        stopShortcutAutoScroll();
+		        return;
+		    }
+		    const sc = s.scroller;
+		    const maxScroll = Math.max(0, sc.scrollHeight - sc.clientHeight);
+		    if (!maxScroll) {
+		        stopShortcutAutoScroll();
+		        return;
+		    }
+		    const rect = sc.getBoundingClientRect();
+		    const EDGE = 36;
+		    const dist = s.scrollDir < 0 ? (s.lastY - rect.top) : (rect.bottom - s.lastY);
+		    const t = Math.max(0, Math.min(1, (EDGE - dist) / EDGE));
+		    const speed = 6 + t * 18;
+		    const prevTop = sc.scrollTop;
+		    sc.scrollTop = Math.max(0, Math.min(maxScroll, sc.scrollTop + s.scrollDir * speed));
+		    if (sc.scrollTop !== prevTop) {
+		        reorderShortcutPlaceholderAtPoint(s.lastX, s.lastY);
+		    }
+		    s.scrollRaf = requestAnimationFrame(stepShortcutAutoScroll);
 		}
 
 		function updateShortcutDrag(e) {
@@ -2754,22 +2804,31 @@
 		    if (e.pointerId !== s.pointerId) return;
 		    s.ghost.style.left = `${e.clientX - s.offsetX}px`;
 		    s.ghost.style.top = `${e.clientY - s.offsetY}px`;
+		    s.lastX = e.clientX;
+		    s.lastY = e.clientY;
 
-		    const el = document.elementFromPoint(e.clientX, e.clientY);
-		    const target = el?.closest?.('.shortcut-draggable');
-		    if (!target) return;
-		    if (target === s.dragged) return;
-		    if (target.parentElement !== s.container) return;
+		    reorderShortcutPlaceholderAtPoint(e.clientX, e.clientY);
 
-		    const r = target.getBoundingClientRect();
-		    const before = e.clientX < r.left + r.width / 2;
-		    s.container.insertBefore(s.placeholder, before ? target : target.nextSibling);
+		    const sc = s.scroller;
+		    if (sc && sc.scrollHeight > sc.clientHeight) {
+		        const rect = sc.getBoundingClientRect();
+		        const EDGE = 36;
+		        let dir = 0;
+		        if (e.clientY < rect.top + EDGE) dir = -1;
+		        else if (e.clientY > rect.bottom - EDGE) dir = 1;
+		        if (dir !== s.scrollDir) {
+		            s.scrollDir = dir;
+		            if (!dir) stopShortcutAutoScroll();
+		            else if (!s.scrollRaf) s.scrollRaf = requestAnimationFrame(stepShortcutAutoScroll);
+		        }
+		    }
 		}
 
 		function endShortcutDrag(e) {
 		    const s = shortcutDragState;
 		    if (!s) return;
 		    if (e.pointerId !== s.pointerId) return;
+		    stopShortcutAutoScroll();
 
 		    try {
 		        s.dragged.releasePointerCapture(e.pointerId);
@@ -3465,9 +3524,11 @@ function openCompareEditDialog(suggestedFields) {
 function updateVirtualCursor() {
     const virtualCursor = document.getElementById('virtualCursor');
     if (!virtualCursor) return;
+    const handle = document.getElementById('virtualCursorHandle');
 
     if (!currentInput || !currentInput.classList.contains('readonly-input') || dom.virtualKeyboard.style.display === 'none') {
         virtualCursor.style.display = 'none';
+        if (handle) handle.style.display = 'none';
         return;
     }
 
@@ -3485,18 +3546,31 @@ function updateVirtualCursor() {
     context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
     const textWidth = context.measureText(textBeforeCursor).width;
 
-    const cursorHeight = parseFloat(style.fontSize) * 1.2;
+    const cursorHeight = (parseFloat(style.fontSize) || 16) * 1.45;
     
     virtualCursor.style.height = cursorHeight + 'px';
-    virtualCursor.style.left = (rect.left + paddingLeft + borderLeft + textWidth) + 'px';
-    virtualCursor.style.top = (rect.top + borderTop + paddingTop + (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2) + 'px';
+    const cursorLeft = rect.left + paddingLeft + borderLeft + textWidth;
+    let cursorTop =
+        rect.top +
+        borderTop +
+        paddingTop +
+        (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2;
+    virtualCursor.style.left = cursorLeft + 'px';
+    virtualCursor.style.top = cursorTop + 'px';
     
     // Fallback if height calculation fails (e.g. flex centering)
-    if (isNaN(parseFloat(virtualCursor.style.top))) {
-         virtualCursor.style.top = (rect.top + (rect.height - cursorHeight) / 2) + 'px';
+    if (isNaN(cursorTop)) {
+        cursorTop = rect.top + (rect.height - cursorHeight) / 2;
+        virtualCursor.style.top = cursorTop + 'px';
     }
 
     virtualCursor.style.display = 'block';
+    if (handle) {
+        const size = 16;
+        handle.style.left = (cursorLeft - size / 2 + 1) + 'px';
+        handle.style.top = (cursorTop + cursorHeight + 6) + 'px';
+        handle.style.display = 'block';
+    }
 }
 
 function resetCursorToEnd(input) {
@@ -3518,7 +3592,16 @@ function moveCursorToClick(input, event) {
     const style = window.getComputedStyle(input);
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-    const x = event.clientX - rect.left - paddingLeft - borderLeft;
+    moveCursorToClientX(input, event.clientX, rect, style, paddingLeft, borderLeft);
+}
+
+function moveCursorToClientX(input, clientX, rectArg = null, styleArg = null, paddingLeftArg = null, borderLeftArg = null) {
+    if (!input) return;
+    const rect = rectArg || input.getBoundingClientRect();
+    const style = styleArg || window.getComputedStyle(input);
+    const paddingLeft = paddingLeftArg ?? (parseFloat(style.paddingLeft) || 0);
+    const borderLeft = borderLeftArg ?? (parseFloat(style.borderLeftWidth) || 0);
+    const x = clientX - rect.left - paddingLeft - borderLeft;
     const value = input.value || "";
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
@@ -3537,7 +3620,44 @@ function moveCursorToClick(input, event) {
     }
     try {
         input.setSelectionRange(pos, pos);
-    } catch (e) {}
+    } catch (e) {
+        try {
+            input.selectionStart = pos;
+            input.selectionEnd = pos;
+        } catch (e2) {}
+    }
+}
+
+function startVirtualCursorFollow() {
+    if (window.__rsdbVirtualCursorTimer) return;
+    window.__rsdbVirtualCursorTimer = setInterval(() => {
+        updateVirtualCursor();
+    }, 200);
+}
+
+function stopVirtualCursorFollow() {
+    if (!window.__rsdbVirtualCursorTimer) return;
+    clearInterval(window.__rsdbVirtualCursorTimer);
+    window.__rsdbVirtualCursorTimer = null;
+}
+
+function moveCaretBy(delta) {
+    if (!currentInput) return;
+    const len = (currentInput.value || '').length;
+    const start = typeof currentInput.selectionStart === 'number' ? currentInput.selectionStart : len;
+    const end = typeof currentInput.selectionEnd === 'number' ? currentInput.selectionEnd : len;
+    const collapsed = start === end;
+    const base = collapsed ? start : Math.min(start, end);
+    const next = Math.max(0, Math.min(len, base + delta));
+    try {
+        currentInput.setSelectionRange(next, next);
+    } catch (e) {
+        try {
+            currentInput.selectionStart = next;
+            currentInput.selectionEnd = next;
+        } catch (e2) {}
+    }
+    updateVirtualCursor();
 }
 
 function initEventListeners() {
@@ -3547,9 +3667,144 @@ function initEventListeners() {
         vc.id = 'virtualCursor';
         document.body.appendChild(vc);
     }
+
+    const vcEl = document.getElementById('virtualCursor');
+    if (vcEl && !vcEl.dataset.rsdbBound) {
+        vcEl.dataset.rsdbBound = '1';
+        vcEl.addEventListener('animationiteration', () => updateVirtualCursor(), { passive: true });
+    }
+
+    if (!document.getElementById('virtualCursorHandle')) {
+        const vh = document.createElement('div');
+        vh.id = 'virtualCursorHandle';
+        document.body.appendChild(vh);
+    }
+    const vhEl = document.getElementById('virtualCursorHandle');
+    if (vhEl && !vhEl.dataset.rsdbBound) {
+        vhEl.dataset.rsdbBound = '1';
+        let dragging = false;
+        let dragPointerId = null;
+        vhEl.addEventListener(
+            'pointerdown',
+            (e) => {
+                if (!currentInput || !currentInput.classList?.contains('readonly-input')) return;
+                if (dom?.virtualKeyboard?.style?.display === 'none') return;
+                dragging = true;
+                dragPointerId = e.pointerId;
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+                try {
+                    vhEl.setPointerCapture(e.pointerId);
+                } catch (e2) {}
+                window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                updateVirtualCursor();
+            },
+            { passive: false },
+        );
+        vhEl.addEventListener(
+            'pointermove',
+            (e) => {
+                if (!dragging || dragPointerId !== e.pointerId) return;
+                if (!currentInput) return;
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+                moveCursorToClientX(currentInput, e.clientX);
+                window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                updateVirtualCursor();
+            },
+            { passive: false },
+        );
+        const endDrag = (e) => {
+            if (!dragging || dragPointerId !== e.pointerId) return;
+            dragging = false;
+            dragPointerId = null;
+            try {
+                vhEl.releasePointerCapture(e.pointerId);
+            } catch (e2) {}
+            window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+            updateVirtualCursor();
+        };
+        vhEl.addEventListener('pointerup', endDrag, { passive: true });
+        vhEl.addEventListener('pointercancel', endDrag, { passive: true });
+    }
     
     window.addEventListener('resize', updateVirtualCursor);
     window.addEventListener('scroll', updateVirtualCursor, true);
+    setTimeout(updateVirtualCursor, 0);
+
+    const vk = document.getElementById('virtualKeyboard');
+    if (vk && !vk.dataset.rsdbSwipeBound) {
+        vk.dataset.rsdbSwipeBound = '1';
+        const state = {
+            active: false,
+            swipeMode: false,
+            pointerId: null,
+            startX: 0,
+            startY: 0,
+            lastStep: 0,
+        };
+        const STEP_PX = 18;
+        const TRIGGER_PX = 14;
+
+        vk.addEventListener(
+            'pointerdown',
+            (e) => {
+                if (dom?.virtualKeyboard?.style?.display === 'none') return;
+                if (!currentInput || !currentInput.classList?.contains('readonly-input')) return;
+                state.active = true;
+                state.swipeMode = false;
+                state.pointerId = e.pointerId;
+                state.startX = e.clientX;
+                state.startY = e.clientY;
+                state.lastStep = 0;
+            },
+            { passive: true },
+        );
+
+        window.addEventListener(
+            'pointermove',
+            (e) => {
+                if (!state.active || state.pointerId !== e.pointerId) return;
+                const dx = e.clientX - state.startX;
+                const dy = e.clientY - state.startY;
+                if (!state.swipeMode) {
+                    if (Math.abs(dx) < TRIGGER_PX) return;
+                    if (Math.abs(dx) <= Math.abs(dy)) return;
+                    state.swipeMode = true;
+                    window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                }
+                if (e.cancelable) e.preventDefault();
+                const step = Math.trunc(dx / STEP_PX);
+                const deltaStep = step - state.lastStep;
+                if (deltaStep !== 0) {
+                    moveCaretBy(deltaStep);
+                    state.lastStep = step;
+                    window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                } else {
+                    updateVirtualCursor();
+                }
+            },
+            { passive: false, capture: true },
+        );
+
+        const endSwipe = (e) => {
+            if (!state.active || state.pointerId !== e.pointerId) return;
+            state.active = false;
+            state.pointerId = null;
+            if (state.swipeMode) {
+                window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                setTimeout(() => {
+                    if (Date.now() - (window.__rsdbKeyboardSwipeConsumedAt || 0) > 220) {
+                        window.__rsdbKeyboardSwipeConsumedAt = 0;
+                    }
+                }, 260);
+            }
+            state.swipeMode = false;
+            state.lastStep = 0;
+        };
+        window.addEventListener('pointerup', endSwipe, { passive: true, capture: true });
+        window.addEventListener('pointercancel', endSwipe, { passive: true, capture: true });
+    }
 
     // Edit Buttons Logic
     document.querySelectorAll('.edit-input-btn').forEach(btn => {
@@ -3607,83 +3862,6 @@ function initEventListeners() {
              currentInput = remarksInput;
              remarksInput.focus(); 
         });
-    }
-
-    const shortcutToolbar = document.getElementById('shortcutToolbar');
-    if (shortcutToolbar) {
-        const STORAGE_KEY = 'rsdb_shortcut_toolbar_right_v1';
-        const savedRight = localStorage.getItem(STORAGE_KEY);
-        if (savedRight && /^\d+px$/.test(savedRight)) {
-            shortcutToolbar.style.right = savedRight;
-        }
-
-        const LONG_PRESS_MS = 260;
-        let pressTimer = null;
-        let dragReady = false;
-        let isDragging = false;
-        let startX = 0;
-        let initialRight = 0;
-        let activePointerId = null;
-
-        const clearPress = () => {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        };
-
-        shortcutToolbar.addEventListener('click', (e) => {
-            if (window.__rsdbShortcutToolbarIgnoreClickUntil && Date.now() < window.__rsdbShortcutToolbarIgnoreClickUntil) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        }, true);
-
-        shortcutToolbar.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse') return;
-            if (activePointerId !== null) return;
-            activePointerId = e.pointerId;
-            dragReady = false;
-            isDragging = false;
-            startX = e.clientX;
-            const style = window.getComputedStyle(shortcutToolbar);
-            initialRight = parseFloat(style.right) || 6;
-            clearPress();
-            pressTimer = setTimeout(() => {
-                dragReady = true;
-            }, LONG_PRESS_MS);
-            shortcutToolbar.setPointerCapture?.(activePointerId);
-        }, { passive: false });
-
-        shortcutToolbar.addEventListener('pointermove', (e) => {
-            if (activePointerId === null || e.pointerId !== activePointerId) return;
-            const deltaX = startX - e.clientX;
-            if (!dragReady) {
-                if (Math.abs(deltaX) > 8) clearPress();
-                return;
-            }
-            if (Math.abs(deltaX) > 2) isDragging = true;
-            if (e.cancelable) e.preventDefault();
-            const toolbarWidth = shortcutToolbar.offsetWidth || 0;
-            const maxRight = Math.max(6, window.innerWidth - toolbarWidth - 6);
-            let newRight = initialRight + deltaX;
-            newRight = Math.max(6, Math.min(newRight, maxRight));
-            shortcutToolbar.style.right = `${Math.round(newRight)}px`;
-        }, { passive: false });
-
-        const endDrag = (e) => {
-            if (activePointerId === null || e.pointerId !== activePointerId) return;
-            clearPress();
-            if (isDragging) {
-                localStorage.setItem(STORAGE_KEY, shortcutToolbar.style.right || '6px');
-                window.__rsdbShortcutToolbarIgnoreClickUntil = Date.now() + 400;
-            }
-            dragReady = false;
-            isDragging = false;
-            shortcutToolbar.releasePointerCapture?.(activePointerId);
-            activePointerId = null;
-        };
-
-        shortcutToolbar.addEventListener('pointerup', endDrag, { passive: false });
-        shortcutToolbar.addEventListener('pointercancel', endDrag, { passive: false });
     }
 
     // FAB Draggable Logic & Reset
@@ -4128,6 +4306,10 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const dlg = document.getElementById('shortcutRowsDialog');
         if (dlg) dlg.open = true;
     });
+    document.getElementById('settingsShortcutToolbarResetItem')?.addEventListener('click', () => {
+        window.resetShortcutToolbarWrapPosition?.();
+        showSnackbar('已重置快捷短语工具栏位置', 'success');
+    });
     document.getElementById('settingsSuggestThresholdItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('suggestThresholdDialog');
@@ -4311,7 +4493,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     }
 
     const openAdd = () => {
-        openShortcutAddDialog(currentShortcutFieldKey, '');
+        openShortcutInlineAdd(currentShortcutFieldKey, '');
     };
 
     if (shortcutEditMode) {
@@ -4529,7 +4711,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     });
     document.getElementById('shortcutActionAddBtn')?.addEventListener('click', () => {
         if (!shortcutActionContext?.fieldKey) return;
-        openShortcutAddDialog(shortcutActionContext.fieldKey, '');
+        openShortcutInlineAdd(shortcutActionContext.fieldKey, '');
     });
     document.getElementById('shortcutSaveBtn')?.addEventListener('click', () => {
         if (!shortcutActionContext) return;
@@ -4598,6 +4780,32 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const dlg = document.getElementById('shortcutAddDialog');
         if (dlg) dlg.open = false;
     });
+
+    const shortcutAddDlg = document.getElementById('shortcutAddDialog');
+    if (shortcutAddDlg && !shortcutAddDlg.dataset.rsdbRestoreBound) {
+        shortcutAddDlg.dataset.rsdbRestoreBound = '1';
+        shortcutAddDlg.addEventListener('close', () => {
+            const dup = document.getElementById('duplicateShortcutConfirmDialog');
+            if (dup?.open) return;
+            const prev = window.__rsdbShortcutAddPrevInput || null;
+            window.__rsdbShortcutAddPrevInput = null;
+            if (!prev) return;
+            currentInput = prev;
+            if (prev.id === 'remarks') {
+                setVirtualKeyboardVisible(false);
+                prev.focus?.();
+                return;
+            }
+            prev.setAttribute('readonly', 'true');
+            prev.classList.add('readonly-input');
+            updateKeyboardForInput(prev);
+            showVirtualKeyboard();
+            prev.focus?.();
+            resetCursorToEnd(prev);
+            refreshShortcutKeysForCurrentInput();
+            setTimeout(updateVirtualCursor, 0);
+        });
+    }
     bindImmediateActionButton(document.getElementById('shortcutAddOkBtn'), () => {
         if (!shortcutAddContext?.fieldKey) return;
         const fieldKey = shortcutAddContext.fieldKey;
@@ -4609,6 +4817,8 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const existedIndex = templates.findIndex(v => (v || '').trim() === value);
         if (existedIndex >= 0) {
             duplicateShortcutContext = { fieldKey, value, existedIndex };
+            const addDlg = document.getElementById('shortcutAddDialog');
+            if (addDlg) addDlg.open = false;
             const dlg = document.getElementById('duplicateShortcutConfirmDialog');
             if (dlg) dlg.open = true;
             return;
@@ -4617,6 +4827,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         KeyboardConfigManager.save();
         const dlg = document.getElementById('shortcutAddDialog');
         if (dlg) dlg.open = false;
+        window.__rsdbShortcutAddPrevInput = shortcutAddContext?.prevInput || window.__rsdbShortcutAddPrevInput || null;
         shortcutAddContext = null;
         showSnackbar('已添加快捷短语', 'success');
     });
@@ -4633,6 +4844,24 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         if (d2) d2.open = false;
         duplicateShortcutContext = null;
         shortcutAddContext = null;
+        const prev = window.__rsdbShortcutAddPrevInput || null;
+        window.__rsdbShortcutAddPrevInput = null;
+        if (prev) {
+            currentInput = prev;
+            if (prev.id === 'remarks') {
+                setVirtualKeyboardVisible(false);
+                prev.focus?.();
+            } else {
+                prev.setAttribute('readonly', 'true');
+                prev.classList.add('readonly-input');
+                updateKeyboardForInput(prev);
+                showVirtualKeyboard();
+                prev.focus?.();
+                resetCursorToEnd(prev);
+                refreshShortcutKeysForCurrentInput();
+                setTimeout(updateVirtualCursor, 0);
+            }
+        }
         showSnackbar('已添加快捷短语', 'success');
     });
     document.getElementById('duplicateShortcutCancelBtn')?.addEventListener('click', () => {
@@ -4644,7 +4873,26 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         if (d2) d2.open = false;
         duplicateShortcutContext = null;
         shortcutAddContext = null;
-        showVirtualKeyboard();
+        const prev = window.__rsdbShortcutAddPrevInput || null;
+        window.__rsdbShortcutAddPrevInput = null;
+        if (prev) {
+            currentInput = prev;
+            if (prev.id === 'remarks') {
+                setVirtualKeyboardVisible(false);
+                prev.focus?.();
+            } else {
+                prev.setAttribute('readonly', 'true');
+                prev.classList.add('readonly-input');
+                updateKeyboardForInput(prev);
+                showVirtualKeyboard();
+                prev.focus?.();
+                resetCursorToEnd(prev);
+                refreshShortcutKeysForCurrentInput();
+                setTimeout(updateVirtualCursor, 0);
+            }
+        } else {
+            showVirtualKeyboard();
+        }
         setTimeout(() => highlightShortcutInKeyboard(value), 60);
     });
     dom.addBtn.addEventListener('click', openAddModal);
@@ -6353,6 +6601,7 @@ function startSearch() {
 
 		let shortcutActionContext = null;
 		let shortcutAddContext = null;
+		let shortcutSuggestDismissedByField = {};
 
 		function getTemplateKeyByField(fieldKey) {
 		    const map = {
@@ -6360,6 +6609,10 @@ function startSearch() {
 		        productId: 'productIdTemplates',
 		        cardId: 'cardIdTemplates',
 		        steelType: 'steelTypeTemplates',
+		        actualDiameter: 'actualDiameterTemplates',
+		        diameter: 'diameterTemplates',
+		        length: 'lengthTemplates',
+		        weight: 'weightTemplates',
 		        status: 'statusTemplates',
 		        position: 'positionTemplates'
 		    };
@@ -6375,51 +6628,126 @@ function startSearch() {
 
 		function getSuggestedAddValues(fieldKey, templateValues) {
 		    if (!appSettings.suggestEnabled) return [];
+		    if (shortcutInlineAddState?.fieldKey) return [];
 		    const stats = inputStats[fieldKey] || {};
 		    const threshold = Math.max(1, Number(appSettings.suggestThreshold) || 5);
 		    const existing = new Set((templateValues || []).map(v => (v || '').trim()).filter(Boolean));
+		    const dismissed = shortcutSuggestDismissedByField?.[fieldKey] instanceof Set ? shortcutSuggestDismissedByField[fieldKey] : null;
 		    return Object.entries(stats)
-		        .filter(([v, c]) => v && !existing.has(v) && Number(c) >= threshold)
+		        .filter(([v, c]) => v && !existing.has(v) && !(dismissed?.has?.(v)) && Number(c) >= threshold)
 		        .sort((a, b) => Number(b[1]) - Number(a[1]))
 		        .slice(0, 3)
 		        .map(([v]) => v);
 		}
 
+		function openShortcutInlineAdd(fieldKey, presetValue = '') {
+		    if (!fieldKey) return;
+		    if (shortcutEditMode) setShortcutEditMode(false);
+		    shortcutInlineAddState = {
+		        fieldKey,
+		        value: (presetValue || '').toString(),
+		        prevInput: currentInput
+		    };
+		    const actionDlg = document.getElementById('shortcutActionDialog');
+		    if (actionDlg) actionDlg.open = false;
+		    const dupDlg = document.getElementById('duplicateShortcutConfirmDialog');
+		    if (dupDlg) dupDlg.open = false;
+		    requestAnimationFrame(() => {
+		        refreshShortcutKeysForCurrentInput();
+		        requestAnimationFrame(() => {
+		            const input = document.getElementById('shortcutInlineAddInput');
+		            if (input) {
+		                input.setAttribute('readonly', 'true');
+		                input.classList.add('readonly-input');
+		                currentInput = input;
+		            }
+		            input?.focus?.();
+		            input?.setSelectionRange?.(input.value.length, input.value.length);
+		            updateVirtualCursor();
+		            setTimeout(updateVirtualCursor, 60);
+		            setTimeout(updateVirtualCursor, 180);
+		        });
+		    });
+		}
+
+		function closeShortcutInlineAdd(options = {}) {
+		    const restoreKeyboard = options.restoreKeyboard !== false;
+		    const prevInput = shortcutInlineAddState?.prevInput || null;
+		    shortcutInlineAddState = null;
+		    refreshShortcutKeysForCurrentInput();
+		    currentInput = prevInput;
+		    updateVirtualCursor();
+		    if (!restoreKeyboard || !prevInput) return;
+		    if (prevInput.id === 'remarks') {
+		        setVirtualKeyboardVisible(false);
+		        return;
+		    }
+		    updateKeyboardForInput(prevInput);
+		    showVirtualKeyboard();
+		    prevInput.focus();
+		    resetCursorToEnd(prevInput);
+		}
+
+		function commitShortcutInlineAdd() {
+		    if (!shortcutInlineAddState?.fieldKey) return;
+		    const fieldKey = shortcutInlineAddState.fieldKey;
+		    const templates = getTemplatesByField(fieldKey);
+		    if (!templates) return;
+		    const value = (shortcutInlineAddState.value || '').trim();
+		    if (!value) {
+		        showSnackbar('请输入快捷短语', 'warning');
+		        return;
+		    }
+		    const existedIndex = templates.findIndex(v => (v || '').trim() === value);
+		    if (existedIndex >= 0) {
+		        showSnackbar('已存在相同快捷短语', 'info');
+		        closeShortcutInlineAdd({ restoreKeyboard: true });
+		        setTimeout(() => highlightShortcutInKeyboard(value), 60);
+		        return;
+		    }
+		    templates.push(value);
+		    KeyboardConfigManager.save();
+		    showSnackbar('已添加快捷短语', 'success');
+		    closeShortcutInlineAdd({ restoreKeyboard: true });
+		}
+
 		function openShortcutAddDialog(fieldKey, presetValue = '') {
-		    if (shortcutEditMode) {
-        setShortcutEditMode(false);
-    }
-
-    shortcutAddContext = { fieldKey };
-    
-
-		    shortcutAddContext = { fieldKey };
-		    const vk = document.getElementById('virtualKeyboard');
-		    if (vk) vk.style.display = 'none';
-		    const virtualCursor = document.getElementById('virtualCursor');
-		    if (virtualCursor) virtualCursor.style.display = 'none';
+		    if (!fieldKey) return;
+		    const dlg = document.getElementById('shortcutAddDialog');
+		    if (!dlg) return;
+		    const restoreInput = shortcutInlineAddState?.prevInput || currentInput;
+		    window.__rsdbShortcutAddPrevInput = restoreInput || null;
+		    shortcutAddContext = { fieldKey, prevInput: restoreInput };
 		    const input = document.getElementById('shortcutAddValue');
-		    if (input) input.value = presetValue;
+		    if (input) input.value = (presetValue || '').toString();
+
 		    const list = document.getElementById('shortcutAddExistingList');
-		    const templates = getTemplatesByField(fieldKey) || [];
 		    if (list) {
 		        list.innerHTML = '';
-		        templates.forEach(v => {
-		            const chip = document.createElement('div');
-		            chip.className = 'keyboard-key shortcut-key';
-		            chip.style.height = '32px';
-		            chip.style.minWidth = '0';
-		            chip.style.padding = '0 10px';
-		            chip.textContent = v;
-		            chip.addEventListener('click', () => {
-		                if (input) input.value = v;
-		                input?.focus?.();
+		        const templates = getTemplatesByField(fieldKey) || [];
+		        templates.forEach((v) => {
+		            const btn = document.createElement('mdui-button');
+		            btn.setAttribute('variant', 'tonal');
+		            btn.style.height = '32px';
+		            btn.style.padding = '0 10px';
+		            btn.style.borderRadius = '999px';
+		            btn.textContent = (v || '').toString();
+		            btn.addEventListener('click', () => {
+		                const val = (v || '').toString();
+		                if (input) input.value = val;
+		                if (input) input.focus?.();
 		            });
-		            list.appendChild(chip);
+		            list.appendChild(btn);
 		        });
 		    }
-		    const dlg = document.getElementById('shortcutAddDialog');
-		    if (dlg) dlg.open = true;
+
+		    dlg.open = true;
+		    setVirtualKeyboardVisible(false);
+		    const vc = document.getElementById('virtualCursor');
+		    if (vc) vc.style.display = 'none';
+		    const vh = document.getElementById('virtualCursorHandle');
+		    if (vh) vh.style.display = 'none';
+		    setTimeout(() => input?.focus?.(), 0);
 		}
 
 		function openShortcutActionDialog(fieldKey, index) {
@@ -6427,6 +6755,10 @@ function startSearch() {
 		    if (!templates) return;
 		    if (index < 0 || index >= templates.length) return;
 		    shortcutActionContext = { fieldKey, index };
+		    const addDlg = document.getElementById('shortcutAddDialog');
+		    if (addDlg) addDlg.open = false;
+		    const dupDlg = document.getElementById('duplicateShortcutConfirmDialog');
+		    if (dupDlg) dupDlg.open = false;
 		    const title = document.getElementById('shortcutActionTitle');
 		    if (title) title.textContent = `快捷短语（${fieldLabels[fieldKey] || fieldKey}）`;
 		    const editInput = document.getElementById('shortcutEditValue');
@@ -6444,6 +6776,85 @@ function startSearch() {
 		    }
 		    const dlg = document.getElementById('shortcutActionDialog');
 		    if (dlg) dlg.open = true;
+		}
+
+		function normalizeShortcutMatchText(text) {
+		    return (text || '').toString().trim().toLowerCase();
+		}
+
+		function normalizeShortcutMatchTextCompact(text) {
+		    return normalizeShortcutMatchText(text).replace(/[\s\-_]+/g, '');
+		}
+
+		function refreshShortcutKeysForCurrentInput() {
+		    if (!dom?.virtualKeyboard || dom.virtualKeyboard.style.display === 'none') return;
+		    const t = keyboardState?.inputType;
+		    if (!t) return;
+		    if (t === 'status') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.statusTemplates);
+		        createShortcutKeys(list, 'status-key', 'status');
+		        return;
+		    }
+		    if (t === 'cardId') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.cardIdTemplates);
+		        createShortcutKeys(list, 'shortcut-key', 'cardId');
+		        return;
+		    }
+		    if (t === 'steelType') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.steelTypeTemplates);
+		        createShortcutKeys(list, 'shortcut-key', 'steelType');
+		        return;
+		    }
+		    if (t === 'productId') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.productIdTemplates);
+		        createShortcutKeys(list, 'shortcut-key', 'productId');
+		        return;
+		    }
+		    if (t === 'furnaceId') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.furnaceIdTemplates);
+		        createShortcutKeys(list, 'shortcut-key', 'furnaceId');
+		        return;
+		    }
+		    if (t === 'position') {
+		        const list = processKeyboardTemplates(KeyboardConfigManager.config.positionTemplates);
+		        createShortcutKeys(list, 'shortcut-key', 'position');
+		        return;
+		    }
+		}
+
+		function scheduleShortcutKeysRefresh() {
+		    if (!dom?.virtualKeyboard || dom.virtualKeyboard.style.display === 'none') return;
+		    if (!currentInput) return;
+		    if (window.__rsdbShortcutRefreshRaf) cancelAnimationFrame(window.__rsdbShortcutRefreshRaf);
+		    window.__rsdbShortcutRefreshRaf = requestAnimationFrame(() => {
+		        window.__rsdbShortcutRefreshRaf = 0;
+		        refreshShortcutKeysForCurrentInput();
+		    });
+		}
+
+		function dismissSuggestedShortcut(fieldKey, value) {
+		    if (!fieldKey || !value) return;
+		    if (!(shortcutSuggestDismissedByField[fieldKey] instanceof Set)) shortcutSuggestDismissedByField[fieldKey] = new Set();
+		    shortcutSuggestDismissedByField[fieldKey].add(value);
+		    scheduleShortcutKeysRefresh();
+		}
+
+		function addSuggestedShortcutToTop(fieldKey, value) {
+		    const templates = getTemplatesByField(fieldKey);
+		    if (!templates) return;
+		    const val = (value || '').trim();
+		    if (!val) return;
+		    const existedIndex = templates.findIndex(v => (v || '').trim() === val);
+		    if (existedIndex >= 0) {
+		        const item = templates.splice(existedIndex, 1)[0];
+		        templates.unshift(item);
+		    } else {
+		        templates.unshift(val);
+		    }
+		    KeyboardConfigManager.save();
+		    if (shortcutSuggestDismissedByField[fieldKey] instanceof Set) shortcutSuggestDismissedByField[fieldKey].delete(val);
+		    scheduleShortcutKeysRefresh();
+		    showSnackbar('已添加到快捷短语顶部', 'success');
 		}
 
 		function createShortcutKeys(options, keyClass, fieldKey) {
@@ -6487,7 +6898,7 @@ function startSearch() {
 		            label.textContent = option;
 		            const del = document.createElement('div');
 		            del.className = 'shortcut-edit-delete';
-		            del.textContent = '×';
+		            del.innerHTML = '<mdui-icon name="delete" style="font-size:18px; pointer-events:none;"></mdui-icon>';
 		            del.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, { passive: true });
 		            del.addEventListener('click', (e) => {
 		                e.stopPropagation();
@@ -6513,20 +6924,135 @@ function startSearch() {
 		        return;
 		    }
 
+		    if (shortcutInlineAddState?.fieldKey === fieldKey) {
+		        const row = document.createElement('div');
+		        row.className = 'keyboard-row';
+		        row.style.display = 'flex';
+		        row.style.gap = '8px';
+		        row.style.alignItems = 'center';
+		        row.style.flexWrap = 'nowrap';
+
+		        const input = document.createElement('input');
+		        input.id = 'shortcutInlineAddInput';
+		        input.type = 'text';
+		        input.autocomplete = 'off';
+		        input.spellcheck = false;
+		        input.setAttribute('readonly', 'true');
+		        input.classList.add('readonly-input');
+		        input.placeholder = '添加快捷短语...';
+		        input.value = (shortcutInlineAddState.value || '').toString();
+		        input.style.flex = '1';
+		        input.style.minWidth = '0';
+		        input.style.height = '36px';
+		        input.style.padding = '0 10px';
+		        input.style.borderRadius = '10px';
+		        input.style.border = '1px solid var(--border-color)';
+		        input.style.background = 'var(--surface-color)';
+		        input.style.color = 'var(--text-color)';
+		        input.style.boxSizing = 'border-box';
+		        input.addEventListener('input', () => {
+		            if (shortcutInlineAddState) shortcutInlineAddState.value = input.value;
+		        });
+		        input.addEventListener('click', (e) => {
+		            e.stopPropagation();
+		            currentInput = input;
+		            input.focus();
+		            moveCursorToClick(input, e);
+		            updateVirtualCursor();
+		        });
+		        input.addEventListener('keydown', (e) => {
+		            if (e.key === 'Enter') {
+		                e.preventDefault();
+		                commitShortcutInlineAdd();
+		            } else if (e.key === 'Escape') {
+		                e.preventDefault();
+		                closeShortcutInlineAdd({ restoreKeyboard: true });
+		            }
+		        });
+
+		        const editBtn = document.createElement('div');
+		        editBtn.className = 'keyboard-key';
+		        editBtn.innerHTML = '<mdui-icon name="edit" style="font-size:22px; pointer-events:none;"></mdui-icon>';
+		        editBtn.style.height = '36px';
+		        editBtn.style.minWidth = '44px';
+		        editBtn.style.display = 'flex';
+		        editBtn.style.alignItems = 'center';
+		        editBtn.style.justifyContent = 'center';
+		        editBtn.title = '编辑';
+		        editBtn.addEventListener('click', () => openShortcutAddDialog(fieldKey, input.value));
+
+		        const okBtn = document.createElement('div');
+		        okBtn.className = 'keyboard-key status-key';
+		        okBtn.innerHTML = '<mdui-icon name="check" style="font-size:22px; pointer-events:none;"></mdui-icon>';
+		        okBtn.style.height = '36px';
+		        okBtn.style.minWidth = '44px';
+		        okBtn.style.display = 'flex';
+		        okBtn.style.alignItems = 'center';
+		        okBtn.style.justifyContent = 'center';
+		        okBtn.title = '添加';
+		        okBtn.addEventListener('click', commitShortcutInlineAdd);
+
+		        const cancelBtn = document.createElement('div');
+		        cancelBtn.className = 'keyboard-key';
+		        cancelBtn.innerHTML = '<mdui-icon name="close" style="font-size:22px; pointer-events:none;"></mdui-icon>';
+		        cancelBtn.style.height = '36px';
+		        cancelBtn.style.minWidth = '44px';
+		        cancelBtn.style.display = 'flex';
+		        cancelBtn.style.alignItems = 'center';
+		        cancelBtn.style.justifyContent = 'center';
+		        cancelBtn.title = '取消';
+		        cancelBtn.addEventListener('click', () => closeShortcutInlineAdd({ restoreKeyboard: true }));
+
+		        row.appendChild(input);
+		        row.appendChild(editBtn);
+		        row.appendChild(okBtn);
+		        row.appendChild(cancelBtn);
+		        targetContainer.appendChild(row);
+		    }
+
 		    const rowsByField = appSettings.shortcutRowsByField && typeof appSettings.shortcutRowsByField === 'object' ? appSettings.shortcutRowsByField : {};
 		    const perField = fieldKey ? Number(rowsByField[fieldKey]) : NaN;
 		    const baseRows = Math.max(1, Math.min(3, Number(appSettings.shortcutRows) || 2));
 		    const rowCount = Math.max(1, Math.min(3, Number.isFinite(perField) ? perField : baseRows));
 		    const rows = Array.from({ length: rowCount }, () => []);
 		    const optionEntries = (options || []).map((v, i) => ({ value: v, index: i }));
-		    const filteredOptions = optionEntries;
-		    const suggested = getSuggestedAddValues(fieldKey, options);
+		    const queryRaw = currentInput?.id === 'shortcutInlineAddInput' ? '' : (currentInput?.value || '').toString();
+		    const query = normalizeShortcutMatchText(queryRaw);
+		    const queryCompact = normalizeShortcutMatchTextCompact(queryRaw);
+		    const matchValue = (candidate) => {
+		        if (!query) return true;
+		        const v1 = normalizeShortcutMatchText(candidate);
+		        if (v1.includes(query)) return true;
+		        if (!queryCompact) return false;
+		        const v2 = normalizeShortcutMatchTextCompact(candidate);
+		        return v2.includes(queryCompact);
+		    };
+		    const filteredOptions = optionEntries.filter(o => matchValue(o.value));
+		    const suggested = getSuggestedAddValues(fieldKey, options).filter(v => matchValue(v));
 		    if (toolbar) toolbar.style.display = 'flex';
 		    if (toolbarWrap) toolbarWrap.style.display = 'block';
 		    if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'block';
-		    if (filteredOptions.length === 0 && suggested.length === 0) {
-		        if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'none';
-		        if (toolbarWrap) toolbarWrap.style.display = 'none';
+		    if (filteredOptions.length === 0 && suggested.length === 0 && shortcutInlineAddState?.fieldKey !== fieldKey) {
+		        const alwaysShowEmpty = fieldKey === 'actualDiameter' || fieldKey === 'diameter' || fieldKey === 'length' || fieldKey === 'weight';
+		        if (!alwaysShowEmpty) {
+		            if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'none';
+		            if (toolbarWrap) toolbarWrap.style.display = 'none';
+		            return;
+		        }
+		        const row = document.createElement('div');
+		        row.className = 'keyboard-row';
+		        const addKey = document.createElement('div');
+		        addKey.className = 'keyboard-key shortcut-key suggest-add-key';
+		        addKey.style.display = 'flex';
+		        addKey.style.alignItems = 'center';
+		        addKey.style.gap = '6px';
+		        addKey.style.padding = '0 12px';
+		        addKey.style.height = '40px';
+		        addKey.style.borderRadius = '16px';
+		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加快捷短语</span>';
+		        addKey.addEventListener('click', () => openShortcutAddDialog(fieldKey, ''));
+		        row.appendChild(addKey);
+		        targetContainer.appendChild(row);
 		        return;
 		    }
 		    suggested.forEach((v, i) => {
@@ -6544,7 +7070,60 @@ function startSearch() {
 		            keyElement.className = `keyboard-key ${keyClass}`;
 		            if (item.kind === 'suggest') {
 		                keyElement.classList.add('suggest-add-key');
-		                keyElement.textContent = `+ ${item.value}`;
+		                keyElement.style.display = 'flex';
+		                keyElement.style.alignItems = 'center';
+		                keyElement.style.justifyContent = 'space-between';
+		                keyElement.style.gap = '10px';
+		                keyElement.style.paddingRight = '10px';
+		                const label = document.createElement('div');
+		                label.style.flex = '1';
+		                label.style.minWidth = '0';
+		                label.style.overflow = 'hidden';
+		                label.style.textOverflow = 'ellipsis';
+		                label.style.whiteSpace = 'nowrap';
+		                label.textContent = `+ ${item.value}`;
+		                const xBtn = document.createElement('div');
+		                xBtn.textContent = '×';
+		                xBtn.style.width = '24px';
+		                xBtn.style.height = '24px';
+		                xBtn.style.display = 'grid';
+		                xBtn.style.placeItems = 'center';
+		                xBtn.style.borderRadius = '999px';
+		                xBtn.style.background = 'rgba(0,0,0,0.14)';
+		                xBtn.style.color = 'rgba(0,0,0,0.6)';
+		                xBtn.style.flex = '0 0 auto';
+		                xBtn.style.userSelect = 'none';
+		                xBtn.style.touchAction = 'none';
+		                let pressTimer = null;
+		                let longPressed = false;
+		                const clearTimer = () => {
+		                    clearTimeout(pressTimer);
+		                    pressTimer = null;
+		                };
+		                xBtn.addEventListener('pointerdown', (e) => {
+		                    e.stopPropagation();
+		                    if (e.cancelable) e.preventDefault();
+		                    longPressed = false;
+		                    clearTimer();
+		                    pressTimer = setTimeout(() => {
+		                        longPressed = true;
+		                        addSuggestedShortcutToTop(fieldKey, item.value);
+		                    }, 520);
+		                    xBtn.setPointerCapture?.(e.pointerId);
+		                }, { passive: false });
+		                xBtn.addEventListener('pointerup', (e) => {
+		                    e.stopPropagation();
+		                    if (e.cancelable) e.preventDefault();
+		                    clearTimer();
+		                    if (!longPressed) dismissSuggestedShortcut(fieldKey, item.value);
+		                    xBtn.releasePointerCapture?.(e.pointerId);
+		                }, { passive: false });
+		                xBtn.addEventListener('pointercancel', (e) => {
+		                    clearTimer();
+		                    xBtn.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		                keyElement.appendChild(label);
+		                keyElement.appendChild(xBtn);
 		                keyElement.addEventListener('click', () => openShortcutAddDialog(fieldKey, item.value));
 		            } else {
 		                keyElement.textContent = item.value;
@@ -6647,6 +7226,10 @@ const DEFAULT_KEYBOARD_CONFIG = {
         '4145', 
         'A105/LF2'
     ],
+    actualDiameterTemplates: [],
+    diameterTemplates: [],
+    lengthTemplates: [],
+    weightTemplates: [],
     statusTemplates: ['车光', '调车', '花皮', '黑皮', '黑调', '花调'],
     positionTemplates: ['外', '过道', '立车', '打卡机','校直机'],
     
@@ -7000,6 +7583,101 @@ const KeyboardConfigManager = {
     }
 };
 
+function processKeyboardTemplates(templates) {
+    if (!Array.isArray(templates)) return [];
+    const now = new Date();
+    const yearFull = now.getFullYear().toString();
+    const year = yearFull.slice(2);
+    const lastYear = (parseInt(year, 10) - 1).toString().slice(-2);
+    const month = String(now.getMonth() + 1);
+    const day = String(now.getDate());
+    const custom = (KeyboardConfigManager?.config?.customVariables && typeof KeyboardConfigManager.config.customVariables === 'object')
+        ? KeyboardConfigManager.config.customVariables
+        : {};
+    const dynamic = Array.isArray(KeyboardConfigManager?.config?.dynamicVariables) ? KeyboardConfigManager.config.dynamicVariables : [];
+    const map = {
+        year,
+        lastYear,
+        month,
+        day,
+        '今月月份': month,
+        '今日': day
+    };
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const formatDate = (d, fmt) => {
+        const y4 = String(d.getFullYear());
+        const y2 = y4.slice(2);
+        const m = d.getMonth() + 1;
+        const dd = d.getDate();
+        const fmtMap = {
+            YYYY: y4,
+            YY: y2,
+            MM: pad2(m),
+            M: String(m),
+            DD: pad2(dd),
+            D: String(dd)
+        };
+        let out = fmt || '';
+        Object.keys(fmtMap).forEach(k => { out = out.split(k).join(fmtMap[k]); });
+        return out || `${y4}${pad2(m)}${pad2(dd)}`;
+    };
+    const isoWeekNumber = (d) => {
+        const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const dayNum = date.getUTCDay() || 7;
+        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+        return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    };
+    const startOfIsoWeek = (d) => {
+        const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const dayNum = date.getDay() || 7;
+        date.setDate(date.getDate() - (dayNum - 1));
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+    dynamic.forEach(def => {
+        const name = (def?.name || '').toString().trim();
+        if (!name) return;
+        const kind = (def?.kind || 'date').toString();
+        const fmt = (def?.format || '').toString().trim();
+        const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
+        let value = null;
+        if (kind === 'isoWeek') {
+            const w = isoWeekNumber(now);
+            value = (fmt === 'W') ? String(w) : pad2(w);
+        } else if (kind === 'month') {
+            const m = now.getMonth() + 1;
+            value = (fmt === 'MM') ? pad2(m) : String(m);
+        } else if (kind === 'day') {
+            const dd = now.getDate();
+            value = (fmt === 'DD') ? pad2(dd) : String(dd);
+        } else if (kind === 'year') {
+            value = (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
+        } else if (kind === 'weekStart') {
+            const d0 = startOfIsoWeek(now);
+            d0.setDate(d0.getDate() + offsetDays);
+            value = formatDate(d0, fmt);
+        } else if (kind === 'weekEnd') {
+            const d0 = startOfIsoWeek(now);
+            d0.setDate(d0.getDate() + 6 + offsetDays);
+            value = formatDate(d0, fmt);
+        } else {
+            const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            d0.setDate(d0.getDate() + offsetDays);
+            value = formatDate(d0, fmt);
+        }
+        if (value != null) map[name] = String(value);
+    });
+    Object.keys(custom).forEach(k => {
+        const v = custom[k];
+        if (typeof v === 'string' || typeof v === 'number') map[k] = String(v);
+    });
+    return templates.map(tpl => (tpl || '').toString().replace(/\$\{([^}]+)\}/g, (m, name) => {
+        const key = String(name || '');
+        return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : m;
+    }));
+}
+
 function generateVirtualKeyboard() {
 // ────────────── 新增：统一处理快捷短语区域显隐 ──────────────
     const vk = document.getElementById('virtualKeyboard');
@@ -7007,6 +7685,13 @@ function generateVirtualKeyboard() {
     const shortcutContainer = document.getElementById('shortcutContainer');
 
     if (shortcutContainer) {
+        const numericFieldKey = keyboardState.numericFieldKey;
+        const numericHasShortcuts =
+            keyboardState.inputType === 'number' &&
+            (numericFieldKey === 'actualDiameter' ||
+                numericFieldKey === 'diameter' ||
+                numericFieldKey === 'length' ||
+                numericFieldKey === 'weight');
         // 1. 判断当前键盘模式是否有关联快捷短语
         const hasShortcuts = 
             keyboardState.inputType === 'furnaceId' ||
@@ -7014,13 +7699,14 @@ function generateVirtualKeyboard() {
             keyboardState.inputType === 'cardId' ||
             keyboardState.inputType === 'steelType' ||
             keyboardState.inputType === 'status'   ||
-            keyboardState.inputType === 'position';
+            keyboardState.inputType === 'position' ||
+            numericHasShortcuts;
 
         // 2. 容器里是否真的有可见的快捷键
         const hasVisibleKeys = shortcutContainer.querySelector('.shortcut-key, .status-key, .suggest-add-key') !== null;
 
         // 3. 最终显隐规则
-        const shouldShow = shortcutEditMode || (hasShortcuts && hasVisibleKeys);
+        const shouldShow = shortcutEditMode || (hasShortcuts && (hasVisibleKeys || numericHasShortcuts));
 
         if (shouldShow) {
             shortcutContainer.style.display = 'block';
@@ -7039,108 +7725,24 @@ function generateVirtualKeyboard() {
 		  const isUpperCase = keyboardState.shiftState === 'locked-on' || keyboardState.shiftState === 'on';
 		  let keyRows = [];
 
-          // 辅助函数：处理模板变量
-          const processTemplates = (templates) => {
-              if (!Array.isArray(templates)) return [];
-              const now = new Date();
-              const yearFull = now.getFullYear().toString();
-              const year = yearFull.slice(2);
-              const lastYear = (parseInt(year, 10) - 1).toString().slice(-2);
-              const month = String(now.getMonth() + 1);
-              const day = String(now.getDate());
-              const custom = (KeyboardConfigManager?.config?.customVariables && typeof KeyboardConfigManager.config.customVariables === 'object')
-                  ? KeyboardConfigManager.config.customVariables
-                  : {};
-              const dynamic = Array.isArray(KeyboardConfigManager?.config?.dynamicVariables) ? KeyboardConfigManager.config.dynamicVariables : [];
-              const map = {
-                  year,
-                  lastYear,
-                  month,
-                  day,
-                  '今月月份': month,
-                  '今日': day
-              };
-
-              const pad2 = (n) => String(n).padStart(2, '0');
-              const formatDate = (d, fmt) => {
-                  const y4 = String(d.getFullYear());
-                  const y2 = y4.slice(2);
-                  const m = d.getMonth() + 1;
-                  const dd = d.getDate();
-                  const fmtMap = {
-                      YYYY: y4,
-                      YY: y2,
-                      MM: pad2(m),
-                      M: String(m),
-                      DD: pad2(dd),
-                      D: String(dd)
-                  };
-                  let out = fmt || '';
-                  Object.keys(fmtMap).forEach(k => { out = out.split(k).join(fmtMap[k]); });
-                  return out || `${y4}${pad2(m)}${pad2(dd)}`;
-              };
-              const isoWeekNumber = (d) => {
-                  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-                  const dayNum = date.getUTCDay() || 7;
-                  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-                  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-                  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-              };
-              const startOfIsoWeek = (d) => {
-                  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                  const dayNum = date.getDay() || 7;
-                  date.setDate(date.getDate() - (dayNum - 1));
-                  date.setHours(0, 0, 0, 0);
-                  return date;
-              };
-              dynamic.forEach(def => {
-                  const name = (def?.name || '').toString().trim();
-                  if (!name) return;
-                  const kind = (def?.kind || 'date').toString();
-                  const fmt = (def?.format || '').toString().trim();
-                  const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
-                  let value = null;
-                  if (kind === 'isoWeek') {
-                      const w = isoWeekNumber(now);
-                      value = (fmt === 'W') ? String(w) : pad2(w);
-                  } else if (kind === 'month') {
-                      const m = now.getMonth() + 1;
-                      value = (fmt === 'MM') ? pad2(m) : String(m);
-                  } else if (kind === 'day') {
-                      const dd = now.getDate();
-                      value = (fmt === 'DD') ? pad2(dd) : String(dd);
-                  } else if (kind === 'year') {
-                      value = (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
-                  } else if (kind === 'weekStart') {
-                      const d0 = startOfIsoWeek(now);
-                      d0.setDate(d0.getDate() + offsetDays);
-                      value = formatDate(d0, fmt);
-                  } else if (kind === 'weekEnd') {
-                      const d0 = startOfIsoWeek(now);
-                      d0.setDate(d0.getDate() + 6 + offsetDays);
-                      value = formatDate(d0, fmt);
-                  } else {
-                      const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                      d0.setDate(d0.getDate() + offsetDays);
-                      value = formatDate(d0, fmt);
-                  }
-                  if (value != null) map[name] = String(value);
-              });
-              Object.keys(custom).forEach(k => {
-                  const v = custom[k];
-                  if (typeof v === 'string' || typeof v === 'number') map[k] = String(v);
-              });
-              return templates.map(tpl => (tpl || '').toString().replace(/\$\{([^}]+)\}/g, (m, name) => {
-                  const key = String(name || '');
-                  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : m;
-              }));
-          };
+          const processTemplates = processKeyboardTemplates;
 
           const layouts = KeyboardConfigManager.config.layouts;
 
 		  switch(keyboardState.inputType) {
 		    case 'number':
 		    case 'numeric-input':
+              const nk = keyboardState.numericFieldKey;
+              if (
+                  nk === 'actualDiameter' ||
+                  nk === 'diameter' ||
+                  nk === 'length' ||
+                  nk === 'weight'
+              ) {
+                  const templates = getTemplatesByField(nk) || [];
+                  const list = processTemplates(templates);
+                  createShortcutKeys(list, 'shortcut-key', nk);
+              }
 		      keyRows = layouts.number;
 		      break;
 
@@ -7663,14 +8265,20 @@ function generateVirtualKeyboard() {
 		  const numericFields = ['actualDiameter', 'diameter', 'length', 'weight', 'hardness', 'calcDiameter1', 'calcDiameter2', 'calcLength', 'calcDensity'];
 		  const isNumeric = numericFields.includes(currentId);
 
-		  if (isNumeric) keyboardState.inputType = 'number';
+		  if (isNumeric) {
+		    keyboardState.inputType = 'number';
+		    keyboardState.numericFieldKey = currentId;
+		  }
 		  else if (currentId === 'productId') keyboardState.inputType = 'productId';
 		  else if (currentId === 'cardId') keyboardState.inputType = 'cardId';
 		  else if (currentId === 'steelType') keyboardState.inputType = 'steelType';
 		  else if (currentId === 'furnaceId') keyboardState.inputType = 'furnaceId';
 		  else if (currentId === 'position') keyboardState.inputType = 'position';
 		  else if (currentId === 'status') keyboardState.inputType = 'status';
-		  else keyboardState.inputType = 'text';
+		  else {
+		    keyboardState.inputType = 'text';
+		    keyboardState.numericFieldKey = null;
+		  }
 
 		  saveKeyboardState();
 		  generateVirtualKeyboard();
@@ -7678,6 +8286,9 @@ function generateVirtualKeyboard() {
 
 		function insertText(text) {
 		  if (!currentInput) return;
+  if (window.__rsdbKeyboardSwipeConsumedAt && Date.now() - window.__rsdbKeyboardSwipeConsumedAt < 220) {
+    return;
+  }
 		  currentInput.focus(); 
 
 		  const startPos = currentInput.selectionStart;
@@ -7694,6 +8305,7 @@ function generateVirtualKeyboard() {
 		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
           
           updateVirtualCursor();
+		  scheduleShortcutKeysRefresh();
 		}
 
 		function handleBackspace() {
@@ -7719,6 +8331,7 @@ function generateVirtualKeyboard() {
 		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
           
           updateVirtualCursor();
+		  scheduleShortcutKeysRefresh();
 		}
 
 		function clearInput() {
@@ -7729,6 +8342,7 @@ function generateVirtualKeyboard() {
 		    currentInput.dispatchEvent(event);
 		    if (currentInput.closest('#calculatorForm')) calculateWeight();
             updateVirtualCursor();
+		    scheduleShortcutKeysRefresh();
 		  }
 		}
 
@@ -7855,15 +8469,20 @@ async function saveDataToIndexedDB() {
 		    if (visible) {
 		        generateVirtualKeyboard();
 		        vk.style.display = 'block';
+		        startVirtualCursorFollow();
 		        if (appSettings.animationsEnabled === false) {
 		            vk.classList.add('vk-visible');
+		            setTimeout(updateVirtualCursor, 0);
 		            return;
 		        }
 		        requestAnimationFrame(() => vk.classList.add('vk-visible'));
+		        setTimeout(updateVirtualCursor, 0);
 		        return;
 		    }
+		    stopVirtualCursorFollow();
 		    const virtualCursor = document.getElementById('virtualCursor');
 		    if (virtualCursor) virtualCursor.style.display = 'none';
+		    shortcutSuggestDismissedByField = {};
 		    vk.classList.remove('vk-visible');
 		    if (appSettings.animationsEnabled === false) {
 		        vk.style.display = 'none';
@@ -9347,35 +9966,136 @@ function startDirectTakePhoto(dataIndex) {
 		showSnackbar('排序已应用：' + msgParts.join(' → '), 'success');
 
 		    }
+		function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('读取失败'));
+        reader.readAsDataURL(file);
+    });
+}
+
 		async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.85) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const img = new Image();
         const reader = new FileReader();
+        let done = false;
+        const finish = (err, value) => {
+            if (done) return;
+            done = true;
+            if (err) reject(err);
+            else resolve(value);
+        };
 
         reader.onload = (e) => {
             img.src = e.target.result;
         };
+        reader.onerror = () => finish(reader.error || new Error('读取失败'));
+        img.onerror = () => finish(new Error('图片解码失败'));
 
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
+            try {
+                const canvas = document.createElement('canvas');
+                let width = img.naturalWidth || img.width;
+                let height = img.naturalHeight || img.height;
 
-            if (width > maxWidth || height > maxHeight) {
-                const ratio = Math.min(maxWidth / width, maxHeight / height);
-                width *= ratio;
-                height *= ratio;
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.max(1, Math.round(width * ratio));
+                    height = Math.max(1, Math.round(height * ratio));
+                } else {
+                    width = Math.max(1, Math.round(width));
+                    height = Math.max(1, Math.round(height));
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    finish(new Error('canvas不可用'));
+                    return;
+                }
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                if (typeof canvas.toBlob === 'function') {
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            finish(new Error('压缩失败'));
+                            return;
+                        }
+                        const r = new FileReader();
+                        r.onload = () => finish(null, r.result);
+                        r.onerror = () => finish(r.error || new Error('读取失败'));
+                        r.readAsDataURL(blob);
+                    }, 'image/jpeg', Math.max(0.1, Math.min(1, Number(quality) || 0.85)));
+                    return;
+                }
+
+                finish(null, canvas.toDataURL('image/jpeg', Math.max(0.1, Math.min(1, Number(quality) || 0.85))));
+            } catch (err) {
+                finish(err);
             }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            resolve(canvas.toDataURL('image/jpeg', quality));
         };
 
         reader.readAsDataURL(file);
+    });
+}
+
+		async function rotateImageBase64(base64, rotateDeg, quality = 0.92) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        let done = false;
+        const finish = (err, value) => {
+            if (done) return;
+            done = true;
+            if (err) reject(err);
+            else resolve(value);
+        };
+        img.onload = () => {
+            try {
+                const deg = ((Number(rotateDeg) || 0) % 360 + 360) % 360;
+                const w = img.naturalWidth || img.width;
+                const h = img.naturalHeight || img.height;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    finish(new Error('canvas不可用'));
+                    return;
+                }
+
+                const isSwap = deg === 90 || deg === 270;
+                canvas.width = isSwap ? h : w;
+                canvas.height = isSwap ? w : h;
+
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((deg * Math.PI) / 180);
+                ctx.drawImage(img, -w / 2, -h / 2);
+
+                if (typeof canvas.toBlob === 'function') {
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            finish(new Error('保存失败'));
+                            return;
+                        }
+                        const r = new FileReader();
+                        r.onload = () => finish(null, r.result);
+                        r.onerror = () => finish(r.error || new Error('读取失败'));
+                        r.readAsDataURL(blob);
+                    }, 'image/jpeg', Math.max(0.1, Math.min(1, Number(quality) || 0.92)));
+                    return;
+                }
+
+                finish(null, canvas.toDataURL('image/jpeg', Math.max(0.1, Math.min(1, Number(quality) || 0.92))));
+            } catch (err) {
+                finish(err);
+            }
+        };
+        img.onerror = () => finish(new Error('图片解码失败'));
+        img.src = base64;
     });
 }
 
@@ -9656,6 +10376,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         <mdui-button-icon variant="filled" icon="rotate_left" id="rotateLeftBtn"></mdui-button-icon>
         <mdui-button-icon variant="filled" icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
         <mdui-button-icon variant="filled" icon="restart_alt" id="resetZoomBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="save" id="saveRotateBtn"></mdui-button-icon>
         <div style="flex-grow: 1;"></div>
         <!-- 下拉菜单（现在包含拍照、从相册选择、删除） -->
         <mdui-dropdown placement="top">
@@ -9741,6 +10462,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
     const rotateRightBtn = bottomBar.querySelector('#rotateRightBtn');
     const resetZoomBtn = bottomBar.querySelector('#resetZoomBtn');
+    const saveRotateBtn = bottomBar.querySelector('#saveRotateBtn');
 
     if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
     if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentScale = Math.min(4, currentScale + 0.25); updateTransform(); });
@@ -9750,6 +10472,41 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
         updateTransform();
         typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
+    });
+    if (saveRotateBtn) saveRotateBtn.addEventListener('click', async () => {
+        const deg = ((rotateDeg % 360) + 360) % 360;
+        if (!deg) {
+            showSnackbar('当前无旋转无需保存', 'info');
+            return;
+        }
+        try {
+            showSnackbar('正在保存旋转后的图片...', 'info');
+            const q = Number(appSettings.imageCompressQuality) || 0.92;
+            const newBase64 = await rotateImageBase64(img.src, deg, q);
+            img.src = newBase64;
+            const previewImg = document.getElementById('previewImg');
+            if (previewImg && previewImg.src) previewImg.src = newBase64;
+            if (dataIndex !== -1 && tableData[dataIndex]) {
+                tableData[dataIndex].cardImage = newBase64;
+                await saveDataToIndexedDB();
+                updateTable();
+            } else if (typeof currentEditIndex === 'number' && currentEditIndex !== -1 && tableData[currentEditIndex]) {
+                tableData[currentEditIndex].cardImage = newBase64;
+                await saveDataToIndexedDB();
+                updateTable();
+            } else {
+                window.tempNewCardImage = newBase64;
+            }
+            rotateDeg = 0;
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+            showSnackbar('已保存旋转后的图片', 'success');
+        } catch (err) {
+            console.error(err);
+            showSnackbar('保存失败', 'error');
+        }
     });
 
     // ────────────────────────────── 双指缩放 + 单指拖动 ──────────────────────────────
@@ -10049,6 +10806,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         <mdui-button-icon variant="filled" icon="rotate_right" id="rotateRightBtn"></mdui-button-icon>
         <!-- 重置无底色 -->
         <mdui-button-icon variant="text" icon="restart_alt" id="resetZoomBtn"></mdui-button-icon>
+        <mdui-button-icon variant="filled" icon="save" id="saveRotateBtn"></mdui-button-icon>
 
         <!-- 上一个 / 下一个 -->
         <mdui-button-icon variant="filled" icon="chevron_left" id="prevImageBtn" title="上一条记录"></mdui-button-icon>
@@ -10135,6 +10893,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     const rotateLeftBtn = bottomBar.querySelector('#rotateLeftBtn');
     const rotateRightBtn = bottomBar.querySelector('#rotateRightBtn');
     const resetZoomBtn = bottomBar.querySelector('#resetZoomBtn');
+    const saveRotateBtn = bottomBar.querySelector('#saveRotateBtn');
     const prevBtn = bottomBar.querySelector('#prevImageBtn');
     const nextBtn = bottomBar.querySelector('#nextImageBtn');
 
@@ -10145,6 +10904,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     if (rotateLeftBtn) rotateLeftBtn.disabled = !enableTransformBtns;
     if (rotateRightBtn) rotateRightBtn.disabled = !enableTransformBtns;
     if (resetZoomBtn) resetZoomBtn.disabled = !enableTransformBtns;
+    if (saveRotateBtn) saveRotateBtn.disabled = !enableTransformBtns;
 
     if (enableTransformBtns) {
         if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentScale = Math.max(0.5, currentScale - 0.25); updateTransform(); });
@@ -10155,6 +10915,33 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0; 
             updateTransform();
             typeof showSnackbar === 'function' && showSnackbar('已重置到原始大小和位置', 'info');
+        });
+        if (saveRotateBtn) saveRotateBtn.addEventListener('click', async () => {
+            const deg = ((rotateDeg % 360) + 360) % 360;
+            if (!deg) {
+                showSnackbar('当前无旋转无需保存', 'info');
+                return;
+            }
+            try {
+                showSnackbar('正在保存旋转后的图片...', 'info');
+                const q = Number(appSettings.imageCompressQuality) || 0.92;
+                const newBase64 = await rotateImageBase64(img.src, deg, q);
+                img.src = newBase64;
+                if (tableData[index]) {
+                    tableData[index].cardImage = newBase64;
+                    await saveDataToIndexedDB();
+                    updateTable();
+                }
+                rotateDeg = 0;
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+                showSnackbar('已保存旋转后的图片', 'success');
+            } catch (err) {
+                console.error(err);
+                showSnackbar('保存失败', 'error');
+            }
         });
     }
 
@@ -10344,22 +11131,33 @@ function initShortcutToolbarDrag() {
     if (!wrap) return;
 
     const STORAGE_KEY = 'shortcutToolbarWrap_pos_v3'; // 版本3，避免旧数据冲突
+    const DEFAULT_RIGHT = '6px';
+    const DEFAULT_TOP = '-48px';
+
+    window.resetShortcutToolbarWrapPosition = () => {
+        const w = document.getElementById('shortcutToolbarWrap');
+        if (!w) return;
+        w.style.right = DEFAULT_RIGHT;
+        w.style.top = DEFAULT_TOP;
+        w.style.bottom = 'auto';
+        localStorage.removeItem(STORAGE_KEY);
+    };
 
     // 1. 恢复上次保存的位置
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
         try {
             const { right, top } = JSON.parse(saved);
-            wrap.style.right = right || '6px';
-            wrap.style.top = top || '4px';
+            wrap.style.right = right || DEFAULT_RIGHT;
+            wrap.style.top = top || DEFAULT_TOP;
             wrap.style.bottom = 'auto';
         } catch (e) {
-            wrap.style.right = '6px';
-            wrap.style.top = '4px';
+            wrap.style.right = DEFAULT_RIGHT;
+            wrap.style.top = DEFAULT_TOP;
         }
     } else {
-        wrap.style.right = '6px';
-        wrap.style.top = '4px';
+        wrap.style.right = DEFAULT_RIGHT;
+        wrap.style.top = DEFAULT_TOP;
         wrap.style.bottom = 'auto';
     }
 
@@ -10369,6 +11167,8 @@ function initShortcutToolbarDrag() {
     let initialRight = 0, initialTop = 0;
     let longPressTimer = null;
     const LONG_PRESS_MS = 280;
+    let ignoreClickUntil = 0;
+    let dragHintShown = false;
 
     // 禁用/恢复滚动的辅助函数
     const disableScroll = () => {
@@ -10393,11 +11193,10 @@ function initShortcutToolbarDrag() {
     const onPointerDown = (e) => {
         if (pointerId !== null) return;
         pointerId = e.pointerId;
-        wrap.setPointerCapture(pointerId);
 
         const style = window.getComputedStyle(wrap);
         initialRight = parseFloat(style.right) || 6;
-        initialTop = parseFloat(style.top) || 4;
+        initialTop = parseFloat(style.top) || -48;
 
         startX = e.clientX;
         startY = e.clientY;
@@ -10408,6 +11207,11 @@ function initShortcutToolbarDrag() {
             isDragging = true;
             wrap.classList.add('dragging');
             disableScroll();  // 禁用所有滚动
+            ignoreClickUntil = Date.now() + 450;
+            if (!dragHintShown) {
+                dragHintShown = true;
+                showSnackbar('提示：双击编辑框可重置快捷短语工具栏位置', 'info');
+            }
 
             if (navigator.vibrate) navigator.vibrate(12);
 
@@ -10416,15 +11220,10 @@ function initShortcutToolbarDrag() {
                 btn.style.pointerEvents = 'none';
             });
         }, LONG_PRESS_MS);
-
-        e.preventDefault();
-        e.stopPropagation();
     };
 
     const onPointerMove = (e) => {
         if (pointerId !== e.pointerId) return;
-        e.preventDefault();
-        e.stopPropagation();
 
         if (!isDragging) {
             const dx = Math.abs(e.clientX - startX);
@@ -10432,6 +11231,8 @@ function initShortcutToolbarDrag() {
             if (dx > 6 || dy > 6) clearTimeout(longPressTimer);
             return;
         }
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
 
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
@@ -10439,10 +11240,14 @@ function initShortcutToolbarDrag() {
         let newRight = initialRight - dx;
         let newTop = initialTop + dy;
 
-        // 限制不飞出屏幕
+        // 限制不飞出屏幕（顶部允许向上拖动）
         const rect = wrap.getBoundingClientRect();
+        const parent = wrap.offsetParent || document.getElementById('virtualKeyboard');
+        const parentHeight = parent && parent.getBoundingClientRect ? parent.getBoundingClientRect().height : window.innerHeight;
         newRight = Math.max(6, Math.min(newRight, window.innerWidth - rect.width - 6));
-        newTop = Math.max(50, Math.min(newTop, window.innerHeight - rect.height - 80));
+        const minTop = -rect.height + 12;
+        const maxTop = Math.max(minTop, parentHeight - rect.height - 12);
+        newTop = Math.max(minTop, Math.min(newTop, maxTop));
 
         wrap.style.right = `${Math.round(newRight)}px`;
         wrap.style.top = `${Math.round(newTop)}px`;
@@ -10465,14 +11270,11 @@ function initShortcutToolbarDrag() {
                 top: wrap.style.top
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
-            showSnackbar('工具栏位置已保存（双击可重置）', 'success');
+            showSnackbar('工具栏位置已保存（双击编辑框可重置）', 'success');
             if (navigator.vibrate) navigator.vibrate(15);
         }
 
         wrap.classList.remove('dragging');
-        if (pointerId !== null) {
-            wrap.releasePointerCapture(pointerId);
-        }
         pointerId = null;
         isDragging = false;
     };
@@ -10483,21 +11285,29 @@ function initShortcutToolbarDrag() {
     document.addEventListener('pointerup', onPointerUp);
     document.addEventListener('pointercancel', onPointerUp);
 
-    // 双击重置到右上默认位置
-    let lastTap = 0;
-    wrap.addEventListener('dblclick', (e) => {
-        const now = Date.now();
-        if (now - lastTap < 100) {
-            wrap.style.right = '6px';
-            wrap.style.top = '4px';
-            wrap.style.bottom = 'auto';
-            localStorage.removeItem(STORAGE_KEY);
+    const toolbar = document.getElementById('shortcutToolbar');
+    if (toolbar && !toolbar.dataset.boundClickGuard) {
+        toolbar.dataset.boundClickGuard = '1';
+        toolbar.addEventListener('click', (e) => {
+            if (Date.now() < ignoreClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    }
+
+    if (!document.documentElement.dataset.boundShortcutToolbarResetDblclick) {
+        document.documentElement.dataset.boundShortcutToolbarResetDblclick = '1';
+        document.addEventListener('dblclick', (e) => {
+            const target = e.target;
+            if (!(target instanceof Element)) return;
+            const vk = document.getElementById('virtualKeyboard');
+            if (!vk || vk.style.display === 'none') return;
+            if (!target.matches('input.readonly-input, textarea.readonly-input')) return;
+            window.resetShortcutToolbarWrapPosition?.();
             showSnackbar('工具栏已重置到右上角', 'info');
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        lastTap = now;
-    });
+        });
+    }
 }
 
 
@@ -10513,6 +11323,7 @@ function initShortcutToolbarDrag() {
 
 		  initTheme();
 		  initEventListeners();
+		  initShortcutToolbarDrag();
 
 		  window.addEventListener("message", (event) => {
 		    const data = event?.data;
