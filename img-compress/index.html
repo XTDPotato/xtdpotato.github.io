@@ -1,1 +1,1511 @@
+<!doctype html>
+<html lang="zh-CN" class="mdui-theme-auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
+    />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>在线压缩图片</title>
 
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css" />
+    <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/upng-js@2.1.0/UPNG.js"></script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+
+    <style>
+      :root {
+        --page-max-width: 100%;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      .page {
+        height: 100vh;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--mdui-color-surface, #fff);
+      }
+
+      .content {
+        flex: 1 1 auto;
+        overflow: auto;
+        min-height: 0;
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        box-sizing: border-box;
+      }
+
+      .container {
+        max-width: var(--page-max-width);
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .dropzone {
+        border: 2px dashed color-mix(in srgb, currentColor 18%, transparent);
+        border-radius: 16px;
+        padding: 18px;
+        box-sizing: border-box;
+        display: grid;
+        gap: 10px;
+        transition: border-color 160ms ease, background 160ms ease;
+      }
+
+      .dropzone.dragover {
+        border-color: rgb(var(--mdui-color-primary, 25 118 210));
+        background: color-mix(in srgb, rgb(var(--mdui-color-primary, 25 118 210)) 10%, transparent);
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .img-list {
+        margin-top: 12px;
+      }
+
+      .settings-card {
+        margin-top: 12px;
+      }
+
+      .batch-bar {
+        margin-top: 12px;
+      }
+
+      .batch-bar-inner {
+        padding: 10px 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .batch-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .batch-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .pager {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .settings-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      @media (min-width: 760px) {
+        .settings-grid.two-col {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .img-item {
+        display: grid;
+        grid-template-columns: 36px 72px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        border-radius: 14px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+
+      .thumb {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: color-mix(in srgb, currentColor 10%, transparent);
+      }
+
+      .meta {
+        min-width: 0;
+      }
+
+      .meta-title {
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .meta-sub {
+        margin-top: 6px;
+        font-size: 12px;
+        opacity: 0.86;
+        display: grid;
+        gap: 2px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .drawer::part(panel) {
+        width: min(360px, 92vw);
+      }
+
+      .setting-group {
+        padding: 10px 12px;
+      }
+
+      .range-row {
+        display: grid;
+        gap: 8px;
+        padding: 8px 12px;
+      }
+
+      .range-row mdui-slider {
+        width: 100%;
+      }
+
+      html.no-animations *,
+      html.no-animations *::before,
+      html.no-animations *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+
+      .fade-in {
+        opacity: 0;
+        transform: translateY(6px);
+        animation: fadeIn 180ms ease forwards;
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <mdui-top-app-bar class="topbar">
+        <mdui-button-icon icon="menu" id="openDrawerBtn"></mdui-button-icon>
+        <mdui-top-app-bar-title>在线压缩图片</mdui-top-app-bar-title>
+        <div style="flex: 1"></div>
+        <mdui-button-icon icon="settings" id="openSettingsBtn"></mdui-button-icon>
+      </mdui-top-app-bar>
+
+      <div class="content">
+        <div class="container">
+          <div class="dropzone" id="dropzone">
+            <div class="mdui-prose">
+              <h3 style="margin: 0">拖拽图片到这里</h3>
+              <p style="margin: 6px 0 0 0; opacity: 0.86">
+                支持 PNG / JPG / WEBP。压缩在本地完成，不会上传到服务器。
+              </p>
+            </div>
+            <div class="btn-row">
+              <mdui-button variant="filled" id="pickBtn" icon="image">选择图片</mdui-button>
+              <mdui-button variant="tonal" id="pickFolderBtn" icon="folder">选择文件夹</mdui-button>
+              <mdui-button variant="tonal" id="compressAllBtn" icon="compress" disabled>压缩全部</mdui-button>
+              <mdui-button variant="tonal" id="downloadZipBtn" icon="folder_zip" disabled>下载 ZIP</mdui-button>
+              <mdui-button variant="text" id="clearBtn" icon="delete" disabled>清空</mdui-button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <mdui-card variant="outlined">
+              <div style="padding: 8px 10px;">
+                <mdui-collapse id="compressSettingsCollapse" accordion>
+                  <mdui-collapse-item open>
+                    <mdui-list-item
+                      slot="header"
+                      icon="tune"
+                      headline="输出设置"
+                      description=""
+                      id="outputSettingsHeader"
+                    ></mdui-list-item>
+                    <div style="padding: 4px 2px 12px; display: grid; gap: 12px;">
+                      <mdui-list style="padding: 0">
+                        <mdui-list-item id="formatItem" icon="photo" headline="输出格式" description=""></mdui-list-item>
+                      </mdui-list>
+                      <div class="range-row" style="padding: 0;">
+                        <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline">
+                          <div style="font-weight: 700">质量（JPG/WEBP/PNG 有效）</div>
+                          <div id="qualityText" style="opacity: 0.86; font-size: 12px"></div>
+                        </div>
+                        <mdui-slider id="qualityRange" min="20" max="100" step="1" value="82"></mdui-slider>
+                      </div>
+                    </div>
+                  </mdui-collapse-item>
+
+                  <mdui-collapse-item>
+                    <mdui-list-item
+                      slot="header"
+                      icon="straighten"
+                      headline="尺寸设置"
+                      description=""
+                      id="sizeSettingsHeader"
+                    ></mdui-list-item>
+                    <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
+                      <mdui-text-field id="maxWidthInput" label="最大宽度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
+                      <mdui-text-field id="maxHeightInput" label="最大高度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
+                    </div>
+                  </mdui-collapse-item>
+
+                  <mdui-collapse-item>
+                    <mdui-list-item
+                      slot="header"
+                      icon="badge"
+                      headline="命名与背景"
+                      description=""
+                      id="nameSettingsHeader"
+                    ></mdui-list-item>
+                    <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
+                      <div style="display:flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 2px;">
+                        <div style="font-weight: 700">JPG/JPEG 背景色</div>
+                        <input id="jpegBgPicker" type="color" style="width: 84px; height: 40px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; padding: 0 6px; box-sizing: border-box; background: transparent;">
+                      </div>
+                      <div></div>
+                      <mdui-text-field id="namePrefixInput" label="输出文件名前缀（可选）" variant="outlined"></mdui-text-field>
+                      <mdui-text-field id="nameSuffixInput" label="输出文件名后缀（可选）" variant="outlined"></mdui-text-field>
+                    </div>
+                  </mdui-collapse-item>
+                </mdui-collapse>
+              </div>
+            </mdui-card>
+          </div>
+
+          <div class="batch-bar">
+            <mdui-card variant="outlined">
+              <div class="batch-bar-inner">
+                <div class="batch-row">
+                  <mdui-checkbox id="selectAllOnPageCheckbox">本页全选</mdui-checkbox>
+                  <div id="selectionInfo" style="opacity: 0.86; font-size: 12px;"></div>
+                </div>
+                <div class="batch-row">
+                  <div class="batch-actions">
+                    <mdui-button variant="tonal" id="compressSelectedBtn" icon="compress" disabled>压缩选中</mdui-button>
+                    <mdui-button variant="tonal" id="downloadSelectedZipBtn" icon="folder_zip" disabled>下载选中 ZIP</mdui-button>
+                    <mdui-button variant="text" id="removeSelectedBtn" icon="delete" disabled>删除选中</mdui-button>
+                  </div>
+                  <div class="pager">
+                    <mdui-button-icon id="prevPageBtn" icon="chevron_left"></mdui-button-icon>
+                    <div id="pageInfo" style="opacity: 0.86; font-size: 12px;"></div>
+                    <mdui-button-icon id="nextPageBtn" icon="chevron_right"></mdui-button-icon>
+                    <mdui-text-field id="jumpPageInput" label="跳转页" variant="outlined" type="number" style="width: 110px;"></mdui-text-field>
+                    <mdui-button id="jumpPageBtn" variant="tonal">跳转</mdui-button>
+                  </div>
+                </div>
+              </div>
+            </mdui-card>
+          </div>
+
+          <div class="img-list" id="imgList"></div>
+        </div>
+      </div>
+    </div>
+
+    <input id="fileInput" type="file" accept="image/*" multiple style="display: none" />
+    <input id="folderInput" type="file" accept="image/*" multiple webkitdirectory directory style="display: none" />
+
+    <mdui-snackbar id="snackbar" placement="bottom-center" closeable></mdui-snackbar>
+
+    <mdui-navigation-drawer id="drawer" class="drawer" close-on-overlay-click>
+      <mdui-list>
+        <mdui-list-subheader>主题与动效</mdui-list-subheader>
+
+        <mdui-collapse id="themeCollapse">
+          <mdui-collapse-item>
+            <mdui-list-item slot="header" icon="dark_mode" headline="主题模式 (当前: 自动)"></mdui-list-item>
+            <mdui-list id="themeCollapseContent">
+              <mdui-list-item class="theme-option" data-theme="auto" icon="brightness_auto" headline="自动 (跟随系统)"></mdui-list-item>
+              <mdui-list-item class="theme-option" data-theme="light" icon="light_mode" headline="日间模式"></mdui-list-item>
+              <mdui-list-item class="theme-option" data-theme="dark" icon="dark_mode" headline="夜间模式"></mdui-list-item>
+            </mdui-list>
+          </mdui-collapse-item>
+        </mdui-collapse>
+
+        <mdui-list-item id="primaryColorItem" icon="palette" headline="主题主色" description=""></mdui-list-item>
+        <mdui-list-item headline="动画效果" description="关闭后减少动效">
+          <mdui-switch slot="end-icon" id="animationsSwitch"></mdui-switch>
+        </mdui-list-item>
+      </mdui-list>
+    </mdui-navigation-drawer>
+
+    <mdui-dialog id="formatDialog" close-on-esc close-on-overlay-click headline="输出格式">
+      <div style="padding: 10px 0">
+        <mdui-segmented-button-group id="formatGroup" selects="single" value="auto">
+          <mdui-segmented-button value="auto">跟随原图</mdui-segmented-button>
+          <mdui-segmented-button value="png">PNG</mdui-segmented-button>
+          <mdui-segmented-button value="jpg">JPG</mdui-segmented-button>
+          <mdui-segmented-button value="jpeg">JPEG</mdui-segmented-button>
+          <mdui-segmented-button value="webp">WEBP</mdui-segmented-button>
+        </mdui-segmented-button-group>
+      </div>
+      <mdui-button slot="action" variant="text" id="formatCancelBtn">取消</mdui-button>
+      <mdui-button slot="action" variant="filled" id="formatOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="primaryColorDialog" close-on-esc close-on-overlay-click headline="主题主色">
+      <div style="padding: 0 24px 16px; display: grid; gap: 12px;">
+        <div id="primaryColorPresetGrid" style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;"></div>
+        <input id="primaryColorPicker" type="color" style="width: 100%; height: 44px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; padding: 0 8px; box-sizing: border-box; background: transparent;">
+        <mdui-text-field id="primaryColorHexInput" label="HEX（#RRGGBB）" variant="outlined"></mdui-text-field>
+      </div>
+      <mdui-button slot="action" variant="text" id="primaryColorCancelBtn">取消</mdui-button>
+      <mdui-button slot="action" variant="outlined" id="primaryColorResetBtn">重置默认</mdui-button>
+      <mdui-button slot="action" variant="filled" id="primaryColorOkBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="itemSettingsDialog" close-on-esc close-on-overlay-click headline="图片设置">
+      <div style="padding: 0 16px 16px; display: grid; gap: 12px;">
+        <mdui-list style="padding: 0">
+          <mdui-list-item id="itemSettingsTitle" icon="image" headline="未选择图片" description=""></mdui-list-item>
+        </mdui-list>
+
+        <mdui-card variant="outlined">
+          <div style="padding: 12px; display: grid; gap: 10px;">
+            <mdui-list style="padding: 0">
+              <mdui-list-item headline="输出格式">
+                <mdui-switch slot="end-icon" id="itemUseGlobalFormatSwitch"></mdui-switch>
+              </mdui-list-item>
+            </mdui-list>
+            <mdui-segmented-button-group id="itemFormatGroup" selects="single" value="auto">
+              <mdui-segmented-button value="auto">跟随原图</mdui-segmented-button>
+              <mdui-segmented-button value="png">PNG</mdui-segmented-button>
+              <mdui-segmented-button value="jpg">JPG</mdui-segmented-button>
+              <mdui-segmented-button value="jpeg">JPEG</mdui-segmented-button>
+              <mdui-segmented-button value="webp">WEBP</mdui-segmented-button>
+            </mdui-segmented-button-group>
+          </div>
+        </mdui-card>
+
+        <mdui-card variant="outlined">
+          <div style="padding: 12px; display: grid; gap: 10px;">
+            <mdui-list style="padding: 0">
+              <mdui-list-item headline="质量（JPG/WEBP/PNG 有效）">
+                <mdui-switch slot="end-icon" id="itemUseGlobalQualitySwitch"></mdui-switch>
+              </mdui-list-item>
+            </mdui-list>
+            <div style="display:flex; justify-content: space-between; align-items: baseline;">
+              <div style="opacity: 0.86; font-size: 12px;">当前</div>
+              <div id="itemQualityText" style="opacity: 0.86; font-size: 12px;"></div>
+            </div>
+            <mdui-slider id="itemQualitySlider" min="20" max="100" step="1" value="82"></mdui-slider>
+          </div>
+        </mdui-card>
+
+        <mdui-card variant="outlined">
+          <div style="padding: 12px; display: grid; gap: 10px;">
+            <mdui-list style="padding: 0">
+              <mdui-list-item headline="最大尺寸（px）">
+                <mdui-switch slot="end-icon" id="itemUseGlobalSizeSwitch"></mdui-switch>
+              </mdui-list-item>
+            </mdui-list>
+            <div class="settings-grid two-col">
+              <mdui-text-field id="itemMaxWidthInput" label="最大宽度（留空=不限制）" variant="outlined" type="number"></mdui-text-field>
+              <mdui-text-field id="itemMaxHeightInput" label="最大高度（留空=不限制）" variant="outlined" type="number"></mdui-text-field>
+            </div>
+          </div>
+        </mdui-card>
+
+        <mdui-card variant="outlined">
+          <div style="padding: 12px; display: grid; gap: 10px;">
+            <mdui-list style="padding: 0">
+              <mdui-list-item headline="命名与背景">
+                <mdui-switch slot="end-icon" id="itemUseGlobalNameSwitch"></mdui-switch>
+              </mdui-list-item>
+            </mdui-list>
+            <div style="display:flex; gap: 10px; align-items: center; justify-content: space-between;">
+              <div style="font-weight: 700">JPG/JPEG 背景色</div>
+              <input id="itemJpegBgPicker" type="color" style="width: 84px; height: 40px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; padding: 0 6px; box-sizing: border-box; background: transparent;">
+            </div>
+            <div class="settings-grid two-col">
+              <mdui-text-field id="itemNamePrefixInput" label="输出文件名前缀（可选）" variant="outlined"></mdui-text-field>
+              <mdui-text-field id="itemNameSuffixInput" label="输出文件名后缀（可选）" variant="outlined"></mdui-text-field>
+            </div>
+          </div>
+        </mdui-card>
+      </div>
+      <mdui-button slot="action" variant="text" id="itemSettingsCancelBtn">取消</mdui-button>
+      <mdui-button slot="action" variant="outlined" id="itemSettingsResetBtn">恢复全局</mdui-button>
+      <mdui-button slot="action" variant="filled" id="itemSettingsSaveBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <script>
+      const PRIMARY_KEY = "xtd_theme_primary";
+      const SETTINGS_KEY = "img_compress_settings";
+
+      const dom = {
+        drawer: document.getElementById("drawer"),
+        openDrawerBtn: document.getElementById("openDrawerBtn"),
+        openSettingsBtn: document.getElementById("openSettingsBtn"),
+        dropzone: document.getElementById("dropzone"),
+        fileInput: document.getElementById("fileInput"),
+        folderInput: document.getElementById("folderInput"),
+        pickBtn: document.getElementById("pickBtn"),
+        pickFolderBtn: document.getElementById("pickFolderBtn"),
+        compressAllBtn: document.getElementById("compressAllBtn"),
+        downloadZipBtn: document.getElementById("downloadZipBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        imgList: document.getElementById("imgList"),
+        snackbar: document.getElementById("snackbar"),
+        qualityRange: document.getElementById("qualityRange"),
+        qualityText: document.getElementById("qualityText"),
+        maxWidthInput: document.getElementById("maxWidthInput"),
+        maxHeightInput: document.getElementById("maxHeightInput"),
+        jpegBgPicker: document.getElementById("jpegBgPicker"),
+        namePrefixInput: document.getElementById("namePrefixInput"),
+        nameSuffixInput: document.getElementById("nameSuffixInput"),
+        formatItem: document.getElementById("formatItem"),
+        formatDialog: document.getElementById("formatDialog"),
+        formatGroup: document.getElementById("formatGroup"),
+        formatOkBtn: document.getElementById("formatOkBtn"),
+        formatCancelBtn: document.getElementById("formatCancelBtn"),
+        outputSettingsHeader: document.getElementById("outputSettingsHeader"),
+        sizeSettingsHeader: document.getElementById("sizeSettingsHeader"),
+        nameSettingsHeader: document.getElementById("nameSettingsHeader"),
+        themeCollapseContent: document.getElementById("themeCollapseContent"),
+        themeCollapse: document.getElementById("themeCollapse"),
+        primaryColorItem: document.getElementById("primaryColorItem"),
+        primaryColorDialog: document.getElementById("primaryColorDialog"),
+        primaryColorPresetGrid: document.getElementById("primaryColorPresetGrid"),
+        primaryColorPicker: document.getElementById("primaryColorPicker"),
+        primaryColorHexInput: document.getElementById("primaryColorHexInput"),
+        primaryColorCancelBtn: document.getElementById("primaryColorCancelBtn"),
+        primaryColorResetBtn: document.getElementById("primaryColorResetBtn"),
+        primaryColorOkBtn: document.getElementById("primaryColorOkBtn"),
+        animationsSwitch: document.getElementById("animationsSwitch"),
+        selectAllOnPageCheckbox: document.getElementById("selectAllOnPageCheckbox"),
+        selectionInfo: document.getElementById("selectionInfo"),
+        compressSelectedBtn: document.getElementById("compressSelectedBtn"),
+        downloadSelectedZipBtn: document.getElementById("downloadSelectedZipBtn"),
+        removeSelectedBtn: document.getElementById("removeSelectedBtn"),
+        prevPageBtn: document.getElementById("prevPageBtn"),
+        nextPageBtn: document.getElementById("nextPageBtn"),
+        pageInfo: document.getElementById("pageInfo"),
+        jumpPageInput: document.getElementById("jumpPageInput"),
+        jumpPageBtn: document.getElementById("jumpPageBtn"),
+        itemSettingsDialog: document.getElementById("itemSettingsDialog"),
+        itemSettingsTitle: document.getElementById("itemSettingsTitle"),
+        itemUseGlobalFormatSwitch: document.getElementById("itemUseGlobalFormatSwitch"),
+        itemFormatGroup: document.getElementById("itemFormatGroup"),
+        itemUseGlobalQualitySwitch: document.getElementById("itemUseGlobalQualitySwitch"),
+        itemQualityText: document.getElementById("itemQualityText"),
+        itemQualitySlider: document.getElementById("itemQualitySlider"),
+        itemUseGlobalSizeSwitch: document.getElementById("itemUseGlobalSizeSwitch"),
+        itemMaxWidthInput: document.getElementById("itemMaxWidthInput"),
+        itemMaxHeightInput: document.getElementById("itemMaxHeightInput"),
+        itemUseGlobalNameSwitch: document.getElementById("itemUseGlobalNameSwitch"),
+        itemJpegBgPicker: document.getElementById("itemJpegBgPicker"),
+        itemNamePrefixInput: document.getElementById("itemNamePrefixInput"),
+        itemNameSuffixInput: document.getElementById("itemNameSuffixInput"),
+        itemSettingsCancelBtn: document.getElementById("itemSettingsCancelBtn"),
+        itemSettingsResetBtn: document.getElementById("itemSettingsResetBtn"),
+        itemSettingsSaveBtn: document.getElementById("itemSettingsSaveBtn"),
+      };
+
+      const defaultSettings = {
+        format: "auto",
+        quality: 0.82,
+        maxWidth: null,
+        maxHeight: null,
+        jpegBackground: "#ffffff",
+        namePrefix: "",
+        nameSuffix: "",
+        animationsEnabled: true,
+      };
+
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if (!raw) return { ...defaultSettings };
+          const parsed = JSON.parse(raw);
+          const next = { ...defaultSettings, ...(parsed || {}) };
+          const q = Number(next.quality);
+          if (Number.isFinite(q)) {
+            const normalized = q > 1 && q <= 100 ? q / 100 : q;
+            next.quality = Math.max(0.2, Math.min(1, normalized));
+          } else {
+            next.quality = 0.82;
+          }
+          next.format = ["auto", "png", "jpg", "jpeg", "webp"].includes(next.format) ? next.format : "auto";
+          const w = next.maxWidth === "" || next.maxWidth == null ? null : Number(next.maxWidth);
+          const h = next.maxHeight === "" || next.maxHeight == null ? null : Number(next.maxHeight);
+          next.maxWidth = Number.isFinite(w) && w > 0 ? Math.round(w) : null;
+          next.maxHeight = Number.isFinite(h) && h > 0 ? Math.round(h) : null;
+          next.jpegBackground =
+            typeof next.jpegBackground === "string" && /^#[0-9a-fA-F]{6}$/.test(next.jpegBackground)
+              ? next.jpegBackground
+              : "#ffffff";
+          next.namePrefix = typeof next.namePrefix === "string" ? next.namePrefix : "";
+          next.nameSuffix = typeof next.nameSuffix === "string" ? next.nameSuffix : "";
+          next.animationsEnabled = next.animationsEnabled !== false;
+          return next;
+        } catch (e) {
+          return { ...defaultSettings };
+        }
+      }
+
+      let settings = loadSettings();
+
+      function saveSettings(patch) {
+        settings = { ...settings, ...(patch || {}) };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        applySettingsToUI();
+      }
+
+      function showToast(text, color) {
+        if (!dom.snackbar) return;
+        dom.snackbar.textContent = text;
+        if (color) dom.snackbar.color = color;
+        else dom.snackbar.removeAttribute("color");
+        dom.snackbar.open = true;
+      }
+
+      function applyColorScheme(color) {
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
+      }
+
+      function isSystemDarkMode() {
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+
+      let selectedTheme = localStorage.getItem("theme") || "auto";
+
+      function applyThemeMode() {
+        const root = document.documentElement;
+        root.classList.remove("mdui-theme-auto", "mdui-theme-light", "mdui-theme-dark");
+        if (selectedTheme === "auto") root.classList.add("mdui-theme-auto");
+        else if (selectedTheme === "dark") root.classList.add("mdui-theme-dark");
+        else root.classList.add("mdui-theme-light");
+      }
+
+      function updateThemeSelectionInDrawer() {
+        if (!dom.themeCollapseContent) return;
+        const themeOptions = dom.themeCollapseContent.querySelectorAll(".theme-option");
+        themeOptions.forEach((item) => {
+          item.removeAttribute("selected");
+          item.removeAttribute("active");
+          const oldCheck = item.querySelector('mdui-icon[slot="end-icon"][data-theme-check="1"]');
+          oldCheck?.remove();
+        });
+        const current = dom.themeCollapseContent.querySelector(`.theme-option[data-theme="${selectedTheme}"]`);
+        if (current) {
+          current.setAttribute("selected", "");
+          current.setAttribute("active", "");
+          const check = document.createElement("mdui-icon");
+          check.setAttribute("slot", "end-icon");
+          check.setAttribute("data-theme-check", "1");
+          check.setAttribute("name", "check");
+          current.appendChild(check);
+        }
+        const headerItem = dom.themeCollapse?.querySelector('mdui-list-item[slot="header"]');
+        if (headerItem) {
+          let headlineText = "主题模式 (当前: 自动)";
+          if (selectedTheme === "light") headlineText = "主题模式 (当前: 日间)";
+          else if (selectedTheme === "dark") headlineText = "主题模式 (当前: 夜间)";
+          headerItem.setAttribute("headline", headlineText);
+          headerItem.setAttribute("icon", "dark_mode");
+        }
+      }
+
+      function changeTheme(theme) {
+        selectedTheme = theme;
+        localStorage.setItem("theme", selectedTheme);
+        applyThemeMode();
+        updateThemeSelectionInDrawer();
+        window.parent?.postMessage?.({ type: "theme:mode", mode: selectedTheme }, "*");
+      }
+
+      function applySettingsToUI() {
+        document.documentElement.classList.toggle("no-animations", settings.animationsEnabled === false);
+        if (dom.animationsSwitch) dom.animationsSwitch.checked = settings.animationsEnabled !== false;
+        const qPct = Math.max(20, Math.min(100, Math.round((Number(settings.quality) || 0.82) * 100)));
+        if (dom.qualityRange) dom.qualityRange.value = qPct;
+        if (dom.qualityText) dom.qualityText.textContent = String(qPct) + "%";
+        if (dom.maxWidthInput) dom.maxWidthInput.value = settings.maxWidth == null ? "" : String(settings.maxWidth);
+        if (dom.maxHeightInput) dom.maxHeightInput.value = settings.maxHeight == null ? "" : String(settings.maxHeight);
+        if (dom.jpegBgPicker) dom.jpegBgPicker.value = settings.jpegBackground || "#ffffff";
+        if (dom.namePrefixInput) dom.namePrefixInput.value = settings.namePrefix || "";
+        if (dom.nameSuffixInput) dom.nameSuffixInput.value = settings.nameSuffix || "";
+        if (dom.formatGroup) dom.formatGroup.value = settings.format || "auto";
+        if (dom.formatItem) {
+          const map = { auto: "跟随原图", png: "PNG", jpg: "JPG", jpeg: "JPEG", webp: "WEBP" };
+          dom.formatItem.setAttribute("description", map[settings.format] || "跟随原图");
+        }
+        if (dom.outputSettingsHeader) {
+          const map = { auto: "跟随原图", png: "PNG", jpg: "JPG", jpeg: "JPEG", webp: "WEBP" };
+          dom.outputSettingsHeader.setAttribute("description", `${map[settings.format] || "跟随原图"} · ${qPct}%`);
+        }
+        if (dom.sizeSettingsHeader) {
+          const w = settings.maxWidth == null ? "不限" : `${settings.maxWidth}px`;
+          const h = settings.maxHeight == null ? "不限" : `${settings.maxHeight}px`;
+          dom.sizeSettingsHeader.setAttribute("description", `${w} · ${h}`);
+        }
+        if (dom.nameSettingsHeader) {
+          const p = (settings.namePrefix || "").trim();
+          const s = (settings.nameSuffix || "").trim();
+          const label = p || s ? `前缀:${p || "-"} · 后缀:${s || "-"}` : "默认";
+          dom.nameSettingsHeader.setAttribute("description", label);
+        }
+        if (dom.primaryColorItem) {
+          const color =
+            localStorage.getItem(PRIMARY_KEY) ||
+            getComputedStyle(document.documentElement).getPropertyValue("--mdui-color-primary").trim() ||
+            "#1976d2";
+          dom.primaryColorItem.setAttribute("description", color);
+        }
+      }
+
+      function pickPrimary(color) {
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+        localStorage.setItem(PRIMARY_KEY, color);
+        applyColorScheme(color);
+        window.parent?.postMessage?.({ type: "theme:primary", color }, "*");
+        showToast("已切换主题主色", "success");
+      }
+
+      function initPrimaryPresetGrid() {
+        if (!dom.primaryColorPresetGrid || dom.primaryColorPresetGrid.dataset.inited) return;
+        dom.primaryColorPresetGrid.dataset.inited = "1";
+        const presets = [
+          { name: "青绿", color: "#00796b" },
+          { name: "蓝色", color: "#1976d2" },
+          { name: "红色", color: "#d32f2f" },
+          { name: "紫色", color: "#7b1fa2" },
+          { name: "橙色", color: "#f57c00" },
+          { name: "绿色", color: "#388e3c" },
+          { name: "粉色", color: "#c2185b" },
+          { name: "蓝灰", color: "#455a64" },
+        ];
+        presets.forEach((p) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = p.name;
+          btn.style.border = "1px solid color-mix(in srgb, currentColor 18%, transparent)";
+          btn.style.borderRadius = "12px";
+          btn.style.padding = "10px 10px";
+          btn.style.background = p.color;
+          btn.style.color = "#fff";
+          btn.style.fontWeight = "700";
+          btn.style.cursor = "pointer";
+          btn.style.boxSizing = "border-box";
+          btn.style.transition = "transform 120ms ease, box-shadow 120ms ease";
+          btn.addEventListener("click", () => {
+            if (dom.primaryColorPicker) dom.primaryColorPicker.value = p.color;
+            if (dom.primaryColorHexInput) dom.primaryColorHexInput.value = p.color;
+            pickPrimary(p.color);
+            if (dom.primaryColorDialog) dom.primaryColorDialog.open = false;
+            applySettingsToUI();
+          });
+          dom.primaryColorPresetGrid.appendChild(btn);
+        });
+      }
+
+      function initThemeSync() {
+        const savedPrimary = localStorage.getItem(PRIMARY_KEY);
+        if (savedPrimary) applyColorScheme(savedPrimary);
+        applyThemeMode();
+        updateThemeSelectionInDrawer();
+        applySettingsToUI();
+
+        window.addEventListener("message", (event) => {
+          const data = event?.data;
+          if (!data) return;
+          if (data.type === "theme:primary") {
+            const color = data.color;
+            if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+            localStorage.setItem(PRIMARY_KEY, color);
+            applyColorScheme(color);
+            applySettingsToUI();
+            return;
+          }
+          if (data.type === "theme:mode") {
+            const mode = data.mode;
+            if (mode !== "auto" && mode !== "light" && mode !== "dark") return;
+            selectedTheme = mode;
+            localStorage.setItem("theme", selectedTheme);
+            applyThemeMode();
+            updateThemeSelectionInDrawer();
+          }
+        });
+
+        window.addEventListener("storage", (event) => {
+          if (event.key === PRIMARY_KEY) {
+            const color = event.newValue;
+            if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+            applyColorScheme(color);
+            applySettingsToUI();
+          }
+          if (event.key === "theme") {
+            const mode = event.newValue;
+            if (mode !== "auto" && mode !== "light" && mode !== "dark") return;
+            selectedTheme = mode;
+            applyThemeMode();
+            updateThemeSelectionInDrawer();
+          }
+        });
+
+        if (window.matchMedia) {
+          const media = window.matchMedia("(prefers-color-scheme: dark)");
+          try {
+            media.addEventListener("change", () => {
+              if (selectedTheme === "auto") applyThemeMode();
+            });
+          } catch (e) {}
+        }
+      }
+
+      function bytesToText(bytes) {
+        const n = Number(bytes) || 0;
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+      }
+
+      function mimeByFormat(format, fallbackMime) {
+        if (format === "jpg" || format === "jpeg") return "image/jpeg";
+        if (format === "webp") return "image/webp";
+        if (format === "png") return "image/png";
+        return fallbackMime || "image/jpeg";
+      }
+
+      function extByMime(mime) {
+        if (mime === "image/png") return "png";
+        if (mime === "image/webp") return "webp";
+        return "jpg";
+      }
+
+      function getFileExt(name) {
+        const m = (name || "").toString().match(/\.([^.]+)$/);
+        return (m ? m[1] : "").toLowerCase();
+      }
+
+      function sanitizeFileName(name) {
+        return (name || "").toString().replace(/[\\\/:*?"<>|]/g, "_").trim();
+      }
+
+      async function decodeImage(file) {
+        const url = URL.createObjectURL(file);
+        try {
+          const img = new Image();
+          img.decoding = "async";
+          img.src = url;
+          await img.decode();
+          return img;
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
+
+      async function compressFile(file, opt) {
+        const o = opt || settings;
+        const img = await decodeImage(file);
+        const maxW = o.maxWidth;
+        const maxH = o.maxHeight;
+        const sw = img.naturalWidth || img.width;
+        const sh = img.naturalHeight || img.height;
+        let scale = 1;
+        if (maxW && sw > maxW) scale = Math.min(scale, maxW / sw);
+        if (maxH && sh > maxH) scale = Math.min(scale, maxH / sh);
+        const tw = Math.max(1, Math.round(sw * scale));
+        const th = Math.max(1, Math.round(sh * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = tw;
+        canvas.height = th;
+        const ctx = canvas.getContext("2d", { alpha: true });
+        if (!ctx) throw new Error("canvas 不可用");
+
+        const outMime = mimeByFormat(o.format, file.type);
+        const isPngOutput = outMime === "image/png";
+        if (outMime === "image/jpeg") {
+          ctx.fillStyle = o.jpegBackground || "#ffffff";
+          ctx.fillRect(0, 0, tw, th);
+        }
+        ctx.drawImage(img, 0, 0, tw, th);
+
+        const q = o.quality;
+        let blob = null;
+        if (isPngOutput && typeof window.UPNG?.encode === "function") {
+          const qv = Number.isFinite(q) ? q : 0.82;
+          const cnum =
+            qv >= 0.95
+              ? 0
+              : qv >= 0.85
+                ? 256
+                : qv >= 0.7
+                  ? 128
+                  : qv >= 0.5
+                    ? 64
+                    : 32;
+          try {
+            const rgba = ctx.getImageData(0, 0, tw, th).data.buffer;
+            const arr = window.UPNG.encode([rgba], tw, th, cnum);
+            blob = new Blob([arr], { type: "image/png" });
+          } catch (e) {
+            blob = null;
+          }
+        }
+        if (!blob) {
+          blob = await new Promise((resolve) => {
+            const useQuality = outMime === "image/jpeg" || outMime === "image/webp";
+            canvas.toBlob((b) => resolve(b || null), outMime, useQuality ? q : undefined);
+          });
+        }
+        if (!blob) throw new Error("压缩失败");
+        const origExt = getFileExt(file.name);
+        const rawBase = sanitizeFileName(file.name.replace(/\.[^.]+$/, "")) || "image";
+        const prefix = sanitizeFileName(o.namePrefix || "");
+        const suffix = sanitizeFileName(o.nameSuffix || "");
+        const base = `${prefix}${rawBase}${suffix}` || rawBase;
+        let ext = extByMime(outMime);
+        if (o.format === "jpg") ext = "jpg";
+        else if (o.format === "jpeg") ext = "jpeg";
+        else if (o.format === "auto") {
+          if (outMime === "image/jpeg" && (origExt === "jpg" || origExt === "jpeg")) ext = origExt;
+          if (outMime === "image/png" && origExt === "png") ext = "png";
+          if (outMime === "image/webp" && origExt === "webp") ext = "webp";
+        }
+        return {
+          blob,
+          mime: outMime,
+          width: tw,
+          height: th,
+          fileName: `${base}.${ext}`,
+        };
+      }
+
+      const PAGE_SIZE = 50;
+      const items = [];
+      const selectedIds = new Set();
+      let folderImported = false;
+      let currentPage = 1;
+      let activeItemIdForSettings = null;
+
+      function getTotalPages() {
+        return Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+      }
+
+      function clampCurrentPage() {
+        const total = getTotalPages();
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > total) currentPage = total;
+      }
+
+      function getPageItems() {
+        clampCurrentPage();
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return items.slice(start, start + PAGE_SIZE);
+      }
+
+      function ensureOverrides(it) {
+        if (it.overrides) return;
+        it.overrides = {
+          format: undefined,
+          quality: undefined,
+          maxWidth: undefined,
+          maxHeight: undefined,
+          jpegBackground: undefined,
+          namePrefix: undefined,
+          nameSuffix: undefined,
+        };
+      }
+
+      function hasCustomOverrides(it) {
+        if (!it?.overrides) return false;
+        return Object.values(it.overrides).some((v) => v !== undefined);
+      }
+
+      function getEffectiveSettings(it) {
+        const opt = { ...settings };
+        if (!it?.overrides) return opt;
+        if (it.overrides.format !== undefined) opt.format = it.overrides.format;
+        if (it.overrides.quality !== undefined) opt.quality = it.overrides.quality;
+        if (it.overrides.maxWidth !== undefined) opt.maxWidth = it.overrides.maxWidth;
+        if (it.overrides.maxHeight !== undefined) opt.maxHeight = it.overrides.maxHeight;
+        if (it.overrides.jpegBackground !== undefined) opt.jpegBackground = it.overrides.jpegBackground;
+        if (it.overrides.namePrefix !== undefined) opt.namePrefix = it.overrides.namePrefix;
+        if (it.overrides.nameSuffix !== undefined) opt.nameSuffix = it.overrides.nameSuffix;
+        return opt;
+      }
+
+      function updateButtons() {
+        const has = items.length > 0;
+        dom.compressAllBtn.disabled = !has;
+        dom.clearBtn.disabled = !has;
+
+        const needZip = items.length > 1 || folderImported;
+        if (dom.downloadZipBtn) dom.downloadZipBtn.style.display = needZip ? "" : "none";
+        dom.downloadZipBtn.disabled = !needZip || !items.some((x) => x.resultBlob);
+
+        const selectedCount = selectedIds.size;
+        if (dom.compressSelectedBtn) dom.compressSelectedBtn.disabled = selectedCount === 0;
+        if (dom.removeSelectedBtn) dom.removeSelectedBtn.disabled = selectedCount === 0;
+        const selectedCompressed = items.some((x) => selectedIds.has(x.id) && x.resultBlob);
+        if (dom.downloadSelectedZipBtn) dom.downloadSelectedZipBtn.disabled = selectedCount < 2 || !selectedCompressed;
+
+        const pageItems = getPageItems();
+        if (dom.selectAllOnPageCheckbox) {
+          const allSelected = pageItems.length > 0 && pageItems.every((x) => selectedIds.has(x.id));
+          dom.selectAllOnPageCheckbox.checked = allSelected;
+        }
+        if (dom.selectionInfo) dom.selectionInfo.textContent = `已选 ${selectedCount} / ${items.length}`;
+        if (dom.pageInfo) dom.pageInfo.textContent = `第 ${currentPage} / ${getTotalPages()} 页（${PAGE_SIZE}/页）`;
+      }
+
+      function renderList() {
+        if (!dom.imgList) return;
+        clampCurrentPage();
+        dom.imgList.innerHTML = "";
+        const pageItems = getPageItems();
+        for (const it of pageItems) {
+          const row = document.createElement("div");
+          row.className = "img-item" + (settings.animationsEnabled === false ? "" : " fade-in");
+
+          const cb = document.createElement("mdui-checkbox");
+          cb.checked = selectedIds.has(it.id);
+          const onSelChange = () => {
+            if (cb.checked) selectedIds.add(it.id);
+            else selectedIds.delete(it.id);
+            updateButtons();
+          };
+          cb.addEventListener("change", onSelChange);
+          cb.addEventListener("input", onSelChange);
+
+          const thumb = document.createElement("img");
+          thumb.className = "thumb";
+          thumb.src = it.previewUrl;
+          thumb.alt = it.file.name;
+
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          const title = document.createElement("div");
+          title.className = "meta-title";
+          title.textContent = it.file.name;
+          const sub = document.createElement("div");
+          sub.className = "meta-sub";
+          const before = `${bytesToText(it.file.size)} · ${it.origW || "?"}×${it.origH || "?"}`;
+          let after = it.statusText || "";
+          if (it.resultBlob) {
+            const percent = it.file.size ? Math.round((it.resultBlob.size / it.file.size) * 100) : 0;
+            after = `${bytesToText(it.resultBlob.size)}（${percent}%） · ${it.outW}×${it.outH}`;
+          }
+          const settingsText = hasCustomOverrides(it) ? "自定义" : "全局";
+          sub.innerHTML = `<div>原图：${before}</div><div>输出：${after || "未压缩"}</div><div>设置：${settingsText}</div>`;
+          meta.appendChild(title);
+          meta.appendChild(sub);
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+          const btnSettings = document.createElement("mdui-button-icon");
+          btnSettings.setAttribute("icon", "tune");
+          const btnCompress = document.createElement("mdui-button");
+          btnCompress.setAttribute("variant", "tonal");
+          btnCompress.setAttribute("icon", "compress");
+          btnCompress.textContent = "压缩";
+          const btnDownload = document.createElement("mdui-button");
+          btnDownload.setAttribute("variant", "filled");
+          btnDownload.setAttribute("icon", "download");
+          btnDownload.textContent = "下载";
+          btnDownload.disabled = !it.resultBlob;
+          const btnRemove = document.createElement("mdui-button-icon");
+          btnRemove.setAttribute("icon", "close");
+
+          btnSettings.addEventListener("click", () => openItemSettings(it.id));
+          btnCompress.addEventListener("click", async () => {
+            await compressOne(it.id);
+          });
+          btnDownload.addEventListener("click", () => {
+            if (!it.resultBlob) return;
+            saveAs(it.resultBlob, it.resultName || "image.jpg");
+          });
+          btnRemove.addEventListener("click", () => {
+            removeItemsByIds([it.id]);
+          });
+
+          actions.appendChild(btnSettings);
+          actions.appendChild(btnCompress);
+          actions.appendChild(btnDownload);
+          actions.appendChild(btnRemove);
+
+          row.appendChild(cb);
+          row.appendChild(thumb);
+          row.appendChild(meta);
+          row.appendChild(actions);
+          dom.imgList.appendChild(row);
+        }
+        updateButtons();
+      }
+
+      function removeItemsByIds(ids) {
+        const removeSet = new Set(ids || []);
+        if (removeSet.size === 0) return;
+        for (let i = items.length - 1; i >= 0; i--) {
+          const it = items[i];
+          if (!removeSet.has(it.id)) continue;
+          try {
+            URL.revokeObjectURL(it.previewUrl);
+          } catch (e) {}
+          items.splice(i, 1);
+          selectedIds.delete(it.id);
+        }
+        clampCurrentPage();
+        renderList();
+      }
+
+      async function compressOne(id) {
+        const it = items.find((x) => x.id === id);
+        if (!it) return;
+        it.statusText = "压缩中...";
+        renderList();
+        try {
+          const opt = getEffectiveSettings(it);
+          const res = await compressFile(it.file, opt);
+          it.resultBlob = res.blob;
+          it.resultName = res.fileName;
+          it.outW = res.width;
+          it.outH = res.height;
+          it.statusText = "完成";
+        } catch (e) {
+          it.statusText = "失败";
+          showToast("压缩失败，请换一个格式或降低尺寸限制", "error");
+        }
+        renderList();
+      }
+
+      async function compressAll() {
+        for (const it of items) {
+          await compressOne(it.id);
+        }
+      }
+
+      async function compressSelected() {
+        const ids = Array.from(selectedIds);
+        if (!ids.length) {
+          showToast("请先勾选要压缩的图片", "warning");
+          return;
+        }
+        for (const id of ids) {
+          await compressOne(id);
+        }
+      }
+
+      async function downloadSelectedZip() {
+        const selected = items.filter((x) => selectedIds.has(x.id) && x.resultBlob);
+        if (selected.length === 0) {
+          showToast("选中的图片还没有压缩结果", "warning");
+          return;
+        }
+        if (selected.length === 1) {
+          saveAs(selected[0].resultBlob, selected[0].resultName || selected[0].file.name);
+          return;
+        }
+        const zip = new JSZip();
+        const folder = zip.folder("images");
+        for (const it of selected) {
+          folder.file(it.resultName || it.file.name, it.resultBlob);
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const dateStr = new Date().toLocaleDateString("zh-CN").replace(/\//g, "-");
+        saveAs(blob, `压缩图片_${dateStr}.zip`);
+      }
+
+      function setDisabled(el, disabled) {
+        if (!el) return;
+        if (disabled) el.setAttribute("disabled", "");
+        else el.removeAttribute("disabled");
+      }
+
+      function syncItemSettingsDialogEnabled() {
+        setDisabled(dom.itemFormatGroup, !!dom.itemUseGlobalFormatSwitch?.checked);
+        setDisabled(dom.itemQualitySlider, !!dom.itemUseGlobalQualitySwitch?.checked);
+        setDisabled(dom.itemMaxWidthInput, !!dom.itemUseGlobalSizeSwitch?.checked);
+        setDisabled(dom.itemMaxHeightInput, !!dom.itemUseGlobalSizeSwitch?.checked);
+        const nameDisabled = !!dom.itemUseGlobalNameSwitch?.checked;
+        if (dom.itemJpegBgPicker) dom.itemJpegBgPicker.disabled = nameDisabled;
+        setDisabled(dom.itemNamePrefixInput, nameDisabled);
+        setDisabled(dom.itemNameSuffixInput, nameDisabled);
+      }
+
+      function updateItemQualityText() {
+        const raw = Number(dom.itemQualitySlider?.value);
+        const pct = Number.isFinite(raw) ? Math.max(20, Math.min(100, raw)) : 82;
+        if (dom.itemQualityText) dom.itemQualityText.textContent = `${pct}%`;
+      }
+
+      function openItemSettings(id) {
+        const it = items.find((x) => x.id === id);
+        if (!it || !dom.itemSettingsDialog) return;
+        ensureOverrides(it);
+        activeItemIdForSettings = id;
+
+        if (dom.itemSettingsTitle) {
+          dom.itemSettingsTitle.setAttribute("headline", it.file.name);
+          const desc = `${bytesToText(it.file.size)} · ${it.origW || "?"}×${it.origH || "?"}`;
+          dom.itemSettingsTitle.setAttribute("description", desc);
+        }
+
+        if (dom.itemUseGlobalFormatSwitch) dom.itemUseGlobalFormatSwitch.checked = it.overrides.format === undefined;
+        if (dom.itemFormatGroup) dom.itemFormatGroup.value = it.overrides.format === undefined ? (settings.format || "auto") : it.overrides.format;
+
+        if (dom.itemUseGlobalQualitySwitch) dom.itemUseGlobalQualitySwitch.checked = it.overrides.quality === undefined;
+        const qPct = Math.max(20, Math.min(100, Math.round(((it.overrides.quality === undefined ? settings.quality : it.overrides.quality) || 0.82) * 100)));
+        if (dom.itemQualitySlider) dom.itemQualitySlider.value = qPct;
+        updateItemQualityText();
+
+        const hasSizeOverride = it.overrides.maxWidth !== undefined || it.overrides.maxHeight !== undefined;
+        if (dom.itemUseGlobalSizeSwitch) dom.itemUseGlobalSizeSwitch.checked = !hasSizeOverride;
+        if (dom.itemMaxWidthInput) {
+          const w = hasSizeOverride ? it.overrides.maxWidth : settings.maxWidth;
+          dom.itemMaxWidthInput.value = w == null ? "" : String(w);
+        }
+        if (dom.itemMaxHeightInput) {
+          const h = hasSizeOverride ? it.overrides.maxHeight : settings.maxHeight;
+          dom.itemMaxHeightInput.value = h == null ? "" : String(h);
+        }
+
+        const hasNameOverride =
+          it.overrides.jpegBackground !== undefined || it.overrides.namePrefix !== undefined || it.overrides.nameSuffix !== undefined;
+        if (dom.itemUseGlobalNameSwitch) dom.itemUseGlobalNameSwitch.checked = !hasNameOverride;
+        if (dom.itemJpegBgPicker) dom.itemJpegBgPicker.value = (hasNameOverride ? it.overrides.jpegBackground : settings.jpegBackground) || "#ffffff";
+        if (dom.itemNamePrefixInput) dom.itemNamePrefixInput.value = hasNameOverride ? it.overrides.namePrefix ?? "" : settings.namePrefix || "";
+        if (dom.itemNameSuffixInput) dom.itemNameSuffixInput.value = hasNameOverride ? it.overrides.nameSuffix ?? "" : settings.nameSuffix || "";
+
+        syncItemSettingsDialogEnabled();
+        dom.itemSettingsDialog.open = true;
+      }
+
+      function resetItemOverrides(it) {
+        ensureOverrides(it);
+        it.overrides.format = undefined;
+        it.overrides.quality = undefined;
+        it.overrides.maxWidth = undefined;
+        it.overrides.maxHeight = undefined;
+        it.overrides.jpegBackground = undefined;
+        it.overrides.namePrefix = undefined;
+        it.overrides.nameSuffix = undefined;
+      }
+
+      function saveItemSettingsFromDialog() {
+        const it = items.find((x) => x.id === activeItemIdForSettings);
+        if (!it) return;
+        ensureOverrides(it);
+
+        if (dom.itemUseGlobalFormatSwitch?.checked) it.overrides.format = undefined;
+        else it.overrides.format = dom.itemFormatGroup?.value || "auto";
+
+        if (dom.itemUseGlobalQualitySwitch?.checked) it.overrides.quality = undefined;
+        else {
+          const raw = Number(dom.itemQualitySlider?.value);
+          const pct = Number.isFinite(raw) ? Math.max(20, Math.min(100, raw)) : 82;
+          it.overrides.quality = pct / 100;
+        }
+
+        if (dom.itemUseGlobalSizeSwitch?.checked) {
+          it.overrides.maxWidth = undefined;
+          it.overrides.maxHeight = undefined;
+        } else {
+          const wRaw = dom.itemMaxWidthInput?.value ?? "";
+          const hRaw = dom.itemMaxHeightInput?.value ?? "";
+          const wNum = wRaw === "" ? null : Number(wRaw);
+          const hNum = hRaw === "" ? null : Number(hRaw);
+          it.overrides.maxWidth = Number.isFinite(wNum) && wNum > 0 ? Math.round(wNum) : null;
+          it.overrides.maxHeight = Number.isFinite(hNum) && hNum > 0 ? Math.round(hNum) : null;
+        }
+
+        if (dom.itemUseGlobalNameSwitch?.checked) {
+          it.overrides.jpegBackground = undefined;
+          it.overrides.namePrefix = undefined;
+          it.overrides.nameSuffix = undefined;
+        } else {
+          const bg = dom.itemJpegBgPicker?.value || "#ffffff";
+          it.overrides.jpegBackground = /^#[0-9a-fA-F]{6}$/.test(bg) ? bg : "#ffffff";
+          it.overrides.namePrefix = (dom.itemNamePrefixInput?.value ?? "").toString();
+          it.overrides.nameSuffix = (dom.itemNameSuffixInput?.value ?? "").toString();
+        }
+
+        renderList();
+      }
+
+      async function downloadZip() {
+        const zip = new JSZip();
+        const folder = zip.folder("images");
+        let count = 0;
+        for (const it of items) {
+          if (!it.resultBlob) continue;
+          const name = it.resultName || it.file.name;
+          folder.file(name, it.resultBlob);
+          count++;
+        }
+        if (!count) {
+          showToast("还没有可下载的压缩结果", "warning");
+          return;
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const dateStr = new Date().toLocaleDateString("zh-CN").replace(/\//g, "-");
+        saveAs(blob, `压缩图片_${dateStr}.zip`);
+      }
+
+      async function addFiles(fileList, fromFolder) {
+        const files = Array.from(fileList || []).filter((f) => f && f.type && f.type.startsWith("image/"));
+        if (!files.length) {
+          showToast("请选择图片文件", "warning");
+          return;
+        }
+        if (fromFolder) folderImported = true;
+        for (const f of files) {
+          const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const previewUrl = URL.createObjectURL(f);
+          const it = { id, file: f, previewUrl, resultBlob: null, statusText: "" };
+          ensureOverrides(it);
+          items.push(it);
+          try {
+            const img = await decodeImage(f);
+            it.origW = img.naturalWidth || img.width;
+            it.origH = img.naturalHeight || img.height;
+          } catch (e) {}
+        }
+        currentPage = getTotalPages();
+        renderList();
+      }
+
+      function initEvents() {
+        dom.openDrawerBtn?.addEventListener("click", () => {
+          if (dom.drawer) dom.drawer.open = true;
+        });
+        dom.openSettingsBtn?.addEventListener("click", () => {
+          if (dom.drawer) dom.drawer.open = true;
+        });
+
+        dom.pickBtn?.addEventListener("click", () => dom.fileInput?.click());
+        dom.fileInput?.addEventListener("change", async () => {
+          await addFiles(dom.fileInput.files, false);
+          dom.fileInput.value = "";
+        });
+        dom.pickFolderBtn?.addEventListener("click", () => dom.folderInput?.click());
+        dom.folderInput?.addEventListener("change", async () => {
+          await addFiles(dom.folderInput.files, true);
+          dom.folderInput.value = "";
+        });
+
+        dom.dropzone?.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dom.dropzone.classList.add("dragover");
+        });
+        dom.dropzone?.addEventListener("dragleave", () => dom.dropzone.classList.remove("dragover"));
+        dom.dropzone?.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          dom.dropzone.classList.remove("dragover");
+          await addFiles(e.dataTransfer.files, false);
+        });
+
+        dom.compressAllBtn?.addEventListener("click", compressAll);
+        dom.downloadZipBtn?.addEventListener("click", downloadZip);
+        dom.clearBtn?.addEventListener("click", () => {
+          for (const it of items) {
+            try {
+              URL.revokeObjectURL(it.previewUrl);
+            } catch (e) {}
+          }
+          items.length = 0;
+          folderImported = false;
+          selectedIds.clear();
+          currentPage = 1;
+          renderList();
+        });
+
+        dom.selectAllOnPageCheckbox?.addEventListener("change", () => {
+          const pageItems = getPageItems();
+          if (dom.selectAllOnPageCheckbox.checked) {
+            pageItems.forEach((x) => selectedIds.add(x.id));
+          } else {
+            pageItems.forEach((x) => selectedIds.delete(x.id));
+          }
+          updateButtons();
+          renderList();
+        });
+
+        dom.compressSelectedBtn?.addEventListener("click", compressSelected);
+        dom.downloadSelectedZipBtn?.addEventListener("click", downloadSelectedZip);
+        dom.removeSelectedBtn?.addEventListener("click", () => {
+          removeItemsByIds(Array.from(selectedIds));
+        });
+
+        dom.prevPageBtn?.addEventListener("click", () => {
+          currentPage = Math.max(1, currentPage - 1);
+          renderList();
+        });
+        dom.nextPageBtn?.addEventListener("click", () => {
+          currentPage = Math.min(getTotalPages(), currentPage + 1);
+          renderList();
+        });
+        dom.jumpPageBtn?.addEventListener("click", () => {
+          const raw = Number(dom.jumpPageInput?.value);
+          if (!Number.isFinite(raw)) return;
+          currentPage = Math.max(1, Math.min(getTotalPages(), Math.round(raw)));
+          renderList();
+        });
+
+        dom.formatItem?.addEventListener("click", () => {
+          if (dom.formatDialog) dom.formatDialog.open = true;
+        });
+        dom.formatCancelBtn?.addEventListener("click", () => {
+          if (dom.formatDialog) dom.formatDialog.open = false;
+        });
+        dom.formatOkBtn?.addEventListener("click", () => {
+          const v = dom.formatGroup?.value || "auto";
+          saveSettings({ format: v });
+          if (dom.formatDialog) dom.formatDialog.open = false;
+        });
+
+        const onQualityChange = (e) => {
+          const raw = Number(e?.target?.value ?? dom.qualityRange?.value);
+          const q = Number.isFinite(raw) ? Math.max(20, Math.min(100, raw)) / 100 : 0.82;
+          saveSettings({ quality: q });
+        };
+        dom.qualityRange?.addEventListener("input", onQualityChange);
+        dom.qualityRange?.addEventListener("change", onQualityChange);
+        dom.maxWidthInput?.addEventListener("change", () => {
+          const v = dom.maxWidthInput.value;
+          const n = v === "" ? null : Number(v);
+          saveSettings({ maxWidth: Number.isFinite(n) && n > 0 ? Math.round(n) : null });
+        });
+        dom.maxHeightInput?.addEventListener("change", () => {
+          const v = dom.maxHeightInput.value;
+          const n = v === "" ? null : Number(v);
+          saveSettings({ maxHeight: Number.isFinite(n) && n > 0 ? Math.round(n) : null });
+        });
+        dom.jpegBgPicker?.addEventListener("input", () => {
+          const v = dom.jpegBgPicker.value;
+          if (!/^#[0-9a-fA-F]{6}$/.test(v)) return;
+          saveSettings({ jpegBackground: v });
+        });
+        dom.namePrefixInput?.addEventListener("change", () => {
+          saveSettings({ namePrefix: (dom.namePrefixInput.value || "").trim() });
+        });
+        dom.nameSuffixInput?.addEventListener("change", () => {
+          saveSettings({ nameSuffix: (dom.nameSuffixInput.value || "").trim() });
+        });
+
+        dom.itemUseGlobalFormatSwitch?.addEventListener("change", syncItemSettingsDialogEnabled);
+        dom.itemUseGlobalQualitySwitch?.addEventListener("change", syncItemSettingsDialogEnabled);
+        dom.itemUseGlobalSizeSwitch?.addEventListener("change", syncItemSettingsDialogEnabled);
+        dom.itemUseGlobalNameSwitch?.addEventListener("change", syncItemSettingsDialogEnabled);
+        dom.itemQualitySlider?.addEventListener("input", updateItemQualityText);
+        dom.itemQualitySlider?.addEventListener("change", updateItemQualityText);
+
+        dom.itemSettingsCancelBtn?.addEventListener("click", () => {
+          if (dom.itemSettingsDialog) dom.itemSettingsDialog.open = false;
+        });
+        dom.itemSettingsResetBtn?.addEventListener("click", () => {
+          const it = items.find((x) => x.id === activeItemIdForSettings);
+          if (!it) return;
+          resetItemOverrides(it);
+          openItemSettings(it.id);
+          renderList();
+        });
+        dom.itemSettingsSaveBtn?.addEventListener("click", () => {
+          saveItemSettingsFromDialog();
+          if (dom.itemSettingsDialog) dom.itemSettingsDialog.open = false;
+        });
+
+        dom.themeCollapseContent?.querySelectorAll(".theme-option").forEach((item) => {
+          item.addEventListener("click", () => {
+            const theme = item.getAttribute("data-theme");
+            if (!theme) return;
+            changeTheme(theme);
+          });
+        });
+
+        dom.primaryColorItem?.addEventListener("click", () => {
+          const current = localStorage.getItem(PRIMARY_KEY) || "#00796b";
+          if (dom.primaryColorPicker) dom.primaryColorPicker.value = /^#[0-9a-fA-F]{6}$/.test(current) ? current : "#00796b";
+          if (dom.primaryColorHexInput) dom.primaryColorHexInput.value = /^#[0-9a-fA-F]{6}$/.test(current) ? current : "#00796b";
+          initPrimaryPresetGrid();
+          if (dom.primaryColorDialog) dom.primaryColorDialog.open = true;
+        });
+        dom.primaryColorCancelBtn?.addEventListener("click", () => {
+          if (dom.primaryColorDialog) dom.primaryColorDialog.open = false;
+        });
+        dom.primaryColorResetBtn?.addEventListener("click", () => {
+          localStorage.removeItem(PRIMARY_KEY);
+          applyColorScheme("#00796b");
+          window.parent?.postMessage?.({ type: "theme:primary", color: "#00796b" }, "*");
+          applySettingsToUI();
+          showToast("已重置主题主色", "success");
+          if (dom.primaryColorDialog) dom.primaryColorDialog.open = false;
+        });
+        dom.primaryColorOkBtn?.addEventListener("click", () => {
+          const raw = (dom.primaryColorHexInput?.value || dom.primaryColorPicker?.value || "").trim();
+          const color = /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : null;
+          if (!color) {
+            showToast("请输入有效的 HEX 颜色", "error");
+            return;
+          }
+          pickPrimary(color);
+          applySettingsToUI();
+          if (dom.primaryColorDialog) dom.primaryColorDialog.open = false;
+        });
+        dom.primaryColorPicker?.addEventListener("input", () => {
+          if (dom.primaryColorHexInput) dom.primaryColorHexInput.value = dom.primaryColorPicker.value;
+        });
+        dom.primaryColorHexInput?.addEventListener("input", () => {
+          const v = (dom.primaryColorHexInput.value || "").trim();
+          if (/^#[0-9a-fA-F]{6}$/.test(v) && dom.primaryColorPicker) dom.primaryColorPicker.value = v;
+        });
+
+        dom.animationsSwitch?.addEventListener("change", () => {
+          saveSettings({ animationsEnabled: !!dom.animationsSwitch.checked });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initThemeSync();
+        initPrimaryPresetGrid();
+        initEvents();
+        applySettingsToUI();
+        renderList();
+      });
+    </script>
+  </body>
+</html>
