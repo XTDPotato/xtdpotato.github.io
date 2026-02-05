@@ -21,7 +21,7 @@
 
     <style>
       :root {
-        --page-max-width: 100%;
+        --page-max-width: 760px;
       }
 
       html,
@@ -31,11 +31,11 @@
       }
 
       body {
-        overflow: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
       .page {
-        height: 100vh;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -50,10 +50,11 @@
 
       .content {
         flex: 1 1 auto;
-        overflow: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         min-height: 0;
         padding: 12px;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        padding-bottom: calc(32px + env(safe-area-inset-bottom));
         box-sizing: border-box;
       }
 
@@ -61,6 +62,9 @@
         max-width: var(--page-max-width);
         margin: 0 auto;
         width: 100%;
+        padding-left: 8px;
+        padding-right: 8px;
+        box-sizing: border-box;
       }
 
       .dropzone {
@@ -87,6 +91,7 @@
 
       .img-list {
         margin-top: 12px;
+        padding-bottom: 60px; /* 防止最底部按钮被遮挡 */
       }
 
       .settings-card {
@@ -94,13 +99,23 @@
       }
 
       .batch-bar {
-        margin-top: 12px;
+        margin: 16px -8px -8px;
+        background: var(--mdui-color-surface);
+        border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .batch-bar mdui-card {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .batch-bar-inner {
         padding: 10px 12px;
         display: grid;
         gap: 10px;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .batch-row {
@@ -109,6 +124,8 @@
         gap: 10px;
         align-items: center;
         justify-content: space-between;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .batch-actions {
@@ -128,12 +145,6 @@
       .settings-grid {
         display: grid;
         gap: 10px;
-      }
-
-      @media (min-width: 760px) {
-        .settings-grid.two-col {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
       }
 
       .img-item {
@@ -187,6 +198,26 @@
         width: min(360px, 92vw);
       }
 
+      .settings-sheet::part(panel) {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: min(var(--page-max-width), 100vw);
+        margin: 0 auto;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      .settings-sheet-body {
+        max-height: 78vh;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 8px 12px 12px;
+        box-sizing: border-box;
+      }
+
       .setting-group {
         padding: 10px 12px;
       }
@@ -220,6 +251,79 @@
           transform: translateY(0);
         }
       }
+
+      /* ── 竖屏 & 小屏幕优化 ── */
+      @media (max-width: 600px) {
+        .container > #settingsCardSlot {
+          display: none;
+        }
+
+        .settings-sheet::part(panel) {
+          width: 100vw;
+          max-width: 100vw;
+        }
+
+        .settings-grid.two-col {
+          grid-template-columns: 1fr;
+        }
+
+        .img-item {
+          grid-template-columns: 48px 64px 1fr auto;
+          gap: 10px;
+          padding: 8px 10px;
+        }
+
+        .thumb {
+          width: 64px;
+          height: 64px;
+        }
+
+        .btn-row,
+        .batch-row,
+        .batch-actions,
+        .pager {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+
+        .btn-row mdui-button,
+        .batch-actions mdui-button {
+          width: 100%;
+        }
+
+        .dropzone {
+          padding: 16px;
+        }
+
+        .content {
+          padding: 12px 8px;
+          padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        }
+
+        .batch-bar {
+          position: sticky;
+          bottom: 0;
+          z-index: 10;
+          margin: 16px -8px 0;
+          padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+          box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+        }
+      }
+
+      @media (orientation: portrait) and (max-width: 520px) {
+        .page {
+          min-height: auto;
+        }
+
+        .content {
+          padding-bottom: 100px !important;
+        }
+
+        .img-list {
+          padding-bottom: 80px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -249,67 +353,69 @@
             </div>
           </div>
 
-          <div class="settings-card">
-            <mdui-card variant="outlined">
-              <div style="padding: 8px 10px;">
-                <mdui-collapse id="compressSettingsCollapse" accordion>
-                  <mdui-collapse-item open>
-                    <mdui-list-item
-                      slot="header"
-                      icon="tune"
-                      headline="输出设置"
-                      description=""
-                      id="outputSettingsHeader"
-                    ></mdui-list-item>
-                    <div style="padding: 4px 2px 12px; display: grid; gap: 12px;">
-                      <mdui-list style="padding: 0">
-                        <mdui-list-item id="formatItem" icon="photo" headline="输出格式" description=""></mdui-list-item>
-                      </mdui-list>
-                      <div class="range-row" style="padding: 0;">
-                        <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline">
-                          <div style="font-weight: 700">质量（JPG/WEBP/PNG 有效）</div>
-                          <div id="qualityText" style="opacity: 0.86; font-size: 12px"></div>
+          <div id="settingsCardSlot">
+            <div class="settings-card">
+              <mdui-card variant="outlined">
+                <div style="padding: 8px 10px;">
+                  <mdui-collapse id="compressSettingsCollapse" accordion>
+                    <mdui-collapse-item open>
+                      <mdui-list-item
+                        slot="header"
+                        icon="tune"
+                        headline="输出设置"
+                        description=""
+                        id="outputSettingsHeader"
+                      ></mdui-list-item>
+                      <div style="padding: 4px 2px 12px; display: grid; gap: 12px;">
+                        <mdui-list style="padding: 0">
+                          <mdui-list-item id="formatItem" icon="photo" headline="输出格式" description=""></mdui-list-item>
+                        </mdui-list>
+                        <div class="range-row" style="padding: 0;">
+                          <div style="display: flex; justify-content: space-between; gap: 10px; align-items: baseline">
+                            <div style="font-weight: 700">质量（JPG/WEBP/PNG 有效）</div>
+                            <div id="qualityText" style="opacity: 0.86; font-size: 12px"></div>
+                          </div>
+                          <mdui-slider id="qualityRange" min="20" max="100" step="1" value="82"></mdui-slider>
                         </div>
-                        <mdui-slider id="qualityRange" min="20" max="100" step="1" value="82"></mdui-slider>
                       </div>
-                    </div>
-                  </mdui-collapse-item>
+                    </mdui-collapse-item>
 
-                  <mdui-collapse-item>
-                    <mdui-list-item
-                      slot="header"
-                      icon="straighten"
-                      headline="尺寸设置"
-                      description=""
-                      id="sizeSettingsHeader"
-                    ></mdui-list-item>
-                    <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
-                      <mdui-text-field id="maxWidthInput" label="最大宽度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
-                      <mdui-text-field id="maxHeightInput" label="最大高度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
-                    </div>
-                  </mdui-collapse-item>
-
-                  <mdui-collapse-item>
-                    <mdui-list-item
-                      slot="header"
-                      icon="badge"
-                      headline="命名与背景"
-                      description=""
-                      id="nameSettingsHeader"
-                    ></mdui-list-item>
-                    <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
-                      <div style="display:flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 2px;">
-                        <div style="font-weight: 700">JPG/JPEG 背景色</div>
-                        <input id="jpegBgPicker" type="color" style="width: 84px; height: 40px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; padding: 0 6px; box-sizing: border-box; background: transparent;">
+                    <mdui-collapse-item>
+                      <mdui-list-item
+                        slot="header"
+                        icon="straighten"
+                        headline="尺寸设置"
+                        description=""
+                        id="sizeSettingsHeader"
+                      ></mdui-list-item>
+                      <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
+                        <mdui-text-field id="maxWidthInput" label="最大宽度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
+                        <mdui-text-field id="maxHeightInput" label="最大高度（px，留空=不限制）" variant="outlined" type="number"></mdui-text-field>
                       </div>
-                      <div></div>
-                      <mdui-text-field id="namePrefixInput" label="输出文件名前缀（可选）" variant="outlined"></mdui-text-field>
-                      <mdui-text-field id="nameSuffixInput" label="输出文件名后缀（可选）" variant="outlined"></mdui-text-field>
-                    </div>
-                  </mdui-collapse-item>
-                </mdui-collapse>
-              </div>
-            </mdui-card>
+                    </mdui-collapse-item>
+
+                    <mdui-collapse-item>
+                      <mdui-list-item
+                        slot="header"
+                        icon="badge"
+                        headline="命名与背景"
+                        description=""
+                        id="nameSettingsHeader"
+                      ></mdui-list-item>
+                      <div class="settings-grid two-col" style="padding: 4px 2px 12px;">
+                        <div style="display:flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 2px;">
+                          <div style="font-weight: 700">JPG/JPEG 背景色</div>
+                          <input id="jpegBgPicker" type="color" style="width: 84px; height: 40px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; padding: 0 6px; box-sizing: border-box; background: transparent;">
+                        </div>
+                        <div></div>
+                        <mdui-text-field id="namePrefixInput" label="输出文件名前缀（可选）" variant="outlined"></mdui-text-field>
+                        <mdui-text-field id="nameSuffixInput" label="输出文件名后缀（可选）" variant="outlined"></mdui-text-field>
+                      </div>
+                    </mdui-collapse-item>
+                  </mdui-collapse>
+                </div>
+              </mdui-card>
+            </div>
           </div>
 
           <div class="batch-bar">
@@ -369,6 +475,11 @@
       </mdui-list>
     </mdui-navigation-drawer>
 
+    <mdui-dialog id="settingsSheet" class="settings-sheet" close-on-esc close-on-overlay-click headline="压缩设置">
+      <div class="settings-sheet-body" id="settingsSheetBody"></div>
+      <mdui-button slot="action" variant="filled" id="settingsSheetCloseBtn">完成</mdui-button>
+    </mdui-dialog>
+
     <mdui-dialog id="formatDialog" close-on-esc close-on-overlay-click headline="输出格式">
       <div style="padding: 10px 0">
         <mdui-segmented-button-group id="formatGroup" selects="single" value="auto">
@@ -394,7 +505,7 @@
       <mdui-button slot="action" variant="filled" id="primaryColorOkBtn">保存</mdui-button>
     </mdui-dialog>
 
-    <mdui-dialog id="itemSettingsDialog" close-on-esc close-on-overlay-click headline="图片设置">
+    <mdui-dialog id="itemSettingsDialog" close-on-esc close-on-overlay-click fullscreen headline="图片设置">
       <div style="padding: 0 16px 16px; display: grid; gap: 12px;">
         <mdui-list style="padding: 0">
           <mdui-list-item id="itemSettingsTitle" icon="image" headline="未选择图片" description=""></mdui-list-item>
@@ -470,6 +581,9 @@
     </mdui-dialog>
 
     <script>
+      // ────────────────────────────────────────────────
+      // 修复：所有模板字符串转义错误（\( {} \) → ${}）
+      // ────────────────────────────────────────────────
       const PRIMARY_KEY = "xtd_theme_primary";
       const SETTINGS_KEY = "img_compress_settings";
 
@@ -477,6 +591,11 @@
         drawer: document.getElementById("drawer"),
         openDrawerBtn: document.getElementById("openDrawerBtn"),
         openSettingsBtn: document.getElementById("openSettingsBtn"),
+        settingsSheet: document.getElementById("settingsSheet"),
+        settingsSheetBody: document.getElementById("settingsSheetBody"),
+        settingsSheetCloseBtn: document.getElementById("settingsSheetCloseBtn"),
+        settingsCardSlot: document.getElementById("settingsCardSlot"),
+        settingsCard: document.querySelector(".settings-card"),
         dropzone: document.getElementById("dropzone"),
         fileInput: document.getElementById("fileInput"),
         folderInput: document.getElementById("folderInput"),
@@ -684,7 +803,7 @@
         if (dom.nameSettingsHeader) {
           const p = (settings.namePrefix || "").trim();
           const s = (settings.nameSuffix || "").trim();
-          const label = p || s ? `前缀:${p || "-"} · 后缀:${s || "-"}` : "默认";
+          const label = p || s ? `前缀: ${p || "-"} · 后缀: ${s || "-"}` : "默认";
           dom.nameSettingsHeader.setAttribute("description", label);
         }
         if (dom.primaryColorItem) {
@@ -990,7 +1109,7 @@
           dom.selectAllOnPageCheckbox.checked = allSelected;
         }
         if (dom.selectionInfo) dom.selectionInfo.textContent = `已选 ${selectedCount} / ${items.length}`;
-        if (dom.pageInfo) dom.pageInfo.textContent = `第 ${currentPage} / ${getTotalPages()} 页（${PAGE_SIZE}/页）`;
+        if (dom.pageInfo) dom.pageInfo.textContent = `第 ${currentPage} / ${getTotalPages()} 页（ ${PAGE_SIZE}/页）`;
       }
 
       function renderList() {
@@ -1310,11 +1429,44 @@
       }
 
       function initEvents() {
+        const syncSettingsPlacement = () => {
+          const card = dom.settingsCard || document.querySelector(".settings-card");
+          if (!card) return;
+          const isMobile = window.matchMedia("(max-width: 600px)").matches;
+          if (isMobile) {
+            if (dom.settingsSheetBody && card.parentElement !== dom.settingsSheetBody) dom.settingsSheetBody.appendChild(card);
+          } else {
+            if (dom.settingsCardSlot && card.parentElement !== dom.settingsCardSlot) dom.settingsCardSlot.appendChild(card);
+          }
+        };
+
+        syncSettingsPlacement();
+        let resizeRaf = 0;
+        const scheduleSync = () => {
+          if (resizeRaf) cancelAnimationFrame(resizeRaf);
+          resizeRaf = requestAnimationFrame(() => {
+            resizeRaf = 0;
+            syncSettingsPlacement();
+          });
+        };
+        window.addEventListener("resize", scheduleSync);
+        window.addEventListener("orientationchange", scheduleSync);
+
         dom.openDrawerBtn?.addEventListener("click", () => {
           if (dom.drawer) dom.drawer.open = true;
         });
         dom.openSettingsBtn?.addEventListener("click", () => {
-          if (dom.drawer) dom.drawer.open = true;
+          const isMobile = window.matchMedia("(max-width: 600px)").matches;
+          if (isMobile && dom.settingsSheet) {
+            syncSettingsPlacement();
+            dom.settingsSheet.open = true;
+            return;
+          }
+          const card = dom.settingsCard || document.querySelector(".settings-card");
+          card?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+        });
+        dom.settingsSheetCloseBtn?.addEventListener("click", () => {
+          if (dom.settingsSheet) dom.settingsSheet.open = false;
         });
 
         dom.pickBtn?.addEventListener("click", () => dom.fileInput?.click());
