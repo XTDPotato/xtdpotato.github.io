@@ -491,6 +491,19 @@
 		    z-index: 10000; /* Ensure it is above MDUI dialogs */
 		    display: none;
 		    box-sizing: border-box;
+		    transform: translateY(100%);
+		    opacity: 0;
+		    transition: transform 160ms ease, opacity 160ms ease;
+		}
+
+		#virtualKeyboard.vk-visible {
+		    transform: translateY(0);
+		    opacity: 1;
+		}
+
+		html.no-animations *, html.no-animations *::before, html.no-animations *::after {
+		    transition: none !important;
+		    animation: none !important;
 		}
 		
 		.keyboard-row {
@@ -598,33 +611,182 @@
 		.system-keyboard { color: white !important; background-color: transparent !important; }
 		.system-keyboard::before { background-color: #2196f3 !important; }
 		
-	#shortcutContainer {
+		#shortcutArea {
+		    position: relative;
+		}
+
+		/* 让工具栏脱离文档流，浮在快捷短语区域右上角 */
+#shortcutToolbarWrap {
+    position: absolute !important;
+    top: 4px;                    /* 贴近快捷短语顶部 */
+    right: 6px;                  /* 右边距保持原样 */
+    z-index: 10;                 /* 确保在快捷短语文字上面 */
+    pointer-events: auto;        /* 自己能被点击 */
+    background: transparent;     /* 去掉背景，让它更像浮动按钮 */
+}
+
+/* 工具栏本体：小一点、半透、圆角更柔和 */
+#shortcutToolbar {
+    display: flex;
+    gap: 4px;                    /* 按钮间距更紧凑 */
+    padding: 4px 6px;
+    border-radius: 12px;
+    background: rgba(var(--surface-color-rgb), 0.92); /* 半透主色背景 */
+    backdrop-filter: blur(10px); /* 毛玻璃效果，更现代 */
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    border: 1px solid rgba(var(--border-color-rgb), 0.4);
+}
+
+/* 拖动时的视觉反馈 */
+#shortcutToolbarWrap.dragging #shortcutToolbar {
+    background: rgba(var(--primary-color-rgb), 0.25) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transform: scale(1.08);
+    transition: all 0.12s ease;
+}
+
+/* 当快捷短语区域为空时，工具栏也跟着更靠上（可选优化） */
+#shortcutContainer:empty ~ #shortcutToolbarWrap {
+    top: 0;
+}
+
+/* 工具栏容器：悬浮在上方 16px，绝对定位，不占文档流 */
+#shortcutToolbarWrap {
+    position: absolute !important;
+    top: -48px !important;              /* 悬浮在上方 16px */
+    right: 6px !important;
+    z-index: 12 !important;
+    
+    /* 关键修复：容器本身不拦截 touch 事件 */
+    pointer-events: none !important;
+    touch-action: none !important;
+}
+
+/* 工具栏本体：只让按钮区域可交互 */
+#shortcutToolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 12px;
+    background: rgba(var(--surface-color-rgb), 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    border: 1px solid rgba(var(--border-color-rgb), 0.4);
+    
+    /* 恢复交互能力 */
+    pointer-events: auto !important;
+    touch-action: manipulation !important;  /* 只允许点击，不滚动 */
+}
+
+/* 拖动时的视觉反馈 */
+#shortcutToolbarWrap.dragging {
+    pointer-events: auto !important;
+    opacity: 0.92;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    transform: scale(1.06);
+    background: rgba(var(--primary-color-rgb), 0.25) !important;
+    backdrop-filter: blur(12px);
+    z-index: 10001;
+}
+
+/* 快捷短语容器：核心滚动修复 */
+#shortcutContainer {
     padding: 4px 0;
     height: auto;
-    min-height: 44px;
+    min-height: 0;
     max-height: 100px;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 0;
+    position: relative;
+    padding-right: 0;
 
-    /* 必须的横向滚动设置 */
+    /* 强制开启横向滚动 + 手机丝滑 */
     overflow-x: auto !important;
-    overflow-y: hidden;                      /* 防止纵向干扰 */
-
-    /* 关键：让内容真正横向溢出 */
+    overflow-y: auto !important;           /* 防止纵向滚动干扰 */
     white-space: nowrap !important;
-    display: block !important;               /* 改成 block 是最可靠的方式 */
-
-    /* 移动端必须加这两行，否则滑不动 */
-    touch-action: pan-x !important;          /* 允许横向拖动 */
-    -webkit-overflow-scrolling: touch !important;  /* iOS Safari 丝滑滚动 */
-
-    /* 可选：让滚动条更明显（调试用，可删） */
-    scrollbar-width: thin;
+    display: block !important;
+    
+    /* 关键：明确允许左右滑动 */
+    touch-action: pan-x !important;          /* 只允许横向滚动 */
+    -webkit-overflow-scrolling: touch !important;
+    
+    /* 内容为空时完全隐藏 */
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: none;
 }
+
+/* 有内容时恢复正常 */
+#shortcutContainer:not(:empty) {
+    visibility: visible;
+    height: auto;
+    min-height: 44px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 编辑模式强制显示（即使为空也显示，便于新增/拖拽） */
+#virtualKeyboard.shortcut-edit-mode #shortcutContainer {
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 100px !important;
+    padding: 4px 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    overflow-x: auto !important;             /* 编辑模式也强制可横滚 */
+    touch-action: pan-x pan-y !important;    /* 编辑时允许更多操作 */
+}
+		#shortcutKeysContainer {
+		    display: inline-block;
+		    width: max-content;
+		}
+
+		#virtualKeyboard.shortcut-edit-mode #shortcutContainer {
+		    overflow-x: hidden !important;
+		    overflow-y: auto !important;
+		    white-space: normal !important;
+		    touch-action: pan-y !important;
+		    max-height: 160px;
+		}
+
+		#virtualKeyboard.shortcut-edit-mode #shortcutKeysContainer {
+		    display: flex;
+		    flex-wrap: wrap;
+		    align-content: flex-start;
+		    width: 100%;
+		}
+
+		.shortcut-draggable {
+		    touch-action: none;
+		}
+
+		.shortcut-placeholder {
+		    opacity: 0.35;
+		}
+
+		.shortcut-highlight {
+		    outline: 2px solid var(--mdui-color-primary, #00796b);
+		    outline-offset: 1px;
+		}
+
+		.shortcut-edit-delete {
+		    flex: none;
+		    width: 28px;
+		    height: 28px;
+		    border-radius: 8px;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    background: rgba(244, 67, 54, 0.12);
+		    color: var(--mdui-color-error, #f44336);
+		    font-size: 14px;
+		    user-select: none;
+		}
 		#shortcutContainer,
 #shortcutContainer *,
 #virtualKeyboard {
-    touch-action: pan-x !important;
+    touch-action: pan-x pan-y !important;
     -webkit-overflow-scrolling: touch !important;
 }
 		#shortcutContainer .keyboard-row {
@@ -645,6 +807,18 @@
 		    height: 40px; /* Match container height */
 		    padding: 0 12px; /* Add horizontal padding for adaptive text width */
 		}
+
+		#virtualKeyboard.shortcut-wrap-enabled .shortcut-key,
+		#virtualKeyboard.shortcut-wrap-enabled .status-key {
+		    height: auto;
+		    min-height: 40px;
+		    max-width: 110px;
+		    white-space: normal;
+		    word-break: break-all;
+		    line-height: 1.15;
+		    padding: 6px 12px;
+		    text-align: center;
+		}
 		
 		/* Shortcut visuals */
 		.shortcut-key::before, .status-key::before {
@@ -653,6 +827,23 @@
 		    left: 4px;
 		    right: 4px;
 		    border-radius: 16px; /* Pill shape for shortcuts */
+		}
+
+		.suggest-add-key::before {
+		    background: rgba(76, 175, 80, 0.16);
+		}
+
+		#keyboardSettingsModal {
+		    z-index: 20000;
+		}
+
+		#advancedJsonEditorDialog {
+		    z-index: 21000;
+		}
+
+		#cancelEditConfirmDialog,
+		#aboutDialog {
+		    z-index: 22000;
 		}
 		
 		
@@ -889,6 +1080,11 @@
 		    max-height: 300px !important;
 		    overflow-y: auto;
 		}
+
+		#shortcutActionDialog mdui-select::part(menu) {
+		    max-height: 60vh !important;
+		    overflow-y: auto;
+		}
 		
 		.modal-footer-custom {
 		    padding: 16px 16px 24px 16px;
@@ -932,8 +1128,16 @@
 /* Quick Edit Dialog Top Positioning */
 .quick-edit-dialog-top::part(panel) {
     align-self: center; /* Center horizontally */
-    margin-top: 48px;
+    margin-top: calc(72px + env(safe-area-inset-top));
     margin-bottom: auto; /* Push to top */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.dialog-pos-top::part(panel) {
+    align-self: center;
+    margin-top: calc(72px + env(safe-area-inset-top));
+    margin-bottom: auto;
     margin-left: auto;
     margin-right: auto;
 }
@@ -1151,12 +1355,12 @@
 			</mdui-collapse>
 			<mdui-divider></mdui-divider>
 			<mdui-list-item id="importItem" icon="file_upload" rounded headline="导入 Excel"></mdui-list-item>
-			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出 Excel"></mdui-list-item>
+			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出"></mdui-list-item>
 			<mdui-list-item id="calculatorBtn" icon="calculate" rounded headline="计算重量"></mdui-list-item>
 		
 			<mdui-list-item id="sortItem" icon="sort" rounded headline="数据排序"></mdui-list-item>
 			
-			<mdui-list-item id="openKeyboardSettingsBtn" rounded icon="keyboard" headline="虚拟键盘设置"></mdui-list-item>
+			<mdui-list-item id="settingsBtn" rounded icon="settings" headline="设置"></mdui-list-item>
 			<mdui-list-item id="installPwaBtn" rounded icon="download" headline="安装应用" style="display: none;"></mdui-list-item>
 		</mdui-list>
 	</mdui-navigation-drawer>
@@ -1189,7 +1393,6 @@
 						</div>
 					</mdui-menu-item>
                     <mdui-menu-item id="resetFabPositionItem" icon="restore">重置按钮位置</mdui-menu-item>
-						<mdui-menu-item id="aboutItem" icon="info">关于</mdui-menu-item>
 					</mdui-menu>
 				</mdui-dropdown>
 			</div>
@@ -1341,7 +1544,6 @@
 					<label for="remarks">备注</label>
 					<div style="position:relative; display:flex; align-items:center;">
 						<textarea rows="5" cols="30" id="remarks" style="flex:1;"></textarea>
-						<mdui-button-icon icon="edit" class="edit-input-btn" data-target="remarks"></mdui-button-icon>
 					</div>
 					<!-- 图片上传与管理区域 -->
 					<mdui-divider style="margin:20px 0 10px 0"></mdui-divider>
@@ -1386,13 +1588,13 @@
 	<!-- 快速编辑弹窗 (Top Aligned) -->
 	<mdui-dialog id="quickEditDialog" fullscreen close-on-esc close-on-overlay-click class="quick-edit-dialog-top">
 		
-		<mdui-top-app-bar slot="header" style="padding: 16px;">
+		<mdui-top-app-bar slot="header" style="padding: 16px; padding-top: calc(16px + env(safe-area-inset-top));">
             <mdui-top-app-bar-title id="quickEditLabel" style="color:var(--primary-color);"></mdui-top-app-bar-title>
             <mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon>
         </mdui-top-app-bar>
 	
 		
-		<div style="padding: 8px; margin-top: 16px;">
+		<div style="padding: 8px; margin-top: 24px; padding-top: calc(8px + env(safe-area-inset-top));">
 			
 			<div style="position:relative; display:flex; align-items:center;">
 				<input type="text" id="quickEditInput" class="readonly-input" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1;">
@@ -1408,7 +1610,18 @@
 	</mdui-dialog>
 	<!-- 虚拟键盘 -->
 	<div id="virtualKeyboard">
-		<div id="shortcutContainer"></div>
+		<div id="shortcutToolbarWrap">
+			<div id="shortcutToolbar">
+				<mdui-button-icon icon="add" id="shortcutQuickAddBtn"></mdui-button-icon>
+				<mdui-button-icon icon="edit" id="shortcutEditToggleBtn"></mdui-button-icon>
+				<mdui-button-icon icon="close" id="shortcutEditCancelBtn" style="display:none"></mdui-button-icon>
+			</div>
+		</div>
+		<div id="shortcutArea">
+			<div id="shortcutContainer">
+				<div id="shortcutKeysContainer"></div>
+			</div>
+		</div>
 		<div id="keyboardRows"></div>
 	</div>
 	<!-- 确认弹窗 -->
@@ -1555,7 +1768,7 @@
         圆棒入库数据管理
       </div>
       <div style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); margin-top: 4px;">
-        版本：2026.01.25 【最新版】
+        当前版本：<span id="aboutCurrentVersion">-</span>
       </div>
     </div>
 
@@ -1565,6 +1778,13 @@
     </div>
 
     <mdui-divider style="margin: 12px 0;"></mdui-divider>
+
+    <div style="margin: 0 0 16px 0;">
+      <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px; text-align:center;">
+        更新日志
+      </div>
+      <div id="aboutChangelog" style="display: grid; gap: 10px;"></div>
+    </div>
 
     <!-- 操作指南（极致紧凑，补齐所有功能+修正错误描述，间距不变） -->
     <div style="display: grid; gap: 20px;">
@@ -1659,8 +1879,8 @@
 	<!-- 取消编辑确认对话框 -->
 	<mdui-dialog id="cancelEditConfirmDialog" headline="确认取消" close-on-overlay-click close-on-esc>
 		<div style="padding:16px 0;font-size:1rem;">确定要取消操作吗？取消后当前输入的内容可能会丢失。</div>
-		<mdui-button slot="action" variant="text" id="cancelCancelBtn">返回继续编辑</mdui-button>
-		<mdui-button slot="action" variant="filled" color="error" id="confirmCancelBtn">确认取消</mdui-button>
+		<mdui-button slot="action" variant="filled" id="cancelCancelBtn">返回继续编辑</mdui-button>
+		<mdui-button slot="action" variant="outlined" color="error" id="confirmCancelBtn">确认取消</mdui-button>
 	</mdui-dialog>
 	
 	
@@ -1683,8 +1903,12 @@
 	<!-- 图片过大提示弹窗 -->
 <mdui-dialog id="largeImageWarnDialog" headline="图片过大" close-on-overlay-click close-on-esc fullscreen>
   <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
-    <p>当前图片大小超过 <strong>5MB</strong>，可能导致加载缓慢或存储空间占用过多。</p>
+    <p>当前图片大小超过 <strong><span id="largeImageThresholdText">5MB</span></strong>，可能导致加载缓慢或存储空间占用过多。</p>
     <p>建议<strong>压缩</strong>后上传（质量损失较小，体积大幅减小）。</p>
+    <div style="margin-top: 12px;">
+      <mdui-checkbox id="largeImageAlwaysCompress">以后都压缩</mdui-checkbox>
+      <mdui-checkbox id="largeImageAlwaysForce" style="margin-left: 12px;">以后都原图</mdui-checkbox>
+    </div>
   </div>
   
   <mdui-button slot="action" variant="text" id="largeImageCancelBtn">取消上传</mdui-button>
@@ -1777,69 +2001,448 @@
 	
 
     <!-- 虚拟键盘设置模态框 (Fullscreen) -->
-    <mdui-dialog id="keyboardSettingsModal" fullscreen close-on-esc close-on-overlay-click>
-        <mdui-top-app-bar slot="header">
-            <mdui-top-app-bar-title>虚拟键盘设置</mdui-top-app-bar-title>
-            <mdui-button-icon icon="close" id="closeKeyboardSettingsModal"></mdui-button-icon>
+<mdui-dialog id="keyboardSettingsModal" fullscreen close-on-esc close-on-overlay-click>
+  <mdui-top-app-bar slot="header">
+    <mdui-top-app-bar-title>虚拟键盘设置</mdui-top-app-bar-title>
+    <mdui-button-icon icon="close" id="closeKeyboardSettingsModal"></mdui-button-icon>
+  </mdui-top-app-bar>
+
+  <div style="padding:0; overflow-y:auto; height:100%; box-sizing:border-box;">
+    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:16px;">
+      在此编辑快捷短语。每行一个。<br>
+      内置可用变量：<code>${year}</code> (如24), <code>${lastYear}</code> (如23)
+    </p>
+
+    <!-- 动态变量 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        自定义变量（动态）
+      </label>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0;">
+        在快捷短语中使用 <code>${变量名}</code>。支持“本周 / 本周一”等日期类变量。
+      </p>
+
+      <div
+        id="dynamicVarList"
+        style="display:grid; gap:10px; width:100%;"
+      ></div>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <mdui-button variant="tonal" id="addDynamicVarBtn" icon="add" style="flex:1">
+          新增变量
+        </mdui-button>
+      </div>
+    </div>
+
+    <!-- 炉号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        炉号 (Furnace ID)
+      </label>
+      <mdui-text-field
+        id="furnaceIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 产品号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        产品号 (Product ID)
+      </label>
+      <mdui-text-field
+        id="productIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 卡片号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        卡片号 (Card ID)
+      </label>
+      <mdui-text-field
+        id="cardIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 钢种 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        钢种 (Steel Type)
+      </label>
+      <mdui-text-field
+        id="steelTypeConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 状态 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        状态 (Status)
+      </label>
+      <mdui-text-field
+        id="statusConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 位置 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        位置 (Position)
+      </label>
+      <mdui-text-field
+        id="positionConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <mdui-divider style="margin:16px 0;"></mdui-divider>
+
+    <!-- 高级配置 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        高级配置 (Advanced JSON)
+      </label>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0;">
+        在此完全自定义键盘布局、键位大小、符号映射等。点击打开完整编辑进行编辑。
+      </p>
+
+      <mdui-text-field
+        id="advancedJsonConfigInput"
+        type="textarea"
+        rows="6"
+        readonly
+        style="
+          width:100%;
+          min-height:280px;
+          font-family:monospace;
+          font-size:12px;
+          background:rgba(0,0,0,0.05);
+        "
+      ></mdui-text-field>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <mdui-button
+          variant="tonal"
+          id="openAdvancedJsonEditorBtn"
+          icon="edit"
+          style="flex:1"
+        >
+          打开完整编辑器
+        </mdui-button>
+      </div>
+    </div>
+  </div>
+
+  <div slot="action">
+    <input type="file" id="importKeyboardConfigInput" accept=".json" style="display:none">
+    <mdui-button variant="outlined" id="exportKeyboardConfigBtn" style="margin-right:auto">
+      导出JSON
+    </mdui-button>
+    <mdui-button variant="outlined" id="importKeyboardConfigBtn" style="margin-right:8px">
+      导入JSON
+    </mdui-button>
+
+    <mdui-button variant="tonal" id="cancelKeyboardConfigBtn">取消</mdui-button>
+    <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
+    <mdui-button variant="filled" id="saveKeyboardConfigBtn">保存</mdui-button>
+  </div>
+</mdui-dialog>
+
+    <mdui-dialog id="settingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header" style="">
+            <mdui-top-app-bar-title>设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSettingsDialogBtn"></mdui-button-icon>
         </mdui-top-app-bar>
-        <div style="padding: 0px; overflow-y: auto; height: 100%; box-sizing: border-box;">
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
-                在此编辑快捷短语。每行一个。<br>
-                可用变量：<code>${year}</code> (如24), <code>${lastYear}</code> (如23)
-            </p>
+<div style="
+  padding: 12px 0 12px;
+  padding-top: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+">
+            <mdui-list>
+                <mdui-list-subheader>主题</mdui-list-subheader>
+                <mdui-list-item id="settingsPrimaryColorItem" icon="palette" headline="主题主色" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>快捷短语</mdui-list-subheader>
+                <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="快捷短语设置" description="编辑各字段快捷短语与布局"></mdui-list-item>
+                <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
+                <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
+                    <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>智能建议</mdui-list-subheader>
+                <mdui-list-item headline="启用建议加入快捷短语" description="添加数据后统计常用输入">
+                    <mdui-switch slot="end-icon" id="settingsSuggestSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsSuggestThresholdItem" icon="tune" headline="建议阈值" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>图片压缩</mdui-list-subheader>
+                <mdui-list-item id="settingsAlwaysCompressItem" headline="大图总是压缩" description="">
+                    <mdui-switch slot="end-icon" id="settingsAlwaysCompressSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsAlwaysForceItem" headline="大图总是原图" description="">
+                    <mdui-switch slot="end-icon" id="settingsAlwaysForceSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsImageCompressItem" icon="photo_size_select_large" headline="图片压缩设置" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>界面</mdui-list-subheader>
+                <mdui-list-item id="settingsDialogPositionItem" icon="vertical_align_top" headline="对话框默认位置" description=""></mdui-list-item>
+                <mdui-list-item id="settingsKeyboardSizeItem" icon="height" headline="虚拟键盘高度/底部留空" description=""></mdui-list-item>
+                <mdui-list-item id="settingsSnackbarItem" icon="notifications" headline="Snackbar 设置" description=""></mdui-list-item>
+                <mdui-list-item headline="动画效果" description="关闭后减少动效，提升老设备流畅度">
+                    <mdui-switch slot="end-icon" id="settingsAnimationsSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>信息</mdui-list-subheader>
+                <mdui-list-item id="settingsAboutItem" icon="info" headline="关于 & 操作指南" description=""></mdui-list-item>
+            </mdui-list>
+        </div>
+    </mdui-dialog>
 
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">炉号 (Furnace ID)</label>
-                <mdui-text-field id="furnaceIdConfigInput" rows="5" autosize style="width:100%;"></mdui-text-field>
-            </div>
+    <mdui-dialog id="primaryColorDialog" close-on-esc close-on-overlay-click headline="主题主色">
+        <div style="padding: 0 24px 16px; display: grid; gap: 12px;">
+            <div id="primaryColorPresetGrid" style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;"></div>
+            <input id="primaryColorPicker" type="color" style="width: 100%; height: 44px; border: 1px solid var(--border-color); border-radius: 10px; padding: 0 8px; box-sizing: border-box; background: transparent;">
+            <mdui-text-field id="primaryColorHexInput" label="HEX（#RRGGBB）" variant="outlined"></mdui-text-field>
+        </div>
+        <mdui-button slot="action" variant="text" id="primaryColorCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="outlined" id="primaryColorResetBtn">重置默认</mdui-button>
+        <mdui-button slot="action" variant="filled" id="primaryColorOkBtn">保存</mdui-button>
+    </mdui-dialog>
 
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">产品号 (Product ID)</label>
-                <mdui-text-field id="productIdConfigInput" rows="3" autosize style="width:100%;"></mdui-text-field>
+    <mdui-dialog id="snackbarSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>Snackbar 设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSnackbarSettingsBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div style="display: grid; gap: 12px;">
+                <mdui-select id="snackbarPlacementSelect" variant="outlined" placement="bottom" value="bottom-center" label="位置"></mdui-select>
+                <mdui-segmented-button-group id="snackbarDismissGroup" selects="single" value="swipe">
+                    <mdui-segmented-button value="swipe">右滑关闭</mdui-segmented-button>
+                    <mdui-segmented-button value="button">按钮关闭</mdui-segmented-button>
+                </mdui-segmented-button-group>
             </div>
+            <div style="margin-top: 14px;">
+                <mdui-button variant="filled" id="saveSnackbarSettingsBtn">保存</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
 
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">卡片号 (Card ID)</label>
-                <mdui-text-field id="cardIdConfigInput" rows="5" autosize style="width:100%;"></mdui-text-field>
+    <mdui-dialog id="shortcutActionDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title id="shortcutActionTitle">快捷短语</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="add" id="shortcutActionAddBtn"></mdui-button-icon>
+            <mdui-button-icon icon="close" id="shortcutActionCloseBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <mdui-text-field id="shortcutEditValue" label="快捷短语内容" variant="outlined"></mdui-text-field>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+                <mdui-button variant="filled" id="shortcutSaveBtn">保存修改</mdui-button>
+                <mdui-button variant="outlined" color="error" id="shortcutDeleteBtn">删除</mdui-button>
             </div>
+        </div>
+    </mdui-dialog>
 
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">钢种 (Steel Type)</label>
-                <mdui-text-field id="steelTypeConfigInput" rows="5" autosize style="width:100%;"></mdui-text-field>
-            </div>
-            
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">状态 (Status)</label>
-                <mdui-text-field id="statusConfigInput" rows="3" autosize style="width:100%;"></mdui-text-field>
-            </div>
-            
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">位置 (Position)</label>
-                <mdui-text-field id="positionConfigInput" rows="3" autosize style="width:100%;"></mdui-text-field>
-            </div>
+    <mdui-dialog id="shortcutAddDialog" close-on-esc fullscreen headline="添加快捷短语">
+        <mdui-text-field id="shortcutAddValue" label="快捷短语内容" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-secondary);">当前已有：</div>
+        <div id="shortcutAddExistingList" style="margin-top: 8px; max-height: 40vh; overflow: auto; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        <mdui-button slot="action" variant="text" id="shortcutAddCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutAddOkBtn">添加</mdui-button>
+    </mdui-dialog>
 
-            <mdui-divider style="margin: 16px 0;"></mdui-divider>
-            
-            <div class="input-group" style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:8px; font-weight:500;">高级配置 (Advanced JSON)</label>
-                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0;">
-                    在此完全自定义键盘布局、键位大小、符号映射等。
-                </p>
-                <mdui-text-field id="advancedJsonConfigInput" rows="2" autosize readonly style="width:100%; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.05);"></mdui-text-field>
-                <div style="display:flex; gap:8px; margin-top: 8px;">
-                     <mdui-button variant="tonal" id="openAdvancedJsonEditorBtn" icon="edit" style="flex:1">打开完整编辑器</mdui-button>
+    <mdui-dialog id="duplicateShortcutConfirmDialog" close-on-esc headline="检测到相同快捷短语">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            已存在相同内容的快捷短语，是否继续添加？
+        </div>
+        <mdui-button slot="action" variant="text" id="duplicateShortcutCancelBtn">取消并定位</mdui-button>
+        <mdui-button slot="action" variant="filled" id="duplicateShortcutOkBtn">继续添加</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="suggestThresholdDialog" close-on-esc close-on-overlay-click headline="建议阈值">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            当某个输入值在“添加数据”时累计出现达到阈值，就会提示加入快捷短语。
+        </div>
+        <mdui-text-field id="suggestThresholdInput" label="次数" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="suggestThresholdCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="suggestThresholdOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutRowsDialog" close-on-esc close-on-overlay-click headline="快捷短语显示行数">
+        <div style="display: grid; gap: 14px; padding: 8px 0;">
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">默认</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup" selects="single" value="2">
+                    <mdui-segmented-button value="1">1 行</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2 行</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3 行</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">钢种</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_steelType" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">产品号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_productId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">卡片号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_cardId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">炉号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_furnaceId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">状态</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_status" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">位置</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_position" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="shortcutRowsCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutRowsOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="dialogPositionDialog" close-on-esc close-on-overlay-click headline="对话框默认位置（可多选）">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; padding: 8px 0;">
+            <mdui-checkbox id="dialogPosTop">顶部</mdui-checkbox>
+            <mdui-checkbox id="dialogPosCenter">居中</mdui-checkbox>
+        </div>
+        <mdui-button slot="action" variant="text" id="dialogPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="dialogPositionOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="keyboardSizeDialog" close-on-esc close-on-overlay-click headline="虚拟键盘高度/底部留空">
+        <div style="display: grid; gap: 16px; padding: 8px 0;">
+            <div style="display: grid; gap: 8px;">
+                <div style="font-weight: 500;">键盘高度(px)</div>
+                <mdui-slider id="vkHeightSlider" min="120" max="1200" step="10" value="420"></mdui-slider>
+                <mdui-text-field id="vkHeightInput" label="键盘高度(px)（留空=自动）" variant="outlined" type="number"></mdui-text-field>
+            </div>
+            <div style="display: grid; gap: 8px;">
+                <div style="font-weight: 500;">底部留空(px)</div>
+                <mdui-slider id="vkBottomOffsetSlider" min="0" max="400" step="5" value="0"></mdui-slider>
+                <mdui-text-field id="vkBottomOffsetInput" label="底部留空(px)（留空=0）" variant="outlined" type="number"></mdui-text-field>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="keyboardSizeCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="keyboardSizeOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="imageCompressSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>图片压缩设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeImageCompressSettingsBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <mdui-segmented-button-group id="imageCompressPolicyGroup" selects="single" value="ask">
+                <mdui-segmented-button value="ask">每次询问</mdui-segmented-button>
+                <mdui-segmented-button value="compress">总是压缩</mdui-segmented-button>
+                <mdui-segmented-button value="force">总是原图</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <div style="margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
+                <mdui-checkbox id="imageCompressUseMaxWidth">限制宽度</mdui-checkbox>
+                <mdui-checkbox id="imageCompressUseMaxHeight">限制高度</mdui-checkbox>
+            </div>
+            <div style="margin-top: 16px; display: grid; gap: 12px;">
+                <mdui-text-field id="largeImageThresholdMB" label="大图阈值(MB)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressMaxWidth" label="最大宽度(px)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressMaxHeight" label="最大高度(px)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressQuality" label="质量(0-1)" variant="outlined" type="number"></mdui-text-field>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <mdui-button variant="filled" id="saveImageCompressSettingsBtn">保存</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="exportChoiceDialog" close-on-esc close-on-overlay-click headline="导出方式">
+        <mdui-segmented-button-group id="exportTypeGroup" selects="single" value="excel_images">
+            <mdui-segmented-button value="excel_images">Excel（含图片）</mdui-segmented-button>
+            <mdui-segmented-button value="zip_images">ZIP（图片外放）</mdui-segmented-button>
+        </mdui-segmented-button-group>
+        <mdui-button slot="action" variant="text" id="exportChoiceCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="exportChoiceOkBtn">导出</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="exportProgressDialog" headline="正在导出" close-on-esc>
+        <div style="padding: 0 24px 24px; display: grid; gap: 12px;">
+            <div id="exportProgressText" style="font-size: 0.95rem; color: var(--mdui-color-on-surface-variant, #757575);"></div>
+            <mdui-linear-progress id="exportProgressBar" value="0"></mdui-linear-progress>
+            <div id="exportProgressPercent" style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); text-align: right;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="moveRowDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title id="moveRowDialogTitle">移动到指定行</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeMoveRowDialogBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <mdui-text-field id="moveRowSearchInput" label="搜索（产品号/卡片号/钢种/行号）" variant="outlined" clearable></mdui-text-field>
+            <mdui-list id="moveRowList" style="margin-top: 10px;"></mdui-list>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px;">
+                <div id="moveRowPageInfo" style="color: var(--mdui-color-on-surface-variant, #757575); font-size: 0.9rem;"></div>
+                <div style="display:flex; gap: 8px; align-items: center;">
+                    <mdui-button-icon icon="navigate_before" id="moveRowPrevBtn"></mdui-button-icon>
+                    <input type="number" id="moveRowPageInput" min="1" value="1" style="width: 70px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; background: var(--surface-color); color: var(--text-color);">
+                    <mdui-button-icon icon="navigate_next" id="moveRowNextBtn"></mdui-button-icon>
                 </div>
             </div>
         </div>
-        <div slot="action">
-            <input type="file" id="importKeyboardConfigInput" accept=".json" style="display:none">
-            <mdui-button variant="outlined" id="exportKeyboardConfigBtn" style="margin-right:auto">导出JSON</mdui-button>
-            <mdui-button variant="outlined" id="importKeyboardConfigBtn" style="margin-right:8px">导入JSON</mdui-button>
-            
-            <mdui-button variant="tonal" id="cancelKeyboardConfigBtn">取消</mdui-button>
-            <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
-            <mdui-button variant="filled" id="saveKeyboardConfigBtn">保存</mdui-button>
-        </div>
+        <mdui-button slot="action" variant="text" id="moveRowCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="moveRowOkBtn">确定</mdui-button>
     </mdui-dialog>
 
     <!-- Advanced JSON Editor Dialog -->
@@ -1849,11 +2452,16 @@
                 <span style="font-size: 1.25rem; font-weight: 500;">编辑 JSON 配置</span>
                 <mdui-button-icon icon="close" id="closeAdvancedJsonEditorBtn"></mdui-button-icon>
             </div>
-            <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 16px 24px;">
+            <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 8px 8px;">
                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 8px;">
                     请确保 JSON 格式正确。支持自定义 layouts (布局), symbolMap (符号映射), templates (模板)。
                 </p>
-                <mdui-text-field id="fullJsonEditorInput" rows="20" style="width:100%; flex: 1; font-family: monospace; font-size: 13px; overflow-y: auto;"></mdui-text-field>
+                <mdui-text-field id="fullJsonEditorInput" 
+                type="textarea" 
+                rows="16"
+                style="width:100%;
+                min-height:120px;
+                font-family: monospace; font-size: 13px;"></mdui-text-field>
             </div>
             <div style="padding: 16px 24px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <mdui-button variant="text" id="cancelJsonEditorBtn">取消</mdui-button>
@@ -1866,16 +2474,64 @@
 
 		const PRIMARY_KEY = "xtd_theme_primary";
 		const themeFlash = document.getElementById("themeFlash");
+		const RSDB_VERSION = '2026.02.04';
+		const RSDB_CHANGELOG = [
+		    {
+		        version: '2026.02.04',
+		        notes: [
+		            '快捷短语：右上角新增 + / 编辑，支持拖动排序',
+		            '设置：快捷短语行数支持按字段自定义；对话框位置支持多选',
+		            '图片：大图压缩策略、可选限制宽高；导出支持 Excel 含图 / ZIP 外放图片'
+		        ]
+		    },
+		    {
+		        version: '2026.01.25',
+		        notes: [
+		            '编辑与多选：搜索/替换/多选删除等功能完善',
+		            '虚拟键盘：光标与滚动体验修复'
+		        ]
+		    }
+		];
 		let tableData = [];              
 		let currentInput = null;         
 		let keyboardState = JSON.parse(localStorage.getItem('keyboardState')) || {
 		    shiftState: 'locked-on',     
 		    inputType: 'text'            
 		};
+		const APP_SETTINGS_KEY = 'rsdb_app_settings_v1';
+		const INPUT_STATS_KEY = 'rsdb_input_stats_v1';
+		const DEFAULT_APP_SETTINGS = {
+		    shortcutRows: 2,
+		    shortcutRowsByField: {},
+		    shortcutWrap: false,
+		    suggestEnabled: true,
+		    suggestThreshold: 5,
+		    imageCompressPolicy: 'ask',
+		    imageCompressUseMaxWidth: true,
+		    imageCompressUseMaxHeight: true,
+		    largeImageThresholdMB: 5,
+		    imageCompressMaxWidth: 1280,
+		    imageCompressMaxHeight: 1280,
+		    imageCompressQuality: 0.8,
+		    snackbarPlacement: 'bottom-center',
+		    snackbarDismissMode: 'swipe',
+		    animationsEnabled: true,
+		    dialogPositions: ['center'],
+		    virtualKeyboardHeight: null,
+		    virtualKeyboardBottomOffset: 0
+		};
+		let appSettings = loadAppSettings();
+		let inputStats = loadInputStats();
+		let shortcutEditMode = false;
+		let currentShortcutFieldKey = null;
+		let shortcutDragState = null;
+		let duplicateShortcutContext = null;
+		let shortcutEditSession = null;
 		let suppressVirtualKeyboard = false;   
 		let currentEditIndex = -1;       
 		let isMultiSelectMode = false;   
 		let selectedRows = new Set();    
+		let moveRowDialogState = null;
 		let selectedTheme = localStorage.getItem('theme') || 'auto';  
 		let searchTerm = '';             
 		let isSearchReplaceVisible = false;  
@@ -1896,6 +2552,367 @@
 		        let isFilterMatchRows = false;
                 let deferredPrompt; // PWA install prompt  
 
+		function loadAppSettings() {
+		    try {
+		        const raw = localStorage.getItem(APP_SETTINGS_KEY);
+		        const parsed = raw ? JSON.parse(raw) : {};
+		        const merged = { ...DEFAULT_APP_SETTINGS, ...(parsed || {}) };
+		        if (!merged.dialogPositions) {
+		            const legacy = merged.dialogPosition;
+		            merged.dialogPositions = legacy === 'top' ? ['top'] : ['center'];
+		        }
+		        if (!merged.shortcutRowsByField || typeof merged.shortcutRowsByField !== 'object') {
+		            merged.shortcutRowsByField = {};
+		        }
+		        if (merged.imageCompressUseMaxWidth === undefined) merged.imageCompressUseMaxWidth = true;
+		        if (merged.imageCompressUseMaxHeight === undefined) merged.imageCompressUseMaxHeight = true;
+		        const mb = Number(merged.largeImageThresholdMB);
+		        merged.largeImageThresholdMB = Number.isFinite(mb) ? Math.max(0.5, Math.min(50, mb)) : 5;
+		        merged.snackbarPlacement = typeof merged.snackbarPlacement === 'string' ? merged.snackbarPlacement : 'bottom-center';
+		        merged.snackbarDismissMode = merged.snackbarDismissMode === 'button' ? 'button' : 'swipe';
+		        merged.animationsEnabled = merged.animationsEnabled !== false;
+		        return merged;
+		    } catch (e) {
+		        return { ...DEFAULT_APP_SETTINGS };
+		    }
+		}
+
+		function saveAppSettings(partial) {
+		    appSettings = { ...appSettings, ...(partial || {}) };
+		    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appSettings));
+		    applyAppSettings();
+		}
+
+		function loadInputStats() {
+		    try {
+		        const raw = localStorage.getItem(INPUT_STATS_KEY);
+		        return raw ? JSON.parse(raw) : {};
+		    } catch (e) {
+		        return {};
+		    }
+		}
+
+		function saveInputStats() {
+		    localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(inputStats));
+		}
+
+		function recordInputStat(fieldKey, value) {
+		    const v = (value || '').trim();
+		    if (!v) return;
+		    if (!inputStats[fieldKey]) inputStats[fieldKey] = {};
+		    inputStats[fieldKey][v] = (inputStats[fieldKey][v] || 0) + 1;
+		}
+
+		function recordInputStatsOnAdd(formData) {
+		    recordInputStat('furnaceId', formData.furnaceId);
+		    recordInputStat('productId', formData.productId);
+		    recordInputStat('cardId', formData.cardId);
+		    recordInputStat('steelType', formData.steelType);
+		    recordInputStat('status', formData.status);
+		    recordInputStat('position', formData.position);
+		    saveInputStats();
+		}
+
+		function applyDialogPositionToAll() {
+		    const dialogs = document.querySelectorAll('mdui-dialog');
+		    const positions = Array.isArray(appSettings.dialogPositions) ? appSettings.dialogPositions : (appSettings.dialogPositions ? [appSettings.dialogPositions] : ['center']);
+		    const hasTop = positions.includes('top');
+		    const hasCenter = positions.includes('center') || positions.length === 0;
+		    dialogs.forEach(dlg => {
+		        dlg.classList.remove('dialog-pos-top');
+		        if (hasTop && !hasCenter) {
+		            dlg.classList.add('dialog-pos-top');
+		            return;
+		        }
+		        if (hasTop && hasCenter) {
+		            if (dlg.hasAttribute('fullscreen')) dlg.classList.add('dialog-pos-top');
+		        }
+		    });
+		}
+
+		function applyAppSettings() {
+		    applyDialogPositionToAll();
+		    document.documentElement.classList.toggle('no-animations', appSettings.animationsEnabled === false);
+		    const vk = document.getElementById('virtualKeyboard');
+		    if (vk) {
+		        vk.classList.toggle('shortcut-wrap-enabled', !!appSettings.shortcutWrap);
+		        const height = Number(appSettings.virtualKeyboardHeight);
+		        if (Number.isFinite(height) && height > 0) vk.style.height = `${Math.round(height)}px`;
+		        else vk.style.height = '';
+		        const bottomOffset = Number(appSettings.virtualKeyboardBottomOffset);
+		        const blank = Number.isFinite(bottomOffset) && bottomOffset >= 0 ? Math.round(bottomOffset) : 0;
+		        vk.style.bottom = '0px';
+		        vk.style.paddingBottom = `${blank + 2}px`;
+		    }
+		    applySnackbarSettings();
+		    updateSettingsUI();
+		    generateVirtualKeyboard();
+		}
+
+		function setShortcutEditMode(enabled) {
+		    const next = !!enabled;
+		    if (next && currentShortcutFieldKey) {
+		        const templates = getTemplatesByField(currentShortcutFieldKey) || [];
+		        shortcutEditSession = {
+		            fieldKey: currentShortcutFieldKey,
+		            original: templates.slice(),
+		            working: templates.slice()
+		        };
+		    }
+		    if (!next && shortcutEditMode && shortcutEditSession && shortcutEditSession.fieldKey === currentShortcutFieldKey) {
+		        const templates = getTemplatesByField(currentShortcutFieldKey);
+		        if (templates) {
+		            templates.splice(0, templates.length, ...(shortcutEditSession.working || []));
+		            KeyboardConfigManager.save();
+		        }
+		        shortcutEditSession = null;
+		    }
+		    if (!next) {
+		        shortcutEditSession = null;
+		    }
+		    shortcutEditMode = next;
+		    const vk = document.getElementById('virtualKeyboard');
+		    if (vk) vk.classList.toggle('shortcut-edit-mode', shortcutEditMode);
+		    const editBtn = document.getElementById('shortcutEditToggleBtn');
+		    if (editBtn) editBtn.setAttribute('icon', shortcutEditMode ? 'check' : 'edit');
+		    const cancelBtn = document.getElementById('shortcutEditCancelBtn');
+		    if (cancelBtn) cancelBtn.style.display = shortcutEditMode ? '' : 'none';
+		    if (editBtn) editBtn.style.color = shortcutEditMode ? '#4caf50' : '';
+		    if (cancelBtn) cancelBtn.style.color = shortcutEditMode ? '#f44336' : '';
+		    generateVirtualKeyboard();
+		}
+
+		function cancelShortcutEditMode() {
+		    shortcutEditSession = null;
+		    shortcutEditMode = false;
+		    const vk = document.getElementById('virtualKeyboard');
+		    if (vk) vk.classList.remove('shortcut-edit-mode');
+		    const editBtn = document.getElementById('shortcutEditToggleBtn');
+		    if (editBtn) editBtn.setAttribute('icon', 'edit');
+		    const cancelBtn = document.getElementById('shortcutEditCancelBtn');
+		    if (cancelBtn) cancelBtn.style.display = 'none';
+		    if (editBtn) editBtn.style.color = '';
+		    if (cancelBtn) cancelBtn.style.color = '';
+		    generateVirtualKeyboard();
+		}
+
+		function highlightShortcutInKeyboard(value) {
+		    if (!value) return;
+		    const vk = document.getElementById('virtualKeyboard');
+		    if (!vk) return;
+		    const keys = Array.from(vk.querySelectorAll('.shortcut-key, .status-key'));
+		    const target = keys.find(k => (k.textContent || '').trim() === value.trim());
+		    if (!target) return;
+		    target.classList.add('shortcut-highlight');
+		    target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+		    setTimeout(() => target.classList.remove('shortcut-highlight'), 1200);
+		}
+
+		function beginShortcutDrag(e, keyElement) {
+		    if (!shortcutEditMode) return;
+		    if (!currentShortcutFieldKey) return;
+		    if (!keyElement?.dataset?.value) return;
+		    const container = document.getElementById('shortcutKeysContainer');
+		    if (!container) return;
+		    const rect = keyElement.getBoundingClientRect();
+		    const ghost = keyElement.cloneNode(true);
+		    ghost.style.position = 'fixed';
+		    ghost.style.left = `${rect.left}px`;
+		    ghost.style.top = `${rect.top}px`;
+		    ghost.style.width = `${rect.width}px`;
+		    ghost.style.height = `${rect.height}px`;
+		    ghost.style.zIndex = '20001';
+		    ghost.style.pointerEvents = 'none';
+		    ghost.style.opacity = '0.85';
+		    document.body.appendChild(ghost);
+
+		    const placeholder = document.createElement('div');
+		    placeholder.className = `${keyElement.className} shortcut-placeholder`;
+		    placeholder.style.width = `${rect.width}px`;
+		    placeholder.style.height = `${rect.height}px`;
+		    placeholder.dataset.value = keyElement.dataset.value;
+		    container.insertBefore(placeholder, keyElement);
+		    keyElement.style.display = 'none';
+
+		    shortcutDragState = {
+		        pointerId: e.pointerId,
+		        container,
+		        ghost,
+		        placeholder,
+		        dragged: keyElement,
+		        offsetX: e.clientX - rect.left,
+		        offsetY: e.clientY - rect.top
+		    };
+		    try {
+		        keyElement.setPointerCapture(e.pointerId);
+		    } catch (err) {}
+		}
+
+		function updateShortcutDrag(e) {
+		    const s = shortcutDragState;
+		    if (!s) return;
+		    if (e.pointerId !== s.pointerId) return;
+		    s.ghost.style.left = `${e.clientX - s.offsetX}px`;
+		    s.ghost.style.top = `${e.clientY - s.offsetY}px`;
+
+		    const el = document.elementFromPoint(e.clientX, e.clientY);
+		    const target = el?.closest?.('.shortcut-draggable');
+		    if (!target) return;
+		    if (target === s.dragged) return;
+		    if (target.parentElement !== s.container) return;
+
+		    const r = target.getBoundingClientRect();
+		    const before = e.clientX < r.left + r.width / 2;
+		    s.container.insertBefore(s.placeholder, before ? target : target.nextSibling);
+		}
+
+		function endShortcutDrag(e) {
+		    const s = shortcutDragState;
+		    if (!s) return;
+		    if (e.pointerId !== s.pointerId) return;
+
+		    try {
+		        s.dragged.releasePointerCapture(e.pointerId);
+		    } catch (err) {}
+
+		    s.container.insertBefore(s.dragged, s.placeholder);
+		    s.dragged.style.display = '';
+		    s.placeholder.remove();
+		    s.ghost.remove();
+		    shortcutDragState = null;
+
+		    const templates = getTemplatesByField(currentShortcutFieldKey);
+		    const ordered = Array.from(s.container.querySelectorAll('.shortcut-draggable'))
+		        .map(n => n.dataset.value)
+		        .filter(v => typeof v === 'string' && v.length > 0);
+		    if (shortcutEditSession && shortcutEditSession.fieldKey === currentShortcutFieldKey) {
+		        shortcutEditSession.working = ordered;
+		    } else if (templates) {
+		        templates.splice(0, templates.length, ...ordered);
+		        KeyboardConfigManager.save();
+		    }
+		}
+
+		function updateSettingsUI() {
+		    const rowsItem = document.getElementById('settingsShortcutRowsItem');
+		    if (rowsItem) {
+		        const base = Math.max(1, Math.min(3, Number(appSettings.shortcutRows) || 2));
+		        const overrides = appSettings.shortcutRowsByField && typeof appSettings.shortcutRowsByField === 'object'
+		            ? Object.keys(appSettings.shortcutRowsByField).filter(k => Number(appSettings.shortcutRowsByField[k]) && Number(appSettings.shortcutRowsByField[k]) !== base)
+		            : [];
+		        rowsItem.setAttribute('description', overrides.length ? `默认 ${base} 行（${overrides.length} 个自定义）` : `默认 ${base} 行`);
+		    }
+		    const thresholdItem = document.getElementById('settingsSuggestThresholdItem');
+		    if (thresholdItem) thresholdItem.setAttribute('description', `${Number(appSettings.suggestThreshold) || 5} 次`);
+		    const suggestSwitch = document.getElementById('settingsSuggestSwitch');
+		    if (suggestSwitch) suggestSwitch.checked = !!appSettings.suggestEnabled;
+		    const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
+		    if (wrapSwitch) wrapSwitch.checked = !!appSettings.shortcutWrap;
+		    const compressItem = document.getElementById('settingsImageCompressItem');
+		    if (compressItem) {
+		        const map = { ask: '每次询问', compress: '总是压缩', force: '总是原图' };
+		        compressItem.setAttribute('description', map[appSettings.imageCompressPolicy] || '每次询问');
+		    }
+		    const thresholdMB = Math.max(0.5, Math.min(50, Number(appSettings.largeImageThresholdMB) || 5));
+		    const compressListItem = document.getElementById('settingsAlwaysCompressItem');
+		    if (compressListItem) compressListItem.setAttribute('description', `超过 ${thresholdMB}MB 自动压缩上传`);
+		    const forceListItem = document.getElementById('settingsAlwaysForceItem');
+		    if (forceListItem) forceListItem.setAttribute('description', `超过 ${thresholdMB}MB 直接上传原图`);
+		    const alwaysCompressSwitch = document.getElementById('settingsAlwaysCompressSwitch');
+		    const alwaysForceSwitch = document.getElementById('settingsAlwaysForceSwitch');
+		    if (alwaysCompressSwitch) alwaysCompressSwitch.checked = appSettings.imageCompressPolicy === 'compress';
+		    if (alwaysForceSwitch) alwaysForceSwitch.checked = appSettings.imageCompressPolicy === 'force';
+		    const dialogPosItem = document.getElementById('settingsDialogPositionItem');
+		    if (dialogPosItem) {
+		        const positions = Array.isArray(appSettings.dialogPositions) ? appSettings.dialogPositions : ['center'];
+		        dialogPosItem.setAttribute('description', positions.length ? positions.join(' + ') : '居中');
+		    }
+		    const keyboardSizeItem = document.getElementById('settingsKeyboardSizeItem');
+		    if (keyboardSizeItem) {
+		        const h = Number(appSettings.virtualKeyboardHeight);
+		        const b = Number(appSettings.virtualKeyboardBottomOffset);
+		        const hText = Number.isFinite(h) && h > 0 ? `${Math.round(h)}px` : '自动';
+		        const bText = Number.isFinite(b) && b > 0 ? `${Math.round(b)}px` : '0px';
+		        keyboardSizeItem.setAttribute('description', `高度 ${hText}，底部 ${bText}`);
+		    }
+		    const snackbarItem = document.getElementById('settingsSnackbarItem');
+		    if (snackbarItem) {
+		        const placement = appSettings.snackbarPlacement || 'bottom-center';
+		        const mode = appSettings.snackbarDismissMode === 'button' ? '按钮关闭' : '右滑关闭';
+		        snackbarItem.setAttribute('description', `${placement}，${mode}`);
+		    }
+		    const animSwitch = document.getElementById('settingsAnimationsSwitch');
+		    if (animSwitch) animSwitch.checked = appSettings.animationsEnabled !== false;
+		    const primaryItem = document.getElementById('settingsPrimaryColorItem');
+		    if (primaryItem) {
+		        const color = localStorage.getItem(PRIMARY_KEY) || getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#00796b';
+		        primaryItem.setAttribute('description', color);
+		    }
+		    const aboutItem = document.getElementById('settingsAboutItem');
+		    if (aboutItem) aboutItem.setAttribute('description', `版本 ${RSDB_VERSION}`);
+		    const policyGroup = document.getElementById('imageCompressPolicyGroup');
+		    if (policyGroup) policyGroup.value = appSettings.imageCompressPolicy || 'ask';
+		    const w = document.getElementById('imageCompressMaxWidth');
+		    const h = document.getElementById('imageCompressMaxHeight');
+		    const q = document.getElementById('imageCompressQuality');
+		    const t = document.getElementById('largeImageThresholdMB');
+		    const setValue = (el, val) => {
+		        if (!el) return;
+		        el.value = val;
+		        try { el.setAttribute('value', val); } catch (e) {}
+		    };
+		    setValue(t, String(thresholdMB));
+		    setValue(w, String(appSettings.imageCompressMaxWidth ?? 1280));
+		    setValue(h, String(appSettings.imageCompressMaxHeight ?? 1280));
+		    setValue(q, String(appSettings.imageCompressQuality ?? 0.8));
+		    const useW = document.getElementById('imageCompressUseMaxWidth');
+		    const useH = document.getElementById('imageCompressUseMaxHeight');
+		    const setChecked = (el, checked) => {
+		        if (!el) return;
+		        el.checked = !!checked;
+		        if (checked) el.setAttribute('checked', '');
+		        else el.removeAttribute('checked');
+		    };
+		    setChecked(useW, appSettings.imageCompressUseMaxWidth !== false);
+		    setChecked(useH, appSettings.imageCompressUseMaxHeight !== false);
+		    if (w) w.disabled = false;
+		    if (h) h.disabled = false;
+		    const rowsGroup = document.getElementById('shortcutRowsGroup');
+		    const baseRows = Math.max(1, Math.min(3, Number(appSettings.shortcutRows) || 2));
+		    if (rowsGroup) rowsGroup.value = String(baseRows);
+		    const map = appSettings.shortcutRowsByField || {};
+		    const setGroup = (id, fieldKey) => {
+		        const el = document.getElementById(id);
+		        if (!el) return;
+		        const v = Math.max(1, Math.min(3, Number(map[fieldKey]) || baseRows));
+		        el.value = String(v);
+		    };
+		    setGroup('shortcutRowsGroup_steelType', 'steelType');
+		    setGroup('shortcutRowsGroup_productId', 'productId');
+		    setGroup('shortcutRowsGroup_cardId', 'cardId');
+		    setGroup('shortcutRowsGroup_furnaceId', 'furnaceId');
+		    setGroup('shortcutRowsGroup_status', 'status');
+		    setGroup('shortcutRowsGroup_position', 'position');
+		    const dialogTop = document.getElementById('dialogPosTop');
+		    const dialogCenter = document.getElementById('dialogPosCenter');
+		    if (dialogTop || dialogCenter) {
+		        const positions = Array.isArray(appSettings.dialogPositions) ? appSettings.dialogPositions : ['center'];
+		        if (dialogTop) dialogTop.checked = positions.includes('top');
+		        if (dialogCenter) dialogCenter.checked = positions.includes('center') || positions.length === 0;
+		    }
+		    const thresholdInput = document.getElementById('suggestThresholdInput');
+		    if (thresholdInput) thresholdInput.value = String(Number(appSettings.suggestThreshold) || 5);
+		    const vkHeightInput = document.getElementById('vkHeightInput');
+		    const vkBottomInput = document.getElementById('vkBottomOffsetInput');
+		    const vkHeightSlider = document.getElementById('vkHeightSlider');
+		    const vkBottomSlider = document.getElementById('vkBottomOffsetSlider');
+		    if (vkHeightInput) vkHeightInput.value = appSettings.virtualKeyboardHeight ? String(appSettings.virtualKeyboardHeight) : '';
+		    if (vkBottomInput) vkBottomInput.value = String(Number(appSettings.virtualKeyboardBottomOffset) || 0);
+		    const hNum = Number(appSettings.virtualKeyboardHeight);
+		    if (vkHeightSlider) vkHeightSlider.value = String(Number.isFinite(hNum) && hNum > 0 ? Math.round(hNum) : 420);
+		    const bNum = Number(appSettings.virtualKeyboardBottomOffset);
+		    if (vkBottomSlider) vkBottomSlider.value = String(Number.isFinite(bNum) && bNum >= 0 ? Math.round(bNum) : 0);
+		}
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
 		  'actualDiameter', 'diameter', 'length', 'weight',
@@ -1974,6 +2991,9 @@
 		  virtualKeyboard: document.getElementById('virtualKeyboard'),
 		  keyboardRows: document.getElementById('keyboardRows'),
 		  shortcutContainer: document.getElementById('shortcutContainer'),
+		  shortcutKeysContainer: document.getElementById('shortcutKeysContainer'),
+		  shortcutQuickAddBtn: document.getElementById('shortcutQuickAddBtn'),
+		  shortcutEditToggleBtn: document.getElementById('shortcutEditToggleBtn'),
 		  searchInput: document.getElementById('searchInput'),
 		  searchClearBtn: document.getElementById('searchClearBtn'),
 		  calculatorModal: document.getElementById('calculatorModalCustom'), 
@@ -2164,10 +3184,86 @@ const ZoomManager = {
 		function showSnackbar(message, color) {
 		  const snackbar = dom.generalSnackbar;
 		  if (!snackbar) return;
+		  snackbar.style.transform = '';
 		  snackbar.innerHTML = message;
 		  if (color) snackbar.color = color;
 		  else snackbar.removeAttribute('color');
 		  snackbar.open = true;
+		}
+
+		function bindImmediateActionButton(el, handler) {
+		  if (!el || typeof handler !== 'function') return;
+		  let ignoreClickUntil = 0;
+		  el.addEventListener('pointerdown', (e) => {
+		    if (e.pointerType === 'mouse') return;
+		    ignoreClickUntil = Date.now() + 600;
+		    if (e.cancelable) e.preventDefault();
+		    handler(e);
+		  }, { passive: false });
+		  el.addEventListener('click', (e) => {
+		    if (Date.now() < ignoreClickUntil) {
+		      e.preventDefault();
+		      e.stopPropagation();
+		      return;
+		    }
+		    handler(e);
+		  });
+		}
+
+		function applySnackbarSettings() {
+		    const snackbar = dom.generalSnackbar;
+		    if (!snackbar) return;
+		    const placement = typeof appSettings.snackbarPlacement === 'string' ? appSettings.snackbarPlacement : 'bottom-center';
+		    snackbar.setAttribute('placement', placement);
+		    const mode = appSettings.snackbarDismissMode === 'button' ? 'button' : 'swipe';
+		    snackbar.toggleAttribute('closeable', mode === 'button');
+		    if (snackbar.dataset.boundSwipe) return;
+		    snackbar.dataset.boundSwipe = '1';
+		    let startX = 0;
+		    let startY = 0;
+		    let active = false;
+		    snackbar.addEventListener('pointerdown', (e) => {
+		        if (appSettings.snackbarDismissMode !== 'swipe') return;
+		        if (!snackbar.open) return;
+		        startX = e.clientX;
+		        startY = e.clientY;
+		        active = true;
+		    }, { passive: true });
+		    snackbar.addEventListener('pointermove', (e) => {
+		        if (appSettings.snackbarDismissMode !== 'swipe') return;
+		        if (!active) return;
+		        const dx = e.clientX - startX;
+		        const dy = e.clientY - startY;
+		        if (Math.abs(dy) > 40) {
+		            active = false;
+		            snackbar.style.transform = '';
+		            return;
+		        }
+		        if (dx > 0) {
+		            snackbar.style.transition = 'transform 0.08s ease-out';
+		            snackbar.style.transform = `translateX(${Math.min(dx, 220)}px)`;
+		        }
+		    }, { passive: true });
+		    const end = (e) => {
+		        if (appSettings.snackbarDismissMode !== 'swipe') return;
+		        if (!active) return;
+		        active = false;
+		        const dx = e.clientX - startX;
+		        const dy = e.clientY - startY;
+		        if (dx > 80 && Math.abs(dy) < 40) {
+		            snackbar.style.transition = 'transform 0.16s ease-out';
+		            snackbar.style.transform = 'translateX(120%)';
+		            setTimeout(() => {
+		                snackbar.open = false;
+		                snackbar.style.transform = '';
+		            }, 170);
+		        } else {
+		            snackbar.style.transition = 'transform 0.16s ease-out';
+		            snackbar.style.transform = '';
+		        }
+		    };
+		    snackbar.addEventListener('pointerup', end, { passive: true });
+		    snackbar.addEventListener('pointercancel', end, { passive: true });
 		}
 
 		function isSystemDarkMode() {
@@ -2320,7 +3416,7 @@ function openCompareEditDialog(suggestedFields) {
             newInput.removeAttribute('readonly');
             newInput.classList.remove('readonly-input');
             newInput.focus();
-            dom.virtualKeyboard.style.display = 'none';
+            setVirtualKeyboardVisible(false);
         });
 
         newInput.addEventListener('click', (e) => {
@@ -2472,7 +3568,7 @@ function initEventListeners() {
                 if (isReadonly && isVirtualKeyboardVisible && isCurrentInput) {
                     targetInput.removeAttribute('readonly');
                     targetInput.classList.remove('readonly-input');
-                    dom.virtualKeyboard.style.display = 'none';
+                    setVirtualKeyboardVisible(false);
                     const virtualCursor = document.getElementById('virtualCursor');
                     if (virtualCursor) virtualCursor.style.display = 'none';
                     targetInput.focus(); // Trigger system keyboard
@@ -2503,7 +3599,7 @@ function initEventListeners() {
              remarksInput.classList.remove('readonly-input');
              
              // 2. Close Virtual Keyboard
-             dom.virtualKeyboard.style.display = 'none';
+             setVirtualKeyboardVisible(false);
              const virtualCursor = document.getElementById('virtualCursor');
              if (virtualCursor) virtualCursor.style.display = 'none';
              
@@ -2511,6 +3607,83 @@ function initEventListeners() {
              currentInput = remarksInput;
              remarksInput.focus(); 
         });
+    }
+
+    const shortcutToolbar = document.getElementById('shortcutToolbar');
+    if (shortcutToolbar) {
+        const STORAGE_KEY = 'rsdb_shortcut_toolbar_right_v1';
+        const savedRight = localStorage.getItem(STORAGE_KEY);
+        if (savedRight && /^\d+px$/.test(savedRight)) {
+            shortcutToolbar.style.right = savedRight;
+        }
+
+        const LONG_PRESS_MS = 260;
+        let pressTimer = null;
+        let dragReady = false;
+        let isDragging = false;
+        let startX = 0;
+        let initialRight = 0;
+        let activePointerId = null;
+
+        const clearPress = () => {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        };
+
+        shortcutToolbar.addEventListener('click', (e) => {
+            if (window.__rsdbShortcutToolbarIgnoreClickUntil && Date.now() < window.__rsdbShortcutToolbarIgnoreClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        shortcutToolbar.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse') return;
+            if (activePointerId !== null) return;
+            activePointerId = e.pointerId;
+            dragReady = false;
+            isDragging = false;
+            startX = e.clientX;
+            const style = window.getComputedStyle(shortcutToolbar);
+            initialRight = parseFloat(style.right) || 6;
+            clearPress();
+            pressTimer = setTimeout(() => {
+                dragReady = true;
+            }, LONG_PRESS_MS);
+            shortcutToolbar.setPointerCapture?.(activePointerId);
+        }, { passive: false });
+
+        shortcutToolbar.addEventListener('pointermove', (e) => {
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+            const deltaX = startX - e.clientX;
+            if (!dragReady) {
+                if (Math.abs(deltaX) > 8) clearPress();
+                return;
+            }
+            if (Math.abs(deltaX) > 2) isDragging = true;
+            if (e.cancelable) e.preventDefault();
+            const toolbarWidth = shortcutToolbar.offsetWidth || 0;
+            const maxRight = Math.max(6, window.innerWidth - toolbarWidth - 6);
+            let newRight = initialRight + deltaX;
+            newRight = Math.max(6, Math.min(newRight, maxRight));
+            shortcutToolbar.style.right = `${Math.round(newRight)}px`;
+        }, { passive: false });
+
+        const endDrag = (e) => {
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+            clearPress();
+            if (isDragging) {
+                localStorage.setItem(STORAGE_KEY, shortcutToolbar.style.right || '6px');
+                window.__rsdbShortcutToolbarIgnoreClickUntil = Date.now() + 400;
+            }
+            dragReady = false;
+            isDragging = false;
+            shortcutToolbar.releasePointerCapture?.(activePointerId);
+            activePointerId = null;
+        };
+
+        shortcutToolbar.addEventListener('pointerup', endDrag, { passive: false });
+        shortcutToolbar.addEventListener('pointercancel', endDrag, { passive: false });
     }
 
     // FAB Draggable Logic & Reset
@@ -2602,7 +3775,7 @@ function initEventListeners() {
                     updateKeyboardForInput(input);
                     showVirtualKeyboard();
                 } else {
-                    dom.virtualKeyboard.style.display = 'none';
+                    setVirtualKeyboardVisible(false);
                     const virtualCursor = document.getElementById('virtualCursor');
                     if (virtualCursor) virtualCursor.style.display = 'none';
                 }
@@ -2712,12 +3885,16 @@ function initEventListeners() {
     dom.closeDataModal.addEventListener('click', () => {
         if (!hasDataChanged()) {
             closeCustomModal(dom.dataSheet);
-            dom.virtualKeyboard.style.display = 'none';
+            setVirtualKeyboardVisible(false);
             const virtualCursor = document.getElementById('virtualCursor');
             if (virtualCursor) virtualCursor.style.display = 'none';
         } else {
             const dialog = document.getElementById('cancelEditConfirmDialog');
-            if (dialog) dialog.open = true;
+            if (dialog) {
+                document.body.appendChild(dialog);
+                dialog.style.zIndex = '22000';
+                dialog.open = true;
+            }
         }
     });
 
@@ -2745,7 +3922,7 @@ function initEventListeners() {
         if (!hasDataChanged()) {
             // No changes, close directly
             closeCustomModal(dom.dataSheet);
-            dom.virtualKeyboard.style.display = 'none';
+            setVirtualKeyboardVisible(false);
             const virtualCursor = document.getElementById('virtualCursor');
             if (virtualCursor) virtualCursor.style.display = 'none';
         } else {
@@ -2757,7 +3934,7 @@ function initEventListeners() {
 
     document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
         closeCustomModal(dom.dataSheet);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
         const virtualCursor = document.getElementById('virtualCursor');
         if (virtualCursor) virtualCursor.style.display = 'none';
         const dialog = document.getElementById('cancelEditConfirmDialog');
@@ -2771,14 +3948,14 @@ function initEventListeners() {
 
     dom.closeQuickEdit.addEventListener('click', () => { 
         closeCustomModal(dom.quickEditDialog); 
-        dom.virtualKeyboard.style.display = 'none'; 
+        setVirtualKeyboardVisible(false); 
         const virtualCursor = document.getElementById('virtualCursor');
         if (virtualCursor) virtualCursor.style.display = 'none';
         keyboardState.isQuickEdit = false;
         saveKeyboardState();
     });
 
-    dom.saveQuickEditBtn.addEventListener('click', saveQuickEdit);
+    bindImmediateActionButton(dom.saveQuickEditBtn, saveQuickEdit);
 
     dom.openFullEditBtn.addEventListener('click', () => {
         keyboardState.isQuickEdit = false;
@@ -2786,7 +3963,7 @@ function initEventListeners() {
         const index = parseInt(dom.quickEditIndex.value);
         const targetFieldId = dom.quickEditField.value;
         closeCustomModal(dom.quickEditDialog);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
         setTimeout(() => {
             openEditModal(index, targetFieldId);
         }, 150);
@@ -2807,7 +3984,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         e.stopPropagation();
         
         if (!e.target.hasAttribute('readonly')) {
-             dom.virtualKeyboard.style.display = 'none';
+             setVirtualKeyboardVisible(false);
              const virtualCursor = document.getElementById('virtualCursor');
              if (virtualCursor) virtualCursor.style.display = 'none';
              return;
@@ -2822,44 +3999,44 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
 
     dom.closeConfirmModal.addEventListener('click', () => {
         closeCustomModal(dom.confirmModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
     });
     dom.cancelConfirmBtn.addEventListener('click', () => {
         closeCustomModal(dom.confirmModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
     });
 
     dom.closeCalculatorModal.addEventListener('click', () => { 
         closeCustomModal(dom.calculatorModal); 
-        dom.virtualKeyboard.style.display = 'none'; 
+        setVirtualKeyboardVisible(false); 
     });
 
     dom.cancelCalcBtn.addEventListener('click', () => { 
         closeCustomModal(dom.calculatorModal); 
-        dom.virtualKeyboard.style.display = 'none'; 
+        setVirtualKeyboardVisible(false); 
     });
 
     dom.clearCalcBtn.addEventListener('click', clearCalculatorInputs);
 
     dom.closeDuplicateModal.addEventListener('click', () => {
         closeCustomModal(dom.duplicateConfirmationModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
     });
 
     document.getElementById('modal-btn-cancel-import')?.addEventListener('click', () => {
         closeCustomModal(dom.duplicateConfirmationModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
         showSnackbar('导入操作已取消', 'warning');
     });
 
     dom.sortItem.addEventListener('click', openSortModal);
     dom.closeSortModal.addEventListener('click', () => {
         closeCustomModal(dom.sortModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
     });
     dom.cancelSortBtn.addEventListener('click', () => {
         closeCustomModal(dom.sortModal);
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
     });
     dom.applySortBtn.addEventListener('click', applySort);
     dom.addSortRuleBtn.addEventListener('click', () => addSortRule());
@@ -2871,10 +4048,42 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         toggleMultiSelectMode(); 
     });
 
-    if (dom.aboutItem && dom.aboutDialog) {
-        dom.aboutItem.addEventListener('click', () => {
+    const settingsAboutItem = document.getElementById('settingsAboutItem');
+    if (settingsAboutItem && dom.aboutDialog) {
+        settingsAboutItem.addEventListener('click', () => {
+            document.body.appendChild(dom.aboutDialog);
+            dom.aboutDialog.style.zIndex = '22000';
             dom.aboutDialog.open = true;
-            dom.drawer.open = false;
+        });
+    }
+
+    const aboutVer = document.getElementById('aboutCurrentVersion');
+    if (aboutVer) aboutVer.textContent = `${RSDB_VERSION} 【最新版】`;
+    const aboutLog = document.getElementById('aboutChangelog');
+    if (aboutLog) {
+        aboutLog.innerHTML = '';
+        RSDB_CHANGELOG.forEach(entry => {
+            const block = document.createElement('div');
+            block.style.padding = '10px 12px';
+            block.style.border = '1px solid var(--border-color)';
+            block.style.borderRadius = '10px';
+            const title = document.createElement('div');
+            title.style.fontWeight = '600';
+            title.style.marginBottom = '6px';
+            title.textContent = entry.version;
+            const ul = document.createElement('ul');
+            ul.style.margin = '0';
+            ul.style.paddingLeft = '18px';
+            ul.style.listStyle = 'none';
+            (entry.notes || []).forEach(n => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '4px';
+                li.textContent = `• ${n}`;
+                ul.appendChild(li);
+            });
+            block.appendChild(title);
+            block.appendChild(ul);
+            aboutLog.appendChild(block);
         });
     }
 
@@ -2898,12 +4107,551 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     // Removed input click listeners as per user request (only edit button triggers edit mode)
 
     dom.importItem.addEventListener('click', () => { dom.drawer.open = false; dom.fileInput.click(); });
-    dom.exportItem.addEventListener('click', () => { dom.drawer.open = false; exportToExcel(); });
+    dom.exportItem.addEventListener('click', () => {
+        dom.drawer.open = false;
+        updateSettingsUI();
+        const dlg = document.getElementById('exportChoiceDialog');
+        if (dlg) dlg.open = true;
+    });
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsDialog = document.getElementById('settingsDialog');
+    settingsBtn?.addEventListener('click', () => {
+        dom.drawer.open = false;
+        updateSettingsUI();
+        if (settingsDialog) settingsDialog.open = true;
+    });
+    document.getElementById('closeSettingsDialogBtn')?.addEventListener('click', () => {
+        if (settingsDialog) settingsDialog.open = false;
+    });
+    document.getElementById('settingsShortcutRowsItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('shortcutRowsDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsSuggestThresholdItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('suggestThresholdDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsDialogPositionItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('dialogPositionDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsKeyboardSizeItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('keyboardSizeDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsImageCompressItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('imageCompressSettingsDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsSnackbarItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('snackbarSettingsDialog');
+        if (dlg) {
+            document.body.appendChild(dlg);
+            dlg.style.zIndex = '20000';
+            const sel = document.getElementById('snackbarPlacementSelect');
+            if (sel && !sel.dataset.inited) {
+                sel.dataset.inited = '1';
+                sel.innerHTML = [
+                    '<mdui-menu-item value="bottom-center">底部居中</mdui-menu-item>',
+                    '<mdui-menu-item value="bottom-left">底部左侧</mdui-menu-item>',
+                    '<mdui-menu-item value="bottom-right">底部右侧</mdui-menu-item>',
+                    '<mdui-menu-item value="top-center">顶部居中</mdui-menu-item>',
+                    '<mdui-menu-item value="top-left">顶部左侧</mdui-menu-item>',
+                    '<mdui-menu-item value="top-right">顶部右侧</mdui-menu-item>'
+                ].join('');
+            }
+            if (sel) sel.value = appSettings.snackbarPlacement || 'bottom-center';
+            const group = document.getElementById('snackbarDismissGroup');
+            if (group) group.value = appSettings.snackbarDismissMode === 'button' ? 'button' : 'swipe';
+            dlg.open = true;
+        }
+    });
+    document.getElementById('closeSnackbarSettingsBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('snackbarSettingsDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('saveSnackbarSettingsBtn')?.addEventListener('click', () => {
+        const sel = document.getElementById('snackbarPlacementSelect');
+        const placement = sel?.value || 'bottom-center';
+        const group = document.getElementById('snackbarDismissGroup');
+        const mode = group?.value === 'button' ? 'button' : 'swipe';
+        saveAppSettings({ snackbarPlacement: placement, snackbarDismissMode: mode });
+        const dlg = document.getElementById('snackbarSettingsDialog');
+        if (dlg) dlg.open = false;
+        showSnackbar('已保存 Snackbar 设置', 'success');
+    });
+
+    document.getElementById('settingsPrimaryColorItem')?.addEventListener('click', () => {
+        const dlg = document.getElementById('primaryColorDialog');
+        const picker = document.getElementById('primaryColorPicker');
+        const input = document.getElementById('primaryColorHexInput');
+        const current = localStorage.getItem(PRIMARY_KEY) || getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#00796b';
+        if (picker) picker.value = /^#[0-9a-fA-F]{6}$/.test(current) ? current : '#00796b';
+        if (input) input.value = /^#[0-9a-fA-F]{6}$/.test(current) ? current : '#00796b';
+        if (dlg) {
+            document.body.appendChild(dlg);
+            dlg.style.zIndex = '20000';
+            dlg.open = true;
+        }
+    });
+    document.getElementById('primaryColorCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('primaryColorDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('primaryColorResetBtn')?.addEventListener('click', () => {
+        localStorage.removeItem(PRIMARY_KEY);
+        applyColorScheme('#00796b');
+        flashTheme('#00796b');
+        updateSettingsUI();
+        showSnackbar('已重置主题主色', 'success');
+    });
+    document.getElementById('primaryColorOkBtn')?.addEventListener('click', () => {
+        const picker = document.getElementById('primaryColorPicker');
+        const input = document.getElementById('primaryColorHexInput');
+        const raw = (input?.value || picker?.value || '').trim();
+        const color = /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : null;
+        if (!color) {
+            showSnackbar('请输入有效的 HEX 颜色', 'error');
+            return;
+        }
+        localStorage.setItem(PRIMARY_KEY, color);
+        applyColorScheme(color);
+        flashTheme(color);
+        updateSettingsUI();
+        const dlg = document.getElementById('primaryColorDialog');
+        if (dlg) dlg.open = false;
+        showSnackbar('已保存主题主色', 'success');
+    });
+    const bindColorSync = () => {
+        const picker = document.getElementById('primaryColorPicker');
+        const input = document.getElementById('primaryColorHexInput');
+        picker?.addEventListener('input', () => { if (input) input.value = picker.value; });
+        input?.addEventListener('input', () => {
+            const v = (input.value || '').trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v) && picker) picker.value = v;
+        });
+    };
+    bindColorSync();
+
+    const initPrimaryPresetGrid = () => {
+        const grid = document.getElementById('primaryColorPresetGrid');
+        if (!grid || grid.dataset.inited) return;
+        grid.dataset.inited = '1';
+        const presets = [
+            { name: '青绿', color: '#00796b' },
+            { name: '蓝色', color: '#1976d2' },
+            { name: '红色', color: '#d32f2f' },
+            { name: '紫色', color: '#7b1fa2' },
+            { name: '橙色', color: '#f57c00' },
+            { name: '绿色', color: '#388e3c' },
+            { name: '粉色', color: '#c2185b' },
+            { name: '蓝灰', color: '#455a64' }
+        ];
+        presets.forEach(p => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.color = p.color;
+            btn.style.border = '1px solid var(--border-color)';
+            btn.style.borderRadius = '12px';
+            btn.style.padding = '10px 10px';
+            btn.style.background = p.color;
+            btn.style.color = '#fff';
+            btn.style.fontWeight = '600';
+            btn.style.cursor = 'pointer';
+            btn.style.boxSizing = 'border-box';
+            btn.style.transition = 'transform 120ms ease, box-shadow 120ms ease';
+            btn.textContent = p.name;
+            btn.addEventListener('click', () => {
+                const picker = document.getElementById('primaryColorPicker');
+                const input = document.getElementById('primaryColorHexInput');
+                if (picker) picker.value = p.color;
+                if (input) input.value = p.color;
+                localStorage.setItem(PRIMARY_KEY, p.color);
+                applyColorScheme(p.color);
+                flashTheme(p.color);
+                updateSettingsUI();
+                showSnackbar(`已切换主题主色：${p.name}`, 'success');
+                const dlg = document.getElementById('primaryColorDialog');
+                if (dlg) dlg.open = false;
+            });
+            grid.appendChild(btn);
+        });
+    };
+    initPrimaryPresetGrid();
+    const bindSwitchListItemToggle = (switchEl) => {
+        const item = switchEl?.closest?.('mdui-list-item');
+        if (!item || !switchEl) return;
+        if (item.dataset.boundToggle) return;
+        item.dataset.boundToggle = '1';
+        item.addEventListener('click', (e) => {
+            if (e?.target?.closest?.('mdui-switch')) return;
+            switchEl.checked = !switchEl.checked;
+            switchEl.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    };
+    const suggestSwitch = document.getElementById('settingsSuggestSwitch');
+    suggestSwitch?.addEventListener('change', () => saveAppSettings({ suggestEnabled: !!suggestSwitch.checked }));
+    bindSwitchListItemToggle(suggestSwitch);
+    const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
+    wrapSwitch?.addEventListener('change', () => saveAppSettings({ shortcutWrap: !!wrapSwitch.checked }));
+    bindSwitchListItemToggle(wrapSwitch);
+    const animSwitch = document.getElementById('settingsAnimationsSwitch');
+    animSwitch?.addEventListener('change', () => saveAppSettings({ animationsEnabled: !!animSwitch.checked }));
+    bindSwitchListItemToggle(animSwitch);
+    dom.shortcutQuickAddBtn?.addEventListener('click', () => {
+    if (!currentShortcutFieldKey) {
+        showSnackbar('请先选择一个字段', 'warning');
+        return;
+    }
+
+    const openAdd = () => {
+        openShortcutAddDialog(currentShortcutFieldKey, '');
+    };
+
+    if (shortcutEditMode) {
+        setShortcutEditMode(false);
+        // 等待编辑模式完全退出（包含 generateVirtualKeyboard 的重绘）
+        setTimeout(openAdd, 80);  // 80ms 足够大多数设备刷新 UI
+    } else {
+        openAdd();
+    }
+});
+    dom.shortcutEditToggleBtn?.addEventListener('click', () => {
+        if (!currentShortcutFieldKey) return;
+        setShortcutEditMode(!shortcutEditMode);
+        showSnackbar(shortcutEditMode ? '编辑模式：拖动排序，点击删除移除；点✔保存或✖取消' : '已保存并退出编辑模式', 'info');
+    });
+    document.getElementById('shortcutEditCancelBtn')?.addEventListener('click', () => {
+        if (!currentShortcutFieldKey) return;
+        cancelShortcutEditMode();
+        showSnackbar('已取消编辑（未保存）', 'info');
+    });
+    const alwaysCompressSwitch = document.getElementById('settingsAlwaysCompressSwitch');
+    const alwaysForceSwitch = document.getElementById('settingsAlwaysForceSwitch');
+    alwaysCompressSwitch?.addEventListener('change', () => {
+        if (alwaysCompressSwitch.checked) {
+            if (alwaysForceSwitch) alwaysForceSwitch.checked = false;
+            saveAppSettings({ imageCompressPolicy: 'compress' });
+        } else {
+            const next = alwaysForceSwitch?.checked ? 'force' : 'ask';
+            saveAppSettings({ imageCompressPolicy: next });
+        }
+    });
+    alwaysForceSwitch?.addEventListener('change', () => {
+        if (alwaysForceSwitch.checked) {
+            if (alwaysCompressSwitch) alwaysCompressSwitch.checked = false;
+            saveAppSettings({ imageCompressPolicy: 'force' });
+        } else {
+            const next = alwaysCompressSwitch?.checked ? 'compress' : 'ask';
+            saveAppSettings({ imageCompressPolicy: next });
+        }
+    });
+    bindSwitchListItemToggle(alwaysCompressSwitch);
+    bindSwitchListItemToggle(alwaysForceSwitch);
+
+    document.getElementById('suggestThresholdCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('suggestThresholdDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('suggestThresholdOkBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('suggestThresholdInput');
+        const val = Math.max(1, Math.min(99, Number(input?.value) || 5));
+        saveAppSettings({ suggestThreshold: val });
+        const dlg = document.getElementById('suggestThresholdDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('shortcutRowsCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutRowsDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('shortcutRowsOkBtn')?.addEventListener('click', () => {
+        const group = document.getElementById('shortcutRowsGroup');
+        const base = Math.max(1, Math.min(3, Number(group?.value) || 2));
+        const read = (id) => Math.max(1, Math.min(3, Number(document.getElementById(id)?.value) || base));
+        const rowsByField = {
+            steelType: read('shortcutRowsGroup_steelType'),
+            productId: read('shortcutRowsGroup_productId'),
+            cardId: read('shortcutRowsGroup_cardId'),
+            furnaceId: read('shortcutRowsGroup_furnaceId'),
+            status: read('shortcutRowsGroup_status'),
+            position: read('shortcutRowsGroup_position')
+        };
+        saveAppSettings({ shortcutRows: base, shortcutRowsByField: rowsByField });
+        const dlg = document.getElementById('shortcutRowsDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('dialogPositionCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('dialogPositionDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('dialogPositionOkBtn'), () => {
+        const top = document.getElementById('dialogPosTop')?.checked;
+        const center = document.getElementById('dialogPosCenter')?.checked;
+        const positions = [];
+        if (top) positions.push('top');
+        if (center) positions.push('center');
+        saveAppSettings({ dialogPositions: positions.length ? positions : ['center'] });
+        const dlg = document.getElementById('dialogPositionDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('keyboardSizeCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('keyboardSizeDialog');
+        if (dlg) dlg.open = false;
+    });
+    const vkHeightSlider = document.getElementById('vkHeightSlider');
+    const vkBottomSlider = document.getElementById('vkBottomOffsetSlider');
+    const vkHeightInput = document.getElementById('vkHeightInput');
+    const vkBottomInput = document.getElementById('vkBottomOffsetInput');
+    vkHeightSlider?.addEventListener('input', () => { if (vkHeightInput) vkHeightInput.value = String(vkHeightSlider.value); });
+    vkBottomSlider?.addEventListener('input', () => { if (vkBottomInput) vkBottomInput.value = String(vkBottomSlider.value); });
+    vkHeightInput?.addEventListener('input', () => {
+        const n = Number(vkHeightInput.value);
+        if (Number.isFinite(n) && vkHeightSlider) vkHeightSlider.value = String(Math.max(120, Math.min(1200, Math.round(n))));
+    });
+    vkBottomInput?.addEventListener('input', () => {
+        const n = Number(vkBottomInput.value);
+        if (Number.isFinite(n) && vkBottomSlider) vkBottomSlider.value = String(Math.max(0, Math.min(400, Math.round(n))));
+    });
+    bindImmediateActionButton(document.getElementById('keyboardSizeOkBtn'), () => {
+        const hRaw = vkHeightInput?.value;
+        const bRaw = vkBottomInput?.value;
+        const height = hRaw === '' || hRaw == null ? null : Math.max(120, Math.min(1200, Number(hRaw)));
+        const bottom = bRaw === '' || bRaw == null ? 0 : Math.max(0, Math.min(400, Number(bRaw)));
+        saveAppSettings({
+            virtualKeyboardHeight: Number.isFinite(height) ? height : null,
+            virtualKeyboardBottomOffset: Number.isFinite(bottom) ? bottom : 0
+        });
+        const dlg = document.getElementById('keyboardSizeDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('closeImageCompressSettingsBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('imageCompressSettingsDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('saveImageCompressSettingsBtn'), () => {
+        const policyGroup = document.getElementById('imageCompressPolicyGroup');
+        const useW = document.getElementById('imageCompressUseMaxWidth')?.checked !== false;
+        const useH = document.getElementById('imageCompressUseMaxHeight')?.checked !== false;
+        const thresholdMBRaw = Number(document.getElementById('largeImageThresholdMB')?.value);
+        const thresholdMB = Math.max(0.5, Math.min(50, Number.isFinite(thresholdMBRaw) ? thresholdMBRaw : 5));
+        const maxWidth = Math.max(200, Math.min(6000, Number(document.getElementById('imageCompressMaxWidth')?.value) || 1280));
+        const maxHeight = Math.max(200, Math.min(6000, Number(document.getElementById('imageCompressMaxHeight')?.value) || 1280));
+        const qualityRaw = Number(document.getElementById('imageCompressQuality')?.value);
+        const quality = Math.max(0.1, Math.min(1, Number.isFinite(qualityRaw) ? qualityRaw : 0.8));
+        const policy = ['ask', 'compress', 'force'].includes(policyGroup?.value) ? policyGroup.value : 'ask';
+        saveAppSettings({
+            imageCompressPolicy: policy,
+            imageCompressUseMaxWidth: useW,
+            imageCompressUseMaxHeight: useH,
+            largeImageThresholdMB: thresholdMB,
+            imageCompressMaxWidth: maxWidth,
+            imageCompressMaxHeight: maxHeight,
+            imageCompressQuality: quality
+        });
+        const dlg = document.getElementById('imageCompressSettingsDialog');
+        if (dlg) dlg.open = false;
+    });
+
+    document.getElementById('exportChoiceCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('exportChoiceDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('exportChoiceOkBtn')?.addEventListener('click', async () => {
+        const group = document.getElementById('exportTypeGroup');
+        const type = group?.value || 'excel_images';
+        const dlg = document.getElementById('exportChoiceDialog');
+        if (dlg) dlg.open = false;
+        if (type === 'zip_images') await exportToZipWithImages();
+        else await exportToExcel();
+    });
+
+    const moveRowDlg = document.getElementById('moveRowDialog');
+    const closeMoveRowDlg = () => { if (moveRowDlg) moveRowDlg.open = false; moveRowDialogState = null; };
+    document.getElementById('closeMoveRowDialogBtn')?.addEventListener('click', closeMoveRowDlg);
+    document.getElementById('moveRowCancelBtn')?.addEventListener('click', closeMoveRowDlg);
+    document.getElementById('moveRowSearchInput')?.addEventListener('input', (e) => {
+        if (!moveRowDialogState) return;
+        moveRowDialogState.query = e.target.value || '';
+        moveRowDialogState.page = 1;
+        renderMoveRowDialog();
+    });
+    document.getElementById('moveRowPrevBtn')?.addEventListener('click', () => {
+        if (!moveRowDialogState) return;
+        moveRowDialogState.page = Math.max(1, moveRowDialogState.page - 1);
+        renderMoveRowDialog();
+    });
+    document.getElementById('moveRowNextBtn')?.addEventListener('click', () => {
+        if (!moveRowDialogState) return;
+        moveRowDialogState.page = moveRowDialogState.page + 1;
+        renderMoveRowDialog();
+    });
+    const moveRowPageInput = document.getElementById('moveRowPageInput');
+    const applyMoveRowPage = () => {
+        if (!moveRowDialogState) return;
+        const raw = Number(moveRowPageInput?.value);
+        if (!Number.isFinite(raw)) return;
+        moveRowDialogState.page = Math.max(1, Math.round(raw));
+        renderMoveRowDialog();
+    };
+    moveRowPageInput?.addEventListener('change', applyMoveRowPage);
+    moveRowPageInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyMoveRowPage(); });
+    document.getElementById('moveRowOkBtn')?.addEventListener('click', () => {
+        if (!moveRowDialogState) return;
+        const src = moveRowDialogState.sourceIndex;
+        const dir = moveRowDialogState.direction;
+        let target = moveRowDialogState.selectedIndex;
+        if (target == null || target < 0 || target === src) {
+            showSnackbar('请选择有效的目标行', 'warning');
+            return;
+        }
+        const moved = tableData.splice(src, 1)[0];
+        if (src < target) target -= 1;
+        const insertIndex = dir === -1 ? target : target + 1;
+        tableData.splice(insertIndex, 0, moved);
+        saveDataToIndexedDB();
+        currentPage = Math.floor(insertIndex / PAGE_SIZE) + 1;
+        updateTable();
+        showSnackbar(`已移动至第 ${insertIndex + 1} 行`, 'success');
+        closeMoveRowDlg();
+    });
+
+    document.getElementById('shortcutActionCloseBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutActionDialog');
+        if (dlg) dlg.open = false;
+        shortcutActionContext = null;
+        showVirtualKeyboard();
+    });
+    document.getElementById('shortcutActionAddBtn')?.addEventListener('click', () => {
+        if (!shortcutActionContext?.fieldKey) return;
+        openShortcutAddDialog(shortcutActionContext.fieldKey, '');
+    });
+    document.getElementById('shortcutSaveBtn')?.addEventListener('click', () => {
+        if (!shortcutActionContext) return;
+        const { fieldKey, index } = shortcutActionContext;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        const input = document.getElementById('shortcutEditValue');
+        const value = (input?.value || '').trim();
+        if (!value) return;
+        templates[index] = value;
+        KeyboardConfigManager.save();
+        const dlg = document.getElementById('shortcutActionDialog');
+        if (dlg) dlg.open = false;
+        shortcutActionContext = null;
+        showVirtualKeyboard();
+        showSnackbar('已保存快捷短语', 'success');
+    });
+    document.getElementById('shortcutDeleteBtn')?.addEventListener('click', () => {
+        if (!shortcutActionContext) return;
+        const { fieldKey, index } = shortcutActionContext;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        templates.splice(index, 1);
+        KeyboardConfigManager.save();
+        const dlg = document.getElementById('shortcutActionDialog');
+        if (dlg) dlg.open = false;
+        shortcutActionContext = null;
+        showVirtualKeyboard();
+        showSnackbar('已删除快捷短语', 'success');
+    });
+    document.getElementById('shortcutMoveBeforeBtn')?.addEventListener('click', () => {
+        if (!shortcutActionContext) return;
+        const { fieldKey, index } = shortcutActionContext;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        const moveSelect = document.getElementById('shortcutMoveTarget');
+        const target = Number(moveSelect?.value);
+        if (!Number.isFinite(target)) return;
+        if (target === index) return;
+        const item = templates.splice(index, 1)[0];
+        const insertIndex = target > index ? target - 1 : target;
+        templates.splice(insertIndex, 0, item);
+        KeyboardConfigManager.save();
+        openShortcutActionDialog(fieldKey, insertIndex);
+        showSnackbar('已移动快捷短语', 'success');
+    });
+    document.getElementById('shortcutMoveAfterBtn')?.addEventListener('click', () => {
+        if (!shortcutActionContext) return;
+        const { fieldKey, index } = shortcutActionContext;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        const moveSelect = document.getElementById('shortcutMoveTarget');
+        const target = Number(moveSelect?.value);
+        if (!Number.isFinite(target)) return;
+        if (target === index) return;
+        const item = templates.splice(index, 1)[0];
+        const insertIndex = target > index ? target : target + 1;
+        templates.splice(Math.min(insertIndex, templates.length), 0, item);
+        KeyboardConfigManager.save();
+        const newIndex = templates.indexOf(item);
+        openShortcutActionDialog(fieldKey, newIndex);
+        showSnackbar('已移动快捷短语', 'success');
+    });
+
+    document.getElementById('shortcutAddCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutAddDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('shortcutAddOkBtn'), () => {
+        if (!shortcutAddContext?.fieldKey) return;
+        const fieldKey = shortcutAddContext.fieldKey;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        const input = document.getElementById('shortcutAddValue');
+        const value = (input?.value || '').trim();
+        if (!value) return;
+        const existedIndex = templates.findIndex(v => (v || '').trim() === value);
+        if (existedIndex >= 0) {
+            duplicateShortcutContext = { fieldKey, value, existedIndex };
+            const dlg = document.getElementById('duplicateShortcutConfirmDialog');
+            if (dlg) dlg.open = true;
+            return;
+        }
+        templates.push(value);
+        KeyboardConfigManager.save();
+        const dlg = document.getElementById('shortcutAddDialog');
+        if (dlg) dlg.open = false;
+        shortcutAddContext = null;
+        showSnackbar('已添加快捷短语', 'success');
+    });
+    document.getElementById('duplicateShortcutOkBtn')?.addEventListener('click', () => {
+        if (!duplicateShortcutContext) return;
+        const { fieldKey, value } = duplicateShortcutContext;
+        const templates = getTemplatesByField(fieldKey);
+        if (!templates) return;
+        templates.push(value);
+        KeyboardConfigManager.save();
+        const d1 = document.getElementById('duplicateShortcutConfirmDialog');
+        if (d1) d1.open = false;
+        const d2 = document.getElementById('shortcutAddDialog');
+        if (d2) d2.open = false;
+        duplicateShortcutContext = null;
+        shortcutAddContext = null;
+        showSnackbar('已添加快捷短语', 'success');
+    });
+    document.getElementById('duplicateShortcutCancelBtn')?.addEventListener('click', () => {
+        if (!duplicateShortcutContext) return;
+        const { value } = duplicateShortcutContext;
+        const d1 = document.getElementById('duplicateShortcutConfirmDialog');
+        if (d1) d1.open = false;
+        const d2 = document.getElementById('shortcutAddDialog');
+        if (d2) d2.open = false;
+        duplicateShortcutContext = null;
+        shortcutAddContext = null;
+        showVirtualKeyboard();
+        setTimeout(() => highlightShortcutInKeyboard(value), 60);
+    });
     dom.addBtn.addEventListener('click', openAddModal);
     dom.fileInput.addEventListener('change', handleFileImport);
     dom.selectAllCheckbox.addEventListener('change', handleSelectAll);
     dom.deleteSelectedBtn.addEventListener('click', confirmDeleteSelected);
-    dom.saveBtn.addEventListener('click', saveData);
+    bindImmediateActionButton(dom.saveBtn, saveData);
 
     dom.searchClearBtn.addEventListener('click', () => {
         dom.searchInput.value = '';
@@ -3059,11 +4807,9 @@ function confirmDeleteSelected() {
         });
 
         saveDataToIndexedDB();  
-        selectedRows.clear();   
-        isMultiSelectMode = false;  
         showSnackbar(`成功删除 ${deleteCount} 条数据`, 'success');
 
-        updateTable();
+        if (isMultiSelectMode) toggleMultiSelectMode();
         closeCustomModal(dom.confirmModal);  
         dom.confirmActionBtn.onclick = null;  
     };
@@ -4191,90 +5937,88 @@ function moveRow(rowIndex, direction) {
   updateTable(); 
 }
 
-// ========== 表格行【长按】指定位置移动核心函数 (✅修复：弹窗高亮+完美兼容分页+搜索过滤) ==========
+function renderMoveRowDialog() {
+  const dlg = document.getElementById('moveRowDialog');
+  if (!dlg || !moveRowDialogState) return;
+  const list = document.getElementById('moveRowList');
+  const search = document.getElementById('moveRowSearchInput');
+  const pageInfo = document.getElementById('moveRowPageInfo');
+  const pageInput = document.getElementById('moveRowPageInput');
+  const title = document.getElementById('moveRowDialogTitle');
+  if (!list || !search || !pageInfo || !pageInput) return;
+
+  if (title) title.textContent = moveRowDialogState.direction === -1 ? '移动到指定行（上方）' : '移动到指定行（下方）';
+  const q = (moveRowDialogState.query || '').trim().toLowerCase();
+  const filtered = q
+    ? moveRowDialogState.items.filter(it => it.search.includes(q))
+    : moveRowDialogState.items;
+
+  const pageSize = moveRowDialogState.pageSize;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const page = Math.max(1, Math.min(totalPages, moveRowDialogState.page));
+  moveRowDialogState.page = page;
+
+  const start = (page - 1) * pageSize;
+  const end = Math.min(filtered.length, start + pageSize);
+  const slice = filtered.slice(start, end);
+
+  list.innerHTML = '';
+  slice.forEach(it => {
+    const item = document.createElement('mdui-list-item');
+    item.setAttribute('headline', `第 ${it.index + 1} 行`);
+    item.setAttribute('description', `${it.productId || '无产品号'} · ${it.cardId || '无卡片号'} · ${it.steelType || '无钢种'}`);
+    item.dataset.targetIndex = String(it.index);
+    if (moveRowDialogState.selectedIndex === it.index) item.setAttribute('selected', '');
+    item.addEventListener('click', () => {
+      moveRowDialogState.selectedIndex = it.index;
+      renderMoveRowDialog();
+    });
+    list.appendChild(item);
+  });
+
+  pageInfo.textContent = `共 ${filtered.length} 条 · 第 ${page} / ${totalPages} 页`;
+  pageInput.value = String(page);
+  const prevBtn = document.getElementById('moveRowPrevBtn');
+  const nextBtn = document.getElementById('moveRowNextBtn');
+  if (prevBtn) prevBtn.disabled = page <= 1;
+  if (nextBtn) nextBtn.disabled = page >= totalPages;
+}
+
+function openMoveRowDialog(sourceIndex, direction) {
+  const dlg = document.getElementById('moveRowDialog');
+  if (!dlg) return;
+  const items = tableData
+    .map((item, idx) => ({ item, idx }))
+    .filter(x => x.idx !== sourceIndex)
+    .map(x => {
+      const productId = x.item?.productId || '';
+      const cardId = x.item?.cardId || '';
+      const steelType = x.item?.steelType || '';
+      const label = `第 ${x.idx + 1} 行 ${productId} ${cardId} ${steelType}`.trim();
+      return { index: x.idx, productId, cardId, steelType, search: label.toLowerCase() };
+    });
+
+  moveRowDialogState = {
+    sourceIndex,
+    direction,
+    items,
+    query: '',
+    page: 1,
+    pageSize: 50,
+    selectedIndex: -1
+  };
+
+  const search = document.getElementById('moveRowSearchInput');
+  if (search) search.value = '';
+  renderMoveRowDialog();
+  document.body.appendChild(dlg);
+  dlg.style.zIndex = '20000';
+  dlg.open = true;
+}
+
 function moveRowToAssignPosition(sourceIndex, direction) {
   if (tableData.length <= 1) return;
-  let rowOptionsHtml = '';
-  // 遍历【全部数据】tableData，兼容分页/搜索，显示所有行的真实序号
-  tableData.forEach((item, idx) => {
-    if (idx !== sourceIndex) { // 排除当前行，禁止移动到自己位置
-      // ✅ 新增：当前行的原始序号+分页兼容的显示文本
-      const rowLabel = `第 ${idx+1} 行 (${item.productId || '无编号'})(${item.cardId || '无卡片号'})(${item.steelType || '无钢种'})`;
-      rowOptionsHtml += `
-        <div class="row-option-item" data-target-index="${idx}" style="padding:8px 12px; cursor:pointer; border-radius:6px; margin:2px 0; transition:all 0.2s;">
-          <span style="font-weight:500; font-size:0.95rem;">${rowLabel}</span>
-        </div>
-      `;
-    }
-  });
-
-  // 弹窗文案不变，精准对应需求：上移=目标行上方，下移=目标行下方
-  const titleText = direction === -1 ? '移动到指定行【上方】' : '移动到指定行【下方】';
-  const descText = direction === -1 ? '选择目标行，当前行会插入到该行上方' : '选择目标行，当前行会插入到该行下方';
-  dom.confirmMessage.innerHTML = `
-    <div style="width:340px; max-height:420px; overflow-y:auto; padding:4px 0;">
-      <h4 style="margin:0 0 10px 0; font-size:1rem; text-align:center; color:#333;">${titleText}</h4>
-      <p style="margin:0 0 14px 0; color:#757575; font-size:0.9rem; text-align:center;">${descText}</p>
-      <div class="row-options-list" style="display:flex; flex-direction:column;">
-        ${rowOptionsHtml}
-      </div>
-    </div>
-  `;
-
-  openCustomModal(dom.confirmModal);
-  let targetIndex = -1;
-  const allOptions = document.querySelectorAll('.row-option-item');
-
-  // ✅ 修复核心1：弹窗渲染完成后立即绑定点击事件，确保100%生效+高亮反馈
-  allOptions.forEach(item => {
-    // 点击选中：高亮+赋值目标索引，必生效
-    item.addEventListener('click', (e) => {
-      e.stopPropagation();
-      targetIndex = parseInt(e.currentTarget.getAttribute('data-target-index'));
-      // 清除所有旧高亮，只高亮当前选中行
-      allOptions.forEach(el => {
-        el.style.background = '';
-        el.style.color = '';
-      });
-      // ✅ 醒目高亮样式，选中后一眼能看到
-      e.currentTarget.style.background = 'var(--primary-color)';
-      e.currentTarget.style.color = '#ffffff';
-    });
-    // 手机端兼容：触摸也触发高亮
-    item.addEventListener('touchend', (e) => {
-      e.stopPropagation();
-      item.click();
-    });
-  });
-
-  // ✅ 确认移动按钮事件 (✅修复核心2：分页自动跳转逻辑+精准移动)
-  dom.confirmActionBtn.onclick = () => {
-    if (targetIndex === -1 || targetIndex === sourceIndex) {
-      showSnackbar('请选择有效的目标行', 'warning');
-      closeCustomModal(dom.confirmModal);
-      dom.confirmActionBtn.onclick = null;
-      return;
-    }
-
-    // ✅ 核心：移动逻辑 - 区分【上方】和【下方】
-    const movedItem = tableData.splice(sourceIndex, 1)[0];
-    if (direction === -1) {
-      // 长按上 → 插入到目标行的【上方】
-      tableData.splice(targetIndex, 0, movedItem);
-      showSnackbar(`已移动至${targetIndex}`, 'warning');
-    } else {
-      // 长按下 → 插入到目标行的【下方】
-      tableData.splice(targetIndex + 1, 0, movedItem);
-      showSnackbar(`已移动至${targetIndex + 1}`, 'warning');
-    }
-
-    // 移动完成：持久化+刷新表格
-
-    saveDataToIndexedDB();
-    updateTable();
-    closeCustomModal(dom.confirmModal);
-    dom.confirmActionBtn.onclick = null;
-  };
+  openMoveRowDialog(sourceIndex, direction);
 }
 
 		// 兼容你的分页/搜索场景：如果有置顶/置底需求，可追加这两个函数（可选）
@@ -4451,7 +6195,7 @@ function findDuplicates(newItem) {
 		        saveDataToIndexedDB();
 		        updateTable();
 		        closeCustomModal(dom.quickEditDialog);
-		        dom.virtualKeyboard.style.display = 'none';
+		        setVirtualKeyboardVisible(false);
 		        showSnackbar('快速修改已保存', 'success');
 
 		keyboardState.isQuickEdit = false;
@@ -4556,7 +6300,7 @@ function startSearch() {
 		        currentInput = inputToFocus;
 
 		        if (currentInput.id === 'remarks') {
-		            dom.virtualKeyboard.style.display = 'none';
+		            setVirtualKeyboardVisible(false);
 		        } else {
 		            currentInput.setAttribute('readonly', 'true');
 		            currentInput.classList.add('readonly-input');
@@ -4580,7 +6324,7 @@ function startSearch() {
 		}
 
 		function closeVirtualKeyboardAndKeepReadOnly() {
-		    dom.virtualKeyboard.style.display = 'none';
+		    setVirtualKeyboardVisible(false);
 		    currentInput = null;
             updateVirtualCursor();
 		}
@@ -4607,39 +6351,248 @@ function startSearch() {
 		  generateVirtualKeyboard();
 		}
 
-		function createShortcutKeys(options, keyClass) {
-		  // Clear existing content if it's not empty (though generateVirtualKeyboard clears it)
-		  // dom.shortcutContainer.innerHTML = ''; 
+		let shortcutActionContext = null;
+		let shortcutAddContext = null;
 
-		  // Split options into two roughly equal parts
-		  const mid = Math.ceil(options.length / 2);
-		  const firstRowOptions = options.slice(0, mid);
-		  const secondRowOptions = options.slice(mid);
+		function getTemplateKeyByField(fieldKey) {
+		    const map = {
+		        furnaceId: 'furnaceIdTemplates',
+		        productId: 'productIdTemplates',
+		        cardId: 'cardIdTemplates',
+		        steelType: 'steelTypeTemplates',
+		        status: 'statusTemplates',
+		        position: 'positionTemplates'
+		    };
+		    return map[fieldKey] || null;
+		}
 
-		  const createRow = (opts) => {
-		    const row = document.createElement('div');
-		    row.className = 'keyboard-row';
-		    opts.forEach(option => {
-		      const keyElement = document.createElement('div');
-		      keyElement.className = `keyboard-key ${keyClass}`;
-		      keyElement.textContent = option;
-		      keyElement.addEventListener('click', () => {
-		        if (currentInput) {
-		          insertText(option);
-		          currentInput.focus();
-		        }
-		      });
-		      row.appendChild(keyElement);
+		function getTemplatesByField(fieldKey) {
+		    const key = getTemplateKeyByField(fieldKey);
+		    if (!key) return null;
+		    if (!Array.isArray(KeyboardConfigManager.config[key])) KeyboardConfigManager.config[key] = [];
+		    return KeyboardConfigManager.config[key];
+		}
+
+		function getSuggestedAddValues(fieldKey, templateValues) {
+		    if (!appSettings.suggestEnabled) return [];
+		    const stats = inputStats[fieldKey] || {};
+		    const threshold = Math.max(1, Number(appSettings.suggestThreshold) || 5);
+		    const existing = new Set((templateValues || []).map(v => (v || '').trim()).filter(Boolean));
+		    return Object.entries(stats)
+		        .filter(([v, c]) => v && !existing.has(v) && Number(c) >= threshold)
+		        .sort((a, b) => Number(b[1]) - Number(a[1]))
+		        .slice(0, 3)
+		        .map(([v]) => v);
+		}
+
+		function openShortcutAddDialog(fieldKey, presetValue = '') {
+		    if (shortcutEditMode) {
+        setShortcutEditMode(false);
+    }
+
+    shortcutAddContext = { fieldKey };
+    
+
+		    shortcutAddContext = { fieldKey };
+		    const vk = document.getElementById('virtualKeyboard');
+		    if (vk) vk.style.display = 'none';
+		    const virtualCursor = document.getElementById('virtualCursor');
+		    if (virtualCursor) virtualCursor.style.display = 'none';
+		    const input = document.getElementById('shortcutAddValue');
+		    if (input) input.value = presetValue;
+		    const list = document.getElementById('shortcutAddExistingList');
+		    const templates = getTemplatesByField(fieldKey) || [];
+		    if (list) {
+		        list.innerHTML = '';
+		        templates.forEach(v => {
+		            const chip = document.createElement('div');
+		            chip.className = 'keyboard-key shortcut-key';
+		            chip.style.height = '32px';
+		            chip.style.minWidth = '0';
+		            chip.style.padding = '0 10px';
+		            chip.textContent = v;
+		            chip.addEventListener('click', () => {
+		                if (input) input.value = v;
+		                input?.focus?.();
+		            });
+		            list.appendChild(chip);
+		        });
+		    }
+		    const dlg = document.getElementById('shortcutAddDialog');
+		    if (dlg) dlg.open = true;
+		}
+
+		function openShortcutActionDialog(fieldKey, index) {
+		    const templates = getTemplatesByField(fieldKey);
+		    if (!templates) return;
+		    if (index < 0 || index >= templates.length) return;
+		    shortcutActionContext = { fieldKey, index };
+		    const title = document.getElementById('shortcutActionTitle');
+		    if (title) title.textContent = `快捷短语（${fieldLabels[fieldKey] || fieldKey}）`;
+		    const editInput = document.getElementById('shortcutEditValue');
+		    if (editInput) editInput.value = templates[index] || '';
+		    const moveSelect = document.getElementById('shortcutMoveTarget');
+		    if (moveSelect) {
+		        moveSelect.innerHTML = '';
+		        templates.forEach((v, i) => {
+		            const opt = document.createElement('mdui-menu-item');
+		            opt.setAttribute('value', String(i));
+		            opt.textContent = v || '(空)';
+		            moveSelect.appendChild(opt);
+		        });
+		        moveSelect.value = String(index);
+		    }
+		    const dlg = document.getElementById('shortcutActionDialog');
+		    if (dlg) dlg.open = true;
+		}
+
+		function createShortcutKeys(options, keyClass, fieldKey) {
+		    currentShortcutFieldKey = fieldKey || null;
+		    const toolbar = document.getElementById('shortcutToolbar');
+		    const toolbarWrap = document.getElementById('shortcutToolbarWrap');
+		    const editBtn = document.getElementById('shortcutEditToggleBtn');
+		    if (editBtn) editBtn.setAttribute('icon', shortcutEditMode ? 'check' : 'edit');
+
+		    const targetContainer = dom.shortcutKeysContainer || dom.shortcutContainer;
+		    if (!targetContainer) return;
+		    targetContainer.innerHTML = '';
+
+		    if (!fieldKey) {
+		        if (toolbar) toolbar.style.display = 'none';
+		        if (toolbarWrap) toolbarWrap.style.display = 'none';
+		        if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'none';
+		        return;
+		    }
+
+		    if (shortcutEditMode && fieldKey) {
+		        if (toolbar) toolbar.style.display = 'flex';
+		        if (toolbarWrap) toolbarWrap.style.display = 'block';
+		        if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'block';
+		        const list = (shortcutEditSession && shortcutEditSession.fieldKey === fieldKey)
+		            ? (shortcutEditSession.working || [])
+		            : (options || []);
+		        list.forEach((option, idx) => {
+		            const keyElement = document.createElement('div');
+		            keyElement.className = `keyboard-key ${keyClass} shortcut-draggable`;
+		            keyElement.style.display = 'flex';
+		            keyElement.style.alignItems = 'center';
+		            keyElement.style.gap = '8px';
+		            keyElement.style.paddingRight = '8px';
+		            const label = document.createElement('div');
+		            label.style.flex = '1';
+		            label.style.minWidth = '0';
+		            label.style.overflow = 'hidden';
+		            label.style.textOverflow = 'ellipsis';
+		            label.style.whiteSpace = 'nowrap';
+		            label.textContent = option;
+		            const del = document.createElement('div');
+		            del.className = 'shortcut-edit-delete';
+		            del.textContent = '×';
+		            del.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, { passive: true });
+		            del.addEventListener('click', (e) => {
+		                e.stopPropagation();
+		                keyElement.remove();
+		                const ordered = Array.from(targetContainer.querySelectorAll('.shortcut-draggable'))
+		                    .map(n => n.dataset.value)
+		                    .filter(v => typeof v === 'string' && v.length > 0);
+		                if (shortcutEditSession && shortcutEditSession.fieldKey === fieldKey) {
+		                    shortcutEditSession.working = ordered;
+		                }
+		                showSnackbar('已删除快捷短语（未保存）', 'info');
+		            });
+		            keyElement.appendChild(label);
+		            keyElement.appendChild(del);
+		            keyElement.dataset.value = option;
+		            keyElement.dataset.index = String(idx);
+		            keyElement.addEventListener('pointerdown', (e) => beginShortcutDrag(e, keyElement), { passive: true });
+		            keyElement.addEventListener('pointermove', updateShortcutDrag, { passive: true });
+		            keyElement.addEventListener('pointerup', endShortcutDrag, { passive: true });
+		            keyElement.addEventListener('pointercancel', endShortcutDrag, { passive: true });
+		            targetContainer.appendChild(keyElement);
+		        });
+		        return;
+		    }
+
+		    const rowsByField = appSettings.shortcutRowsByField && typeof appSettings.shortcutRowsByField === 'object' ? appSettings.shortcutRowsByField : {};
+		    const perField = fieldKey ? Number(rowsByField[fieldKey]) : NaN;
+		    const baseRows = Math.max(1, Math.min(3, Number(appSettings.shortcutRows) || 2));
+		    const rowCount = Math.max(1, Math.min(3, Number.isFinite(perField) ? perField : baseRows));
+		    const rows = Array.from({ length: rowCount }, () => []);
+		    const optionEntries = (options || []).map((v, i) => ({ value: v, index: i }));
+		    const filteredOptions = optionEntries;
+		    const suggested = getSuggestedAddValues(fieldKey, options);
+		    if (toolbar) toolbar.style.display = 'flex';
+		    if (toolbarWrap) toolbarWrap.style.display = 'block';
+		    if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'block';
+		    if (filteredOptions.length === 0 && suggested.length === 0) {
+		        if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'none';
+		        if (toolbarWrap) toolbarWrap.style.display = 'none';
+		        return;
+		    }
+		    suggested.forEach((v, i) => {
+		        rows[0].push({ kind: 'suggest', value: v, order: i });
 		    });
-		    return row;
-		  };
+		    filteredOptions.forEach((option, idx) => {
+		        rows[idx % rowCount].push({ kind: 'template', value: option.value, index: option.index });
+		    });
 
-		  if (firstRowOptions.length > 0) {
-		    dom.shortcutContainer.appendChild(createRow(firstRowOptions));
-		  }
-		  if (secondRowOptions.length > 0) {
-		    dom.shortcutContainer.appendChild(createRow(secondRowOptions));
-		  }
+		    const createRow = (items) => {
+		        const row = document.createElement('div');
+		        row.className = 'keyboard-row';
+		        items.forEach(item => {
+		            const keyElement = document.createElement('div');
+		            keyElement.className = `keyboard-key ${keyClass}`;
+		            if (item.kind === 'suggest') {
+		                keyElement.classList.add('suggest-add-key');
+		                keyElement.textContent = `+ ${item.value}`;
+		                keyElement.addEventListener('click', () => openShortcutAddDialog(fieldKey, item.value));
+		            } else {
+		                keyElement.textContent = item.value;
+		                let pressTimer = null;
+		                let longPressed = false;
+		                const clearTimer = () => {
+		                    clearTimeout(pressTimer);
+		                    pressTimer = null;
+		                };
+		                keyElement.addEventListener('pointerdown', (e) => {
+		                    longPressed = false;
+		                    clearTimer();
+		                    pressTimer = setTimeout(() => {
+		                        longPressed = true;
+		                        setVirtualKeyboardVisible(false);
+		                        const virtualCursor = document.getElementById('virtualCursor');
+		                        if (virtualCursor) virtualCursor.style.display = 'none';
+		                        openShortcutActionDialog(fieldKey, item.index);
+		                    }, 500);
+		                    if (e.pointerId != null) keyElement.setPointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		                keyElement.addEventListener('pointermove', (e) => {
+		                    if (!pressTimer) return;
+		                    if (Math.abs(e.movementX) > 8 || Math.abs(e.movementY) > 8) {
+		                        clearTimer();
+		                    }
+		                }, { passive: true });
+		                keyElement.addEventListener('pointerup', (e) => {
+		                    clearTimer();
+		                    if (!longPressed && currentInput) {
+		                        insertText(item.value);
+		                        currentInput.focus();
+		                    }
+		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		                keyElement.addEventListener('pointercancel', (e) => {
+		                    clearTimer();
+		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		            }
+		            row.appendChild(keyElement);
+		        });
+		        return row;
+		    };
+
+		    rows.forEach(r => {
+		        if (r.length > 0) targetContainer.appendChild(createRow(r));
+		    });
 		}
 
 		
@@ -4649,6 +6602,8 @@ function startSearch() {
 
 // 默认配置
 const DEFAULT_KEYBOARD_CONFIG = {
+    customVariables: {},
+    dynamicVariables: [],
     furnaceIdTemplates: [
         '1251', 
         'VD25/', 
@@ -4803,12 +6758,14 @@ const KeyboardConfigManager = {
     },
 
     bindEvents() {
-        const openBtn = document.getElementById('openKeyboardSettingsBtn');
+        const openBtn = document.getElementById('settingsKeyboardItem');
         const modal = document.getElementById('keyboardSettingsModal');
         const closeBtn = document.getElementById('closeKeyboardSettingsModal');
         const cancelBtn = document.getElementById('cancelKeyboardConfigBtn');
         const saveBtn = document.getElementById('saveKeyboardConfigBtn');
         const resetBtn = document.getElementById('resetKeyboardConfigBtn');
+        const dynamicVarList = document.getElementById('dynamicVarList');
+        const addDynamicVarBtn = document.getElementById('addDynamicVarBtn');
         
         const inputs = {
             furnaceId: document.getElementById('furnaceIdConfigInput'),
@@ -4820,6 +6777,86 @@ const KeyboardConfigManager = {
             advancedJson: document.getElementById('advancedJsonConfigInput')
         };
 
+        const createDynamicVarRow = (item = {}) => {
+            const row = document.createElement('div');
+            row.style.display = 'grid';
+            row.style.gridTemplateColumns = '1.1fr 1.2fr 1fr 0.9fr 36px';
+            row.style.gap = '8px';
+            row.style.alignItems = 'center';
+
+            const name = document.createElement('mdui-text-field');
+            name.setAttribute('label', '变量名');
+            name.setAttribute('variant', 'outlined');
+            name.value = item.name || '';
+
+            const kind = document.createElement('mdui-select');
+            kind.setAttribute('variant', 'outlined');
+            kind.setAttribute('placement', 'bottom');
+            kind.setAttribute('value', item.kind || 'date');
+            kind.value = item.kind || 'date';
+            kind.innerHTML = [
+                '<mdui-menu-item value="date">日期(今天+偏移)</mdui-menu-item>',
+                '<mdui-menu-item value="weekStart">本周一(周起始+偏移)</mdui-menu-item>',
+                '<mdui-menu-item value="weekEnd">本周日(周结束+偏移)</mdui-menu-item>',
+                '<mdui-menu-item value="isoWeek">本周(周序号)</mdui-menu-item>',
+                '<mdui-menu-item value="month">本月(月份)</mdui-menu-item>',
+                '<mdui-menu-item value="day">今日(日)</mdui-menu-item>',
+                '<mdui-menu-item value="year">今年(年份)</mdui-menu-item>'
+            ].join('');
+
+            const format = document.createElement('mdui-text-field');
+            format.setAttribute('label', '格式');
+            format.setAttribute('variant', 'outlined');
+            format.value = item.format || '';
+
+            const offset = document.createElement('mdui-text-field');
+            offset.setAttribute('label', '偏移(天)');
+            offset.setAttribute('variant', 'outlined');
+            offset.setAttribute('type', 'number');
+            offset.value = item.offsetDays != null ? String(item.offsetDays) : '0';
+
+            const del = document.createElement('mdui-button-icon');
+            del.setAttribute('icon', 'delete');
+            del.setAttribute('variant', 'text');
+            del.addEventListener('click', () => row.remove());
+
+            row.appendChild(name);
+            row.appendChild(kind);
+            row.appendChild(format);
+            row.appendChild(offset);
+            row.appendChild(del);
+            return row;
+        };
+
+        const renderDynamicVars = () => {
+            if (!dynamicVarList) return;
+            dynamicVarList.innerHTML = '';
+            const vars = Array.isArray(this.config.dynamicVariables) ? this.config.dynamicVariables : [];
+            if (vars.length === 0) {
+                const defaults = [
+                    { name: '本周', kind: 'isoWeek', format: 'WW', offsetDays: 0 },
+                    { name: '本周一', kind: 'weekStart', format: 'YYYYMMDD', offsetDays: 0 }
+                ];
+                defaults.forEach(v => dynamicVarList.appendChild(createDynamicVarRow(v)));
+                return;
+            }
+            vars.forEach(v => dynamicVarList.appendChild(createDynamicVarRow(v)));
+        };
+
+        const readDynamicVars = () => {
+            if (!dynamicVarList) return [];
+            const rows = Array.from(dynamicVarList.children);
+            return rows.map(r => {
+                const items = r.querySelectorAll('mdui-text-field, mdui-select');
+                const name = items[0]?.value?.trim?.() || '';
+                const kind = items[1]?.value || 'date';
+                const format = items[2]?.value?.trim?.() || '';
+                const offsetDaysRaw = Number(items[3]?.value);
+                const offsetDays = Number.isFinite(offsetDaysRaw) ? Math.max(-3660, Math.min(3660, Math.round(offsetDaysRaw))) : 0;
+                return { name, kind, format, offsetDays };
+            }).filter(v => v.name);
+        };
+
         const updateInputsFromConfig = () => {
             inputs.furnaceId.value = this.config.furnaceIdTemplates.join('\n');
             inputs.productId.value = this.config.productIdTemplates.join('\n');
@@ -4828,13 +6865,18 @@ const KeyboardConfigManager = {
             inputs.status.value = (this.config.statusTemplates || []).join('\n');
             inputs.position.value = (this.config.positionTemplates || []).join('\n');
             inputs.advancedJson.value = JSON.stringify(this.config);
+            renderDynamicVars();
         };
 
         if (openBtn) {
             openBtn.addEventListener('click', () => {
                 updateInputsFromConfig();
-                modal.open = true;
                 dom.drawer.open = false;
+                if (modal) {
+                    document.body.appendChild(modal);
+                    modal.style.zIndex = '20000';
+                    modal.open = true;
+                }
             });
         }
 
@@ -4843,9 +6885,13 @@ const KeyboardConfigManager = {
         };
 
         [closeBtn, cancelBtn].forEach(btn => btn?.addEventListener('click', closeModal));
+        addDynamicVarBtn?.addEventListener('click', () => {
+            if (!dynamicVarList) return;
+            dynamicVarList.appendChild(createDynamicVarRow({ name: '', kind: 'date', format: 'YYYYMMDD', offsetDays: 0 }));
+        });
 
         if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
+            bindImmediateActionButton(saveBtn, () => {
                 const processInput = (textarea) => textarea.value.split('\n')
                     .map(line => line.trim())
                     .filter(line => line.length > 0);
@@ -4856,6 +6902,7 @@ const KeyboardConfigManager = {
                 this.config.steelTypeTemplates = processInput(inputs.steelType);
                 this.config.statusTemplates = processInput(inputs.status);
                 this.config.positionTemplates = processInput(inputs.position);
+                this.config.dynamicVariables = readDynamicVars();
                 
                 this.save();
                 closeModal();
@@ -4873,6 +6920,8 @@ const KeyboardConfigManager = {
         if (openEditorBtn) {
             openEditorBtn.addEventListener('click', () => {
                 editorInput.value = JSON.stringify(this.config, null, 2);
+                document.body.appendChild(editorDialog);
+                editorDialog.style.zIndex = '21000';
                 editorDialog.open = true;
             });
         }
@@ -4952,8 +7001,40 @@ const KeyboardConfigManager = {
 };
 
 function generateVirtualKeyboard() {
-		  dom.shortcutContainer.innerHTML = '';
+// ────────────── 新增：统一处理快捷短语区域显隐 ──────────────
+    const vk = document.getElementById('virtualKeyboard');
+    const shortcutWrap = document.getElementById('shortcutToolbarWrap');
+    const shortcutContainer = document.getElementById('shortcutContainer');
+
+    if (shortcutContainer) {
+        // 1. 判断当前键盘模式是否有关联快捷短语
+        const hasShortcuts = 
+            keyboardState.inputType === 'furnaceId' ||
+            keyboardState.inputType === 'productId' ||
+            keyboardState.inputType === 'cardId' ||
+            keyboardState.inputType === 'steelType' ||
+            keyboardState.inputType === 'status'   ||
+            keyboardState.inputType === 'position';
+
+        // 2. 容器里是否真的有可见的快捷键
+        const hasVisibleKeys = shortcutContainer.querySelector('.shortcut-key, .status-key, .suggest-add-key') !== null;
+
+        // 3. 最终显隐规则
+        const shouldShow = shortcutEditMode || (hasShortcuts && hasVisibleKeys);
+
+        if (shouldShow) {
+            shortcutContainer.style.display = 'block';
+            if (shortcutWrap) shortcutWrap.style.display = 'block';
+        } else {
+            shortcutContainer.style.display = 'none';
+            if (shortcutWrap) shortcutWrap.style.display = 'none';
+        }
+        }
+		  if (dom.shortcutKeysContainer) dom.shortcutKeysContainer.innerHTML = '';
 		  dom.keyboardRows.innerHTML = '';
+		  currentShortcutFieldKey = null;
+		  const toolbar = document.getElementById('shortcutToolbar');
+		  if (toolbar) toolbar.style.display = 'none';
 
 		  const isUpperCase = keyboardState.shiftState === 'locked-on' || keyboardState.shiftState === 'on';
 		  let keyRows = [];
@@ -4961,11 +7042,98 @@ function generateVirtualKeyboard() {
           // 辅助函数：处理模板变量
           const processTemplates = (templates) => {
               if (!Array.isArray(templates)) return [];
-              const year = new Date().getFullYear().toString().slice(2);
-              const lastYear = (parseInt(year) - 1).toString().slice(-2);
-              return templates.map(tpl => 
-                  tpl.replace(/\$\{year\}/g, year).replace(/\$\{lastYear\}/g, lastYear)
-              );
+              const now = new Date();
+              const yearFull = now.getFullYear().toString();
+              const year = yearFull.slice(2);
+              const lastYear = (parseInt(year, 10) - 1).toString().slice(-2);
+              const month = String(now.getMonth() + 1);
+              const day = String(now.getDate());
+              const custom = (KeyboardConfigManager?.config?.customVariables && typeof KeyboardConfigManager.config.customVariables === 'object')
+                  ? KeyboardConfigManager.config.customVariables
+                  : {};
+              const dynamic = Array.isArray(KeyboardConfigManager?.config?.dynamicVariables) ? KeyboardConfigManager.config.dynamicVariables : [];
+              const map = {
+                  year,
+                  lastYear,
+                  month,
+                  day,
+                  '今月月份': month,
+                  '今日': day
+              };
+
+              const pad2 = (n) => String(n).padStart(2, '0');
+              const formatDate = (d, fmt) => {
+                  const y4 = String(d.getFullYear());
+                  const y2 = y4.slice(2);
+                  const m = d.getMonth() + 1;
+                  const dd = d.getDate();
+                  const fmtMap = {
+                      YYYY: y4,
+                      YY: y2,
+                      MM: pad2(m),
+                      M: String(m),
+                      DD: pad2(dd),
+                      D: String(dd)
+                  };
+                  let out = fmt || '';
+                  Object.keys(fmtMap).forEach(k => { out = out.split(k).join(fmtMap[k]); });
+                  return out || `${y4}${pad2(m)}${pad2(dd)}`;
+              };
+              const isoWeekNumber = (d) => {
+                  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                  const dayNum = date.getUTCDay() || 7;
+                  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+                  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+                  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+              };
+              const startOfIsoWeek = (d) => {
+                  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                  const dayNum = date.getDay() || 7;
+                  date.setDate(date.getDate() - (dayNum - 1));
+                  date.setHours(0, 0, 0, 0);
+                  return date;
+              };
+              dynamic.forEach(def => {
+                  const name = (def?.name || '').toString().trim();
+                  if (!name) return;
+                  const kind = (def?.kind || 'date').toString();
+                  const fmt = (def?.format || '').toString().trim();
+                  const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
+                  let value = null;
+                  if (kind === 'isoWeek') {
+                      const w = isoWeekNumber(now);
+                      value = (fmt === 'W') ? String(w) : pad2(w);
+                  } else if (kind === 'month') {
+                      const m = now.getMonth() + 1;
+                      value = (fmt === 'MM') ? pad2(m) : String(m);
+                  } else if (kind === 'day') {
+                      const dd = now.getDate();
+                      value = (fmt === 'DD') ? pad2(dd) : String(dd);
+                  } else if (kind === 'year') {
+                      value = (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
+                  } else if (kind === 'weekStart') {
+                      const d0 = startOfIsoWeek(now);
+                      d0.setDate(d0.getDate() + offsetDays);
+                      value = formatDate(d0, fmt);
+                  } else if (kind === 'weekEnd') {
+                      const d0 = startOfIsoWeek(now);
+                      d0.setDate(d0.getDate() + 6 + offsetDays);
+                      value = formatDate(d0, fmt);
+                  } else {
+                      const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      d0.setDate(d0.getDate() + offsetDays);
+                      value = formatDate(d0, fmt);
+                  }
+                  if (value != null) map[name] = String(value);
+              });
+              Object.keys(custom).forEach(k => {
+                  const v = custom[k];
+                  if (typeof v === 'string' || typeof v === 'number') map[k] = String(v);
+              });
+              return templates.map(tpl => (tpl || '').toString().replace(/\$\{([^}]+)\}/g, (m, name) => {
+                  const key = String(name || '');
+                  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : m;
+              }));
           };
 
           const layouts = KeyboardConfigManager.config.layouts;
@@ -4978,31 +7146,31 @@ function generateVirtualKeyboard() {
 
 		    case 'status':
               const statusShortcuts = processTemplates(KeyboardConfigManager.config.statusTemplates);
-		      createShortcutKeys(statusShortcuts, 'status-key');
+		      createShortcutKeys(statusShortcuts, 'status-key', 'status');
 		      keyRows = layouts.status;
 		      break;
 
 		    case 'cardId':
 		      const cardShortcuts = processTemplates(KeyboardConfigManager.config.cardIdTemplates);
-              createShortcutKeys(cardShortcuts, 'shortcut-key');
+              createShortcutKeys(cardShortcuts, 'shortcut-key', 'cardId');
               // fallthrough to text keyboard
 
 		    case 'steelType':
               if (keyboardState.inputType === 'steelType') {
                   const steelShortcuts = processTemplates(KeyboardConfigManager.config.steelTypeTemplates);
-                  createShortcutKeys(steelShortcuts, 'shortcut-key');
+                  createShortcutKeys(steelShortcuts, 'shortcut-key', 'steelType');
               }
 
 		    case 'productId':
               if (keyboardState.inputType === 'productId') {
                   const productShortcuts = processTemplates(KeyboardConfigManager.config.productIdTemplates);
-                  createShortcutKeys(productShortcuts, 'shortcut-key');
+                  createShortcutKeys(productShortcuts, 'shortcut-key', 'productId');
               }
  
 		    case 'furnaceId':
               if (keyboardState.inputType === 'furnaceId') {
                   const furnaceShortcuts = processTemplates(KeyboardConfigManager.config.furnaceIdTemplates);
-                  createShortcutKeys(furnaceShortcuts, 'shortcut-key');
+                  createShortcutKeys(furnaceShortcuts, 'shortcut-key', 'furnaceId');
               }
               // Fallthrough to text keyboard for all above IDs
 		    case 'text':
@@ -5012,7 +7180,7 @@ function generateVirtualKeyboard() {
 
 		    case 'position':
               const positionShortcuts = processTemplates(KeyboardConfigManager.config.positionTemplates);
-		      createShortcutKeys(positionShortcuts, 'shortcut-key');
+		      createShortcutKeys(positionShortcuts, 'shortcut-key', 'position');
 		      keyRows = layouts.position;
 		      break;
 
@@ -5270,7 +7438,7 @@ function generateVirtualKeyboard() {
         currentInput.classList.remove('readonly-input');
 
         // 2. 关闭虚拟键盘
-        dom.virtualKeyboard.style.display = 'none';
+        setVirtualKeyboardVisible(false);
 
         // 3. 焦点回到输入框，触发系统键盘弹出
         currentInput.focus();
@@ -5426,7 +7594,7 @@ function generateVirtualKeyboard() {
 
 		function handleNextInput() {
 		  if (!currentInput) {
-		    dom.virtualKeyboard.style.display = 'none';
+		    setVirtualKeyboardVisible(false);
 		    return;
 		  }
 
@@ -5436,7 +7604,7 @@ function generateVirtualKeyboard() {
 
 		  if (isQuickEditInput) {
 		      saveQuickEdit(); 
-		      dom.virtualKeyboard.style.display = 'none';
+		      setVirtualKeyboardVisible(false);
 		      return;
 		  }
 
@@ -5453,7 +7621,7 @@ function generateVirtualKeyboard() {
 		  }
 
 		  if (!nextInput) {
-		      dom.virtualKeyboard.style.display = 'none';
+		      setVirtualKeyboardVisible(false);
 		      return;
 		  }
 
@@ -5462,7 +7630,7 @@ function generateVirtualKeyboard() {
 		  if (currentInput.id === 'remarks' && !isCalcInput) {
 		    currentInput.removeAttribute('readonly');
 		    currentInput.classList.remove('readonly-input');
-		    dom.virtualKeyboard.style.display = 'none';
+		    setVirtualKeyboardVisible(false);
 		  } else {
 		    currentInput.setAttribute('readonly', 'true');
 		    currentInput.classList.add('readonly-input');
@@ -5672,14 +7840,38 @@ async function saveDataToIndexedDB() {
 		    if (suppressVirtualKeyboard) {
 		        return;
 		    }
-		    generateVirtualKeyboard();
-		    dom.virtualKeyboard.style.display = 'block';
+		    setVirtualKeyboardVisible(true);
 		    if (currentInput) {
 		        setTimeout(() => {
-		            currentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		            currentInput.scrollIntoView({ behavior: appSettings.animationsEnabled === false ? 'auto' : 'smooth', block: 'center' });
 		        }, 100);
 		    }
 		    setTimeout(updateVirtualCursor, 150);
+		}
+
+		function setVirtualKeyboardVisible(visible) {
+		    const vk = dom.virtualKeyboard;
+		    if (!vk) return;
+		    if (visible) {
+		        generateVirtualKeyboard();
+		        vk.style.display = 'block';
+		        if (appSettings.animationsEnabled === false) {
+		            vk.classList.add('vk-visible');
+		            return;
+		        }
+		        requestAnimationFrame(() => vk.classList.add('vk-visible'));
+		        return;
+		    }
+		    const virtualCursor = document.getElementById('virtualCursor');
+		    if (virtualCursor) virtualCursor.style.display = 'none';
+		    vk.classList.remove('vk-visible');
+		    if (appSettings.animationsEnabled === false) {
+		        vk.style.display = 'none';
+		        return;
+		    }
+		    setTimeout(() => {
+		        if (!vk.classList.contains('vk-visible')) vk.style.display = 'none';
+		    }, 180);
 		}
 
 		function loadData() {
@@ -5733,7 +7925,7 @@ function showSingleDuplicateWarnDialog(duplicate, newData, isEditMode) {
         cancelBtn.onclick = () => {
             const index = duplicate.index;
             closeCustomModal(dom.dataSheet);
-            dom.virtualKeyboard.style.display = 'none';
+            setVirtualKeyboardVisible(false);
             highlightAndScrollToRow(index);
             dialog.open = false;
             showSnackbar('操作已取消', 'info');
@@ -5750,7 +7942,7 @@ function showSingleDuplicateWarnDialog(duplicate, newData, isEditMode) {
             updateTable();
             dialog.open = false;
             closeCustomModal(dom.dataSheet);
-            dom.virtualKeyboard.style.display = 'none';
+            setVirtualKeyboardVisible(false);
             showSnackbar('已覆盖保存重复数据', 'success');
         };
     }
@@ -6068,6 +8260,7 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
     // 6. 执行保存
     if (!isEditMode) {
         tableData.push(formData);
+        recordInputStatsOnAdd(formData);
         console.log('[SAVE] 新增完成 - 新记录已推入 tableData，图片状态：' + (formData.cardImage ? '有图' : '无图'));
     } else {
         tableData[currentEditIndex] = formData;
@@ -6085,7 +8278,7 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
     currentPage = 1;
     updateTable();
     closeCustomModal(dom.dataSheet);
-    dom.virtualKeyboard.style.display = 'none';
+    setVirtualKeyboardVisible(false);
 
     showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
 }
@@ -6583,7 +8776,7 @@ function handleFileImport(e) {
 		    const workbook = new ExcelJS.Workbook();
 		    const worksheet = workbook.addWorksheet('圆棒入库数据');
 
-		    worksheet.columns = [
+		    const columns = [
 		        { header: '序号', key: 'seq', width: 8 },
 		        { header: '钢种', key: 'steelType', width: 15 },
 		        { header: '产品号', key: 'productId', width: 18 },
@@ -6599,54 +8792,214 @@ function handleFileImport(e) {
 		        { header: '备注', key: 'remarks', width: 20 },
 		        { header: '卡片图片', key: 'cardImage', width: 12 }
 		    ];
+		    const tableWidths = getExcelColumnWidthsFromTable(columns.map(c => c.header));
+		    columns.forEach((c, i) => { if (tableWidths[i]) c.width = tableWidths[i]; });
+		    worksheet.columns = columns;
 
 		    const headerRow = worksheet.getRow(1);
 		    headerRow.font = { bold: true };
 		    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-		    exportData.forEach((item, index) => {
-		        const row = worksheet.addRow({
-		            seq: index + 1,
-		            steelType: item.steelType || '',
-		            productId: item.productId || '',
-		            cardId: item.cardId || '',
-		            furnaceId: item.furnaceId || '',
-		            actualDiameter: item.actualDiameter || '',
-		            diameter: item.diameter || '',
-		            length: item.length || '',
-		            weight: item.weight ? Math.round(parseFloat(item.weight)) || '' : '',
-		            status: item.status || '',
-		            position: item.position || '',
-		            hardness: item.hardness || '',
-		            remarks: item.remarks || '',
-		            cardImage: ''
-		        });
+		    const total = exportData.length + 2;
+		    try {
+		        updateExportProgress(0, total, `准备导出（共 ${exportData.length} 条）...`);
+		        await new Promise(requestAnimationFrame);
 
-		        row.height = 22; // 固定高度
+		        for (let index = 0; index < exportData.length; index++) {
+		            const item = exportData[index];
+		            updateExportProgress(index + 1, total, `正在生成数据（${index + 1}/${exportData.length}）...`);
+		            if (index % 10 === 0) await new Promise(requestAnimationFrame);
 
-		        if (item.cardImage && item.cardImage.startsWith('data:image/')) {
-		            const base64Data = item.cardImage.split(',')[1];
-		            const ext = item.cardImage.match(/data:image\/(jpeg|png);/)?.[1] || 'jpeg';
-
-		            const imageId = workbook.addImage({
-		                base64: base64Data,
-		                extension: ext,
+		            const row = worksheet.addRow({
+		                seq: index + 1,
+		                steelType: item.steelType || '',
+		                productId: item.productId || '',
+		                cardId: item.cardId || '',
+		                furnaceId: item.furnaceId || '',
+		                actualDiameter: item.actualDiameter || '',
+		                diameter: item.diameter || '',
+		                length: item.length || '',
+		                weight: item.weight ? Math.round(parseFloat(item.weight)) || '' : '',
+		                status: item.status || '',
+		                position: item.position || '',
+		                hardness: item.hardness || '',
+		                remarks: item.remarks || '',
+		                cardImage: ''
 		            });
 
-		            worksheet.addImage(imageId, {
-		                tl: { col: 13, row: index + 1 },
-		                ext: { width: 40, height: 30 },
-		                editAs: 'oneCell'
+		            row.height = 22;
+
+		            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
+		                const base64Data = item.cardImage.split(',')[1];
+		                const ext = item.cardImage.match(/data:image\/(jpeg|png);/)?.[1] || 'jpeg';
+
+		                const imageId = workbook.addImage({
+		                    base64: base64Data,
+		                    extension: ext,
+		                });
+
+		                worksheet.addImage(imageId, {
+		                    tl: { col: 13, row: index + 1 },
+		                    ext: { width: 40, height: 30 },
+		                    editAs: 'oneCell'
+		                });
+		            }
+		        }
+
+		        updateExportProgress(exportData.length + 1, total, '正在生成 Excel 文件...');
+		        await new Promise(requestAnimationFrame);
+		        const buffer = await workbook.xlsx.writeBuffer();
+		        const blob = new Blob([buffer], { type: 'application/octet-stream' });
+		        const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+		        saveAs(blob, `圆棒入库数据_${dateStr}.xlsx`);
+		        showSnackbar('导出成功！图片已嵌入表格', 'success');
+		    } finally {
+		        closeExportProgress();
+		    }
+		}
+
+		function sanitizeFileName(name) {
+		    return (name || '').toString().replace(/[\\\/:*?"<>|]/g, '_').trim();
+		}
+
+		function getExcelColumnWidthsFromTable(headers, headerAlias) {
+		    const ths = Array.from(document.querySelectorAll('#dataTable thead th'));
+		    if (ths.length === 0) return headers.map(() => null);
+		    const map = new Map();
+		    ths.forEach(th => {
+		        const text = (th.textContent || '').trim();
+		        if (!text) return;
+		        const w = th.getBoundingClientRect().width;
+		        if (Number.isFinite(w) && w > 0) map.set(text, w);
+		    });
+		    const alias = headerAlias && typeof headerAlias === 'object' ? headerAlias : {};
+		    const pxToExcel = (px) => Math.max(8, Math.min(60, Math.round(px / 7)));
+		    return headers.map(h => {
+		        const key = alias[h] || h;
+		        const px = map.get(key);
+		        return Number.isFinite(px) ? pxToExcel(px) : null;
+		    });
+		}
+
+		function setExportProgressState(open, current, total, text) {
+		    const dlg = document.getElementById('exportProgressDialog');
+		    if (!dlg) return;
+		    if (open) {
+		        document.body.appendChild(dlg);
+		        dlg.style.zIndex = '22000';
+		        dlg.open = true;
+		    } else {
+		        dlg.open = false;
+		    }
+		    const label = document.getElementById('exportProgressText');
+		    if (label) label.textContent = text || '';
+		    const bar = document.getElementById('exportProgressBar');
+		    const percent = document.getElementById('exportProgressPercent');
+		    const safeTotal = Math.max(1, Number(total) || 1);
+		    const safeCurrent = Math.max(0, Math.min(safeTotal, Number(current) || 0));
+		    const v = safeCurrent / safeTotal;
+		    if (bar) bar.value = v;
+		    if (percent) percent.textContent = `${Math.round(v * 100)}%`;
+		}
+
+		function updateExportProgress(current, total, text) {
+		    setExportProgressState(true, current, total, text);
+		}
+
+		function closeExportProgress() {
+		    setExportProgressState(false, 0, 1, '');
+		}
+
+		async function exportToZipWithImages() {
+		    const exportData = getFilteredData();
+		    if (exportData.length === 0) {
+		        showSnackbar('暂无数据可导出', 'warning');
+		        return;
+		    }
+
+		    const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+		    const zip = new JSZip();
+		    const imagesFolder = zip.folder('images');
+
+		    const workbook = new ExcelJS.Workbook();
+		    const worksheet = workbook.addWorksheet('圆棒入库数据');
+
+		    const columns = [
+		        { header: '序号', key: 'seq', width: 8 },
+		        { header: '钢种', key: 'steelType', width: 15 },
+		        { header: '产品号', key: 'productId', width: 18 },
+		        { header: '卡片号', key: 'cardId', width: 12 },
+		        { header: '炉号', key: 'furnaceId', width: 12 },
+		        { header: '实际直径', key: 'actualDiameter', width: 12 },
+		        { header: '直径', key: 'diameter', width: 10 },
+		        { header: '长度', key: 'length', width: 10 },
+		        { header: '重量', key: 'weight', width: 10 },
+		        { header: '状态', key: 'status', width: 10 },
+		        { header: '位置', key: 'position', width: 10 },
+		        { header: '硬度', key: 'hardness', width: 10 },
+		        { header: '备注', key: 'remarks', width: 20 },
+		        { header: '卡片图片文件', key: 'cardImageFile', width: 28 }
+		    ];
+		    const tableWidths = getExcelColumnWidthsFromTable(columns.map(c => c.header), { '卡片图片文件': '卡片图片' });
+		    columns.forEach((c, i) => { if (tableWidths[i]) c.width = tableWidths[i]; });
+		    worksheet.columns = columns;
+
+		    const headerRow = worksheet.getRow(1);
+		    headerRow.font = { bold: true };
+		    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+		    const total = exportData.length + 2;
+		    try {
+		        updateExportProgress(0, total, `准备导出（共 ${exportData.length} 条）...`);
+		        await new Promise(requestAnimationFrame);
+
+		        for (let index = 0; index < exportData.length; index++) {
+		            const item = exportData[index];
+		            updateExportProgress(index + 1, total, `正在生成数据（${index + 1}/${exportData.length}）...`);
+		            if (index % 20 === 0) await new Promise(requestAnimationFrame);
+
+		            let imageFileName = '';
+		            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
+		                const m = item.cardImage.match(/^data:image\/(png|jpeg|jpg);base64,(.*)$/);
+		                if (m && m[2]) {
+		                    const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+		                    const baseName = sanitizeFileName(item.productId || item.cardId || `item_${index + 1}`) || `item_${index + 1}`;
+		                    imageFileName = `${baseName}_${index + 1}.${ext}`;
+		                    imagesFolder.file(imageFileName, m[2], { base64: true });
+		                }
+		            }
+
+		            worksheet.addRow({
+		                seq: index + 1,
+		                steelType: item.steelType || '',
+		                productId: item.productId || '',
+		                cardId: item.cardId || '',
+		                furnaceId: item.furnaceId || '',
+		                actualDiameter: item.actualDiameter || '',
+		                diameter: item.diameter || '',
+		                length: item.length || '',
+		                weight: item.weight ? Math.round(parseFloat(item.weight)) || '' : '',
+		                status: item.status || '',
+		                position: item.position || '',
+		                hardness: item.hardness || '',
+		                remarks: item.remarks || '',
+		                cardImageFile: imageFileName ? `images/${imageFileName}` : ''
 		            });
 		        }
-		    });
 
-		    const buffer = await workbook.xlsx.writeBuffer();
-		    const blob = new Blob([buffer], { type: 'application/octet-stream' });
-		    const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
-		    saveAs(blob, `圆棒入库数据_${dateStr}.xlsx`);
+		        updateExportProgress(exportData.length + 1, total, '正在生成 Excel 文件...');
+		        await new Promise(requestAnimationFrame);
+		        const buffer = await workbook.xlsx.writeBuffer();
+		        zip.file(`圆棒入库数据_${dateStr}.xlsx`, buffer);
 
-		    showSnackbar('导出成功！图片已嵌入表格', 'success');
+		        updateExportProgress(exportData.length + 2, total, '正在打包 ZIP...');
+		        await new Promise(requestAnimationFrame);
+		        const blob = await zip.generateAsync({ type: 'blob' });
+		        saveAs(blob, `圆棒入库数据_${dateStr}.zip`);
+		        showSnackbar('导出成功！图片已外放到 ZIP', 'success');
+		    } finally {
+		        closeExportProgress();
+		    }
 		}
 
 		function calculateWeight() {
@@ -6749,7 +9102,7 @@ function startDirectTakePhoto(dataIndex) {
 		    };
 
 		    closeCustomModal(dom.calculatorModal); 
-		    dom.virtualKeyboard.style.display = 'none'; 
+		    setVirtualKeyboardVisible(false); 
 		    openAddModalWithData(preFilledData);
 		}
 
@@ -7051,10 +9404,12 @@ async function handleImageSelect(e) {
     }
 
     let base64;
+    const thresholdMB = Math.max(0.5, Math.min(50, Number(appSettings.largeImageThresholdMB) || 5));
+    const thresholdBytes = thresholdMB * 1024 * 1024;
 
-    // ≤5MB：原图上传
-    if (file.size <= 5 * 1024 * 1024) {
-        showSnackbar('图片小于5MB，原图上传中...', 'info');
+    // ≤阈值：原图上传
+    if (file.size <= thresholdBytes) {
+        showSnackbar(`图片小于${thresholdMB}MB，原图上传中...`, 'info');
         try {
             base64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -7068,17 +9423,62 @@ async function handleImageSelect(e) {
             return null;
         }
     } else {
-        // >5MB：弹出选择
+        const policy = appSettings.imageCompressPolicy || 'ask';
+        if (policy === 'compress') {
+            showSnackbar('正在压缩大图...', 'info');
+            try {
+                const useW = appSettings.imageCompressUseMaxWidth !== false;
+                const useH = appSettings.imageCompressUseMaxHeight !== false;
+                if (!useW && !useH) {
+                    base64 = await fileToBase64(file);
+                } else {
+                base64 = await compressImage(
+                    file,
+                    useW ? (Number(appSettings.imageCompressMaxWidth) || 1280) : 100000,
+                    useH ? (Number(appSettings.imageCompressMaxHeight) || 1280) : 100000,
+                    Number(appSettings.imageCompressQuality) || 0.8
+                );
+                }
+            } catch {
+                showSnackbar('压缩失败', 'error');
+                return null;
+            }
+        } else if (policy === 'force') {
+            showSnackbar('正在处理大图（较慢）...', 'warning');
+            try {
+                base64 = await fileToBase64(file);
+            } catch {
+                showSnackbar('上传失败', 'error');
+                return null;
+            }
+        } else {
+        // >阈值：弹出选择
         const dialog = document.getElementById('largeImageWarnDialog');
         if (!dialog) {
             showSnackbar('系统错误：找不到过大图片提示', 'error');
             return null;
         }
 
+        const thresholdEl = dialog.querySelector('#largeImageThresholdText');
+        if (thresholdEl) thresholdEl.textContent = `${thresholdMB}MB`;
         dialog.open = true;
 
         base64 = await new Promise(resolve => {
             let handled = false;
+            const alwaysCompress = dialog.querySelector('#largeImageAlwaysCompress');
+            const alwaysForce = dialog.querySelector('#largeImageAlwaysForce');
+            if (alwaysCompress && !alwaysCompress.dataset.bound) {
+                alwaysCompress.dataset.bound = '1';
+                alwaysCompress.addEventListener('change', () => {
+                    if (alwaysCompress.checked && alwaysForce) alwaysForce.checked = false;
+                });
+            }
+            if (alwaysForce && !alwaysForce.dataset.bound) {
+                alwaysForce.dataset.bound = '1';
+                alwaysForce.addEventListener('change', () => {
+                    if (alwaysForce.checked && alwaysCompress) alwaysCompress.checked = false;
+                });
+            }
 
             const compressBtn = dialog.querySelector('#largeImageCompressBtn');
             if (compressBtn) {
@@ -7087,7 +9487,17 @@ async function handleImageSelect(e) {
                     dialog.open = false;
                     showSnackbar('正在压缩大图...', 'info');
                     try {
-                        const compressed = await compressImage(file, 1024, 1024, 0.75);
+                        const useW = appSettings.imageCompressUseMaxWidth !== false;
+                        const useH = appSettings.imageCompressUseMaxHeight !== false;
+                        const compressed = (!useW && !useH)
+                            ? await fileToBase64(file)
+                            : await compressImage(
+                                file,
+                                useW ? (Number(appSettings.imageCompressMaxWidth) || 1280) : 100000,
+                                useH ? (Number(appSettings.imageCompressMaxHeight) || 1280) : 100000,
+                                Number(appSettings.imageCompressQuality) || 0.8
+                            );
+                        if (alwaysCompress?.checked) saveAppSettings({ imageCompressPolicy: 'compress' });
                         resolve(compressed);
                     } catch {
                         showSnackbar('压缩失败', 'error');
@@ -7104,6 +9514,7 @@ async function handleImageSelect(e) {
                     showSnackbar('正在处理大图（较慢）...', 'warning');
                     try {
                         const raw = await fileToBase64(file);
+                        if (alwaysForce?.checked) saveAppSettings({ imageCompressPolicy: 'force' });
                         resolve(raw);
                     } catch {
                         showSnackbar('上传失败', 'error');
@@ -7130,6 +9541,7 @@ async function handleImageSelect(e) {
                 resolve(null);
             }, { once: true });
         });
+        }
     }
 
     if (!base64) return null;
@@ -7462,7 +9874,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 		function openEditModalForImageUpload(dataIndex) {
 		    // 临时抑制键盘
 		    suppressVirtualKeyboard = true;
-		    dom.virtualKeyboard.style.display = 'none';
+		    setVirtualKeyboardVisible(false);
 
 		    // 打开编辑弹窗
 		    openEditModal(dataIndex);
@@ -7926,6 +10338,170 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 }
 
 
+// ────────────── 完整版：shortcutToolbarWrap 可拖动（浮动、不占行、不被滚动抢） ──────────────
+function initShortcutToolbarDrag() {
+    const wrap = document.getElementById('shortcutToolbarWrap');
+    if (!wrap) return;
+
+    const STORAGE_KEY = 'shortcutToolbarWrap_pos_v3'; // 版本3，避免旧数据冲突
+
+    // 1. 恢复上次保存的位置
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            const { right, top } = JSON.parse(saved);
+            wrap.style.right = right || '6px';
+            wrap.style.top = top || '4px';
+            wrap.style.bottom = 'auto';
+        } catch (e) {
+            wrap.style.right = '6px';
+            wrap.style.top = '4px';
+        }
+    } else {
+        wrap.style.right = '6px';
+        wrap.style.top = '4px';
+        wrap.style.bottom = 'auto';
+    }
+
+    let pointerId = null;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialRight = 0, initialTop = 0;
+    let longPressTimer = null;
+    const LONG_PRESS_MS = 280;
+
+    // 禁用/恢复滚动的辅助函数
+    const disableScroll = () => {
+        document.body.classList.add('dragging-active');
+        document.documentElement.classList.add('dragging-active');
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        // 额外禁用快捷短语区域的横向滚动
+        const sc = document.getElementById('shortcutContainer');
+        if (sc) sc.style.overflowX = 'hidden';
+    };
+
+    const enableScroll = () => {
+        document.body.classList.remove('dragging-active');
+        document.documentElement.classList.remove('dragging-active');
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        const sc = document.getElementById('shortcutContainer');
+        if (sc) sc.style.overflowX = 'auto';
+    };
+
+    const onPointerDown = (e) => {
+        if (pointerId !== null) return;
+        pointerId = e.pointerId;
+        wrap.setPointerCapture(pointerId);
+
+        const style = window.getComputedStyle(wrap);
+        initialRight = parseFloat(style.right) || 6;
+        initialTop = parseFloat(style.top) || 4;
+
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = false;
+
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+            isDragging = true;
+            wrap.classList.add('dragging');
+            disableScroll();  // 禁用所有滚动
+
+            if (navigator.vibrate) navigator.vibrate(12);
+
+            // 临时禁用内部按钮的点击（防止误触发 + 或 edit）
+            wrap.querySelectorAll('mdui-button-icon').forEach(btn => {
+                btn.style.pointerEvents = 'none';
+            });
+        }, LONG_PRESS_MS);
+
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const onPointerMove = (e) => {
+        if (pointerId !== e.pointerId) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isDragging) {
+            const dx = Math.abs(e.clientX - startX);
+            const dy = Math.abs(e.clientY - startY);
+            if (dx > 6 || dy > 6) clearTimeout(longPressTimer);
+            return;
+        }
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        let newRight = initialRight - dx;
+        let newTop = initialTop + dy;
+
+        // 限制不飞出屏幕
+        const rect = wrap.getBoundingClientRect();
+        newRight = Math.max(6, Math.min(newRight, window.innerWidth - rect.width - 6));
+        newTop = Math.max(50, Math.min(newTop, window.innerHeight - rect.height - 80));
+
+        wrap.style.right = `${Math.round(newRight)}px`;
+        wrap.style.top = `${Math.round(newTop)}px`;
+        wrap.style.bottom = 'auto';
+    };
+
+    const onPointerUp = (e) => {
+        if (pointerId !== e.pointerId) return;
+        clearTimeout(longPressTimer);
+
+        // 恢复滚动和按钮交互
+        enableScroll();
+        wrap.querySelectorAll('mdui-button-icon').forEach(btn => {
+            btn.style.pointerEvents = '';
+        });
+
+        if (isDragging) {
+            const pos = {
+                right: wrap.style.right,
+                top: wrap.style.top
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+            showSnackbar('工具栏位置已保存（双击可重置）', 'success');
+            if (navigator.vibrate) navigator.vibrate(15);
+        }
+
+        wrap.classList.remove('dragging');
+        if (pointerId !== null) {
+            wrap.releasePointerCapture(pointerId);
+        }
+        pointerId = null;
+        isDragging = false;
+    };
+
+    // 绑定事件（move 和 up 监听 document，确保手指移出元素也能跟踪）
+    wrap.addEventListener('pointerdown', onPointerDown, { passive: false });
+    document.addEventListener('pointermove', onPointerMove, { passive: false });
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+
+    // 双击重置到右上默认位置
+    let lastTap = 0;
+    wrap.addEventListener('dblclick', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 100) {
+            wrap.style.right = '6px';
+            wrap.style.top = '4px';
+            wrap.style.bottom = 'auto';
+            localStorage.removeItem(STORAGE_KEY);
+            showSnackbar('工具栏已重置到右上角', 'info');
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        lastTap = now;
+    });
+}
+
+
+
 
 		document.addEventListener('DOMContentLoaded', () => {
 		  const savedPrimary = localStorage.getItem(PRIMARY_KEY);
@@ -7991,7 +10567,8 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 		  dom.calcDensity.value = 0.00617;
 		  ZoomManager.init();
           KeyboardConfigManager.init();
-          
+          applyAppSettings();
+          initShortcutToolbarDrag();
           
           
 if('serviceWorker' in navigator){       // 判断浏览器支不支持 service worker
