@@ -72,6 +72,11 @@
         body.theme-flash #themeFlash {
             opacity: 0.18;
         }
+
+        #general-snackbar {
+            z-index: 50000 !important;
+            position: fixed;
+        }
 		
 		.data-form input, .data-form select, .data-form textarea, .search-bar input {
 		    background-color: var(--background-color);
@@ -1606,6 +1611,7 @@
 			<div id="shortcutToolbar">
 				<mdui-button-icon icon="add" id="shortcutQuickAddBtn"></mdui-button-icon>
 				<mdui-button-icon icon="edit" id="shortcutEditToggleBtn"></mdui-button-icon>
+				<mdui-button-icon icon="close" id="shortcutClearInputBtn"></mdui-button-icon>
 				<mdui-button-icon icon="close" id="shortcutEditCancelBtn" style="display:none"></mdui-button-icon>
 			</div>
 		</div>
@@ -2180,6 +2186,14 @@
                 <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
                     <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
                 </mdui-list-item>
+                <mdui-list-item headline="快捷短语自动补全" description="根据当前输入过滤匹配">
+                    <mdui-switch slot="end-icon" id="settingsShortcutAutoCompleteSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsShortcutAutoCompleteByFieldItem" icon="tune" headline="自动补全（按字段）" description=""></mdui-list-item>
+                <mdui-list-item id="settingsShortcutAddPositionItem" icon="vertical_align_top" headline="快捷短语新增位置" description=""></mdui-list-item>
+                <mdui-list-item headline="快捷短语推荐按点击排序" description="开启后按点击频率排序显示">
+                    <mdui-switch slot="end-icon" id="settingsShortcutRankByClicksSwitch"></mdui-switch>
+                </mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>智能建议</mdui-list-subheader>
                 <mdui-list-item headline="启用建议加入快捷短语" description="添加数据后统计常用输入">
@@ -2206,7 +2220,12 @@
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>信息</mdui-list-subheader>
                 <mdui-list-item id="settingsAboutItem" icon="info" headline="关于 & 操作指南" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>导入导出</mdui-list-subheader>
+                <mdui-list-item id="settingsExportAllXmlItem" icon="download" headline="导出全部配置（XML）" description="键盘 / 快捷短语 / 设置"></mdui-list-item>
+                <mdui-list-item id="settingsImportAllXmlItem" icon="upload" headline="导入全部配置（XML）" description="会覆盖当前配置"></mdui-list-item>
             </mdui-list>
+            <input type="file" id="importAllXmlInput" accept=".xml" style="display:none">
         </div>
     </mdui-dialog>
 
@@ -2343,6 +2362,26 @@
         </div>
         <mdui-button slot="action" variant="text" id="shortcutRowsCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="shortcutRowsOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutAddPositionDialog" close-on-esc close-on-overlay-click headline="快捷短语新增位置">
+        <mdui-segmented-button-group id="shortcutAddPositionGroup" selects="single" value="first">
+            <mdui-segmented-button value="first">第一个</mdui-segmented-button>
+            <mdui-segmented-button value="last">最后一个</mdui-segmented-button>
+        </mdui-segmented-button-group>
+        <mdui-button slot="action" variant="text" id="shortcutAddPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutAddPositionOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutAutoCompleteByFieldDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>自动补全（按字段）</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeShortcutAutoCompleteByFieldBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="shortcutAutoCompleteByFieldList" style="display:grid; gap: 10px;"></div>
+        </div>
     </mdui-dialog>
 
     <mdui-dialog id="dialogPositionDialog" close-on-esc close-on-overlay-click headline="对话框默认位置（可多选）">
@@ -2497,6 +2536,10 @@
 		    shortcutRows: 2,
 		    shortcutRowsByField: {},
 		    shortcutWrap: false,
+		    shortcutAutoCompleteEnabled: true,
+		    shortcutAutoCompleteByField: {},
+		    shortcutAddPosition: 'first',
+		    shortcutRankByClicks: false,
 		    suggestEnabled: true,
 		    suggestThreshold: 5,
 		    imageCompressPolicy: 'ask',
@@ -2558,6 +2601,12 @@
 		        if (!merged.shortcutRowsByField || typeof merged.shortcutRowsByField !== 'object') {
 		            merged.shortcutRowsByField = {};
 		        }
+		        if (merged.shortcutAutoCompleteEnabled === undefined) merged.shortcutAutoCompleteEnabled = true;
+		        if (!merged.shortcutAutoCompleteByField || typeof merged.shortcutAutoCompleteByField !== 'object') {
+		            merged.shortcutAutoCompleteByField = {};
+		        }
+		        merged.shortcutAddPosition = merged.shortcutAddPosition === 'last' ? 'last' : 'first';
+		        merged.shortcutRankByClicks = merged.shortcutRankByClicks === true;
 		        if (merged.imageCompressUseMaxWidth === undefined) merged.imageCompressUseMaxWidth = true;
 		        if (merged.imageCompressUseMaxHeight === undefined) merged.imageCompressUseMaxHeight = true;
 		        const mb = Number(merged.largeImageThresholdMB);
@@ -2867,6 +2916,18 @@
 		    if (suggestSwitch) suggestSwitch.checked = !!appSettings.suggestEnabled;
 		    const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
 		    if (wrapSwitch) wrapSwitch.checked = !!appSettings.shortcutWrap;
+		    const autoSwitch = document.getElementById('settingsShortcutAutoCompleteSwitch');
+		    if (autoSwitch) autoSwitch.checked = appSettings.shortcutAutoCompleteEnabled !== false;
+		    const autoByFieldItem = document.getElementById('settingsShortcutAutoCompleteByFieldItem');
+		    if (autoByFieldItem) {
+		        const map = appSettings.shortcutAutoCompleteByField && typeof appSettings.shortcutAutoCompleteByField === 'object' ? appSettings.shortcutAutoCompleteByField : {};
+		        const customized = Object.keys(map).filter(k => map[k] === false || map[k] === true);
+		        autoByFieldItem.setAttribute('description', customized.length ? `已设置 ${customized.length} 项` : '跟随全局');
+		    }
+		    const posItem = document.getElementById('settingsShortcutAddPositionItem');
+		    if (posItem) posItem.setAttribute('description', appSettings.shortcutAddPosition === 'last' ? '最后一个' : '第一个');
+		    const rankSwitch = document.getElementById('settingsShortcutRankByClicksSwitch');
+		    if (rankSwitch) rankSwitch.checked = appSettings.shortcutRankByClicks === true;
 		    const compressItem = document.getElementById('settingsImageCompressItem');
 		    if (compressItem) {
 		        const map = { ask: '每次询问', compress: '总是压缩', force: '总是原图' };
@@ -3253,10 +3314,25 @@ const ZoomManager = {
 		function bindImmediateActionButton(el, handler) {
 		  if (!el || typeof handler !== 'function') return;
 		  let ignoreClickUntil = 0;
+		  if (!document.documentElement.dataset.rsdbClickGuard) {
+		    document.documentElement.dataset.rsdbClickGuard = '1';
+		    document.addEventListener(
+		      'click',
+		      (e) => {
+		        if (!window.__rsdbSuppressClicksUntil) return;
+		        if (Date.now() >= window.__rsdbSuppressClicksUntil) return;
+		        e.preventDefault();
+		        e.stopPropagation();
+		      },
+		      true,
+		    );
+		  }
 		  el.addEventListener('pointerdown', (e) => {
 		    if (e.pointerType === 'mouse') return;
 		    ignoreClickUntil = Date.now() + 600;
+		    window.__rsdbSuppressClicksUntil = Date.now() + 320;
 		    if (e.cancelable) e.preventDefault();
+		    e.stopPropagation();
 		    handler(e);
 		  }, { passive: false });
 		  el.addEventListener('click', (e) => {
@@ -3526,7 +3602,9 @@ function updateVirtualCursor() {
     if (!virtualCursor) return;
     const handle = document.getElementById('virtualCursorHandle');
 
-    if (!currentInput || !currentInput.classList.contains('readonly-input') || dom.virtualKeyboard.style.display === 'none') {
+    const vk = dom?.virtualKeyboard;
+    const vkVisible = !!vk && window.getComputedStyle(vk).display !== 'none';
+    if (!currentInput || !currentInput.classList.contains('readonly-input') || !vkVisible) {
         virtualCursor.style.display = 'none';
         if (handle) handle.style.display = 'none';
         return;
@@ -3534,12 +3612,14 @@ function updateVirtualCursor() {
 
     const rect = currentInput.getBoundingClientRect();
     const style = window.getComputedStyle(currentInput);
-    const paddingLeft = parseFloat(style.paddingLeft);
-    const paddingTop = parseFloat(style.paddingTop);
-    const borderLeft = parseFloat(style.borderLeftWidth);
-    const borderTop = parseFloat(style.borderTopWidth);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const borderTop = parseFloat(style.borderTopWidth) || 0;
     
-    const textBeforeCursor = currentInput.value.substring(0, currentInput.selectionStart);
+    const selStart =
+        typeof currentInput.selectionStart === 'number' ? currentInput.selectionStart : (currentInput.value || '').length;
+    const textBeforeCursor = (currentInput.value || '').substring(0, selStart);
     
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -3549,12 +3629,13 @@ function updateVirtualCursor() {
     const cursorHeight = (parseFloat(style.fontSize) || 16) * 1.45;
     
     virtualCursor.style.height = cursorHeight + 'px';
-    const cursorLeft = rect.left + paddingLeft + borderLeft + textWidth;
+    let cursorLeft = rect.left + paddingLeft + borderLeft + textWidth;
     let cursorTop =
         rect.top +
         borderTop +
         paddingTop +
         (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2;
+    if (!Number.isFinite(cursorLeft)) cursorLeft = rect.left;
     virtualCursor.style.left = cursorLeft + 'px';
     virtualCursor.style.top = cursorTop + 'px';
     
@@ -4301,6 +4382,82 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     document.getElementById('closeSettingsDialogBtn')?.addEventListener('click', () => {
         if (settingsDialog) settingsDialog.open = false;
     });
+    document.getElementById('settingsExportAllXmlItem')?.addEventListener('click', () => {
+        const buildXml = () => {
+            const payload = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                theme: localStorage.getItem('theme') || 'auto',
+                primaryColor: localStorage.getItem(PRIMARY_KEY) || '',
+                appSettings: appSettings || {},
+                keyboardConfig: KeyboardConfigManager?.config || {},
+                inputStats: inputStats || {},
+                shortcutClickStats: shortcutClickStats || {},
+            };
+            const json = (v) => `<![CDATA[${JSON.stringify(v ?? {}, null, 2)}]]>`;
+            const escape = (s) => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+                `<rsdbConfig version="${payload.version}" exportedAt="${escape(payload.exportedAt)}">\n` +
+                `  <theme>${escape(payload.theme)}</theme>\n` +
+                `  <primaryColor>${escape(payload.primaryColor)}</primaryColor>\n` +
+                `  <appSettings>${json(payload.appSettings)}</appSettings>\n` +
+                `  <keyboardConfig>${json(payload.keyboardConfig)}</keyboardConfig>\n` +
+                `  <inputStats>${json(payload.inputStats)}</inputStats>\n` +
+                `  <shortcutClickStats>${json(payload.shortcutClickStats)}</shortcutClickStats>\n` +
+                `</rsdbConfig>\n`;
+        };
+        const xml = buildXml();
+        const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'rsdb_config.xml';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1200);
+        showSnackbar('已导出 XML 配置', 'success');
+    });
+    document.getElementById('settingsImportAllXmlItem')?.addEventListener('click', () => {
+        const input = document.getElementById('importAllXmlInput');
+        if (input) input.click();
+    });
+    document.getElementById('importAllXmlInput')?.addEventListener('change', async (e) => {
+        const input = e.target;
+        const file = input?.files?.[0];
+        if (!file) return;
+        input.value = '';
+        try {
+            const text = await file.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'application/xml');
+            const root = doc.querySelector('rsdbConfig');
+            if (!root) throw new Error('invalid xml');
+            const theme = root.querySelector('theme')?.textContent?.trim();
+            const primary = root.querySelector('primaryColor')?.textContent?.trim();
+            const readJson = (tag) => {
+                const node = root.querySelector(tag);
+                const raw = node?.textContent || '';
+                return raw ? JSON.parse(raw) : {};
+            };
+            const importedAppSettings = readJson('appSettings');
+            const importedKeyboardConfig = readJson('keyboardConfig');
+            const importedInputStats = readJson('inputStats');
+            const importedShortcutClickStats = readJson('shortcutClickStats');
+
+            if (theme) localStorage.setItem('theme', theme);
+            if (primary) localStorage.setItem(PRIMARY_KEY, primary);
+            localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(importedAppSettings || {}));
+            localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(importedKeyboardConfig || {}));
+            localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(importedInputStats || {}));
+            localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(importedShortcutClickStats || {}));
+
+            showSnackbar('已导入配置，正在刷新...', 'success');
+            setTimeout(() => location.reload(), 260);
+        } catch (err) {
+            showSnackbar('导入失败：XML 格式不正确', 'error');
+        }
+    });
     document.getElementById('settingsShortcutRowsItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('shortcutRowsDialog');
@@ -4483,6 +4640,86 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
     wrapSwitch?.addEventListener('change', () => saveAppSettings({ shortcutWrap: !!wrapSwitch.checked }));
     bindSwitchListItemToggle(wrapSwitch);
+    const autoSwitch = document.getElementById('settingsShortcutAutoCompleteSwitch');
+    autoSwitch?.addEventListener('change', () => saveAppSettings({ shortcutAutoCompleteEnabled: autoSwitch.checked !== false }));
+    bindSwitchListItemToggle(autoSwitch);
+
+    const rankSwitch = document.getElementById('settingsShortcutRankByClicksSwitch');
+    rankSwitch?.addEventListener('change', () => saveAppSettings({ shortcutRankByClicks: rankSwitch.checked === true }));
+    bindSwitchListItemToggle(rankSwitch);
+
+    document.getElementById('settingsShortcutAddPositionItem')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutAddPositionDialog');
+        const group = document.getElementById('shortcutAddPositionGroup');
+        if (group) group.value = appSettings.shortcutAddPosition === 'last' ? 'last' : 'first';
+        if (dlg) dlg.open = true;
+    });
+    bindImmediateActionButton(document.getElementById('shortcutAddPositionOkBtn'), () => {
+        const dlg = document.getElementById('shortcutAddPositionDialog');
+        const group = document.getElementById('shortcutAddPositionGroup');
+        const value = group?.value === 'last' ? 'last' : 'first';
+        saveAppSettings({ shortcutAddPosition: value });
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('shortcutAddPositionCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutAddPositionDialog');
+        if (dlg) dlg.open = false;
+    });
+
+    document.getElementById('settingsShortcutAutoCompleteByFieldItem')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutAutoCompleteByFieldDialog');
+        const list = document.getElementById('shortcutAutoCompleteByFieldList');
+        if (!dlg || !list) return;
+        list.innerHTML = '';
+        const fields = [
+            'furnaceId',
+            'productId',
+            'cardId',
+            'steelType',
+            'status',
+            'position',
+            'actualDiameter',
+            'diameter',
+            'length',
+            'weight',
+        ];
+        const map =
+            appSettings.shortcutAutoCompleteByField && typeof appSettings.shortcutAutoCompleteByField === 'object'
+                ? { ...appSettings.shortcutAutoCompleteByField }
+                : {};
+        const globalOn = appSettings.shortcutAutoCompleteEnabled !== false;
+        fields.forEach((k) => {
+            const item = document.createElement('mdui-list-item');
+            item.setAttribute('headline', fieldLabels?.[k] || k);
+            const sw = document.createElement('mdui-switch');
+            sw.setAttribute('slot', 'end-icon');
+            const explicit = typeof map[k] === 'boolean' ? map[k] : null;
+            sw.checked = explicit ?? globalOn;
+            sw.addEventListener('change', () => {
+                map[k] = sw.checked === true;
+                saveAppSettings({ shortcutAutoCompleteByField: map });
+            });
+            const reset = document.createElement('mdui-button-icon');
+            reset.setAttribute('slot', 'end-icon');
+            reset.setAttribute('icon', 'restart_alt');
+            reset.title = '跟随全局';
+            reset.addEventListener('click', (e) => {
+                e.stopPropagation();
+                delete map[k];
+                saveAppSettings({ shortcutAutoCompleteByField: map });
+                sw.checked = globalOn;
+            });
+            item.appendChild(reset);
+            item.appendChild(sw);
+            list.appendChild(item);
+        });
+        dlg.open = true;
+    });
+    document.getElementById('closeShortcutAutoCompleteByFieldBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('shortcutAutoCompleteByFieldDialog');
+        if (dlg) dlg.open = false;
+    });
+
     const animSwitch = document.getElementById('settingsAnimationsSwitch');
     animSwitch?.addEventListener('change', () => saveAppSettings({ animationsEnabled: !!animSwitch.checked }));
     bindSwitchListItemToggle(animSwitch);
@@ -4504,6 +4741,11 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         openAdd();
     }
 });
+    document.getElementById('shortcutClearInputBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        clearInput();
+    });
     dom.shortcutEditToggleBtn?.addEventListener('click', () => {
         if (!currentShortcutFieldKey) return;
         setShortcutEditMode(!shortcutEditMode);
@@ -4823,8 +5065,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
             if (dlg) dlg.open = true;
             return;
         }
-        templates.push(value);
-        KeyboardConfigManager.save();
+        addShortcutTemplate(fieldKey, value);
         const dlg = document.getElementById('shortcutAddDialog');
         if (dlg) dlg.open = false;
         window.__rsdbShortcutAddPrevInput = shortcutAddContext?.prevInput || window.__rsdbShortcutAddPrevInput || null;
@@ -4836,7 +5077,8 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const { fieldKey, value } = duplicateShortcutContext;
         const templates = getTemplatesByField(fieldKey);
         if (!templates) return;
-        templates.push(value);
+        if (appSettings.shortcutAddPosition === 'last') templates.push(value);
+        else templates.unshift(value);
         KeyboardConfigManager.save();
         const d1 = document.getElementById('duplicateShortcutConfirmDialog');
         if (d1) d1.open = false;
@@ -6705,8 +6947,7 @@ function startSearch() {
 		        setTimeout(() => highlightShortcutInKeyboard(value), 60);
 		        return;
 		    }
-		    templates.push(value);
-		    KeyboardConfigManager.save();
+		    addShortcutTemplate(fieldKey, value);
 		    showSnackbar('已添加快捷短语', 'success');
 		    closeShortcutInlineAdd({ restoreKeyboard: true });
 		}
@@ -6832,29 +7073,102 @@ function startSearch() {
 		    });
 		}
 
+		const SHORTCUT_CLICK_STATS_KEY = 'rsdb_shortcut_click_stats_v1';
+		let shortcutClickStats = (() => {
+		    try {
+		        const raw = localStorage.getItem(SHORTCUT_CLICK_STATS_KEY);
+		        const parsed = raw ? JSON.parse(raw) : {};
+		        return parsed && typeof parsed === 'object' ? parsed : {};
+		    } catch (e) {
+		        return {};
+		    }
+		})();
+
+		function saveShortcutClickStats() {
+		    try {
+		        localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(shortcutClickStats || {}));
+		    } catch (e) {}
+		}
+
+		function recordShortcutClick(fieldKey, value) {
+		    if (!fieldKey || !value) return;
+		    const v = (value || '').toString();
+		    if (!shortcutClickStats[fieldKey] || typeof shortcutClickStats[fieldKey] !== 'object') shortcutClickStats[fieldKey] = {};
+		    shortcutClickStats[fieldKey][v] = (shortcutClickStats[fieldKey][v] || 0) + 1;
+		    saveShortcutClickStats();
+		}
+
+		function getShortcutClickCount(fieldKey, value) {
+		    const v = (value || '').toString();
+		    const m = shortcutClickStats?.[fieldKey];
+		    const n = m && typeof m === 'object' ? Number(m[v]) : 0;
+		    return Number.isFinite(n) ? n : 0;
+		}
+
+		function isAutoCompleteEnabledForField(fieldKey) {
+		    const globalOn = appSettings.shortcutAutoCompleteEnabled !== false;
+		    const map = appSettings.shortcutAutoCompleteByField && typeof appSettings.shortcutAutoCompleteByField === 'object'
+		        ? appSettings.shortcutAutoCompleteByField
+		        : {};
+		    if (typeof map[fieldKey] === 'boolean') return map[fieldKey];
+		    return globalOn;
+		}
+
+		function addShortcutTemplate(fieldKey, value) {
+		    const templates = getTemplatesByField(fieldKey);
+		    if (!templates) return false;
+		    const val = (value || '').trim();
+		    if (!val) return false;
+		    const existedIndex = templates.findIndex(v => (v || '').trim() === val);
+		    if (existedIndex >= 0) templates.splice(existedIndex, 1);
+		    if (appSettings.shortcutAddPosition === 'last') templates.push(val);
+		    else templates.unshift(val);
+		    KeyboardConfigManager.save();
+		    return true;
+		}
+
+		function applyShortcutToCurrentInput(fieldKey, value) {
+		    if (!currentInput) return;
+		    const v = (value || '').toString();
+		    if (isAutoCompleteEnabledForField(fieldKey)) {
+		        currentInput.value = v;
+		        const pos = v.length;
+		        try {
+		            currentInput.setSelectionRange(pos, pos);
+		        } catch (e) {
+		            try {
+		                currentInput.selectionStart = pos;
+		                currentInput.selectionEnd = pos;
+		            } catch (e2) {}
+		        }
+		        currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+		        updateVirtualCursor();
+		        setTimeout(updateVirtualCursor, 0);
+		        scheduleShortcutKeysRefresh();
+		        return;
+		    }
+		    insertText(v);
+		}
+
 		function dismissSuggestedShortcut(fieldKey, value) {
 		    if (!fieldKey || !value) return;
 		    if (!(shortcutSuggestDismissedByField[fieldKey] instanceof Set)) shortcutSuggestDismissedByField[fieldKey] = new Set();
 		    shortcutSuggestDismissedByField[fieldKey].add(value);
+		    const stats = inputStats[fieldKey];
+		    if (stats && typeof stats === 'object') {
+		        delete stats[value];
+		        saveInputStats();
+		    }
 		    scheduleShortcutKeysRefresh();
 		}
 
-		function addSuggestedShortcutToTop(fieldKey, value) {
-		    const templates = getTemplatesByField(fieldKey);
-		    if (!templates) return;
+		function addSuggestedShortcut(fieldKey, value) {
+		    const ok = addShortcutTemplate(fieldKey, value);
 		    const val = (value || '').trim();
-		    if (!val) return;
-		    const existedIndex = templates.findIndex(v => (v || '').trim() === val);
-		    if (existedIndex >= 0) {
-		        const item = templates.splice(existedIndex, 1)[0];
-		        templates.unshift(item);
-		    } else {
-		        templates.unshift(val);
-		    }
-		    KeyboardConfigManager.save();
+		    if (!ok) return;
 		    if (shortcutSuggestDismissedByField[fieldKey] instanceof Set) shortcutSuggestDismissedByField[fieldKey].delete(val);
 		    scheduleShortcutKeysRefresh();
-		    showSnackbar('已添加到快捷短语顶部', 'success');
+		    showSnackbar('已添加快捷短语', 'success');
 		}
 
 		function createShortcutKeys(options, keyClass, fieldKey) {
@@ -6952,6 +7266,8 @@ function startSearch() {
 		        input.style.boxSizing = 'border-box';
 		        input.addEventListener('input', () => {
 		            if (shortcutInlineAddState) shortcutInlineAddState.value = input.value;
+		            updateVirtualCursor();
+		            setTimeout(updateVirtualCursor, 0);
 		        });
 		        input.addEventListener('click', (e) => {
 		            e.stopPropagation();
@@ -7016,7 +7332,21 @@ function startSearch() {
 		    const rowCount = Math.max(1, Math.min(3, Number.isFinite(perField) ? perField : baseRows));
 		    const rows = Array.from({ length: rowCount }, () => []);
 		    const optionEntries = (options || []).map((v, i) => ({ value: v, index: i }));
-		    const queryRaw = currentInput?.id === 'shortcutInlineAddInput' ? '' : (currentInput?.value || '').toString();
+		    const orderedEntries = appSettings.shortcutRankByClicks
+		        ? optionEntries
+		              .slice()
+		              .sort((a, b) => {
+		                  const ca = getShortcutClickCount(fieldKey, a.value);
+		                  const cb = getShortcutClickCount(fieldKey, b.value);
+		                  if (cb !== ca) return cb - ca;
+		                  return a.index - b.index;
+		              })
+		        : optionEntries;
+		    const allowAutoComplete = fieldKey ? isAutoCompleteEnabledForField(fieldKey) : (appSettings.shortcutAutoCompleteEnabled !== false);
+		    const queryRaw =
+		        allowAutoComplete && currentInput?.id !== 'shortcutInlineAddInput'
+		            ? (currentInput?.value || '').toString()
+		            : '';
 		    const query = normalizeShortcutMatchText(queryRaw);
 		    const queryCompact = normalizeShortcutMatchTextCompact(queryRaw);
 		    const matchValue = (candidate) => {
@@ -7027,7 +7357,7 @@ function startSearch() {
 		        const v2 = normalizeShortcutMatchTextCompact(candidate);
 		        return v2.includes(queryCompact);
 		    };
-		    const filteredOptions = optionEntries.filter(o => matchValue(o.value));
+		    const filteredOptions = orderedEntries.filter(o => matchValue(o.value));
 		    const suggested = getSuggestedAddValues(fieldKey, options).filter(v => matchValue(v));
 		    if (toolbar) toolbar.style.display = 'flex';
 		    if (toolbarWrap) toolbarWrap.style.display = 'block';
@@ -7094,37 +7424,56 @@ function startSearch() {
 		                xBtn.style.flex = '0 0 auto';
 		                xBtn.style.userSelect = 'none';
 		                xBtn.style.touchAction = 'none';
+		                xBtn.addEventListener('pointerdown', (e) => {
+		                    e.stopPropagation();
+		                    if (e.cancelable) e.preventDefault();
+		                    xBtn.setPointerCapture?.(e.pointerId);
+		                }, { passive: false });
+		                xBtn.addEventListener('pointerup', (e) => {
+		                    e.stopPropagation();
+		                    if (e.cancelable) e.preventDefault();
+		                    dismissSuggestedShortcut(fieldKey, item.value);
+		                    xBtn.releasePointerCapture?.(e.pointerId);
+		                }, { passive: false });
+		                xBtn.addEventListener('pointercancel', (e) => {
+		                    xBtn.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		                keyElement.appendChild(label);
+		                keyElement.appendChild(xBtn);
 		                let pressTimer = null;
 		                let longPressed = false;
 		                const clearTimer = () => {
 		                    clearTimeout(pressTimer);
 		                    pressTimer = null;
 		                };
-		                xBtn.addEventListener('pointerdown', (e) => {
-		                    e.stopPropagation();
-		                    if (e.cancelable) e.preventDefault();
+		                keyElement.addEventListener('pointerdown', (e) => {
 		                    longPressed = false;
 		                    clearTimer();
 		                    pressTimer = setTimeout(() => {
 		                        longPressed = true;
-		                        addSuggestedShortcutToTop(fieldKey, item.value);
+		                        addSuggestedShortcut(fieldKey, item.value);
 		                    }, 520);
-		                    xBtn.setPointerCapture?.(e.pointerId);
-		                }, { passive: false });
-		                xBtn.addEventListener('pointerup', (e) => {
-		                    e.stopPropagation();
-		                    if (e.cancelable) e.preventDefault();
-		                    clearTimer();
-		                    if (!longPressed) dismissSuggestedShortcut(fieldKey, item.value);
-		                    xBtn.releasePointerCapture?.(e.pointerId);
-		                }, { passive: false });
-		                xBtn.addEventListener('pointercancel', (e) => {
-		                    clearTimer();
-		                    xBtn.releasePointerCapture?.(e.pointerId);
+		                    if (e.pointerId != null) keyElement.setPointerCapture?.(e.pointerId);
 		                }, { passive: true });
-		                keyElement.appendChild(label);
-		                keyElement.appendChild(xBtn);
-		                keyElement.addEventListener('click', () => openShortcutAddDialog(fieldKey, item.value));
+		                keyElement.addEventListener('pointermove', (e) => {
+		                    if (!pressTimer) return;
+		                    if (Math.abs(e.movementX) > 8 || Math.abs(e.movementY) > 8) {
+		                        clearTimer();
+		                    }
+		                }, { passive: true });
+		                keyElement.addEventListener('pointerup', (e) => {
+		                    clearTimer();
+		                    if (!longPressed && currentInput) {
+		                        applyShortcutToCurrentInput(fieldKey, item.value);
+		                        recordShortcutClick(fieldKey, item.value);
+		                        currentInput.focus();
+		                    }
+		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
+		                keyElement.addEventListener('pointercancel', (e) => {
+		                    clearTimer();
+		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
+		                }, { passive: true });
 		            } else {
 		                keyElement.textContent = item.value;
 		                let pressTimer = null;
@@ -7154,7 +7503,8 @@ function startSearch() {
 		                keyElement.addEventListener('pointerup', (e) => {
 		                    clearTimer();
 		                    if (!longPressed && currentInput) {
-		                        insertText(item.value);
+		                        applyShortcutToCurrentInput(fieldKey, item.value);
+		                        recordShortcutClick(fieldKey, item.value);
 		                        currentInput.focus();
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
@@ -7685,37 +8035,9 @@ function generateVirtualKeyboard() {
     const shortcutContainer = document.getElementById('shortcutContainer');
 
     if (shortcutContainer) {
-        const numericFieldKey = keyboardState.numericFieldKey;
-        const numericHasShortcuts =
-            keyboardState.inputType === 'number' &&
-            (numericFieldKey === 'actualDiameter' ||
-                numericFieldKey === 'diameter' ||
-                numericFieldKey === 'length' ||
-                numericFieldKey === 'weight');
-        // 1. 判断当前键盘模式是否有关联快捷短语
-        const hasShortcuts = 
-            keyboardState.inputType === 'furnaceId' ||
-            keyboardState.inputType === 'productId' ||
-            keyboardState.inputType === 'cardId' ||
-            keyboardState.inputType === 'steelType' ||
-            keyboardState.inputType === 'status'   ||
-            keyboardState.inputType === 'position' ||
-            numericHasShortcuts;
-
-        // 2. 容器里是否真的有可见的快捷键
-        const hasVisibleKeys = shortcutContainer.querySelector('.shortcut-key, .status-key, .suggest-add-key') !== null;
-
-        // 3. 最终显隐规则
-        const shouldShow = shortcutEditMode || (hasShortcuts && (hasVisibleKeys || numericHasShortcuts));
-
-        if (shouldShow) {
-            shortcutContainer.style.display = 'block';
-            if (shortcutWrap) shortcutWrap.style.display = 'block';
-        } else {
-            shortcutContainer.style.display = 'none';
-            if (shortcutWrap) shortcutWrap.style.display = 'none';
-        }
-        }
+        shortcutContainer.style.display = 'block';
+        if (shortcutWrap) shortcutWrap.style.display = 'block';
+    }
 		  if (dom.shortcutKeysContainer) dom.shortcutKeysContainer.innerHTML = '';
 		  dom.keyboardRows.innerHTML = '';
 		  currentShortcutFieldKey = null;
@@ -8291,37 +8613,22 @@ function generateVirtualKeyboard() {
   }
 		  currentInput.focus(); 
 
-		  const startPos = currentInput.selectionStart;
-		  const endPos = currentInput.selectionEnd;
-		  const currentValue = currentInput.value;
+		  const currentValue = currentInput.value || '';
+		  const len = currentValue.length;
+		  const rawStart = typeof currentInput.selectionStart === 'number' ? currentInput.selectionStart : len;
+		  const rawEnd = typeof currentInput.selectionEnd === 'number' ? currentInput.selectionEnd : len;
+		  const startPos = Math.max(0, Math.min(len, rawStart));
+		  const endPos = Math.max(0, Math.min(len, rawEnd));
 
 		  currentInput.value = currentValue.substring(0, startPos) + text + currentValue.substring(endPos);
-		  currentInput.selectionStart = currentInput.selectionEnd = startPos + text.length;
-
-		  const event = new Event('input', { bubbles: true });
-		  currentInput.dispatchEvent(event);
-
-		  if (currentInput.closest('#calculatorForm')) calculateWeight();
-		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
-          
-          updateVirtualCursor();
-		  scheduleShortcutKeysRefresh();
-		}
-
-		function handleBackspace() {
-		  if (!currentInput) return;
-		  currentInput.focus();
-
-		  const startPos = currentInput.selectionStart;
-		  const endPos = currentInput.selectionEnd;
-		  const currentValue = currentInput.value;
-
-		  if (startPos === endPos && startPos > 0) {
-		    currentInput.value = currentValue.substring(0, startPos - 1) + currentValue.substring(endPos);
-		    currentInput.selectionStart = currentInput.selectionEnd = startPos - 1;
-		  } else if (startPos !== endPos) {
-		    currentInput.value = currentValue.substring(0, startPos) + currentValue.substring(endPos);
-		    currentInput.selectionStart = currentInput.selectionEnd = startPos;
+		  const nextPos = startPos + String(text ?? '').length;
+		  try {
+		    currentInput.setSelectionRange(nextPos, nextPos);
+		  } catch (e) {
+		    try {
+		      currentInput.selectionStart = nextPos;
+		      currentInput.selectionEnd = nextPos;
+		    } catch (e2) {}
 		  }
 
 		  const event = new Event('input', { bubbles: true });
@@ -8331,6 +8638,52 @@ function generateVirtualKeyboard() {
 		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
           
           updateVirtualCursor();
+          setTimeout(updateVirtualCursor, 0);
+		  scheduleShortcutKeysRefresh();
+		}
+
+		function handleBackspace() {
+		  if (!currentInput) return;
+		  currentInput.focus();
+
+		  const currentValue = currentInput.value || '';
+		  const len = currentValue.length;
+		  const rawStart = typeof currentInput.selectionStart === 'number' ? currentInput.selectionStart : len;
+		  const rawEnd = typeof currentInput.selectionEnd === 'number' ? currentInput.selectionEnd : len;
+		  const startPos = Math.max(0, Math.min(len, rawStart));
+		  const endPos = Math.max(0, Math.min(len, rawEnd));
+
+		  if (startPos === endPos && startPos > 0) {
+		    currentInput.value = currentValue.substring(0, startPos - 1) + currentValue.substring(endPos);
+		    const nextPos = startPos - 1;
+		    try {
+		      currentInput.setSelectionRange(nextPos, nextPos);
+		    } catch (e) {
+		      try {
+		        currentInput.selectionStart = nextPos;
+		        currentInput.selectionEnd = nextPos;
+		      } catch (e2) {}
+		    }
+		  } else if (startPos !== endPos) {
+		    currentInput.value = currentValue.substring(0, startPos) + currentValue.substring(endPos);
+		    try {
+		      currentInput.setSelectionRange(startPos, startPos);
+		    } catch (e) {
+		      try {
+		        currentInput.selectionStart = startPos;
+		        currentInput.selectionEnd = startPos;
+		      } catch (e2) {}
+		    }
+		  }
+
+		  const event = new Event('input', { bubbles: true });
+		  currentInput.dispatchEvent(event);
+
+		  if (currentInput.closest('#calculatorForm')) calculateWeight();
+		  else if (currentInput.id === 'searchInput' && isSearchReplaceVisible) startSearch();
+          
+          updateVirtualCursor();
+          setTimeout(updateVirtualCursor, 0);
 		  scheduleShortcutKeysRefresh();
 		}
 
