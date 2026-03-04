@@ -4117,7 +4117,7 @@ function initEventListeners() {
             beginOperation('delete_all', '删除所有表格数据');
             tableData = [];
             window.rsdbAllData = []; // 兼容性保留
-            saveDataToLocalStorage();
+            saveDataToIndexedDB();
             updateTable();
             updateSummary();
             commitOperation();
@@ -5767,6 +5767,17 @@ function updateTable() {
     applySearchHighlight();
     bindRowEvents(); // 渲染完必绑事件
 };
+function updateSummary() {
+    try {
+        const all = Array.isArray(tableData) ? tableData : [];
+        const current = typeof getFilteredData === 'function' ? getFilteredData() : all;
+        if (dom && dom.totalCountText) {
+            dom.totalCountText.textContent = current.length === all.length
+                ? `共 ${all.length} 条数据`
+                : `共 ${current.length} 条匹配数据（原 ${all.length} 条）`;
+        }
+    } catch (e) {}
+}
 		/**
 		 * 更新搜索结果计数显示（修复占位符暴露问题）
 		 */
@@ -7352,7 +7363,16 @@ function startSearch() {
             try {
                 localStorage.setItem(HISTORY_KEY, JSON.stringify(operationHistory || []));
                 localStorage.setItem(HISTORY_CURSOR_KEY, String(historyCursor));
-            } catch (e) {}
+            } catch (e) {
+                console.error('Failed to save operation history to localStorage:', e);
+            }
+            
+            // 同时保存到 IndexedDB
+            try {
+                saveDataToIndexedDB();
+            } catch (dbErr) {
+                console.error('Failed to save operation history to IndexedDB:', dbErr);
+            }
         }
         function deepCopyData(arr) {
             try { return JSON.parse(JSON.stringify(arr || [])); } catch (e) { return []; }
@@ -7397,7 +7417,7 @@ function startSearch() {
             tableData = deepCopyData(entry.beforeTable);
             KeyboardConfigManager.config = deepCopyKeyboard(entry.beforeKeyboard);
             saveKeyboardConfigSilent();
-            saveDataToLocalStorage();
+            saveDataToIndexedDB();
             updateTable();
             updateSummary();
             historyCursor = idx;
@@ -7411,7 +7431,7 @@ function startSearch() {
             tableData = deepCopyData(entry.afterTable);
             KeyboardConfigManager.config = deepCopyKeyboard(entry.afterKeyboard);
             saveKeyboardConfigSilent();
-            saveDataToLocalStorage();
+            saveDataToIndexedDB();
             updateTable();
             updateSummary();
             historyCursor = historyCursor + 1;
@@ -7565,7 +7585,7 @@ function startSearch() {
                     tableData = deepCopyData(entry.beforeTable);
                     KeyboardConfigManager.config = deepCopyKeyboard(entry.beforeKeyboard);
                     saveKeyboardConfigSilent();
-                    saveDataToLocalStorage();
+                    saveDataToIndexedDB();
                     updateTable();
                     updateSummary();
                     const idxInMain = operationHistory.findIndex(e => e.ts === entry.ts && e.type === entry.type);
@@ -9196,8 +9216,9 @@ function generateVirtualKeyboard() {
 
 		// === IndexedDB 初始化和操作 ===
 		const DB_NAME = 'RoundBarDB';
-		const DB_VERSION = 1;
+		const DB_VERSION = 2; // 升级版本号以触发数据库升级
 		const STORE_NAME = 'data';
+		const HISTORY_STORE_NAME = 'operationHistory';
 		let db = null;
 
 		function openDB() {
@@ -9224,6 +9245,9 @@ function generateVirtualKeyboard() {
 		            if (!db.objectStoreNames.contains(STORE_NAME)) {
 		                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
 		            }
+		            if (!db.objectStoreNames.contains(HISTORY_STORE_NAME)) {
+		                db.createObjectStore(HISTORY_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+		            }
 		        };
 		    });
 		}
@@ -9236,6 +9260,8 @@ function generateVirtualKeyboard() {
 async function saveDataToIndexedDB() {
 		    try {
 		        const db = await openDB();
+		        
+		        // 保存表格数据
 		        const tx = db.transaction(STORE_NAME, 'readwrite');
 		        const store = tx.objectStore(STORE_NAME);
 
@@ -9249,6 +9275,29 @@ async function saveDataToIndexedDB() {
 
 		        await tx.done;
 		        console.log('IndexedDB 保存成功，共', tableData.length, '条数据');
+		        
+		        // 保存操作历史数据
+		        try {
+		            const historyTx = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+		            const historyStore = historyTx.objectStore(HISTORY_STORE_NAME);
+		            
+		            // 清空旧的操作历史数据
+		            await historyStore.clear();
+		            
+		            // 添加新的操作历史数据（只保存一条记录，包含完整的操作历史和游标）
+		            const historyData = {
+		                operationHistory: operationHistory || [],
+		                historyCursor: historyCursor || 0,
+		                timestamp: Date.now()
+		            };
+		            
+		            await historyStore.add(historyData);
+		            await historyTx.done;
+		            console.log('IndexedDB 保存操作历史成功，共', operationHistory.length, '条记录');
+		        } catch (historyErr) {
+		            console.error('IndexedDB 保存操作历史失败:', historyErr);
+		        }
+		        
 		    } catch (err) {
 		        console.error('IndexedDB 保存失败:', err);
 		        showSnackbar('数据保存失败（IndexedDB错误）', 'error');
@@ -9259,6 +9308,8 @@ async function saveDataToIndexedDB() {
 		async function loadDataFromIndexedDB() {
 		    try {
 		        const db = await openDB();
+		        
+		        // 加载表格数据
 		        const tx = db.transaction(STORE_NAME, 'readonly');
 		        const store = tx.objectStore(STORE_NAME);
 		        const request = store.getAll();
@@ -9275,10 +9326,43 @@ async function saveDataToIndexedDB() {
 		            tableData = [];
 		            console.log('IndexedDB 无数据，使用空数组');
 		        }
+		        
+		        // 加载操作历史数据
+		        try {
+		            const historyTx = db.transaction(HISTORY_STORE_NAME, 'readonly');
+		            const historyStore = historyTx.objectStore(HISTORY_STORE_NAME);
+		            const historyRequest = historyStore.getAll();
+		            
+		            const historyData = await new Promise((resolve, reject) => {
+		                historyRequest.onsuccess = () => resolve(historyRequest.result);
+		                historyRequest.onerror = () => reject(historyRequest.error);
+		            });
+		            
+		            if (historyData && historyData.length > 0) {
+		                // 假设历史数据存储为单个对象，包含 operationHistory 和 historyCursor
+		                const historyEntry = historyData[0]; // 取第一个（也是唯一的）历史记录
+		                if (historyEntry && historyEntry.operationHistory) {
+		                    operationHistory = historyEntry.operationHistory;
+		                    historyCursor = historyEntry.historyCursor || 0;
+		                    console.log('IndexedDB 加载操作历史成功，共', operationHistory.length, '条记录');
+		                }
+		            } else {
+		                operationHistory = [];
+		                historyCursor = 0;
+		                console.log('IndexedDB 无操作历史数据，使用空数组');
+		            }
+		        } catch (historyErr) {
+		            console.error('IndexedDB 加载操作历史失败:', historyErr);
+		            operationHistory = [];
+		            historyCursor = 0;
+		        }
+		        
 		    } catch (err) {
 		        console.error('IndexedDB 加载失败:', err);
 		        showSnackbar('数据加载失败，使用空数据', 'warning');
 		        tableData = [];
+		        operationHistory = [];
+		        historyCursor = 0;
 		    }
 
 		    // === 关键修复：重置分页 + 刷新布局，确保表格铺满全屏 ===
@@ -10527,9 +10611,11 @@ function startDirectTakePhoto(dataIndex) {
                 const compressedBase64 = await handleImageSelect(e);
 
                 if (compressedBase64 && tableData[dataIndex]) {
+                    beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'direct_take' });
                     tableData[dataIndex].cardImage = compressedBase64;
                     saveDataToIndexedDB();
                     updateTable();  // 关键：立即刷新表格显示新图片
+                    commitOperation();
                     showSnackbar('上传成功，已填入表格', 'success');
                 }
             } catch (err) {
@@ -11139,15 +11225,19 @@ async function handleImageSelect(e) {
     window.tempNewCardImage = base64;
     console.log('[上传] 图片已强制存入 window.tempNewCardImage，长度：' + base64.length);
 
-    // 编辑模式下直接写回 tableData
+    // 编辑模式下：同时写入 tableData，并记录可撤销操作
     if (currentEditIndex !== -1 && tableData[currentEditIndex]) {
+        beginOperation('update_image', '更新图片', { index: currentEditIndex, mode: 'edit' });
         tableData[currentEditIndex].cardImage = base64;
-        console.log('[上传] 编辑模式 - 已直接写入 tableData');
+        console.log('[上传] 编辑模式 - 已直接写入 tableData，并记录历史');
+        await saveDataToIndexedDB();
+        updateTable();
+        commitOperation();
+    } else {
+        // 非编辑模式：仅刷新预览和临时变量，由后续保存逻辑统一记录操作
+        await saveDataToIndexedDB();
+        updateTable();
     }
-
-    // 实时持久化一次（防止意外丢失）
-    await saveDataToIndexedDB();
-    updateTable();
 
     showSnackbar('图片处理完成', 'success');
     return base64;
@@ -11342,13 +11432,17 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             const previewImg = document.getElementById('previewImg');
             if (previewImg && previewImg.src) previewImg.src = newBase64;
             if (dataIndex !== -1 && tableData[dataIndex]) {
+                beginOperation('update_image', '旋转图片', { index: dataIndex, mode: 'viewer_rotate' });
                 tableData[dataIndex].cardImage = newBase64;
                 await saveDataToIndexedDB();
                 updateTable();
+                commitOperation();
             } else if (typeof currentEditIndex === 'number' && currentEditIndex !== -1 && tableData[currentEditIndex]) {
+                beginOperation('update_image', '旋转图片', { index: currentEditIndex, mode: 'edit_rotate' });
                 tableData[currentEditIndex].cardImage = newBase64;
                 await saveDataToIndexedDB();
                 updateTable();
+                commitOperation();
             } else {
                 window.tempNewCardImage = newBase64;
             }
@@ -11427,9 +11521,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
                     img.src = base64;
                     // 如果有 dataIndex，更新 tableData
                     if (dataIndex !== -1 && tableData[dataIndex]) {
+                        beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'viewer_take' });
                         tableData[dataIndex].cardImage = base64;
                         saveDataToIndexedDB();
                         updateTable();
+                        commitOperation();
                     }
                     showSnackbar('图片已通过拍照替换', 'success');
                 }
@@ -11452,9 +11548,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
                 if (base64) {
                     img.src = base64;
                     if (dataIndex !== -1 && tableData[dataIndex]) {
+                        beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'viewer_gallery' });
                         tableData[dataIndex].cardImage = base64;
                         saveDataToIndexedDB();
                         updateTable();
+                        commitOperation();
                     }
                     showSnackbar('图片已替换', 'success');
                 }
@@ -11783,9 +11881,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
                 const newBase64 = await rotateImageBase64(img.src, deg, q);
                 img.src = newBase64;
                 if (tableData[index]) {
+                    beginOperation('update_image', '旋转图片', { index, mode: 'quick_rotate' });
                     tableData[index].cardImage = newBase64;
                     await saveDataToIndexedDB();
                     updateTable();
+                    commitOperation();
                 }
                 rotateDeg = 0;
                 currentScale = 1;
@@ -11935,9 +12035,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             if (e.target.files?.[0]) {
                 const base64 = await handleImageSelect(e);
                 if (base64) {
+                    beginOperation('update_image', '更新图片', { index, mode: 'preview_take' });
                     tableData[index].cardImage = base64;
                     saveDataToIndexedDB();
                     updateTable();
+                    commitOperation();
                     showSnackbar('图片已替换', 'success');
                 }
             }
@@ -11956,9 +12058,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             if (e.target.files?.[0]) {
                 const base64 = await handleImageSelect(e);
                 if (base64) {
+                    beginOperation('update_image', '更新图片', { index, mode: 'preview_gallery' });
                     tableData[index].cardImage = base64;
                     saveDataToIndexedDB();
                     updateTable();
+                    commitOperation();
                     showSnackbar('图片已替换', 'success');
                 }
             }
