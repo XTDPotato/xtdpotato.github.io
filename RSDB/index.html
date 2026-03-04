@@ -1389,7 +1389,10 @@
 							<span>只显示匹配行</span>
 						</div>
 					</mdui-menu-item>
-                    <mdui-menu-item id="resetFabPositionItem" icon="restore">重置按钮位置</mdui-menu-item>
+                    <mdui-menu-item id="undoMenuItem" icon="undo">撤销</mdui-menu-item>
+                    <mdui-menu-item id="redoMenuItem" icon="redo">重做</mdui-menu-item>
+                    <mdui-menu-item id="operationHistoryMenuItem" icon="list_alt">操作详细列表</mdui-menu-item>
+                    <mdui-menu-item id="deleteAllDataMenuItem" icon="delete_forever">删除所有表格数据</mdui-menu-item>
 					</mdui-menu>
 				</mdui-dropdown>
 			</div>
@@ -1851,6 +1854,9 @@
           <li style="margin-bottom: 4px;">• 关闭方式：按住右下 ▼ 键向上滑动后松开 = 关闭虚拟键盘（会显示“关闭”提示）</li>
           <li style="margin-bottom: 4px;">• 快编模式：右下键显示 ✔，轻触即可关闭虚拟键盘</li>
           <li style="margin-bottom: 4px;">• 删除键：按住 ← 连续删除；按住 ← 向上滑动后松开 = 清空当前字段</li>
+          <li style="margin-bottom: 4px;">• 智能建议：当某字段值或前缀累计出现达到阈值，显示“+ 值/前缀”；点击输入到编辑框，长按添加为快捷短语</li>
+          <li style="margin-bottom: 4px;">• 模糊匹配：输入如“25D0”，会智能建议此前频繁使用的“25D0”前缀</li>
+          <li>• 开关控制：设置 → 智能建议 → 可全局或按字段开启/关闭</li>
           <li>• 字符滑动：部分字符键支持“轻触输入字母/数字，向上滑动松开输入符号”</li>
         </ul>
       </div>
@@ -1926,6 +1932,30 @@
   
   <mdui-button slot="action" variant="text" id="singleDuplicateCancelBtn">取消添加</mdui-button>
   <mdui-button slot="action" variant="filled" color="error" id="singleDuplicateOverrideBtn">覆盖保存</mdui-button>
+</mdui-dialog>
+
+<!-- 删除所有数据确认对话框 -->
+<mdui-dialog id="deleteAllDataConfirmDialog" headline="确认删除所有数据" close-on-overlay-click close-on-esc>
+    <div style="padding:16px 0;font-size:1rem;color:#f44336;">确定要删除表格中的所有数据吗？此操作不可恢复！</div>
+    <mdui-button slot="action" variant="text" id="cancelDeleteAllDataBtn">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" color="error" id="confirmDeleteAllDataBtn" disabled>确认删除 (1)</mdui-button>
+</mdui-dialog>
+
+<mdui-dialog id="operationHistoryDialog" fullscreen close-on-esc close-on-overlay-click>
+  <mdui-top-app-bar slot="header">
+    <mdui-top-app-bar-title>操作详细列表</mdui-top-app-bar-title>
+    <div style="flex:1"></div>
+    <mdui-button-icon icon="close" id="closeOperationHistoryBtn"></mdui-button-icon>
+  </mdui-top-app-bar>
+  <div style="padding:16px; box-sizing:border-box; height:100%; display:grid; grid-template-rows:auto 1fr; gap:12px;">
+    <mdui-text-field id="operationSearchInput" label="搜索操作（按描述/类型）" variant="outlined" clearable></mdui-text-field>
+    <div id="operationHistoryList" style="overflow:auto; display:grid; gap:8px;"></div>
+  </div>
+</mdui-dialog>
+
+<mdui-dialog id="operationPreviewDialog" headline="操作预览" close-on-esc close-on-overlay-click>
+  <div id="operationPreviewContent" style="padding:0 24px 16px;"></div>
+  <mdui-button slot="action" variant="text" id="closeOperationPreviewBtn">关闭</mdui-button>
 </mdui-dialog>
 
 <!-- 批量导入时的重复确认弹窗（完整列表 + 差异对比） -->
@@ -2199,6 +2229,7 @@
                 <mdui-list-item headline="启用建议加入快捷短语" description="添加数据后统计常用输入">
                     <mdui-switch slot="end-icon" id="settingsSuggestSwitch"></mdui-switch>
                 </mdui-list-item>
+                <mdui-list-item id="settingsSuggestByFieldItem" icon="tune" headline="智能建议（按字段）" description=""></mdui-list-item>
                 <mdui-list-item id="settingsSuggestThresholdItem" icon="tune" headline="建议阈值" description=""></mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>图片压缩</mdui-list-subheader>
@@ -2381,6 +2412,17 @@
         </mdui-top-app-bar>
         <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
             <div id="shortcutAutoCompleteByFieldList" style="display:grid; gap: 10px;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="suggestByFieldDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>智能建议（按字段）</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSuggestByFieldBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="suggestByFieldList" style="display:grid; gap: 10px;"></div>
         </div>
     </mdui-dialog>
 
@@ -2605,6 +2647,9 @@
 		        if (!merged.shortcutAutoCompleteByField || typeof merged.shortcutAutoCompleteByField !== 'object') {
 		            merged.shortcutAutoCompleteByField = {};
 		        }
+                if (!merged.suggestEnabledByField || typeof merged.suggestEnabledByField !== 'object') {
+                    merged.suggestEnabledByField = {};
+                }
 		        merged.shortcutAddPosition = merged.shortcutAddPosition === 'last' ? 'last' : 'first';
 		        merged.shortcutRankByClicks = merged.shortcutRankByClicks === true;
 		        if (merged.imageCompressUseMaxWidth === undefined) merged.imageCompressUseMaxWidth = true;
@@ -2726,6 +2771,8 @@
 		    if (cancelBtn) cancelBtn.style.display = shortcutEditMode ? '' : 'none';
 		    if (editBtn) editBtn.style.color = shortcutEditMode ? '#4caf50' : '';
 		    if (cancelBtn) cancelBtn.style.color = shortcutEditMode ? '#f44336' : '';
+		    const clearBtn = document.getElementById('shortcutClearInputBtn');
+		    if (clearBtn) clearBtn.style.display = shortcutEditMode ? 'none' : '';
 		    generateVirtualKeyboard();
 		}
 
@@ -2740,6 +2787,8 @@
 		    if (cancelBtn) cancelBtn.style.display = 'none';
 		    if (editBtn) editBtn.style.color = '';
 		    if (cancelBtn) cancelBtn.style.color = '';
+		    const clearBtn = document.getElementById('shortcutClearInputBtn');
+		    if (clearBtn) clearBtn.style.display = '';
 		    generateVirtualKeyboard();
 		}
 
@@ -2896,8 +2945,10 @@
 		    if (shortcutEditSession && shortcutEditSession.fieldKey === currentShortcutFieldKey) {
 		        shortcutEditSession.working = ordered;
 		    } else if (templates) {
+		        beginOperation('shortcut_reorder', '重新排序快捷短语：' + (fieldLabels[currentShortcutFieldKey] || currentShortcutFieldKey));
 		        templates.splice(0, templates.length, ...ordered);
 		        KeyboardConfigManager.save();
+		        commitOperation();
 		    }
 		}
 
@@ -2947,6 +2998,12 @@
 		        const positions = Array.isArray(appSettings.dialogPositions) ? appSettings.dialogPositions : ['center'];
 		        dialogPosItem.setAttribute('description', positions.length ? positions.join(' + ') : '居中');
 		    }
+        const suggestByFieldItem = document.getElementById('settingsSuggestByFieldItem');
+        if (suggestByFieldItem) {
+            const map = appSettings.suggestEnabledByField && typeof appSettings.suggestEnabledByField === 'object' ? appSettings.suggestEnabledByField : {};
+            const customized = Object.keys(map).filter(k => map[k] === false || map[k] === true);
+            suggestByFieldItem.setAttribute('description', customized.length ? `已设置 ${customized.length} 项` : '跟随全局');
+        }
 		    const keyboardSizeItem = document.getElementById('settingsKeyboardSizeItem');
 		    if (keyboardSizeItem) {
 		        const h = Number(appSettings.virtualKeyboardHeight);
@@ -3650,7 +3707,9 @@ function updateVirtualCursor() {
         const size = 16;
         handle.style.left = (cursorLeft - size / 2 + 1) + 'px';
         handle.style.top = (cursorTop + cursorHeight + 6) + 'px';
-        handle.style.display = 'block';
+        const last = window.__rsdbLastCursorInteractAt || 0;
+        const inactive = Date.now() - last > 3000;
+        handle.style.display = inactive ? 'none' : 'block';
     }
 }
 
@@ -3778,6 +3837,7 @@ function initEventListeners() {
                     vhEl.setPointerCapture(e.pointerId);
                 } catch (e2) {}
                 window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                window.__rsdbLastCursorInteractAt = Date.now();
                 updateVirtualCursor();
             },
             { passive: false },
@@ -3791,6 +3851,7 @@ function initEventListeners() {
                 e.stopPropagation();
                 moveCursorToClientX(currentInput, e.clientX);
                 window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+                window.__rsdbLastCursorInteractAt = Date.now();
                 updateVirtualCursor();
             },
             { passive: false },
@@ -3803,6 +3864,7 @@ function initEventListeners() {
                 vhEl.releasePointerCapture(e.pointerId);
             } catch (e2) {}
             window.__rsdbKeyboardSwipeConsumedAt = Date.now();
+            window.__rsdbLastCursorInteractAt = Date.now();
             updateVirtualCursor();
         };
         vhEl.addEventListener('pointerup', endDrag, { passive: true });
@@ -4009,18 +4071,91 @@ function initEventListeners() {
         });
     }
 
-    // Reset FAB Menu Item
-    const resetFabBtn = document.getElementById('resetFabPositionItem');
-    if (resetFabBtn) {
-        resetFabBtn.addEventListener('click', () => {
-            localStorage.removeItem('fabPosition');
-            if (mainFab) {
-                mainFab.style.right = '16px';
-                mainFab.style.bottom = '76px';
+    // Delete All Data Menu Item
+    const deleteAllDataBtn = document.getElementById('deleteAllDataMenuItem');
+    const deleteAllDataDialog = document.getElementById('deleteAllDataConfirmDialog');
+    const confirmDeleteAllDataBtn = document.getElementById('confirmDeleteAllDataBtn');
+    const cancelDeleteAllDataBtn = document.getElementById('cancelDeleteAllDataBtn');
+    let deleteAllTimer = null;
+
+    if (deleteAllDataBtn) {
+        deleteAllDataBtn.addEventListener('click', () => {
+            if (deleteAllDataDialog) {
+                deleteAllDataDialog.open = true;
+                // 倒计时逻辑
+                let timeLeft = 1;
+                confirmDeleteAllDataBtn.disabled = true;
+                confirmDeleteAllDataBtn.textContent = `确认删除 (${timeLeft})`;
+                
+                if (deleteAllTimer) clearInterval(deleteAllTimer);
+                deleteAllTimer = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft <= 0) {
+                        clearInterval(deleteAllTimer);
+                        confirmDeleteAllDataBtn.disabled = false;
+                        confirmDeleteAllDataBtn.textContent = '确认删除';
+                    } else {
+                        confirmDeleteAllDataBtn.textContent = `确认删除 (${timeLeft})`;
+                    }
+                }, 1000);
             }
-            showSnackbar('按钮位置已重置', 'success');
         });
     }
+
+    if (cancelDeleteAllDataBtn) {
+        cancelDeleteAllDataBtn.addEventListener('click', () => {
+            if (deleteAllDataDialog) deleteAllDataDialog.open = false;
+            if (deleteAllTimer) clearInterval(deleteAllTimer);
+        });
+    }
+
+    if (confirmDeleteAllDataBtn) {
+        confirmDeleteAllDataBtn.addEventListener('click', () => {
+            if (deleteAllDataDialog) deleteAllDataDialog.open = false;
+            
+            // 执行删除所有数据
+            beginOperation('delete_all', '删除所有表格数据');
+            tableData = [];
+            window.rsdbAllData = []; // 兼容性保留
+            saveDataToLocalStorage();
+            updateTable();
+            updateSummary();
+            commitOperation();
+            operationHistory = [];
+            historyCursor = 0;
+            saveOperationHistory();
+            showSnackbar('所有数据已删除', 'success');
+        });
+    }
+
+    const undoItem = document.getElementById('undoMenuItem');
+    const redoItem = document.getElementById('redoMenuItem');
+    const opHistoryItem = document.getElementById('operationHistoryMenuItem');
+    undoItem?.addEventListener('click', () => {
+        const ok = undoOperation();
+        if (!ok) showSnackbar('没有可撤销的操作', 'info');
+    });
+    redoItem?.addEventListener('click', () => {
+        const ok = redoOperation();
+        if (!ok) showSnackbar('没有可重做的操作', 'info');
+    });
+    opHistoryItem?.addEventListener('click', () => {
+        renderOperationHistoryList('');
+        const dlg = document.getElementById('operationHistoryDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('closeOperationHistoryBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('operationHistoryDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('operationSearchInput')?.addEventListener('input', (e) => {
+        const q = (e.target.value || '').trim().toLowerCase();
+        renderOperationHistoryList(q);
+    });
+    document.getElementById('closeOperationPreviewBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('operationPreviewDialog');
+        if (dlg) dlg.open = false;
+    });
 
     // Add click listeners to all form inputs to trigger virtual keyboard
     if (typeof inputFields !== 'undefined') {
@@ -4113,9 +4248,11 @@ function initEventListeners() {
         confirmDeleteImageBtn.onclick = () => {
             const index = window.tempDeleteImageIndex;
             if (index !== undefined && tableData[index]) {
+                beginOperation('delete_image', '删除图片', { index });
                 tableData[index].cardImage = '';
                 saveDataToIndexedDB();
                 updateTable();
+                commitOperation();
 
                 const previewContainer = document.getElementById('cardImagePreview');
                 const noImageArea = document.getElementById('noImageUploadArea');
@@ -4720,6 +4857,60 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         if (dlg) dlg.open = false;
     });
 
+    document.getElementById('settingsSuggestByFieldItem')?.addEventListener('click', () => {
+        const dlg = document.getElementById('suggestByFieldDialog');
+        const list = document.getElementById('suggestByFieldList');
+        if (!dlg || !list) return;
+        list.innerHTML = '';
+        const fields = [
+            'furnaceId',
+            'productId',
+            'cardId',
+            'steelType',
+            'status',
+            'position',
+            'actualDiameter',
+            'diameter',
+            'length',
+            'weight',
+        ];
+        const map =
+            appSettings.suggestEnabledByField && typeof appSettings.suggestEnabledByField === 'object'
+                ? { ...appSettings.suggestEnabledByField }
+                : {};
+        const globalOn = !!appSettings.suggestEnabled;
+        fields.forEach((k) => {
+            const item = document.createElement('mdui-list-item');
+            item.setAttribute('headline', fieldLabels?.[k] || k);
+            const sw = document.createElement('mdui-switch');
+            sw.setAttribute('slot', 'end-icon');
+            const explicit = typeof map[k] === 'boolean' ? map[k] : null;
+            sw.checked = explicit ?? globalOn;
+            sw.addEventListener('change', () => {
+                map[k] = sw.checked === true;
+                saveAppSettings({ suggestEnabledByField: map });
+            });
+            const reset = document.createElement('mdui-button-icon');
+            reset.setAttribute('slot', 'end-icon');
+            reset.setAttribute('icon', 'restart_alt');
+            reset.title = '跟随全局';
+            reset.addEventListener('click', (e) => {
+                e.stopPropagation();
+                delete map[k];
+                saveAppSettings({ suggestEnabledByField: map });
+                sw.checked = globalOn;
+            });
+            item.appendChild(reset);
+            item.appendChild(sw);
+            list.appendChild(item);
+        });
+        dlg.open = true;
+    });
+    document.getElementById('closeSuggestByFieldBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('suggestByFieldDialog');
+        if (dlg) dlg.open = false;
+    });
+
     const animSwitch = document.getElementById('settingsAnimationsSwitch');
     animSwitch?.addEventListener('change', () => saveAppSettings({ animationsEnabled: !!animSwitch.checked }));
     bindSwitchListItemToggle(animSwitch);
@@ -4963,8 +5154,10 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const input = document.getElementById('shortcutEditValue');
         const value = (input?.value || '').trim();
         if (!value) return;
+        beginOperation('shortcut_edit', '编辑快捷短语：' + (fieldLabels[fieldKey] || fieldKey));
         templates[index] = value;
         KeyboardConfigManager.save();
+        commitOperation();
         const dlg = document.getElementById('shortcutActionDialog');
         if (dlg) dlg.open = false;
         shortcutActionContext = null;
@@ -4976,8 +5169,11 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const { fieldKey, index } = shortcutActionContext;
         const templates = getTemplatesByField(fieldKey);
         if (!templates) return;
+        const oldVal = templates[index];
+        beginOperation('shortcut_delete', '删除快捷短语：' + (fieldLabels[fieldKey] || fieldKey) + (oldVal ? `（${oldVal}）` : ''));
         templates.splice(index, 1);
         KeyboardConfigManager.save();
+        commitOperation();
         const dlg = document.getElementById('shortcutActionDialog');
         if (dlg) dlg.open = false;
         shortcutActionContext = null;
@@ -4993,10 +5189,12 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const target = Number(moveSelect?.value);
         if (!Number.isFinite(target)) return;
         if (target === index) return;
+        beginOperation('shortcut_move', '移动快捷短语：' + (fieldLabels[fieldKey] || fieldKey));
         const item = templates.splice(index, 1)[0];
         const insertIndex = target > index ? target - 1 : target;
         templates.splice(insertIndex, 0, item);
         KeyboardConfigManager.save();
+        commitOperation();
         openShortcutActionDialog(fieldKey, insertIndex);
         showSnackbar('已移动快捷短语', 'success');
     });
@@ -5009,10 +5207,12 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const target = Number(moveSelect?.value);
         if (!Number.isFinite(target)) return;
         if (target === index) return;
+        beginOperation('shortcut_move', '移动快捷短语：' + (fieldLabels[fieldKey] || fieldKey));
         const item = templates.splice(index, 1)[0];
         const insertIndex = target > index ? target : target + 1;
         templates.splice(Math.min(insertIndex, templates.length), 0, item);
         KeyboardConfigManager.save();
+        commitOperation();
         const newIndex = templates.indexOf(item);
         openShortcutActionDialog(fieldKey, newIndex);
         showSnackbar('已移动快捷短语', 'success');
@@ -5065,21 +5265,26 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
             if (dlg) dlg.open = true;
             return;
         }
+        beginOperation('shortcut_add', '添加快捷短语：' + (fieldLabels[fieldKey] || fieldKey) + `（${value}）`);
         addShortcutTemplate(fieldKey, value);
+        commitOperation();
         const dlg = document.getElementById('shortcutAddDialog');
         if (dlg) dlg.open = false;
         window.__rsdbShortcutAddPrevInput = shortcutAddContext?.prevInput || window.__rsdbShortcutAddPrevInput || null;
         shortcutAddContext = null;
         showSnackbar('已添加快捷短语', 'success');
+        closeShortcutInlineAdd({ restoreKeyboard: true });
     });
     document.getElementById('duplicateShortcutOkBtn')?.addEventListener('click', () => {
         if (!duplicateShortcutContext) return;
         const { fieldKey, value } = duplicateShortcutContext;
         const templates = getTemplatesByField(fieldKey);
         if (!templates) return;
+        beginOperation('shortcut_add', '添加快捷短语：' + (fieldLabels[fieldKey] || fieldKey) + `（${value}）`);
         if (appSettings.shortcutAddPosition === 'last') templates.push(value);
         else templates.unshift(value);
         KeyboardConfigManager.save();
+        commitOperation();
         const d1 = document.getElementById('duplicateShortcutConfirmDialog');
         if (d1) d1.open = false;
         const d2 = document.getElementById('shortcutAddDialog');
@@ -5105,6 +5310,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
             }
         }
         showSnackbar('已添加快捷短语', 'success');
+        closeShortcutInlineAdd({ restoreKeyboard: true });
     });
     document.getElementById('duplicateShortcutCancelBtn')?.addEventListener('click', () => {
         if (!duplicateShortcutContext) return;
@@ -5136,6 +5342,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
             showVirtualKeyboard();
         }
         setTimeout(() => highlightShortcutInKeyboard(value), 60);
+        closeShortcutInlineAdd({ restoreKeyboard: true });
     });
     dom.addBtn.addEventListener('click', openAddModal);
     dom.fileInput.addEventListener('change', handleFileImport);
@@ -5290,6 +5497,7 @@ function confirmDeleteSelected() {
     openCustomModal(dom.confirmModal);
 
     dom.confirmActionBtn.onclick = () => {
+        beginOperation('delete_selected', '批量删除 ' + deleteCount + ' 条');
 
         const sortedIndexes = Array.from(selectedRows).sort((a, b) => b - a);
         sortedIndexes.forEach(index => {
@@ -5297,6 +5505,7 @@ function confirmDeleteSelected() {
         });
 
         saveDataToIndexedDB();  
+        commitOperation();
         showSnackbar(`成功删除 ${deleteCount} 条数据`, 'success');
 
         if (isMultiSelectMode) toggleMultiSelectMode();
@@ -5851,6 +6060,7 @@ function confirmReplaceAll() {
     openCustomModal(dom.confirmModal);
 
     dom.confirmActionBtn.onclick = () => {
+        beginOperation('replace_all', '替换 ' + oldText + ' → ' + (newText || '(空)'));
         let replaceCount = 0;
         const regex = new RegExp(escapeRegExp(oldText), 'gi');
 
@@ -5877,6 +6087,7 @@ function confirmReplaceAll() {
 
         // ✅ 修复6：替换全部后 彻底清空所有搜索相关状态 + 更新计数UI
         updateTable();
+        commitOperation();
         dom.searchInput.value = '';
         dom.replaceQueryInput.value = '';
         searchTerm = '';
@@ -6372,10 +6583,12 @@ if (downBtn) {
         }
 
         // 执行删除
+        beginOperation('delete_row', '删除单行', { index });
         tableData.splice(index, 1);
         selectedRows.clear();
         saveDataToIndexedDB();
         updateTable();
+        commitOperation();
 
         // 关闭确认弹窗
         closeCustomModal(dom.confirmModal);
@@ -6422,9 +6635,11 @@ function moveRow(rowIndex, direction) {
   if (tableData.length <= 1) return; 
   const targetIndex = rowIndex + direction;
   if (targetIndex < 0 || targetIndex >= tableData.length) return;
+  beginOperation('move_row', '行移动：' + (direction < 0 ? '上移' : '下移'), { rowIndex, targetIndex });
   [tableData[rowIndex], tableData[targetIndex]] = [tableData[targetIndex], tableData[rowIndex]];
   saveDataToIndexedDB(); 
   updateTable(); 
+  commitOperation();
 }
 
 function renderMoveRowDialog() {
@@ -6514,19 +6729,23 @@ function moveRowToAssignPosition(sourceIndex, direction) {
 		// 兼容你的分页/搜索场景：如果有置顶/置底需求，可追加这两个函数（可选）
 function moveRowToTop(rowIndex) {
   if (rowIndex === 0) return;
+  beginOperation('move_row_top', '行置顶', { rowIndex });
   const movedItem = tableData.splice(rowIndex, 1)[0];
   tableData.unshift(movedItem);
   saveDataToIndexedDB();
   updateTable();
   showSnackbar('行已置顶', 'success');
+  commitOperation();
 }
 function moveRowToBottom(rowIndex) {
   if (rowIndex === tableData.length -1) return;
+  beginOperation('move_row_bottom', '行为置底', { rowIndex });
   const movedItem = tableData.splice(rowIndex, 1)[0];
   tableData.push(movedItem);
   saveDataToIndexedDB();
   updateTable();
   showSnackbar('行已置底', 'success');
+  commitOperation();
 }
 
 		function deleteSelected() {
@@ -6681,9 +6900,11 @@ function findDuplicates(newItem) {
 		            return;
 		        }
 
+		        beginOperation('edit_field', '快速修改：' + (fieldLabels[fieldId] || fieldId));
 		        tableData[index][fieldId] = newValue;
 		        saveDataToIndexedDB();
 		        updateTable();
+		        commitOperation();
 		        closeCustomModal(dom.quickEditDialog);
 		        setVirtualKeyboardVisible(false);
 		        showSnackbar('快速修改已保存', 'success');
@@ -6869,17 +7090,41 @@ function startSearch() {
 		}
 
 		function getSuggestedAddValues(fieldKey, templateValues) {
-		    if (!appSettings.suggestEnabled) return [];
-		    if (shortcutInlineAddState?.fieldKey) return [];
-		    const stats = inputStats[fieldKey] || {};
-		    const threshold = Math.max(1, Number(appSettings.suggestThreshold) || 5);
-		    const existing = new Set((templateValues || []).map(v => (v || '').trim()).filter(Boolean));
-		    const dismissed = shortcutSuggestDismissedByField?.[fieldKey] instanceof Set ? shortcutSuggestDismissedByField[fieldKey] : null;
-		    return Object.entries(stats)
-		        .filter(([v, c]) => v && !existing.has(v) && !(dismissed?.has?.(v)) && Number(c) >= threshold)
-		        .sort((a, b) => Number(b[1]) - Number(a[1]))
-		        .slice(0, 3)
-		        .map(([v]) => v);
+            const byField = appSettings.suggestEnabledByField && typeof appSettings.suggestEnabledByField === 'object' ? appSettings.suggestEnabledByField : {};
+            const enabled = typeof byField[fieldKey] === 'boolean' ? byField[fieldKey] : !!appSettings.suggestEnabled;
+            if (!enabled) return [];
+            if (shortcutInlineAddState?.fieldKey) return [];
+            const stats = inputStats[fieldKey] || {};
+            const threshold = Math.max(1, Number(appSettings.suggestThreshold) || 5);
+            const existing = new Set((templateValues || []).map(v => (v || '').trim()).filter(Boolean));
+            const dismissed = shortcutSuggestDismissedByField?.[fieldKey] instanceof Set ? shortcutSuggestDismissedByField[fieldKey] : null;
+            const entries = Object.entries(stats)
+                .filter(([v, c]) => v && Number(c) >= threshold)
+                .sort((a, b) => Number(b[1]) - Number(a[1]));
+            const out = [];
+            const queryRaw = (currentInput?.value || '').toString();
+            const query = normalizeShortcutMatchText(queryRaw);
+            const queryCompact = normalizeShortcutMatchTextCompact(queryRaw);
+            if (queryCompact) {
+                let prefixCount = 0;
+                entries.forEach(([v, c]) => {
+                    const vv = normalizeShortcutMatchTextCompact(v);
+                    if (vv.startsWith(queryCompact)) prefixCount += Number(c) || 0;
+                });
+                const qTrim = query.trim();
+                if (prefixCount >= threshold && qTrim && !existing.has(qTrim) && !(dismissed?.has?.(qTrim))) {
+                    out.push(qTrim);
+                }
+            }
+            entries.some(([v, c]) => {
+                const val = (v || '').trim();
+                if (!val) return false;
+                if (existing.has(val)) return false;
+                if (dismissed?.has?.(val)) return false;
+                out.push(val);
+                return out.length >= 3;
+            });
+            return out.slice(0, 3);
 		}
 
 		function openShortcutInlineAdd(fieldKey, presetValue = '') {
@@ -7090,6 +7335,252 @@ function startSearch() {
 		    } catch (e) {}
 		}
 
+        const HISTORY_KEY = 'rsdb_operation_history_v1';
+        const HISTORY_CURSOR_KEY = 'rsdb_operation_history_cursor_v1';
+        let operationHistory = (() => {
+            try {
+                const raw = localStorage.getItem(HISTORY_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) { return []; }
+        })();
+        let historyCursor = (() => {
+            const v = Number(localStorage.getItem(HISTORY_CURSOR_KEY) || operationHistory.length);
+            return Number.isFinite(v) ? v : operationHistory.length;
+        })();
+        function saveOperationHistory() {
+            try {
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(operationHistory || []));
+                localStorage.setItem(HISTORY_CURSOR_KEY, String(historyCursor));
+            } catch (e) {}
+        }
+        function deepCopyData(arr) {
+            try { return JSON.parse(JSON.stringify(arr || [])); } catch (e) { return []; }
+        }
+        function deepCopyKeyboard(cfg) {
+            try { return JSON.parse(JSON.stringify(cfg || {})); } catch (e) { return {}; }
+        }
+        function saveKeyboardConfigSilent() {
+            try {
+                localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(KeyboardConfigManager.config || {}));
+            } catch (e) {}
+            try { generateVirtualKeyboard(); } catch (e) {}
+        }
+        function beginOperation(type, description, meta = {}) {
+            const beforeTable = deepCopyData(tableData);
+            const beforeKeyboard = deepCopyKeyboard(KeyboardConfigManager.config);
+            window.__rsdbPendingOp = {
+                ts: Date.now(),
+                type: String(type || ''),
+                description: String(description || ''),
+                meta: meta || {},
+                beforeTable,
+                beforeKeyboard
+            };
+        }
+        function commitOperation() {
+            const pending = window.__rsdbPendingOp;
+            if (!pending) return;
+            const afterTable = deepCopyData(tableData);
+            const afterKeyboard = deepCopyKeyboard(KeyboardConfigManager.config);
+            const entry = { ...pending, afterTable, afterKeyboard };
+            operationHistory = operationHistory.slice(0, historyCursor);
+            operationHistory.push(entry);
+            historyCursor = operationHistory.length;
+            saveOperationHistory();
+            window.__rsdbPendingOp = null;
+        }
+        function undoOperation() {
+            if (historyCursor <= 0) return false;
+            const idx = historyCursor - 1;
+            const entry = operationHistory[idx];
+            tableData = deepCopyData(entry.beforeTable);
+            KeyboardConfigManager.config = deepCopyKeyboard(entry.beforeKeyboard);
+            saveKeyboardConfigSilent();
+            saveDataToLocalStorage();
+            updateTable();
+            updateSummary();
+            historyCursor = idx;
+            saveOperationHistory();
+            showSnackbar('已撤销：' + (entry.description || entry.type || ''), 'success');
+            return true;
+        }
+        function redoOperation() {
+            if (historyCursor >= operationHistory.length) return false;
+            const entry = operationHistory[historyCursor];
+            tableData = deepCopyData(entry.afterTable);
+            KeyboardConfigManager.config = deepCopyKeyboard(entry.afterKeyboard);
+            saveKeyboardConfigSilent();
+            saveDataToLocalStorage();
+            updateTable();
+            updateSummary();
+            historyCursor = historyCursor + 1;
+            saveOperationHistory();
+            showSnackbar('已重做：' + (entry.description || entry.type || ''), 'success');
+            return true;
+        }
+        function diffSummary(before, after) {
+            const b = Array.isArray(before) ? before : [];
+            const a = Array.isArray(after) ? after : [];
+            const lenDiff = (a.length || 0) - (b.length || 0);
+            const minLen = Math.min(b.length, a.length);
+            let changedCells = 0;
+            for (let i = 0; i < minLen; i++) {
+                const bi = b[i] || {};
+                const ai = a[i] || {};
+                const keys = Object.keys({ ...bi, ...ai });
+                for (const k of keys) {
+                    if (String(bi[k] ?? '') !== String(ai[k] ?? '')) changedCells++;
+                }
+            }
+            return { beforeCount: b.length, afterCount: a.length, deltaCount: lenDiff, changedCells };
+        }
+        function diffKeyboardSummary(b, a) {
+            const fields = ['furnaceIdTemplates','productIdTemplates','cardIdTemplates','steelTypeTemplates','statusTemplates','positionTemplates'];
+            const changes = [];
+            fields.forEach(k => {
+                const arrB = Array.isArray(b?.[k]) ? b[k] : [];
+                const arrA = Array.isArray(a?.[k]) ? a[k] : [];
+                const lenDiff = arrA.length - arrB.length;
+                let changed = 0;
+                const max = Math.max(arrA.length, arrB.length);
+                for (let i = 0; i < max; i++) {
+                    if ((arrB[i] || '') !== (arrA[i] || '')) changed++;
+                }
+                if (lenDiff !== 0 || changed > 0) {
+                    const labelMap = {
+                        furnaceIdTemplates:'炉号',productIdTemplates:'产品号',cardIdTemplates:'卡片号',
+                        steelTypeTemplates:'钢种',statusTemplates:'状态',positionTemplates:'位置'
+                    };
+                    changes.push({ field: labelMap[k] || k, lenDiff, changed });
+                }
+            });
+            return changes;
+        }
+        function buildRowChangeDetails(b, a, limit = 5) {
+            const rows = [];
+            const lenB = Array.isArray(b) ? b.length : 0;
+            const lenA = Array.isArray(a) ? a.length : 0;
+            const maxLen = Math.max(lenB, lenA);
+            for (let i = 0; i < maxLen && rows.length < limit; i++) {
+                const bi = lenB > i ? b[i] : undefined;
+                const ai = lenA > i ? a[i] : undefined;
+                if (!bi && ai) {
+                    rows.push({ type: 'added', index: i, after: ai });
+                    continue;
+                }
+                if (bi && !ai) {
+                    rows.push({ type: 'deleted', index: i, before: bi });
+                    continue;
+                }
+                const keys = Object.keys({ ...(bi || {}), ...(ai || {}) });
+                const diffFields = [];
+                keys.forEach(k => {
+                    const vb = String(bi?.[k] ?? '');
+                    const va = String(ai?.[k] ?? '');
+                    if (vb !== va) diffFields.push({ key: k, before: vb, after: va });
+                });
+                if (diffFields.length) rows.push({ type: 'modified', index: i, fields: diffFields });
+            }
+            const parts = [];
+            rows.forEach(r => {
+                if (r.type === 'added') {
+                    parts.push(`<div style="margin-top:8px;">新增行 #${r.index + 1}</div>`);
+                    const f = Object.keys(r.after || {});
+                    f.slice(0, 6).forEach(k => {
+                        parts.push(`<div style="padding-left:12px;display:flex;gap:8px;"><span>${fieldLabels[k] || k}：</span><span>${String(r.after[k] ?? '')}</span></div>`);
+                    });
+                } else if (r.type === 'deleted') {
+                    parts.push(`<div style="margin-top:8px;">删除行 #${r.index + 1}</div>`);
+                    const f = Object.keys(r.before || {});
+                    f.slice(0, 6).forEach(k => {
+                        parts.push(`<div style="padding-left:12px;display:flex;gap:8px;"><span>${fieldLabels[k] || k}：</span><span>${String(r.before[k] ?? '')}</span></div>`);
+                    });
+                } else if (r.type === 'modified') {
+                    parts.push(`<div style="margin-top:8px;">修改行 #${r.index + 1}</div>`);
+                    r.fields.slice(0, 6).forEach(fd => {
+                        parts.push(`<div style="padding-left:12px;">${fieldLabels[fd.key] || fd.key}：<span style="color:#f44336;">${fd.before}</span> → <span style="color:var(--primary-color);">${fd.after}</span></div>`);
+                    });
+                }
+            });
+            return parts.join('');
+        }
+        function renderOperationHistoryList(query) {
+            const list = document.getElementById('operationHistoryList');
+            if (!list) return;
+            list.innerHTML = '';
+            const q = (query || '').toLowerCase();
+            const items = operationHistory.slice().sort((x, y) => y.ts - x.ts).filter(e => {
+                if (!q) return true;
+                const text = `${e.type || ''} ${e.description || ''}`.toLowerCase();
+                return text.includes(q);
+            });
+            items.forEach((entry, idx) => {
+                const wrap = document.createElement('div');
+                wrap.style.border = '1px solid var(--border-color)';
+                wrap.style.borderRadius = '10px';
+                wrap.style.padding = '10px';
+                wrap.style.display = 'grid';
+                wrap.style.gap = '6px';
+                const title = document.createElement('div');
+                title.style.fontWeight = '600';
+                title.textContent = `${new Date(entry.ts).toLocaleString()} · ${entry.description || entry.type || ''}`;
+                const actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+                const previewBtn = document.createElement('mdui-button');
+                previewBtn.setAttribute('variant', 'outlined');
+                previewBtn.textContent = '预览';
+                previewBtn.addEventListener('click', () => {
+                    const s = diffSummary(entry.beforeTable, entry.afterTable);
+                    const kb = diffKeyboardSummary(entry.beforeKeyboard, entry.afterKeyboard);
+                    const dlg = document.getElementById('operationPreviewDialog');
+                    const content = document.getElementById('operationPreviewContent');
+                    if (content) {
+                        const lines = [
+                            `<div>时间：${new Date(entry.ts).toLocaleString()}</div>`,
+                            `<div>类型：${entry.type || ''}</div>`,
+                            `<div>描述：${entry.description || ''}</div>`,
+                            `<div>变更：行 ${s.beforeCount} → ${s.afterCount}（Δ ${s.deltaCount}），单元格变更 ${s.changedCells}</div>`
+                        ];
+                        if (kb.length) {
+                            lines.push('<div>快捷短语变更：</div>');
+                            kb.forEach(k => {
+                                lines.push(`<div style="padding-left:12px;">${k.field}：长度Δ ${k.lenDiff}，顺序/内容变更 ${k.changed}</div>`);
+                            });
+                        }
+                        const rowDetails = buildRowChangeDetails(entry.beforeTable, entry.afterTable, 5);
+                        if (rowDetails) {
+                            lines.push('<div style="margin-top:8px;">表格变更详情：</div>');
+                            lines.push(rowDetails);
+                        }
+                        content.innerHTML = lines.join('');
+                    }
+                    if (dlg) dlg.open = true;
+                });
+                const rollbackBtn = document.createElement('mdui-button');
+                rollbackBtn.setAttribute('variant', 'filled');
+                rollbackBtn.textContent = '回退到此';
+                rollbackBtn.addEventListener('click', () => {
+                    tableData = deepCopyData(entry.beforeTable);
+                    KeyboardConfigManager.config = deepCopyKeyboard(entry.beforeKeyboard);
+                    saveKeyboardConfigSilent();
+                    saveDataToLocalStorage();
+                    updateTable();
+                    updateSummary();
+                    const idxInMain = operationHistory.findIndex(e => e.ts === entry.ts && e.type === entry.type);
+                    historyCursor = Math.max(0, idxInMain);
+                    saveOperationHistory();
+                    showSnackbar('已回退到所选操作之前状态', 'success');
+                });
+                actions.appendChild(previewBtn);
+                actions.appendChild(rollbackBtn);
+                wrap.appendChild(title);
+                wrap.appendChild(actions);
+                list.appendChild(wrap);
+            });
+        }
+
 		function recordShortcutClick(fieldKey, value) {
 		    if (!fieldKey || !value) return;
 		    const v = (value || '').toString();
@@ -7163,10 +7654,12 @@ function startSearch() {
 		}
 
 		function addSuggestedShortcut(fieldKey, value) {
+		    beginOperation('shortcut_add', '添加快捷短语：' + (fieldLabels[fieldKey] || fieldKey) + `（${(value || '').trim()}）`);
 		    const ok = addShortcutTemplate(fieldKey, value);
 		    const val = (value || '').trim();
 		    if (!ok) return;
 		    if (shortcutSuggestDismissedByField[fieldKey] instanceof Set) shortcutSuggestDismissedByField[fieldKey].delete(val);
+		    commitOperation();
 		    scheduleShortcutKeysRefresh();
 		    showSnackbar('已添加快捷短语', 'success');
 		}
@@ -7266,17 +7759,20 @@ function startSearch() {
 		        input.style.boxSizing = 'border-box';
 		        input.addEventListener('input', () => {
 		            if (shortcutInlineAddState) shortcutInlineAddState.value = input.value;
+                    window.__rsdbLastCursorInteractAt = Date.now();
 		            updateVirtualCursor();
 		            setTimeout(updateVirtualCursor, 0);
 		        });
 		        input.addEventListener('click', (e) => {
 		            e.stopPropagation();
+                    window.__rsdbLastCursorInteractAt = Date.now();
 		            currentInput = input;
 		            input.focus();
 		            moveCursorToClick(input, e);
 		            updateVirtualCursor();
 		        });
 		        input.addEventListener('keydown', (e) => {
+                    window.__rsdbLastCursorInteractAt = Date.now();
 		            if (e.key === 'Enter') {
 		                e.preventDefault();
 		                commitShortcutInlineAdd();
@@ -7363,12 +7859,6 @@ function startSearch() {
 		    if (toolbarWrap) toolbarWrap.style.display = 'block';
 		    if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'block';
 		    if (filteredOptions.length === 0 && suggested.length === 0 && shortcutInlineAddState?.fieldKey !== fieldKey) {
-		        const alwaysShowEmpty = fieldKey === 'actualDiameter' || fieldKey === 'diameter' || fieldKey === 'length' || fieldKey === 'weight';
-		        if (!alwaysShowEmpty) {
-		            if (dom.shortcutContainer) dom.shortcutContainer.style.display = 'none';
-		            if (toolbarWrap) toolbarWrap.style.display = 'none';
-		            return;
-		        }
 		        const row = document.createElement('div');
 		        row.className = 'keyboard-row';
 		        const addKey = document.createElement('div');
@@ -7379,8 +7869,8 @@ function startSearch() {
 		        addKey.style.padding = '0 12px';
 		        addKey.style.height = '40px';
 		        addKey.style.borderRadius = '16px';
-		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加快捷短语</span>';
-		        addKey.addEventListener('click', () => openShortcutAddDialog(fieldKey, ''));
+		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加此字段在那个位置</span>';
+		        addKey.addEventListener('click', () => openShortcutAddDialog(fieldKey, (currentInput?.value || '').toString()));
 		        row.appendChild(addKey);
 		        targetContainer.appendChild(row);
 		        return;
@@ -7825,6 +8315,7 @@ const KeyboardConfigManager = {
 
         if (saveBtn) {
             bindImmediateActionButton(saveBtn, () => {
+                beginOperation('keyboard_config_save', '保存键盘配置');
                 const processInput = (textarea) => textarea.value.split('\n')
                     .map(line => line.trim())
                     .filter(line => line.length > 0);
@@ -7838,6 +8329,7 @@ const KeyboardConfigManager = {
                 this.config.dynamicVariables = readDynamicVars();
                 
                 this.save();
+                commitOperation();
                 closeModal();
             });
         }
@@ -8612,6 +9104,7 @@ function generateVirtualKeyboard() {
     return;
   }
 		  currentInput.focus(); 
+          window.__rsdbLastCursorInteractAt = Date.now();
 
 		  const currentValue = currentInput.value || '';
 		  const len = currentValue.length;
@@ -8645,6 +9138,7 @@ function generateVirtualKeyboard() {
 		function handleBackspace() {
 		  if (!currentInput) return;
 		  currentInput.focus();
+          window.__rsdbLastCursorInteractAt = Date.now();
 
 		  const currentValue = currentInput.value || '';
 		  const len = currentValue.length;
@@ -8691,6 +9185,7 @@ function generateVirtualKeyboard() {
 		  if (currentInput) {
 		    currentInput.value = '';
 		    currentInput.focus();
+            window.__rsdbLastCursorInteractAt = Date.now();
 		    const event = new Event('input', { bubbles: true });
 		    currentInput.dispatchEvent(event);
 		    if (currentInput.closest('#calculatorForm')) calculateWeight();
@@ -9229,12 +9724,14 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
         }
     }
 
-    // 6. 执行保存
+    // 6. 执行保存（写入前记录操作）
     if (!isEditMode) {
+        beginOperation('add_row', '添加数据', { mode: 'manual' });
         tableData.push(formData);
         recordInputStatsOnAdd(formData);
         console.log('[SAVE] 新增完成 - 新记录已推入 tableData，图片状态：' + (formData.cardImage ? '有图' : '无图'));
     } else {
+        beginOperation('edit_row', '编辑数据', { index: currentEditIndex });
         tableData[currentEditIndex] = formData;
         console.log('[SAVE] 编辑完成 - 索引 ' + currentEditIndex + ' 已更新，图片状态：' + (formData.cardImage ? '有图' : '无图'));
     }
@@ -9247,6 +9744,7 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
 
     // 7. 持久化 & 刷新
     await saveDataToIndexedDB();
+    commitOperation();
     currentPage = 1;
     updateTable();
     closeCustomModal(dom.dataSheet);
@@ -9283,12 +9781,14 @@ function finalizeImport(newData, duplicateEntries, totalImported) {
     }
 
     if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
+        beginOperation('import', '导入数据', { added: actuallyAdded, overridden: actuallyOverridden, skipped: actuallySkipped, total: totalImported });
         console.log('【导入】开始持久化保存到 IndexedDB...');
         saveDataToIndexedDB()
             .then(() => {
                 console.log('【导入】数据保存成功，开始刷新表格');
                 currentPage = 1;  // 重置到第一页
                 updateTable();    // 强制刷新，确保图片显示
+                commitOperation();
                 console.log('【导入】表格已刷新，图片应正常显示');
             })
             .catch(err => {
@@ -10284,6 +10784,7 @@ function startDirectTakePhoto(dataIndex) {
 		    });
 
 		    // 执行排序
+		    beginOperation('sort', '应用排序规则');
 		    tableData.sort((a, b) => {
 		        for (const rule of rules) {
 		            let aVal = a[rule.field] ?? '';
@@ -10311,6 +10812,7 @@ function startDirectTakePhoto(dataIndex) {
 		    saveDataToIndexedDB();
 		    currentPage = 1;  
 		    updateTable();
+		    commitOperation();
 		    closeCustomModal(dom.sortModal);
 
 		    const msgParts = rules.map((r, i) =>
@@ -11733,6 +12235,8 @@ function initShortcutToolbarDrag() {
           KeyboardConfigManager.init();
           applyAppSettings();
           initShortcutToolbarDrag();
+          // 刷新后立即渲染操作历史列表，确保本地数据立即可见
+          renderOperationHistoryList('');
           
           
 if('serviceWorker' in navigator){       // 判断浏览器支不支持 service worker

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rsdbConfig version="1" exportedAt="2026-02-07T12:57:25.356Z">
+  <theme>auto</theme>
+  <primaryColor>#f57c00</primaryColor>
+  <appSettings><![CDATA[{
+  "shortcutRows": 1,
+  "shortcutRowsByField": {
+    "steelType": 3,
+    "productId": 1,
+    "cardId": 3,
+    "furnaceId": 3,
+    "status": 1,
+    "position": 1
+  },
+  "shortcutWrap": false,
+  "shortcutAutoCompleteEnabled": true,
+  "shortcutAutoCompleteByField": {
+    "length": false,
+    "diameter": false,
+    "weight": false,
+    "actualDiameter": false,
+    "position": false,
+    "status": false
+  },
+  "shortcutAddPosition": "first",
+  "shortcutRankByClicks": false,
+  "suggestEnabled": true,
+  "suggestThreshold": 3,
+  "imageCompressPolicy": "compress",
+  "imageCompressUseMaxWidth": false,
+  "imageCompressUseMaxHeight": false,
+  "largeImageThresholdMB": 3,
+  "imageCompressMaxWidth": 1280,
+  "imageCompressMaxHeight": 1280,
+  "imageCompressQuality": 0.8,
+  "snackbarPlacement": "bottom-center",
+  "snackbarDismissMode": "button",
+  "animationsEnabled": true,
+  "dialogPositions": [
+    "center"
+  ],
+  "virtualKeyboardHeight": null,
+  "virtualKeyboardBottomOffset": 85,
+  "dialogPosition": "center"
+}]]></appSettings>
+  <keyboardConfig><![CDATA[{
+  "customVariables": {},
+  "dynamicVariables": [],
+  "furnaceIdTemplates": [
+    "1251",
+    "VD25/",
+    "1250",
+    "251050",
+    "251051",
+    "25D0",
+    "25C0",
+    "VD${year}/",
+    "VD${lastYear}/",
+    "${year}1",
+    "1${year}1",
+    "${lastYear}1",
+    "1${lastYear}1"
+  ],
+  "productIdTemplates": [
+    "TH1",
+    "TH5",
+    "TH6"
+  ],
+  "cardIdTemplates": [
+    "备库",
+    "1",
+    "TS",
+    "V478-",
+    "SG505",
+    "SG506",
+    "V15P",
+    "V2526-",
+    "V2527-",
+    "VT",
+    "TH"
+  ],
+  "steelTypeTemplates": [
+    "C45E",
+    "C45",
+    "42CrMo4",
+    "1045Norm",
+    "S355J2G3",
+    "16/20MnCrS5",
+    "1.2714",
+    "4145",
+    "4140Q&T",
+    "42CrMo4",
+    "1.2344"
+  ],
+  "actualDiameterTemplates": [],
+  "diameterTemplates": [],
+  "lengthTemplates": [],
+  "weightTemplates": [],
+  "statusTemplates": [
+    "车光",
+    "调车",
+    "花皮",
+    "黑皮",
+    "黑调",
+    "花调"
+  ],
+  "positionTemplates": [
+    "外",
+    "过道",
+    "立车",
+    "打卡机",
+    "校直机"
+  ],
+  "layouts": {
+    "number": [
+      [
+        "%",
+        "1",
+        "2",
+        "3",
+        "+",
+        "clear"
+      ],
+      [
+        ":",
+        "4",
+        "5",
+        "6",
+        "-",
+        "backspace"
+      ],
+      [
+        "#",
+        "7",
+        "8",
+        "9",
+        "*",
+        "esc"
+      ],
+      [
+        "_",
+        ".",
+        "0",
+        "/",
+        "、",
+        "done"
+      ]
+    ],
+    "status": [
+      [
+        "clear",
+        "backspace",
+        "esc",
+        "done"
+      ]
+    ],
+    "text": [
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "0"
+      ],
+      [
+        "q",
+        "w",
+        "e",
+        "r",
+        "t",
+        "y",
+        "u",
+        "i",
+        "o",
+        "p"
+      ],
+      [
+        "a",
+        "s",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        "+",
+        "-"
+      ],
+      [
+        "shift",
+        "z",
+        "x",
+        "c",
+        "v",
+        "b",
+        "n",
+        "m",
+        "backspace"
+      ],
+      [
+        "symbol",
+        ",",
+        "space",
+        ".",
+        "clear",
+        "done"
+      ]
+    ],
+    "textShift": [
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "0"
+      ],
+      [
+        "Q",
+        "W",
+        "E",
+        "R",
+        "T",
+        "Y",
+        "U",
+        "I",
+        "O",
+        "P"
+      ],
+      [
+        "A",
+        "S",
+        "D",
+        "F",
+        "G",
+        "H",
+        "J",
+        "K",
+        "L",
+        "+",
+        "-"
+      ],
+      [
+        "shift",
+        "Z",
+        "X",
+        "C",
+        "V",
+        "B",
+        "N",
+        "M",
+        "backspace"
+      ],
+      [
+        "symbol",
+        ",",
+        "space",
+        ".",
+        "clear",
+        "done"
+      ]
+    ],
+    "position": [
+      [
+        "%",
+        "1",
+        "2",
+        "3",
+        "A"
+      ],
+      [
+        "/",
+        "4",
+        "5",
+        "6",
+        "B"
+      ],
+      [
+        "+",
+        "7",
+        "8",
+        "9",
+        "C"
+      ],
+      [
+        "*",
+        "/",
+        "0",
+        "-",
+        "D"
+      ],
+      [
+        "clear",
+        "backspace",
+        "esc",
+        "done"
+      ]
+    ],
+    "symbol": [
+      [
+        "~",
+        "!",
+        "@",
+        "#",
+        "$",
+        "%",
+        "^",
+        "&",
+        "*",
+        "(",
+        ")"
+      ],
+      [
+        "_",
+        "+",
+        "=",
+        "|",
+        "\\",
+        ":",
+        "\"",
+        "<",
+        ">",
+        "?",
+        ","
+      ],
+      [
+        "`",
+        "}",
+        "[",
+        "]",
+        "{",
+        "(",
+        ")",
+        ".",
+        "/",
+        "system"
+      ],
+      [
+        "ABC",
+        "space",
+        "backspace",
+        "clear",
+        "done"
+      ]
+    ]
+  },
+  "symbolMap": {
+    "q": "1",
+    "w": "2",
+    "e": "3",
+    "r": "4",
+    "t": "5",
+    "y": "6",
+    "u": "7",
+    "i": "8",
+    "o": "9",
+    "p": "0",
+    "a": "~",
+    "s": "!",
+    "d": "@",
+    "f": "#",
+    "g": "%",
+    "h": "“",
+    "j": "”",
+    "k": "*",
+    "l": "？",
+    "z": "(",
+    "x": ")",
+    "c": "-",
+    "v": "_",
+    "b": ":",
+    "n": ";",
+    "m": "/"
+  }
+}]]></keyboardConfig>
+  <inputStats><![CDATA[{}]]></inputStats>
+  <shortcutClickStats><![CDATA[{
+  "steelType": {
+    "C45E": 1
+  },
+  "productId": {
+    "TH1": 1
+  },
+  "position": {
+    "外": 1,
+    "立车": 1
+  },
+  "status": {
+    "花皮": 1
+  }
+}]]></shortcutClickStats>
+</rsdbConfig>
