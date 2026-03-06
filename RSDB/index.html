@@ -2249,6 +2249,9 @@
                     <mdui-switch slot="end-icon" id="settingsAnimationsSwitch"></mdui-switch>
                 </mdui-list-item>
                 <mdui-divider></mdui-divider>
+                <mdui-list-subheader>历史记录</mdui-list-subheader>
+                <mdui-list-item id="settingsHistoryMaxCountItem" icon="history" headline="历史记录保留条数" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
                 <mdui-list-subheader>信息</mdui-list-subheader>
                 <mdui-list-item id="settingsAboutItem" icon="info" headline="关于 & 操作指南" description=""></mdui-list-item>
                 <mdui-divider></mdui-divider>
@@ -2330,6 +2333,15 @@
         <mdui-text-field id="suggestThresholdInput" label="次数" variant="outlined" type="number"></mdui-text-field>
         <mdui-button slot="action" variant="text" id="suggestThresholdCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="suggestThresholdOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="historyMaxCountDialog" close-on-esc close-on-overlay-click headline="历史记录保留条数">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            仅保留最近的若干条历史记录，以减少卡顿。
+        </div>
+        <mdui-text-field id="historyMaxCountInput" label="条数（最近）" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="historyMaxCountCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="historyMaxCountOkBtn">确定</mdui-button>
     </mdui-dialog>
 
     <mdui-dialog id="shortcutRowsDialog" close-on-esc close-on-overlay-click headline="快捷短语显示行数">
@@ -2596,7 +2608,8 @@
 		    animationsEnabled: true,
 		    dialogPositions: ['center'],
 		    virtualKeyboardHeight: null,
-		    virtualKeyboardBottomOffset: 0
+		    virtualKeyboardBottomOffset: 0,
+		    operationHistoryMaxCount: 8
 		};
 		let appSettings = loadAppSettings();
 		let inputStats = loadInputStats();
@@ -2659,6 +2672,10 @@
 		        merged.snackbarPlacement = typeof merged.snackbarPlacement === 'string' ? merged.snackbarPlacement : 'bottom-center';
 		        merged.snackbarDismissMode = merged.snackbarDismissMode === 'button' ? 'button' : 'swipe';
 		        merged.animationsEnabled = merged.animationsEnabled !== false;
+		        {
+		            const hc = Number(merged.operationHistoryMaxCount);
+		            merged.operationHistoryMaxCount = Number.isFinite(hc) ? Math.max(1, Math.min(200, Math.round(hc))) : 8;
+		        }
 		        return merged;
 		    } catch (e) {
 		        return { ...DEFAULT_APP_SETTINGS };
@@ -3089,6 +3106,8 @@
 		    if (vkHeightSlider) vkHeightSlider.value = String(Number.isFinite(hNum) && hNum > 0 ? Math.round(hNum) : 420);
 		    const bNum = Number(appSettings.virtualKeyboardBottomOffset);
 		    if (vkBottomSlider) vkBottomSlider.value = String(Number.isFinite(bNum) && bNum >= 0 ? Math.round(bNum) : 0);
+		    const historyItem = document.getElementById('settingsHistoryMaxCountItem');
+		    if (historyItem) historyItem.setAttribute('description', `最近 ${Number(appSettings.operationHistoryMaxCount) || 8} 条`);
 		}
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
@@ -4614,6 +4633,13 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const dlg = document.getElementById('dialogPositionDialog');
         if (dlg) dlg.open = true;
     });
+    document.getElementById('settingsHistoryMaxCountItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('historyMaxCountDialog');
+        const input = document.getElementById('historyMaxCountInput');
+        if (input) input.value = String(Number(appSettings.operationHistoryMaxCount) || 8);
+        if (dlg) dlg.open = true;
+    });
     document.getElementById('settingsKeyboardSizeItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('keyboardSizeDialog');
@@ -4652,6 +4678,10 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const dlg = document.getElementById('snackbarSettingsDialog');
         if (dlg) dlg.open = false;
     });
+    document.getElementById('historyMaxCountCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('historyMaxCountDialog');
+        if (dlg) dlg.open = false;
+    });
     document.getElementById('saveSnackbarSettingsBtn')?.addEventListener('click', () => {
         const sel = document.getElementById('snackbarPlacementSelect');
         const placement = sel?.value || 'bottom-center';
@@ -4661,6 +4691,15 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const dlg = document.getElementById('snackbarSettingsDialog');
         if (dlg) dlg.open = false;
         showSnackbar('已保存 Snackbar 设置', 'success');
+    });
+    document.getElementById('historyMaxCountOkBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('historyMaxCountInput');
+        const val = Math.max(1, Math.min(200, Number(input?.value) || 8));
+        saveAppSettings({ operationHistoryMaxCount: val });
+        const dlg = document.getElementById('historyMaxCountDialog');
+        if (dlg) dlg.open = false;
+        saveOperationHistory();
+        showSnackbar('已保存历史记录保留条数', 'success');
     });
 
     document.getElementById('settingsPrimaryColorItem')?.addEventListener('click', () => {
@@ -7360,14 +7399,18 @@ function startSearch() {
             return Number.isFinite(v) ? v : operationHistory.length;
         })();
         function saveOperationHistory() {
+            const limit = Math.max(1, Math.min(200, Number(appSettings.operationHistoryMaxCount) || 8));
+            if (operationHistory.length > limit) {
+                const overflow = operationHistory.length - limit;
+                operationHistory = operationHistory.slice(overflow);
+                historyCursor = Math.max(0, historyCursor - overflow);
+            }
             try {
                 localStorage.setItem(HISTORY_KEY, JSON.stringify(operationHistory || []));
                 localStorage.setItem(HISTORY_CURSOR_KEY, String(historyCursor));
             } catch (e) {
                 console.error('Failed to save operation history to localStorage:', e);
             }
-            
-            // 同时保存到 IndexedDB
             try {
                 saveDataToIndexedDB();
             } catch (dbErr) {
