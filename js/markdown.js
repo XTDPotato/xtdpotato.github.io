@@ -1,178 +1,124 @@
 (() => {
-  function escapeHtml(str) {
-    return (str ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
   function formatInline(text) {
     let out = text ?? "";
-    // 严格解析顺序：行内代码 > 图片 > 链接 > 加粗 > 删除线
     out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2">');
     out = out.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+      '<a href="$2" target="_blank">$1</a>'
     );
-    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    out = out.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     return out;
   }
 
   function renderMarkdown(md) {
-    const safe = escapeHtml(md ?? "");
-    const lines = safe.split(/\r?\n/);
+    if (!md) return "";
+    const lines = md.split(/\r?\n/);
     let html = "";
-    
-    // 状态管理
-    let inCode = false;
-    let codeLang = "";
-    let codeBuffer = [];
+
+    let inCode = false, codeLang = "", codeBuffer = [];
     let listMode = null;
     let paragraph = [];
-    let inBlockquote = false;
-    let blockquoteBuffer = [];
+    let inQuote = false, quoteBuffer = [];
 
-    // 刷新函数
-    const flushParagraph = () => {
-      if (paragraph.length === 0) return;
-      const text = formatInline(paragraph.join("<br>"));
-      html += `<p>${text}</p>`;
-      paragraph = [];
+    const flushPara = () => {
+      if (paragraph.length) {
+        html += `<p>${formatInline(paragraph.join("<br>"))}</p>`;
+        paragraph = [];
+      }
     };
-
     const flushList = () => {
-      if (!listMode) return;
-      html += listMode === "ul" ? "</ul>" : "</ol>";
-      listMode = null;
+      if (listMode) { html += `</${listMode}>`; listMode = null; }
     };
-
     const flushCode = () => {
-      if (!inCode) return;
-      const langClass = codeLang ? ` class="language-${codeLang}"` : "";
-      const code = codeBuffer.join("\n");
-      html += `<pre><code${langClass}>${code}</code></pre>`;
-      codeBuffer = [];
-      codeLang = "";
-      inCode = false;
+      if (inCode) {
+        const lang = codeLang ? ` class="language-${codeLang}"` : "";
+        const code = codeBuffer.join("\n");
+        html += `<pre><code${lang}>${code}</code></pre>`;
+        codeBuffer = []; inCode = false;
+      }
+    };
+    const flushQuote = () => {
+      if (inQuote) {
+        html += `<blockquote style="margin:12px 0; padding:8px 12px; border-left:3px solid #ccc; background:#444444; border-radius:4px;">${formatInline(quoteBuffer.join("<br>"))}</blockquote>`;
+        quoteBuffer = []; inQuote = false;
+      }
     };
 
-    const flushBlockquote = () => {
-      if (!inBlockquote) return;
-      const text = formatInline(blockquoteBuffer.join("<br>"));
-      html += `<blockquote>${text}</blockquote>`;
-      blockquoteBuffer = [];
-      inBlockquote = false;
-    };
-
-    // 逐行解析
     for (const line of lines) {
-      const trimmed = line.trim();
+      const t = line.trim();
+      if (t.startsWith("```")) {
+        flushPara(); flushList(); flushQuote();
+        inCode ? flushCode() : (inCode = true, codeLang = t.slice(3).trim());
+        continue;
+      }
+      if (inCode) { codeBuffer.push(line); continue; }
 
-      // --- 分割线 (优先级最高)
-      if (trimmed === "---" || trimmed === "***" || trimmed === "___") {
-        flushParagraph();
-        flushList();
-        flushCode();
-        flushBlockquote();
+      if (t === "---") {
+        flushPara(); flushList(); flushCode(); flushQuote();
         html += "<mdui-divider></mdui-divider>";
         continue;
       }
 
-      // 代码块 ``` (支持 ```javascript 带语言格式)
-      if (trimmed.startsWith("```")) {
-        flushParagraph();
-        flushList();
-        flushBlockquote();
-        
-        if (!inCode) {
-          inCode = true;
-          // 提取语言标识
-          const langMatch = trimmed.match(/^```(\w*)/);
-          codeLang = langMatch ? langMatch[1] : "";
-        } else {
-          flushCode();
-        }
+      if (!t) {
+        flushPara(); flushList(); flushQuote(); continue;
+      }
+
+      const h = t.match(/^(#{1,6}) (.*)/);
+      if (h) {
+        flushPara(); flushList(); flushQuote();
+        html += `<h${h[1].length}>${formatInline(h[2])}</h${h[1].length}>`;
         continue;
       }
 
-      if (inCode) {
-        codeBuffer.push(line);
+      const q = line.match(/^> ?(.*)/);
+      if (q) {
+        flushPara(); flushList();
+        inQuote = true;
+        quoteBuffer.push(q[1]);
         continue;
       }
 
-      // 空行
-      if (!trimmed) {
-        flushParagraph();
-        flushList();
-        flushBlockquote();
+      const ul = t.match(/^[-*+] (.*)/);
+      const ol = t.match(/^\d+\. (.*)/);
+      if (ul || ol) {
+        flushPara(); flushQuote();
+        const m = ul ? "ul" : "ol";
+        if (listMode !== m) { flushList(); listMode = m; html += `<${m}>`; }
+        html += `<li>${formatInline(ul ? ul[1] : ol[1])}</li>`;
         continue;
       }
 
-      // 标题 # ## ###
-      const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-      if (headingMatch) {
-        flushParagraph();
-        flushList();
-        flushBlockquote();
-        const level = headingMatch[1].length;
-        html += `<h${level}>${formatInline(headingMatch[2])}</h${level}>`;
+      if (/^<[a-z]/i.test(t)) {
+        flushPara(); flushList(); flushQuote();
+        html += line;
         continue;
       }
 
-      // 引用块 > (支持多行连续引用)
-      const quoteMatch = line.match(/^>\s*(.*)$/);
-      if (quoteMatch) {
-        flushParagraph();
-        flushList();
-        inBlockquote = true;
-        blockquoteBuffer.push(quoteMatch[1]);
-        continue;
-      }
-
-      // 无序列表 - * +
-      const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
-      // 有序列表 1.
-      const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
-      
-      if (ulMatch || olMatch) {
-        flushParagraph();
-        flushBlockquote();
-        
-        const nextMode = ulMatch ? "ul" : "ol";
-        if (!listMode) {
-          listMode = nextMode;
-          html += nextMode === "ul" ? "<ul>" : "<ol>";
-        } else if (listMode !== nextMode) {
-          flushList();
-          listMode = nextMode;
-          html += nextMode === "ul" ? "<ul>" : "<ol>";
-        }
-        
-        const itemText = formatInline((ulMatch ? ulMatch[1] : olMatch[1]) ?? "");
-        html += `<li>${itemText}</li>`;
-        continue;
-      }
-
-      // 普通段落
-      paragraph.push(trimmed);
+      paragraph.push(line);
     }
 
-    // 结束时刷新所有剩余内容
-    flushParagraph();
-    flushList();
-    flushCode();
-    flushBlockquote();
+    flushPara(); flushList(); flushCode(); flushQuote();
+
+    setTimeout(() => {
+      const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g);
+      if (scripts) {
+        scripts.forEach(s => {
+          const div = document.createElement("div");
+          div.innerHTML = s;
+          const script = div.querySelector("script");
+          if (script) {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          }
+        });
+      }
+    }, 0);
 
     return html;
   }
 
-  window.XTDMarkdown = {
-    escapeHtml,
-    formatInline,
-    renderMarkdown,
-  };
+  window.XTDMarkdown = { formatInline, renderMarkdown };
 })();
