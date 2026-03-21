@@ -62,14 +62,17 @@
 
 ## 1. 下载链接（客户端与服务端）推荐改版
 ### 客户端 / 控制端 - 月光阿西西 (Axixi) 改版
-[GitHub Releases](https://github.com/Axixi2233/moonlight-android/releases)
+
+**Github Releases**
+[安卓](https://github.com/Axixi2233/moonlight-android/releases)
+[Windows](https://github.com/Axixi2233/moonlight-qt/releases/tag/250306)
 
 ### 服务端 / 被控端 - Sunshine 改版 Apollo
-[GitHub Releases](https://github.com/moonlight-stream/moonlight-android/releases)
+[GitHub Releases Windows](https://github.com/ClassicOldSong/Apollo/releases)
 
 > 注：上方为官方仓库基础路径，若无法访问可使用下方综合下载
 
-### 综合下载（123云盘）
+### 整理的综合下载（123云盘）
 [点击进入下载（含 Apollo / 阿西西）](https://www.123pan.com/s/RzbrVv-0qdKd.html)
 
 ---
