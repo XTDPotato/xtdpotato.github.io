@@ -2,10 +2,7 @@
 <html lang="zh-CN" class="mdui-theme-auto">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
     <meta name="renderer" content="webkit" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
@@ -15,269 +12,108 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 
-    <link rel="stylesheet" href="css/markdown.css" />
-
-    <title>教程</title>
-
     <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
+      html, body { height: 100%; margin: 0; background: var(--mdui-color-surface); color: var(--mdui-color-on-surface); }
+      .page { height: 100%; display: flex; flex-direction: column; }
+      .content { padding: 12px; box-sizing: border-box; max-width: 1000px; margin: 0 auto; width: 100%; padding-bottom: 48px; }
+      
+      .top-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .search-input { flex-grow: 1; }
+      
+      .grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+        gap: 12px; 
+      }
+      
+      .course-card { height: 100%; display: flex; flex-direction: column; }
+      .course-cover { width: 100%; height: 100px; object-fit: cover; display: block; background: var(--mdui-color-surface-container-high); }
+      .course-body { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
+      .course-title { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.3; height: 36px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .course-desc { margin: 6px 0 0 0; opacity: 0.7; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      .highlight { 
+        color: var(--mdui-color-on-primary-container); 
+        background-color: var(--mdui-color-primary-container); 
+        border-radius: 4px; 
+        padding: 0 2px;
+        font-weight: bold;
       }
 
-      .page {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
+      .course-dialog::part(panel) { padding: 0; width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
+      .course-doc-wrap { height: 100%; overflow-y: auto; background: var(--mdui-color-surface); scroll-behavior: smooth; }
+      .course-hero { width: 100%; height: 220px; object-fit: cover; background: var(--mdui-color-surface-container-high); }
+      .course-doc { padding: 24px; max-width: 800px; margin: 0 auto; }
 
-      .topbar-wrap {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: var(--mdui-color-surface, #fff);
-      }
-
-      .content {
-        padding: 12px;
-        box-sizing: border-box;
-        max-width: 980px;
-        margin: 0 auto;
-        width: 100%;
-        padding-bottom: 24px;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      @media (max-width: 720px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .course-card {
-        overflow: hidden;
-      }
-
-      .course-cover {
-        width: 100%;
-        height: 140px;
-        object-fit: cover;
-        display: block;
-        background: #eee;
-      }
-
-      .course-body {
-        padding: 12px;
-      }
-
-      .course-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 700;
-      }
-
-      .course-desc {
-        margin: 8px 0 0 0;
-        opacity: 0.86;
-        line-height: 1.55;
-        font-size: 13px;
-      }
-
-      .course-dialog::part(panel) {
-        padding: 0;
-        margin: 0;
-        width: 100vw;
-        height: 100vh;
-        max-height: 100vh;
-      }
-
-      .course-dialog-layout {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .course-doc-wrap {
-        width: 100%;
-        flex: 1;
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .course-hero {
-        width: 100%;
-        height: 180px;
-        object-fit: cover;
-        display: block;
-        background: #eee;
-      }
-
-      .course-doc {
-        padding: 14px;
-        box-sizing: border-box;
-        max-width: 980px;
-        margin: 0 auto;
-      }
-      .favorites-desktop {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 0;
-      }
-      @media (max-width: 900px), (pointer: coarse) {
-        .favorites-desktop {
-          display: none;
-        }
-      }
-
-      .favorites-sheet::part(panel) {
-        padding: 0;
-        width: min(720px, 100%);
-        margin-left: auto;
-        margin-right: auto;
-        margin-top: auto;
-        border-radius: 16px 16px 0 0;
-      }
-
-      .favorites-header {
-        padding: 10px 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-      }
-
-      .favorites-title {
-        font-weight: 700;
-      }
-
-      .favorites-list {
-        padding: 6px 8px 12px;
-      }
+      .markdown-body { line-height: 1.8; font-size: 16px; color: var(--mdui-color-on-surface); }
+      .markdown-body h1 { font-size: 2.2rem; margin-bottom: 1.5rem; border-bottom: 3px solid var(--mdui-color-primary-container); padding-bottom: 10px; }
+      .markdown-body h2 { font-size: 1.6rem; margin-top: 2rem; border-bottom: 1px solid var(--mdui-color-outline-variant); padding-bottom: 6px; }
+      .markdown-body h3 { font-size: 1.3rem; margin-top: 1.5rem; color: var(--mdui-color-primary); }
+      .markdown-body code { background: var(--mdui-color-secondary-container); color: var(--mdui-color-on-secondary-container); padding: 2px 6px; border-radius: 4px; font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
+      .markdown-body pre { background: #1e1e1e; color: #d4d4d4; padding: 18px; border-radius: 10px; overflow-x: auto; margin: 20px 0; }
+      .markdown-body blockquote { border-left: 5px solid var(--mdui-color-primary); background: var(--mdui-color-surface-container-high); margin: 20px 0; padding: 12px 20px; border-radius: 0 8px 8px 0; }
+      .markdown-body img { max-width: 100%; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: block; }
+      
+      .btn-link { margin-top: 16px; display: inline-block; }
+      .favorites-sheet::part(panel) { border-radius: 20px 20px 0 0; }
     </style>
   </head>
 
   <body>
     <div class="page">
       <div class="content">
-        <div class="favorites-desktop">
-          <mdui-button id="favoritesBtnDesktop" variant="text" icon="bookmarks">收藏夹</mdui-button>
+        <div class="top-controls">
+          <mdui-text-field id="searchInput" class="search-input" icon="search" clearable placeholder="搜索教程..." variant="outlined"></mdui-text-field>
+          <mdui-button id="favoritesBtnDesktop" variant="tonal" icon="bookmarks">收藏夹</mdui-button>
         </div>
         <div class="grid" id="courseGrid"></div>
       </div>
     </div>
 
-    <mdui-snackbar id="coursesSnackbar" closeable>提示</mdui-snackbar>
+    <mdui-snackbar id="coursesSnackbar" closeable></mdui-snackbar>
 
-    <mdui-dialog id="courseDialog" fullscreen class="course-dialog" close-on-esc close-on-overlay-click>
-      <div class="course-dialog-layout">
-        <div class="course-doc-wrap">
-          <img id="courseHeroImg" class="course-hero" src="" alt="教程封面" style="display: none" />
-          <div id="courseDoc" class="course-doc markdown-body"></div>
-        </div>
+    <mdui-dialog id="courseDialog" fullscreen class="course-dialog">
+      <div class="course-doc-wrap">
+        <img id="courseHeroImg" class="course-hero" src="" alt="封面" />
+        <div id="courseDoc" class="course-doc markdown-body"></div>
       </div>
     </mdui-dialog>
 
-    <mdui-dialog id="favoritesSheet" class="favorites-sheet" close-on-overlay-click>
-      <div class="favorites-header">
-        <mdui-icon name="bookmarks"></mdui-icon>
-        <div class="favorites-title">收藏夹</div>
-        <div style="flex-grow: 1"></div>
+    <mdui-dialog id="favoritesSheet" class="favorites-sheet">
+      <div style="padding: 18px; display: flex; align-items: center; border-bottom: 1px solid var(--mdui-color-outline-variant);">
+        <mdui-icon name="bookmarks" style="margin-right: 12px"></mdui-icon>
+        <div style="font-weight: 700; font-size: 1.2rem; flex-grow: 1">我的收藏</div>
         <mdui-button-icon id="favoritesCloseBtn" icon="close"></mdui-button-icon>
       </div>
-      <div class="favorites-list">
-        <mdui-list id="favoritesList"></mdui-list>
-      </div>
+      <mdui-list id="favoritesList" style="padding: 12px"></mdui-list>
     </mdui-dialog>
 
-    <script src="js/markdown.js"></script>
+<script src="js/markdown.js"></script>
+
+
+<script src="js/markdown_read.js"></script>
+
     <script>
-      const PRIMARY_KEY = "xtd_theme_primary";
+const courses = [
+  {
+    id: "stream-master",
+    title: "[正在施工]Moonlight + Sunshine 低延迟串流全攻略",
+    desc: "从服务端(被控端)环境搭建到客户端(控制端)密钥配对的详细流程。",
+    icon: "cast",
+    cover: "icons/ms_cl.png",
+    // 这里只放路径，不放具体内容
+    mdPath: "tutorials/stream-master.md" 
+  },
+  {
+    id: "ms-start",
+    title: "基岩版开发：快速入门指南",
+    desc: "学习附加包 (Add-on) 的开发，访问微软官方创作者中心。",
+    icon: "rocket_launch",
+    cover: "icons/mcbedrock_dev.png",
+    mdPath: "tutorials/ms-start.md"
+  }
+];
 
-      function applyColorScheme(color) {
-        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
-        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
-      }
-
-      const savedPrimary = localStorage.getItem(PRIMARY_KEY);
-      if (savedPrimary) applyColorScheme(savedPrimary);
-
-      window.addEventListener("message", (event) => {
-        const data = event?.data;
-        if (!data || data.type !== "theme:primary") return;
-        const color = data.color;
-        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
-        localStorage.setItem(PRIMARY_KEY, color);
-        applyColorScheme(color);
-      });
-
-      window.addEventListener("storage", (event) => {
-        if (event.key !== PRIMARY_KEY) return;
-        const color = event.newValue;
-        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
-        applyColorScheme(color);
-      });
-
-      const STORAGE_KEY = "xtd_courses_favorites_v1";
-
-      const courses = [
-        {
-          id: "course1",
-          title: "MC 基岩版自定义界面 UI",
-          desc: "绑定 dialogue 视图、ServerForm 显示自定义 UI 等内容。",
-          icon: "view_quilt",
-          cover: "RSDB/icon-192.png",
-          md: `
-## 你将学到什么
-
-- 认识「对话（Dialogue）」与「表单（Form）」两套 UI 思路的区别
-- 用一套可维护的方式组织 UI：资源文件、命名规则、版本管理
-- 服务端在合适的时机打开 UI，并处理玩家选择结果
-
-## 示例图
-
-![自定义界面示例](RSDB/icon-192.png)
-
-## 准备工作
-
-1. 下载并导入示例包（mcaddon）
-2. 确保你的开发环境能打包并部署到世界（资源包 / 行为包）
-
-[下载示例（mcaddon）](https://d.feiliupan.com/t/83696425556250624/xtdpotato/%E8%87%AA%E5%AE%9A%E4%B9%89NPC%E7%95%8C%E9%9D%A2%E7%BB%91%E5%AE%9A.mcaddon.zip)
-
-## Part A：对话（Dialogue）绑定入口
-
-- 做一个最小可用对话：欢迎词 + 两个按钮（打开菜单 / 关闭）
-- 关键是“按钮点击 → 触发脚本/指令”，把 UI 打开的逻辑从对话树里抽出来
-
-## Part B：ServerForm 显示自定义 UI
-
-建议封装成一个统一入口函数：
-
-\`\`\`
-openMainMenu(player)
-\`\`\`
-
-内部负责：
-
-- 组装 UI 的数据
-- 调用框架 API 发送给玩家
-- 在回调里根据按钮索引分发到下一页
-
-## 常见坑（排错清单）
-
-- UI 点了没反应：检查事件名是否一致、回调是否被覆盖
-- 只有部分玩家能打开：检查权限判断与 player 对象是否为空
-- 文本乱码：统一 UTF-8，避免混用编码
-`,
-        },
-      ];
 
       const dom = {
         grid: document.getElementById("courseGrid"),
@@ -286,198 +122,110 @@ openMainMenu(player)
         favoritesList: document.getElementById("favoritesList"),
         favoritesCloseBtn: document.getElementById("favoritesCloseBtn"),
         favoritesBtnDesktop: document.getElementById("favoritesBtnDesktop"),
+        searchInput: document.getElementById("searchInput"),
         dialog: document.getElementById("courseDialog"),
         heroImg: document.getElementById("courseHeroImg"),
         doc: document.getElementById("courseDoc"),
       };
 
-      let activeCourseId = null;
-      let favorites = [];
+      let activeId = null;
+      let favorites = JSON.parse(localStorage.getItem("mc_dev_favs") || "[]");
 
       function showToast(text) {
-        if (!dom.snackbar) return;
         dom.snackbar.textContent = text;
         dom.snackbar.open = true;
       }
 
-      function loadFavorites() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          const parsed = JSON.parse(raw || "[]");
-          favorites = Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          favorites = [];
-        }
+      function highlightText(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<span class="highlight">$1</span>');
       }
 
-      function saveFavorites() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-      }
+      function renderGrid(filterText = "") {
+        const query = filterText.trim().toLowerCase();
+        const filtered = courses.filter(c => c.title.toLowerCase().includes(query) || c.desc.toLowerCase().includes(query));
 
-      function isFavorite(id) {
-        return favorites.includes(id);
-      }
-
-      function toggleFavorite(id) {
-        if (!id) return;
-        if (isFavorite(id)) favorites = favorites.filter((x) => x !== id);
-        else favorites = [...favorites, id];
-        saveFavorites();
-        renderFavorites();
-        notifyTopbar();
-      }
-
-      function updateDialogFavButton() {
-        return;
-      }
-
-      function renderGrid() {
-        if (!dom.grid) return;
-        dom.grid.innerHTML = "";
-        for (const course of courses) {
-          const card = document.createElement("mdui-card");
-          card.setAttribute("clickable", "");
-          card.setAttribute("variant", "outlined");
-          card.className = "course-card";
-          card.addEventListener("click", () => openCourse(course.id));
-
-          const img = document.createElement("img");
-          img.className = "course-cover";
-          img.alt = course.title;
-          img.src = course.cover;
-
-          const body = document.createElement("div");
-          body.className = "course-body";
-          body.innerHTML = `
-            <div class="mdui-prose">
-              <h3 class="course-title">${course.title}</h3>
-              <p class="course-desc">${course.desc}</p>
+        dom.grid.innerHTML = filtered.map(c => `
+          <mdui-card clickable class="course-card" onclick="openCourse('${c.id}')">
+            <img class="course-cover" src="${c.cover}" alt="${c.title}">
+            <div class="course-body">
+              <div class="course-title">${highlightText(c.title, query)}</div>
+              <div class="course-desc">${highlightText(c.desc, query)}</div>
             </div>
-          `;
-
-          card.appendChild(img);
-          card.appendChild(body);
-          dom.grid.appendChild(card);
-        }
+          </mdui-card>
+        `).join('');
       }
 
-      function openCourse(courseId) {
-        const course = courses.find((c) => c.id === courseId);
-        if (!course || !dom.dialog || !dom.doc || !window.XTDMarkdown?.renderMarkdown) return;
-        activeCourseId = courseId;
+      dom.searchInput.addEventListener('input', (e) => renderGrid(e.target.value));
 
-        if (dom.heroImg) dom.heroImg.src = course.cover;
-        if (dom.heroImg) dom.heroImg.style.display = course.cover ? "block" : "none";
-        dom.doc.innerHTML = window.XTDMarkdown.renderMarkdown(course.md || "");
-        dom.dialog.open = true;
-        notifyTopbar();
-      }
+
+// 修改后的 openCourse
+async function openCourse(id) {
+  const course = courses.find(c => c.id === id);
+  if (!course) return;
+  
+  activeId = id;
+  dom.heroImg.src = course.cover;
+  dom.dialog.open = true; // 先打开弹窗
+  dom.doc.innerHTML = "<p>正在加载教程...</p>"; // 显示 loading 状态
+  notifyTopbar();
+
+  // 核心：异步加载并渲染
+  const html = await loadAndRenderMarkdown(course.mdPath);
+  dom.doc.innerHTML = html;
+}
 
       function renderFavorites() {
-        if (!dom.favoritesList) return;
-        dom.favoritesList.innerHTML = "";
-
-        const favCourses = favorites
-          .map((id) => courses.find((c) => c.id === id))
-          .filter(Boolean);
-
-        if (favCourses.length === 0) {
-          const empty = document.createElement("mdui-list-item");
-          empty.setAttribute("headline", "收藏夹还是空的");
-          empty.setAttribute("description", "在教程详情里点右上角收藏按钮");
-          dom.favoritesList.appendChild(empty);
-          return;
-        }
-
-        for (const course of favCourses) {
-          const item = document.createElement("mdui-list-item");
-          item.setAttribute("rounded", "");
-          item.setAttribute("headline", course.title);
-          item.setAttribute("description", "点击打开");
-          const icon = document.createElement("mdui-icon");
-          icon.setAttribute("slot", "icon");
-          icon.setAttribute("name", course.icon || "menu_book");
-          item.appendChild(icon);
-          item.addEventListener("click", () => {
-            if (dom.favoritesSheet) dom.favoritesSheet.open = false;
-            openCourse(course.id);
-          });
-          dom.favoritesList.appendChild(item);
-        }
+        const favData = favorites.map(id => courses.find(c => c.id === id)).filter(Boolean);
+        dom.favoritesList.innerHTML = favData.length 
+          ? favData.map(c => `<mdui-list-item rounded headline="${c.title}" onclick="openFromFav('${c.id}')"><mdui-icon slot="icon" name="${c.icon}"></mdui-icon></mdui-list-item>`).join('')
+          : `<mdui-list-item disabled>暂时没有收藏项目</mdui-list-item>`;
       }
 
-      dom.favoritesBtnDesktop?.addEventListener("click", () => {
-        if (!dom.favoritesSheet) return;
-        renderFavorites();
-        dom.favoritesSheet.open = true;
-      });
-
-      dom.favoritesCloseBtn?.addEventListener("click", () => {
-        if (dom.favoritesSheet) dom.favoritesSheet.open = false;
-      });
+      window.openFromFav = (id) => {
+        dom.favoritesSheet.open = false;
+        setTimeout(() => openCourse(id), 250);
+      };
 
       function notifyTopbar() {
-        const course = courses.find((c) => c.id === activeCourseId) || null;
-        if (!course || !dom.dialog?.open) {
-          window.parent?.postMessage(
-            {
-              type: "app:topbar",
-              tab: "courses",
-              title: "教程",
-              actions: [{ id: "courses:favorites", icon: "bookmarks", text: "收藏夹" }],
-            },
-            "*",
-          );
+        const course = courses.find(c => c.id === activeId);
+        if (!dom.dialog.open || !course) {
+          window.parent?.postMessage({ type: "app:topbar", tab: "courses", title: "教程", actions: [{ id: "act:open_favs", icon: "bookmarks", text: "收藏夹" }] }, "*");
           return;
         }
-        const favIcon = isFavorite(course.id) ? "bookmark" : "bookmark_add";
-        window.parent?.postMessage(
-          {
-            type: "app:topbar",
-            tab: "courses",
-            title: course.title,
-            actions: [
-              { id: "courses:fav", icon: favIcon, text: "收藏" },
-              { id: "courses:collapse", icon: "unfold_less", text: "收起" },
-            ],
-          },
-          "*",
-        );
+        const isFav = favorites.includes(activeId);
+        window.parent?.postMessage({
+          type: "app:topbar", tab: "courses", title: course.title, icon: "close", actionId: "act:close_detail",
+          actions: [
+          { id: "act:close_detail", icon: "unfold_less", text: "收起详情" },
+          { id: "act:toggle_fav", icon: isFav ? "bookmark" : "bookmark_border", text: isFav ? "取消收藏" : "收藏本篇" }
+  
+          
+          ]
+        }, "*");
       }
 
       window.addEventListener("message", (event) => {
         const data = event?.data;
-        if (!data || data.type !== "app:action") return;
-        const id = data.id;
-        if (id === "courses:collapse") {
-          if (dom.dialog) dom.dialog.open = false;
-          activeCourseId = null;
+        if (data?.id === "act:close_detail") dom.dialog.open = false;
+        if (data?.id === "act:toggle_fav" && activeId) {
+          const index = favorites.indexOf(activeId);
+          if (index > -1) favorites.splice(index, 1);
+          else favorites.push(activeId);
+          localStorage.setItem("mc_dev_favs", JSON.stringify(favorites));
+          showToast(index > -1 ? "已移出收藏" : "已加入收藏");
           notifyTopbar();
-          return;
-        }
-        if (id === "courses:fav") {
-          if (!activeCourseId) return;
-          toggleFavorite(activeCourseId);
-          showToast(isFavorite(activeCourseId) ? "已加入收藏夹" : "已移出收藏夹");
-          notifyTopbar();
-          return;
-        }
-        if (id === "courses:favorites") {
-          if (!dom.favoritesSheet) return;
           renderFavorites();
-          dom.favoritesSheet.open = true;
-          return;
         }
+        if (data?.id === "act:open_favs") { renderFavorites(); dom.favoritesSheet.open = true; }
       });
 
-      dom.dialog?.addEventListener("close", () => {
-        activeCourseId = null;
-        notifyTopbar();
-      });
+      dom.favoritesBtnDesktop.onclick = () => { renderFavorites(); dom.favoritesSheet.open = true; };
+      dom.favoritesCloseBtn.onclick = () => dom.favoritesSheet.open = false;
+      dom.dialog.addEventListener("close", () => { activeId = null; notifyTopbar(); });
 
-      loadFavorites();
       renderGrid();
-      renderFavorites();
       notifyTopbar();
     </script>
   </body>
