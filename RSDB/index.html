@@ -2251,6 +2251,7 @@
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>历史记录</mdui-list-subheader>
                 <mdui-list-item id="settingsHistoryMaxCountItem" icon="history" headline="历史记录保留条数" description=""></mdui-list-item>
+                <mdui-list-item id="settingsUndoRedoMaxStepsItem" icon="redo" headline="撤销/重做步数上限" description=""></mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>信息</mdui-list-subheader>
                 <mdui-list-item id="settingsAboutItem" icon="info" headline="关于 & 操作指南" description=""></mdui-list-item>
@@ -2342,6 +2343,15 @@
         <mdui-text-field id="historyMaxCountInput" label="条数（最近）" variant="outlined" type="number"></mdui-text-field>
         <mdui-button slot="action" variant="text" id="historyMaxCountCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="historyMaxCountOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="undoRedoMaxStepsDialog" close-on-esc close-on-overlay-click headline="撤销/重做步数上限">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            限制可撤销/重做的最大步数，超出则移除更早的步骤。
+        </div>
+        <mdui-text-field id="undoRedoMaxStepsInput" label="步数（最多）" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="undoRedoMaxStepsCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="undoRedoMaxStepsOkBtn">确定</mdui-button>
     </mdui-dialog>
 
     <mdui-dialog id="shortcutRowsDialog" close-on-esc close-on-overlay-click headline="快捷短语显示行数">
@@ -2609,7 +2619,8 @@
 		    dialogPositions: ['center'],
 		    virtualKeyboardHeight: null,
 		    virtualKeyboardBottomOffset: 0,
-		    operationHistoryMaxCount: 8
+		    operationHistoryMaxCount: 8,
+		    undoRedoMaxSteps: 10
 		};
 		let appSettings = loadAppSettings();
 		let inputStats = loadInputStats();
@@ -2675,6 +2686,10 @@
 		        {
 		            const hc = Number(merged.operationHistoryMaxCount);
 		            merged.operationHistoryMaxCount = Number.isFinite(hc) ? Math.max(1, Math.min(200, Math.round(hc))) : 8;
+		        }
+		        {
+		            const ud = Number(merged.undoRedoMaxSteps);
+		            merged.undoRedoMaxSteps = Number.isFinite(ud) ? Math.max(1, Math.min(200, Math.round(ud))) : 10;
 		        }
 		        return merged;
 		    } catch (e) {
@@ -3035,6 +3050,10 @@
 		        const mode = appSettings.snackbarDismissMode === 'button' ? '按钮关闭' : '右滑关闭';
 		        snackbarItem.setAttribute('description', `${placement}，${mode}`);
 		    }
+		    const historyItem = document.getElementById('settingsHistoryMaxCountItem');
+		    if (historyItem) historyItem.setAttribute('description', `最近 ${Number(appSettings.operationHistoryMaxCount) || 8} 条`);
+		    const undoRedoItem = document.getElementById('settingsUndoRedoMaxStepsItem');
+		    if (undoRedoItem) undoRedoItem.setAttribute('description', `最多 ${Number(appSettings.undoRedoMaxSteps) || 10} 步`);
 		    const animSwitch = document.getElementById('settingsAnimationsSwitch');
 		    if (animSwitch) animSwitch.checked = appSettings.animationsEnabled !== false;
 		    const primaryItem = document.getElementById('settingsPrimaryColorItem');
@@ -3106,8 +3125,7 @@
 		    if (vkHeightSlider) vkHeightSlider.value = String(Number.isFinite(hNum) && hNum > 0 ? Math.round(hNum) : 420);
 		    const bNum = Number(appSettings.virtualKeyboardBottomOffset);
 		    if (vkBottomSlider) vkBottomSlider.value = String(Number.isFinite(bNum) && bNum >= 0 ? Math.round(bNum) : 0);
-		    const historyItem = document.getElementById('settingsHistoryMaxCountItem');
-		    if (historyItem) historyItem.setAttribute('description', `最近 ${Number(appSettings.operationHistoryMaxCount) || 8} 条`);
+
 		}
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
@@ -4578,42 +4596,48 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         const input = document.getElementById('importAllXmlInput');
         if (input) input.click();
     });
-    document.getElementById('importAllXmlInput')?.addEventListener('change', async (e) => {
-        const input = e.target;
-        const file = input?.files?.[0];
-        if (!file) return;
+document.getElementById('importAllXmlInput')?.addEventListener('change', async (e) => {
+    const input = e.target;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/xml');
+        const root = doc.querySelector('rsdbConfig');
+        if (!root) throw new Error('invalid xml');
+        
+        const theme = root.querySelector('theme')?.textContent?.trim();
+        const primary = root.querySelector('primaryColor')?.textContent?.trim();
+        
+        const readJson = (tag) => {
+            const node = root.querySelector(tag);
+            const raw = node?.textContent || '';
+            return raw ? JSON.parse(raw) : {};
+        };
+        
+        const importedAppSettings = readJson('appSettings');
+        const importedKeyboardConfig = readJson('keyboardConfig');
+        const importedInputStats = readJson('inputStats');
+        const importedShortcutClickStats = readJson('shortcutClickStats');
+
+        if (theme) localStorage.setItem('theme', theme);
+        if (primary) localStorage.setItem(PRIMARY_KEY, primary);
+        localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(importedAppSettings || {}));
+        localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(importedKeyboardConfig || {}));
+        localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(importedInputStats || {}));
+        localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(importedShortcutClickStats || {}));
+
+        showSnackbar('已导入配置，正在刷新...', 'success');
+        setTimeout(() => location.reload(), 260);
+    } catch (err) {
+        showSnackbar('导入失败：XML 格式不正确', 'error');
+    } finally {
+        
         input.value = '';
-        try {
-            const text = await file.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'application/xml');
-            const root = doc.querySelector('rsdbConfig');
-            if (!root) throw new Error('invalid xml');
-            const theme = root.querySelector('theme')?.textContent?.trim();
-            const primary = root.querySelector('primaryColor')?.textContent?.trim();
-            const readJson = (tag) => {
-                const node = root.querySelector(tag);
-                const raw = node?.textContent || '';
-                return raw ? JSON.parse(raw) : {};
-            };
-            const importedAppSettings = readJson('appSettings');
-            const importedKeyboardConfig = readJson('keyboardConfig');
-            const importedInputStats = readJson('inputStats');
-            const importedShortcutClickStats = readJson('shortcutClickStats');
-
-            if (theme) localStorage.setItem('theme', theme);
-            if (primary) localStorage.setItem(PRIMARY_KEY, primary);
-            localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(importedAppSettings || {}));
-            localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(importedKeyboardConfig || {}));
-            localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(importedInputStats || {}));
-            localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(importedShortcutClickStats || {}));
-
-            showSnackbar('已导入配置，正在刷新...', 'success');
-            setTimeout(() => location.reload(), 260);
-        } catch (err) {
-            showSnackbar('导入失败：XML 格式不正确', 'error');
-        }
-    });
+    }
+});
     document.getElementById('settingsShortcutRowsItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('shortcutRowsDialog');
@@ -4631,6 +4655,13 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     document.getElementById('settingsDialogPositionItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('dialogPositionDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsUndoRedoMaxStepsItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('undoRedoMaxStepsDialog');
+        const input = document.getElementById('undoRedoMaxStepsInput');
+        if (input) input.value = String(Number(appSettings.undoRedoMaxSteps) || 10);
         if (dlg) dlg.open = true;
     });
     document.getElementById('settingsHistoryMaxCountItem')?.addEventListener('click', () => {
@@ -4700,6 +4731,19 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         if (dlg) dlg.open = false;
         saveOperationHistory();
         showSnackbar('已保存历史记录保留条数', 'success');
+    });
+    document.getElementById('undoRedoMaxStepsCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('undoRedoMaxStepsDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('undoRedoMaxStepsOkBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('undoRedoMaxStepsInput');
+        const val = Math.max(1, Math.min(200, Number(input?.value) || 10));
+        saveAppSettings({ undoRedoMaxSteps: val });
+        const dlg = document.getElementById('undoRedoMaxStepsDialog');
+        if (dlg) dlg.open = false;
+        saveOperationHistory();
+        showSnackbar('已保存撤销/重做步数上限', 'success');
     });
 
     document.getElementById('settingsPrimaryColorItem')?.addEventListener('click', () => {
@@ -7399,7 +7443,9 @@ function startSearch() {
             return Number.isFinite(v) ? v : operationHistory.length;
         })();
         function saveOperationHistory() {
-            const limit = Math.max(1, Math.min(200, Number(appSettings.operationHistoryMaxCount) || 8));
+            const showLimit = Math.max(1, Math.min(200, Number(appSettings.operationHistoryMaxCount) || 8));
+            const stepsLimit = Math.max(1, Math.min(200, Number(appSettings.undoRedoMaxSteps) || 10));
+            const limit = Math.min(showLimit, stepsLimit);
             if (operationHistory.length > limit) {
                 const overflow = operationHistory.length - limit;
                 operationHistory = operationHistory.slice(overflow);
@@ -8023,6 +8069,10 @@ function startSearch() {
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
 		                }, { passive: true });
+		                keyElement.addEventListener('click', (e) => {
+		                    e.preventDefault();
+		                    e.stopPropagation();
+		                }, { passive: false });
 		                keyElement.addEventListener('pointercancel', (e) => {
 		                    clearTimer();
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
@@ -8062,6 +8112,10 @@ function startSearch() {
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
 		                }, { passive: true });
+		                keyElement.addEventListener('click', (e) => {
+		                    e.preventDefault();
+		                    e.stopPropagation();
+		                }, { passive: false });
 		                keyElement.addEventListener('pointercancel', (e) => {
 		                    clearTimer();
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
@@ -8084,104 +8138,437 @@ function startSearch() {
 
 // 默认配置
 const DEFAULT_KEYBOARD_CONFIG = {
-    customVariables: {},
-    dynamicVariables: [],
-    furnaceIdTemplates: [
-        '1251', 
-        'VD25/', 
-        '1250', 
-        '251050', 
-        '251051', 
-        '25D0', 
-        '25C0', 
-        'VD26/',
-        'VD${year}/',       
-        'VD${lastYear}/',   
-        '${year}1',          
-        '1${year}1',
-        '${lastYear}1',
-        '1${lastYear}1'
+  "customVariables": {},
+  "dynamicVariables": {},
+  "furnaceIdTemplates": [
+    "265001649",
+    "25C06550",
+    "125122210",
+    "12601178",
+    "12601036",
+    "265130020",
+    "25D09356",
+    "2520996704",
+    "12512123",
+    "265000649",
+    "25C09115",
+    "2521043832",
+    "12601145",
+    "12512288",
+    "12601164",
+    "2521043202",
+    "1${lastYear}0",
+    "1${year}0",
+    "${lastYear}1050",
+    "${lastYear}1051",
+    "${lastYear}310",
+    "${lastYear}110",
+    "VD${lastYear}/",
+    "VD${year}/",
+    "${year}1",
+    "1${year}1",
+    "${lastYear}1",
+    "1${lastYear}1",
+    "25D06841",
+    "25C06652"
+  ],
+  "productIdTemplates": [
+    "TH",
+    "TH5",
+    "TH6"
+  ],
+  "cardIdTemplates": [
+    "V2604-",
+    "MOS605-",
+    "SG602-",
+    "V1621-",
+    "HBS602-",
+    "V15P131-",
+    "MOS603-",
+    "V3602-",
+    "V2606-",
+    "EURO601-",
+    "V3601-",
+    "HBS601-",
+    "V2602-",
+    "MOS602-",
+    "型式试验用",
+    "V1612-",
+    "V1618-",
+    "V1615-",
+    "MOS601-",
+    "V1609-",
+    "V2603-",
+    "V1611-",
+    "V1620-",
+    "SA505-",
+    "V1617-",
+    "V480-",
+    "V15P135-",
+    "V1622-",
+    "SA601-",
+    "TH2600541-",
+    "MOS505-",
+    "VT602-",
+    "备库",
+    "HAS601-",
+    "V1603HA-",
+    "V478-",
+    "HBS506-",
+    "V1605-",
+    "V15P",
+    "VS502-",
+    "SG601-",
+    "SG505-",
+    "SG506-",
+    "VS502-",
+    "AUSA502-",
+    "V2526-",
+    "V2527-",
+    "TS",
+    "TH",
+    "VT"
+  ],
+  "steelTypeTemplates": [
+    "42CrMoS4+QT",
+    "39NiCrMo3+QT",
+    "C45E+N",
+    "18NiCrMoS5+A",
+    "S355J2+N",
+    "C45R",
+    "42CrMo4+QT",
+    "20#",
+    "817M40",
+    "S355J2N",
+    "C45R+N",
+    "4140Ann",
+    "39NiCrMoS3",
+    "4340Q&T",
+    "C45N",
+    "18NiCrMoS5",
+    "35CrMo",
+    "4340Ann",
+    "1.2714+QT",
+    "080M40",
+    "42CrMoS4",
+    "S355J2",
+    "C45",
+    "C45Cr",
+    "42CrMo4",
+    "S355J2G3",
+    "C45E",
+    "C15E",
+    "42CrMo4+Q",
+    "55NiCrMoV7",
+    "18NiCrMo5",
+    "18CrMo4",
+    "39NiCrMo3",
+    "39NiCrMoS3+QT",
+    "4140Q&T",
+    "1045Norm",
+    "1018Norm",
+    "16/20MnCrS5",
+    "16MnCrS5 HH+FP",
+    "42CrMo4+HH+QT",
+    "1.2714",
+    "1.2344",
+    "4145",
+    "4130"
+  ],
+  "actualDiameterTemplates": [],
+  "diameterTemplates": [],
+  "lengthTemplates": [],
+  "weightTemplates": [],
+  "statusTemplates": [
+    "正回火车光",
+    "调质粗车",
+    "车光",
+    "退火车光",
+    "正火车光",
+    "空冷车光",
+    "调质车光",
+    "花皮",
+    "空冷黑皮",
+    "黑调",
+    "花调"
+  ],
+  "positionTemplates": [
+    "附近",
+    "外",
+    "过道",
+    "立车",
+    "打卡机",
+    "校直机"
+  ],
+  "layouts": {
+    "number": [
+      [
+        "%",
+        "1",
+        "2",
+        "3",
+        "+",
+        "clear"
+      ],
+      [
+        ":",
+        "4",
+        "5",
+        "6",
+        "-",
+        "backspace"
+      ],
+      [
+        "#",
+        "7",
+        "8",
+        "9",
+        "*",
+        "esc"
+      ],
+      [
+        "_",
+        ".",
+        "0",
+        "/",
+        "、",
+        "done"
+      ]
     ],
-    productIdTemplates: ['TH', 'TH5', 'TH6'],
-    cardIdTemplates: [
-        '备库', 
-        'V478-', 
-        'SG505', 
-        'SG506', 
-        'V15P', 
-        'AUSA502-', 
-        'V2526-', 
-        'V2527-', 
-        'TS', 
-        'TH', 
-        'VT'
+    "status": [
+      [
+        "clear",
+        "backspace",
+        "esc",
+        "done"
+      ]
     ],
-    steelTypeTemplates: [
-        '42CrMo4', 
-        'C45E', 
-        '4140Q&T', 
-        '1045Norm', 
-        'C45', 
-        'S355J2G3', 
-        '16/20MnCrS5', 
-        '1.2714', 
-        '1.2344', 
-        '4145', 
-        'A105/LF2'
+    "text": [
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "0"
+      ],
+      [
+        "q",
+        "w",
+        "e",
+        "r",
+        "t",
+        "y",
+        "u",
+        "i",
+        "o",
+        "p"
+      ],
+      [
+        "a",
+        "s",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        "+",
+        "-"
+      ],
+      [
+        "shift",
+        "z",
+        "x",
+        "c",
+        "v",
+        "b",
+        "n",
+        "m",
+        "backspace"
+      ],
+      [
+        "symbol",
+        ",",
+        "space",
+        ".",
+        "done"
+      ]
     ],
-    actualDiameterTemplates: [],
-    diameterTemplates: [],
-    lengthTemplates: [],
-    weightTemplates: [],
-    statusTemplates: ['车光', '调车', '花皮', '黑皮', '黑调', '花调'],
-    positionTemplates: ['外', '过道', '立车', '打卡机','校直机'],
-    
-    // Default Layouts
-    layouts: {
-        number: [
-            ['%', '1', '2', '3','+', 'clear'],
-            [':', '4', '5', '6', '-', 'backspace'],
-            ['#', '7', '8', '9','*', 'esc'], 
-            ['_', '.', '0', '/','、', 'done']
-        ],
-        status: [
-            ['clear', 'backspace', 'esc', 'done']
-        ],
-        text: [
-            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-            ['q','w','e','r','t','y','u','i','o','p'],
-            ['a','s','d','f','g','h','j','k','l', '+','-'],
-            ['shift', 'z','x','c','v','b','n','m', 'backspace'],
-            ['symbol',',','space', '.', 'clear','done']
-        ],
-        textShift: [
-            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-            ['Q','W','E','R','T','Y','U','I','O','P'],
-            ['A','S','D','F','G','H','J','K','L', '+','-'],
-            ['shift', 'Z','X','C','V','B','N','M', 'backspace'],
-            ['symbol',',','space', '.', 'clear','done']
-        ],
-        position: [
-            ['%', '1', '2', '3', 'A'],
-            ['/', '4', '5', '6', 'B'],
-            ['+', '7', '8', '9', 'C'],
-            ['*', '/','0', '-','D'],
-            ['clear', 'backspace','esc','done'] 
-        ],
-        symbol: [
-            ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
-            ['_', '+', '=', '|', '\\', ':', '"', '<', '>', '?', ','],
-            ['`', '}', '[', ']', '{', '(', ')', '.', '/', 'system'],
-            ['ABC', 'space', 'backspace','clear', 'done'] 
-        ]
-    },
-    
-    // Symbol Map
-    symbolMap: {
-        'q': '1', 'w': '2', 'e': '3', 'r': '4', 't': '5', 'y': '6', 'u': '7', 'i': '8', 'o': '9', 'p': '0',
-        'a': '~', 's': '!', 'd': '@', 'f': '#', 'g': '%', 'h': '“', 'j': '”', 'k': '*', 'l': '？',
-        'z': '(', 'x': ')', 'c': '-', 'v': '_', 'b': ':', 'n': ';', 'm': '/'
-    }
+    "textShift": [
+      [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "0"
+      ],
+      [
+        "Q",
+        "W",
+        "E",
+        "R",
+        "T",
+        "Y",
+        "U",
+        "I",
+        "O",
+        "P"
+      ],
+      [
+        "A",
+        "S",
+        "D",
+        "F",
+        "G",
+        "H",
+        "J",
+        "K",
+        "L",
+        "+",
+        "-"
+      ],
+      [
+        "shift",
+        "Z",
+        "X",
+        "C",
+        "V",
+        "B",
+        "N",
+        "M",
+        "backspace"
+      ],
+      [
+        "symbol",
+        ",",
+        "space",
+        ".",
+        "done"
+      ]
+    ],
+    "position": [
+      [
+        "%",
+        "1",
+        "2",
+        "3",
+        "A"
+      ],
+      [
+        "/",
+        "4",
+        "5",
+        "6",
+        "B"
+      ],
+      [
+        "+",
+        "7",
+        "8",
+        "9",
+        "C"
+      ],
+      [
+        "*",
+        "/",
+        "0",
+        "-",
+        "D"
+      ],
+      [
+        "clear",
+        "backspace",
+        "esc",
+        "done"
+      ]
+    ],
+    "symbol": [
+      [
+        "~",
+        "!",
+        "@",
+        "#",
+        "$",
+        "%",
+        "^",
+        "&",
+        "*",
+        "(",
+        ")"
+      ],
+      [
+        "_",
+        "+",
+        "=",
+        "|",
+        "\\",
+        ":",
+        "\"",
+        "<",
+        ">",
+        "?",
+        ","
+      ],
+      [
+        "`",
+        "}",
+        "[",
+        "]",
+        "{",
+        "(",
+        ")",
+        ".",
+        "/",
+        "system"
+      ],
+      [
+        "ABC",
+        "space",
+        "backspace",
+        "clear",
+        "done"
+      ]
+    ]
+  },
+  "symbolMap": {
+    "q": "1",
+    "w": "2",
+    "e": "3",
+    "r": "4",
+    "t": "5",
+    "y": "6",
+    "u": "7",
+    "i": "8",
+    "o": "9",
+    "p": "0",
+    "a": "~",
+    "s": "!",
+    "d": "@",
+    "f": "#",
+    "g": "%",
+    "h": "“",
+    "j": "”",
+    "k": "*",
+    "l": "？",
+    "z": "(",
+    "x": ")",
+    "c": "-",
+    "v": "_",
+    "b": ":",
+    "n": ";",
+    "m": "/"
+  }
 };
 
 // 配置管理器
