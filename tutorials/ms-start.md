@@ -8,6 +8,7 @@
 
 [访问微软基岩版开发文档](https://learn.microsoft.com/zh-cn/minecraft/creator/documents/gettingstarted\)
 
+
 ## 适用范围
 - 附加包（Add-on）开发
 - 行为包 / 资源包制作
