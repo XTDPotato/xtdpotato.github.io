@@ -36,6 +36,9 @@
 		    --text-color: #212121;
 		    --border-color: #e0e0e0;
 		    --drawer-icon-size: 24px;
+            --table-cell-min-width: 80px;
+            --table-cell-height: 48px;
+            --table-cell-font-size: 1rem;
 		}
 
         /* 修复：确保背景色覆盖全屏，防止主题切换底部留白 */
@@ -906,13 +909,14 @@
 		
 		/* 其他单元格、选中、高亮等样式保持不变 */
 		#dataTable th, #dataTable td {
-		    padding: 12px 8px;
+		    padding: 8px;
 		    border: 1px solid var(--border-color);
 		    text-align: center;
 		    white-space: normal;
 		    word-break: break-word;
-		    font-size: 1rem;
-		    min-width: 80px;
+		    font-size: var(--table-cell-font-size);
+		    min-width: var(--table-cell-min-width);
+            height: var(--table-cell-height);
 		    overflow: visible;
 		}
 		
@@ -1106,6 +1110,11 @@
 		    max-height: 60vh !important;
 		    overflow-y: auto;
 		}
+        #keyboardVisualEditorDialog mdui-select::part(menu),
+        #keyboardVisualEditorDialog mdui-dropdown::part(panel) {
+            max-height: 60vh !important;
+            overflow-y: auto !important;
+        }
 		
 		.modal-footer-custom {
 		    padding: 16px 16px 24px 16px;
@@ -2065,25 +2074,14 @@
       内置可用变量：<code>${year}</code> (如24), <code>${lastYear}</code> (如23)
     </p>
 
-    <!-- 动态变量 -->
     <div class="input-group" style="margin-bottom:16px;">
-      <label style="display:block; margin-bottom:8px; font-weight:500;">
-        自定义变量（动态）
-      </label>
+      <label style="display:block; margin-bottom:8px; font-weight:500;">可视化编辑器</label>
       <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0;">
-        在快捷短语中使用 <code>${变量名}</code>。支持“本周 / 本周一”等日期类变量。
+        自定义变量、键盘键位（添加/移动/尺寸/键值）已整合到可视化编辑器。
       </p>
-
-      <div
-        id="dynamicVarList"
-        style="display:grid; gap:10px; width:100%;"
-      ></div>
-
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <mdui-button variant="tonal" id="addDynamicVarBtn" icon="add" style="flex:1">
-          新增变量
-        </mdui-button>
-      </div>
+      <mdui-button variant="tonal" id="openKeyboardVisualEditorBtn" icon="grid_view" style="width:100%;">
+        打开虚拟键盘可视化编辑器
+      </mdui-button>
     </div>
 
     <!-- 炉号 -->
@@ -2235,8 +2233,10 @@
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>快捷短语</mdui-list-subheader>
                 <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="快捷短语设置" description="编辑各字段快捷短语与布局"></mdui-list-item>
+                <mdui-list-item id="settingsKeyboardVisualEditorItem" icon="view_quilt" headline="虚拟键盘可视化编辑器" description="编辑键位/变量/大小与位置"></mdui-list-item>
                 <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
                 <mdui-list-item id="settingsShortcutToolbarResetItem" icon="restart_alt" headline="重置快捷短语工具栏位置" description="拖到屏幕外点不到时，可用此项重置"></mdui-list-item>
+                <mdui-list-item id="settingsFabPositionItem" icon="open_with" headline="自定义FAB位置" description="X/Y滑块实时预览"></mdui-list-item>
                 <mdui-list-item id="settingsFabResetItem" icon="my_location" headline="重置FAB位置" description="恢复到默认右下角"></mdui-list-item>
                 <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
                     <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
@@ -2269,6 +2269,7 @@
                 <mdui-list-subheader>界面</mdui-list-subheader>
                 <mdui-list-item id="settingsDialogPositionItem" icon="vertical_align_top" headline="对话框默认位置" description=""></mdui-list-item>
                 <mdui-list-item id="settingsKeyboardSizeItem" icon="height" headline="虚拟键盘高度/底部留空" description=""></mdui-list-item>
+                <mdui-list-item id="settingsTableViewItem" icon="table_chart" headline="表格视图参数" description=""></mdui-list-item>
                 <mdui-list-item id="settingsSnackbarItem" icon="notifications" headline="Snackbar 设置" description=""></mdui-list-item>
                 <mdui-list-item headline="动画效果" description="关闭部分动画（含自定义弹窗过渡）">
                     <mdui-switch slot="end-icon" id="settingsAnimationsSwitch"></mdui-switch>
@@ -2507,6 +2508,35 @@
         <mdui-button slot="action" variant="text" id="keyboardSizeCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="keyboardSizeOkBtn">确定</mdui-button>
     </mdui-dialog>
+    <mdui-dialog id="fabPositionDialog" close-on-esc close-on-overlay-click headline="自定义FAB位置">
+        <div style="display:grid; gap: 10px; padding: 8px 0;">
+            <div id="fabPositionPreviewText" style="font-size:0.9rem;color:#757575;">实时预览中…</div>
+            <mdui-slider id="fabPosXSlider" min="0" max="100" step="1"></mdui-slider>
+            <mdui-text-field id="fabPosXInput" label="X（距右侧，px）" type="number" variant="outlined"></mdui-text-field>
+            <mdui-slider id="fabPosYSlider" min="0" max="100" step="1"></mdui-slider>
+            <mdui-text-field id="fabPosYInput" label="Y（距底部，px）" type="number" variant="outlined"></mdui-text-field>
+        </div>
+        <mdui-button slot="action" variant="text" id="fabPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="fabPositionOkBtn">保存</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="tableViewDialog" close-on-esc close-on-overlay-click headline="表格视图参数">
+        <mdui-text-field id="tableScaleDefaultInput" label="默认表格缩放（0.25-2.0）" type="number" step="0.05" min="0.25" max="2" variant="outlined"></mdui-text-field>
+        <mdui-text-field id="tableCellWidthInput" label="单元格最小宽度（px）" type="number" min="48" max="320" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tableCellHeightInput" label="单元格高度（px）" type="number" min="30" max="160" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tableCellFontSizeInput" label="单元格字体大小（px）" type="number" min="10" max="40" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="tableViewCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="tableViewOkBtn">确定</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="cellStyleDialog" close-on-esc close-on-overlay-click headline="单元格样式">
+        <div id="cellStyleTargetText" style="font-size:0.9rem;color:#757575;margin-bottom:8px;"></div>
+        <mdui-text-field id="cellStyleFontSizeInput" label="字体大小（px）" type="number" min="10" max="48" variant="outlined"></mdui-text-field>
+        <mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
+        <mdui-text-field id="cellStyleBgColorInput" label="背景颜色（#RRGGBB）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
+        <mdui-text-field id="cellStyleFontWeightInput" label="字重（normal / bold / 100-900）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="cellStyleResetBtn">重置当前格</mdui-button>
+        <mdui-button slot="action" variant="text" id="cellStyleCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="cellStyleOkBtn">保存</mdui-button>
+    </mdui-dialog>
 
     <mdui-dialog id="imageCompressSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
         <mdui-top-app-bar slot="header">
@@ -2599,6 +2629,47 @@
             </div>
         </div>
     </mdui-dialog>
+    <mdui-dialog id="keyboardVisualEditorDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>虚拟键盘可视化编辑器</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="closeKeyboardVisualEditorBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 14px; overflow-y:auto; height:100%; box-sizing:border-box;">
+            <mdui-select id="vkVisualLayoutSelect" variant="outlined" label="编辑布局" style="width:100%;">
+                <mdui-menu-item value="text">文本键盘</mdui-menu-item>
+                <mdui-menu-item value="textShift">大写键盘</mdui-menu-item>
+                <mdui-menu-item value="number">数字键盘</mdui-menu-item>
+                <mdui-menu-item value="status">状态键盘</mdui-menu-item>
+                <mdui-menu-item value="position">位置键盘</mdui-menu-item>
+                <mdui-menu-item value="symbol">符号键盘</mdui-menu-item>
+            </mdui-select>
+            <div id="vkVisualPreview" style="margin-top:10px;display:grid;gap:8px;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                <mdui-button variant="tonal" id="vkVisualAddKeyBtn" icon="add">新增按键</mdui-button>
+                <mdui-button variant="tonal" id="vkVisualAddRowBtn" icon="playlist_add">新增一行</mdui-button>
+                <mdui-button variant="outlined" color="error" id="vkVisualDeleteKeyBtn" icon="delete">删除选中键</mdui-button>
+            </div>
+            <div style="margin-top:10px;display:grid;gap:8px;">
+                <mdui-text-field id="vkVisualKeyValueInput" label="键值(key)" variant="outlined"></mdui-text-field>
+                <mdui-text-field id="vkVisualKeyLabelInput" label="显示文本(label，可空)" variant="outlined"></mdui-text-field>
+                <mdui-slider id="vkVisualKeyFlexSlider" min="1" max="4" step="1"></mdui-slider>
+                <div style="font-size:0.85rem;color:#757575;">键宽（flex）</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <mdui-button variant="text" id="vkVisualMoveLeftBtn">左移</mdui-button>
+                    <mdui-button variant="text" id="vkVisualMoveRightBtn">右移</mdui-button>
+                    <mdui-button variant="text" id="vkVisualMoveUpBtn">上移</mdui-button>
+                    <mdui-button variant="text" id="vkVisualMoveDownBtn">下移</mdui-button>
+                </div>
+            </div>
+            <mdui-divider style="margin:14px 0;"></mdui-divider>
+            <div style="font-weight:500;">自定义变量（动态）</div>
+            <div id="dynamicVarListVisual" style="display:grid;gap:10px;margin-top:8px;"></div>
+            <mdui-button variant="tonal" id="addDynamicVarBtnVisual" icon="add" style="margin-top:8px;">新增变量</mdui-button>
+        </div>
+        <mdui-button slot="action" variant="text" id="keyboardVisualCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="keyboardVisualSaveBtn">保存并应用</mdui-button>
+    </mdui-dialog>
 
 	<script>
 
@@ -2663,7 +2734,12 @@
 		    historyStorageEnabled: true,
 		    operationHistoryMaxCount: 8,
 		    undoRedoEnabled: true,
-		    undoRedoMaxSteps: 10
+		    undoRedoMaxSteps: 10,
+            tableScaleDefault: 0.5,
+            tableCellWidth: 80,
+            tableCellHeight: 48,
+            tableCellFontSize: 16,
+            tableCellStyles: {}
 		};
 		let appSettings = loadAppSettings();
 		let inputStats = loadInputStats();
@@ -2728,6 +2804,25 @@
 		        merged.animationsEnabled = merged.animationsEnabled !== false;
 		        merged.historyStorageEnabled = merged.historyStorageEnabled !== false;
 		        merged.undoRedoEnabled = merged.undoRedoEnabled !== false;
+                {
+                    const s = Number(merged.tableScaleDefault);
+                    merged.tableScaleDefault = Number.isFinite(s) ? Math.max(0.25, Math.min(2, s)) : 0.5;
+                }
+                {
+                    const w = Number(merged.tableCellWidth);
+                    merged.tableCellWidth = Number.isFinite(w) ? Math.max(48, Math.min(320, Math.round(w))) : 80;
+                }
+                {
+                    const h = Number(merged.tableCellHeight);
+                    merged.tableCellHeight = Number.isFinite(h) ? Math.max(30, Math.min(160, Math.round(h))) : 48;
+                }
+                {
+                    const fs = Number(merged.tableCellFontSize);
+                    merged.tableCellFontSize = Number.isFinite(fs) ? Math.max(10, Math.min(40, Math.round(fs))) : 16;
+                }
+                if (!merged.tableCellStyles || typeof merged.tableCellStyles !== 'object') {
+                    merged.tableCellStyles = {};
+                }
 		        {
 		            const hc = Number(merged.operationHistoryMaxCount);
 		            merged.operationHistoryMaxCount = Number.isFinite(hc) ? Math.max(1, Math.min(200, Math.round(hc))) : 8;
@@ -2799,9 +2894,39 @@
 		    });
 		}
 
+        function applyTableViewSettings() {
+            const root = document.documentElement;
+            const cellW = Math.max(48, Math.min(320, Number(appSettings.tableCellWidth) || 80));
+            const cellH = Math.max(30, Math.min(160, Number(appSettings.tableCellHeight) || 48));
+            const cellFs = Math.max(10, Math.min(40, Number(appSettings.tableCellFontSize) || 16));
+            root.style.setProperty('--table-cell-min-width', `${cellW}px`);
+            root.style.setProperty('--table-cell-height', `${cellH}px`);
+            root.style.setProperty('--table-cell-font-size', `${cellFs}px`);
+            if (ZoomManager) {
+                ZoomManager.minScale = 0.25;
+                ZoomManager.maxScale = 2;
+                const nextScale = Math.max(0.25, Math.min(2, Number(appSettings.tableScaleDefault) || 0.5));
+                if (!Number.isFinite(ZoomManager.currentScale) || ZoomManager.currentScale < ZoomManager.minScale || ZoomManager.currentScale > ZoomManager.maxScale) {
+                    ZoomManager.currentScale = nextScale;
+                }
+            }
+        }
+
+        function applyCellCustomStyle(cellEl, rowIndex, fieldKey) {
+            if (!cellEl || rowIndex === undefined || !fieldKey) return;
+            const key = `${rowIndex}:${fieldKey}`;
+            const style = appSettings.tableCellStyles?.[key];
+            if (!style || typeof style !== 'object') return;
+            if (style.fontSize) cellEl.style.fontSize = `${Math.max(10, Math.min(48, Number(style.fontSize) || 0))}px`;
+            if (style.color) cellEl.style.color = style.color;
+            if (style.backgroundColor) cellEl.style.backgroundColor = style.backgroundColor;
+            if (style.fontWeight) cellEl.style.fontWeight = style.fontWeight;
+        }
+
 		function applyAppSettings() {
 		    applyDialogPositionToAll();
 		    document.documentElement.classList.toggle('no-animations', appSettings.animationsEnabled === false);
+            applyTableViewSettings();
 		    const vk = document.getElementById('virtualKeyboard');
 		    if (vk) {
 		        vk.classList.toggle('shortcut-wrap-enabled', !!appSettings.shortcutWrap);
@@ -3090,6 +3215,15 @@
 		        const bText = Number.isFinite(b) && b > 0 ? `${Math.round(b)}px` : '0px';
 		        keyboardSizeItem.setAttribute('description', `高度 ${hText}，底部 ${bText}`);
 		    }
+            const vkVisualItem = document.getElementById('settingsKeyboardVisualEditorItem');
+            if (vkVisualItem) vkVisualItem.setAttribute('description', '可视化编辑键位并管理动态变量');
+            const tableViewItem = document.getElementById('settingsTableViewItem');
+            if (tableViewItem) {
+                const s = Number(appSettings.tableScaleDefault) || 0.5;
+                const w = Number(appSettings.tableCellWidth) || 80;
+                const h = Number(appSettings.tableCellHeight) || 48;
+                tableViewItem.setAttribute('description', `缩放 ${s.toFixed(2)}，宽 ${w}px，高 ${h}px`);
+            }
 		    const snackbarItem = document.getElementById('settingsSnackbarItem');
 		    if (snackbarItem) {
 		        const placement = appSettings.snackbarPlacement || 'bottom-center';
@@ -3187,6 +3321,14 @@
 		    if (vkHeightSlider) vkHeightSlider.value = String(Number.isFinite(hNum) && hNum > 0 ? Math.round(hNum) : 420);
 		    const bNum = Number(appSettings.virtualKeyboardBottomOffset);
 		    if (vkBottomSlider) vkBottomSlider.value = String(Number.isFinite(bNum) && bNum >= 0 ? Math.round(bNum) : 0);
+            const tableScaleInput = document.getElementById('tableScaleDefaultInput');
+            const tableCellWInput = document.getElementById('tableCellWidthInput');
+            const tableCellHInput = document.getElementById('tableCellHeightInput');
+            const tableCellFsInput = document.getElementById('tableCellFontSizeInput');
+            if (tableScaleInput) tableScaleInput.value = String(Number(appSettings.tableScaleDefault) || 0.5);
+            if (tableCellWInput) tableCellWInput.value = String(Number(appSettings.tableCellWidth) || 80);
+            if (tableCellHInput) tableCellHInput.value = String(Number(appSettings.tableCellHeight) || 48);
+            if (tableCellFsInput) tableCellFsInput.value = String(Number(appSettings.tableCellFontSize) || 16);
 
 		}
 
@@ -3343,8 +3485,8 @@
 // === Zoom Manager (View Logic) ===
 // ==========================================
 const ZoomManager = {
-    currentScale: 1,
-    minScale: 0.5,
+    currentScale: Number(appSettings?.tableScaleDefault) || 0.5,
+    minScale: 0.25,
     maxScale: 2.0,
     container: null,
     naturalWidth: 0,
@@ -3442,7 +3584,7 @@ const ZoomManager = {
                 const now = Date.now();
                 if (now - lastTap < 300) {
                     e.preventDefault();
-                    this.applyScale(1);
+                    this.applyScale(Number(appSettings.tableScaleDefault) || 0.5);
                 }
                 lastTap = now;
             });
@@ -4169,6 +4311,8 @@ function initEventListeners() {
         let baseRight = 0, baseBottom = 0;
         let pressTimer = null;
         const LONG_PRESS_MS = 280;
+        let scrollGuardUntil = 0;
+        window.addEventListener('scroll', () => { scrollGuardUntil = Date.now() + 180; }, { passive: true });
 
         const clearPress = () => {
             if (pressTimer) clearTimeout(pressTimer);
@@ -4191,6 +4335,7 @@ function initEventListeners() {
 
         mainFab.addEventListener('pointerdown', (e) => {
             if (pointerId !== null) return;
+            if (Date.now() < scrollGuardUntil) return;
             pointerId = e.pointerId;
             sx = e.clientX;
             sy = e.clientY;
@@ -4210,7 +4355,7 @@ function initEventListeners() {
             if (!dragging) {
                 const dx = Math.abs(e.clientX - sx);
                 const dy = Math.abs(e.clientY - sy);
-                if (dx > 6 || dy > 6) clearPress();
+                if (dx > 12 || dy > 12) clearPress();
                 return;
             }
             if (e.cancelable) e.preventDefault();
@@ -4776,6 +4921,43 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         window.resetShortcutToolbarWrapPosition?.();
         showSnackbar('已重置快捷短语工具栏位置', 'success');
     });
+    document.getElementById('settingsFabPositionItem')?.addEventListener('click', () => {
+        const fab = document.getElementById('mainFab');
+        const dlg = document.getElementById('fabPositionDialog');
+        const xInput = document.getElementById('fabPosXInput');
+        const yInput = document.getElementById('fabPosYInput');
+        const xSlider = document.getElementById('fabPosXSlider');
+        const ySlider = document.getElementById('fabPosYSlider');
+        if (!fab || !dlg || !xInput || !yInput || !xSlider || !ySlider) return;
+        const style = window.getComputedStyle(fab);
+        const right = Math.max(0, Math.round(parseFloat(style.right) || 24));
+        const bottom = Math.max(0, Math.round(parseFloat(style.bottom) || 24));
+        window.__rsdbFabPosDraftOrigin = { right: `${right}px`, bottom: `${bottom}px` };
+        const maxRight = Math.max(0, window.innerWidth - 48);
+        const maxBottom = Math.max(0, window.innerHeight - 48);
+        xSlider.max = String(maxRight);
+        ySlider.max = String(maxBottom);
+        const preview = () => {
+            const rx = Math.max(0, Math.min(maxRight, Number(xInput.value) || 0));
+            const by = Math.max(0, Math.min(maxBottom, Number(yInput.value) || 0));
+            fab.style.right = `${rx}px`;
+            fab.style.bottom = `${by}px`;
+            const txt = document.getElementById('fabPositionPreviewText');
+            if (txt) txt.textContent = `右侧 ${rx}px，底部 ${by}px（实时预览）`;
+            xSlider.value = String(rx);
+            ySlider.value = String(by);
+        };
+        xInput.value = String(right);
+        yInput.value = String(bottom);
+        xSlider.value = String(right);
+        ySlider.value = String(bottom);
+        preview();
+        dlg.open = true;
+        xSlider.oninput = () => { xInput.value = String(xSlider.value); preview(); };
+        ySlider.oninput = () => { yInput.value = String(ySlider.value); preview(); };
+        xInput.oninput = preview;
+        yInput.oninput = preview;
+    });
     document.getElementById('settingsFabResetItem')?.addEventListener('click', () => {
         localStorage.removeItem('fabPosition');
         const fab = document.getElementById('mainFab');
@@ -4785,6 +4967,31 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         }
         showSnackbar('已重置FAB位置', 'success');
     });
+    document.getElementById('fabPositionCancelBtn')?.addEventListener('click', () => {
+        const fab = document.getElementById('mainFab');
+        const old = window.__rsdbFabPosDraftOrigin;
+        if (fab && old) {
+            fab.style.right = old.right;
+            fab.style.bottom = old.bottom;
+        }
+        const dlg = document.getElementById('fabPositionDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('fabPositionOkBtn'), () => {
+        const fab = document.getElementById('mainFab');
+        const xInput = document.getElementById('fabPosXInput');
+        const yInput = document.getElementById('fabPosYInput');
+        if (!fab || !xInput || !yInput) return;
+        const right = `${Math.max(0, Math.round(Number(xInput.value) || 24))}px`;
+        const bottom = `${Math.max(0, Math.round(Number(yInput.value) || 24))}px`;
+        fab.style.right = right;
+        fab.style.bottom = bottom;
+        localStorage.setItem('fabPosition', JSON.stringify({ right, bottom }));
+        window.__rsdbFabPosDraftOrigin = null;
+        const dlg = document.getElementById('fabPositionDialog');
+        if (dlg) dlg.open = false;
+        showSnackbar('已保存FAB位置', 'success');
+    });
     document.getElementById('settingsSuggestThresholdItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('suggestThresholdDialog');
@@ -4793,6 +5000,11 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     document.getElementById('settingsDialogPositionItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('dialogPositionDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsTableViewItem')?.addEventListener('click', () => {
+        updateSettingsUI();
+        const dlg = document.getElementById('tableViewDialog');
         if (dlg) dlg.open = true;
     });
     document.getElementById('settingsUndoRedoMaxStepsItem')?.addEventListener('click', () => {
@@ -5298,6 +5510,63 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         const dlg = document.getElementById('keyboardSizeDialog');
         if (dlg) dlg.open = false;
     });
+    document.getElementById('tableViewCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('tableViewDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('tableViewOkBtn'), () => {
+        const scale = Math.max(0.25, Math.min(2, Number(document.getElementById('tableScaleDefaultInput')?.value) || 0.5));
+        const width = Math.max(48, Math.min(320, Number(document.getElementById('tableCellWidthInput')?.value) || 80));
+        const height = Math.max(30, Math.min(160, Number(document.getElementById('tableCellHeightInput')?.value) || 48));
+        const fontSize = Math.max(10, Math.min(40, Number(document.getElementById('tableCellFontSizeInput')?.value) || 16));
+        saveAppSettings({
+            tableScaleDefault: scale,
+            tableCellWidth: width,
+            tableCellHeight: height,
+            tableCellFontSize: fontSize
+        });
+        if (ZoomManager) {
+            ZoomManager.currentScale = scale;
+            ZoomManager.onTableUpdate();
+        }
+        updateTable();
+        const dlg = document.getElementById('tableViewDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('cellStyleCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('cellStyleDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('cellStyleResetBtn')?.addEventListener('click', () => {
+        const key = window.__rsdbEditingCellKey;
+        if (!key) return;
+        const next = { ...(appSettings.tableCellStyles || {}) };
+        delete next[key];
+        saveAppSettings({ tableCellStyles: next });
+        const dlg = document.getElementById('cellStyleDialog');
+        if (dlg) dlg.open = false;
+        updateTable();
+    });
+    bindImmediateActionButton(document.getElementById('cellStyleOkBtn'), () => {
+        const key = window.__rsdbEditingCellKey;
+        if (!key) return;
+        const fontSize = Number(document.getElementById('cellStyleFontSizeInput')?.value);
+        const color = (document.getElementById('cellStyleTextColorInput')?.value || '').trim();
+        const bgColor = (document.getElementById('cellStyleBgColorInput')?.value || '').trim();
+        const fontWeight = (document.getElementById('cellStyleFontWeightInput')?.value || '').trim();
+        const validColor = (v) => /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(v);
+        const styleObj = {};
+        if (Number.isFinite(fontSize)) styleObj.fontSize = Math.max(10, Math.min(48, Math.round(fontSize)));
+        if (validColor(color)) styleObj.color = color;
+        if (validColor(bgColor)) styleObj.backgroundColor = bgColor;
+        if (fontWeight) styleObj.fontWeight = fontWeight;
+        const next = { ...(appSettings.tableCellStyles || {}) };
+        next[key] = styleObj;
+        saveAppSettings({ tableCellStyles: next });
+        const dlg = document.getElementById('cellStyleDialog');
+        if (dlg) dlg.open = false;
+        updateTable();
+    });
     document.getElementById('closeImageCompressSettingsBtn')?.addEventListener('click', () => {
         const dlg = document.getElementById('imageCompressSettingsDialog');
         if (dlg) dlg.open = false;
@@ -5633,7 +5902,44 @@ dom.tableBody.addEventListener('dblclick', (e) => {
     openEditModal(index, targetFieldId);
 });
 
+let cellStylePressTimer = null;
+let cellStylePressTarget = null;
+let suppressCellClickUntil = 0;
+dom.tableBody.addEventListener('pointerdown', (e) => {
+    if (isMultiSelectMode) return;
+    const cell = e.target.closest('td[data-field]');
+    if (!cell) return;
+    const row = e.target.closest('tr');
+    const field = cell.getAttribute('data-field');
+    if (!row || !field) return;
+    if (field === 'cardImage' || field === 'seq') return;
+    const index = Number(row.getAttribute('data-index'));
+    if (!Number.isFinite(index)) return;
+    clearTimeout(cellStylePressTimer);
+    cellStylePressTarget = { index, field };
+    cellStylePressTimer = setTimeout(() => {
+        suppressCellClickUntil = Date.now() + 700;
+        openCellStyleDialog(index, field);
+    }, 500);
+}, { passive: true });
+dom.tableBody.addEventListener('pointermove', () => {
+    clearTimeout(cellStylePressTimer);
+}, { passive: true });
+dom.tableBody.addEventListener('pointerup', () => {
+    clearTimeout(cellStylePressTimer);
+    cellStylePressTarget = null;
+}, { passive: true });
+dom.tableBody.addEventListener('pointercancel', () => {
+    clearTimeout(cellStylePressTimer);
+    cellStylePressTarget = null;
+}, { passive: true });
+
  dom.tableBody.addEventListener('click', (e) => {
+    if (Date.now() < suppressCellClickUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+    }
 
     if (isMultiSelectMode) return;
 
@@ -6023,6 +6329,10 @@ function updateTable() {
         `;
 
         tbody.appendChild(row);
+        row.querySelectorAll('td[data-field]').forEach((cell) => {
+            const fieldKey = cell.getAttribute('data-field');
+            applyCellCustomStyle(cell, originalIndex, fieldKey);
+        });
     });
 
     applySearchHighlight();
@@ -7186,6 +7496,27 @@ function findDuplicates(newItem) {
 		    }
 		}
 
+        function openCellStyleDialog(index, fieldId) {
+            if (!Number.isFinite(index) || index < 0) return;
+            if (!fieldId) return;
+            const key = `${index}:${fieldId}`;
+            window.__rsdbEditingCellKey = key;
+            const targetText = document.getElementById('cellStyleTargetText');
+            if (targetText) targetText.textContent = `第 ${index + 1} 行 · ${fieldLabels[fieldId] || fieldId}`;
+            const current = appSettings.tableCellStyles?.[key] || {};
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = val == null ? '' : String(val);
+            };
+            setVal('cellStyleFontSizeInput', current.fontSize || '');
+            setVal('cellStyleTextColorInput', current.color || '');
+            setVal('cellStyleBgColorInput', current.backgroundColor || '');
+            setVal('cellStyleFontWeightInput', current.fontWeight || '');
+            const dlg = document.getElementById('cellStyleDialog');
+            if (dlg) dlg.open = true;
+        }
+
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
 
 function startSearch() {
@@ -8182,6 +8513,8 @@ function startSearch() {
 		    const perField = fieldKey ? Number(rowsByField[fieldKey]) : NaN;
 		    const baseRows = Math.max(1, Math.min(3, Number(appSettings.shortcutRows) || 2));
 		    const rowCount = Math.max(1, Math.min(3, Number.isFinite(perField) ? perField : baseRows));
+            const shortcutRowHeight = 44;
+            targetContainer.style.minHeight = `${rowCount * shortcutRowHeight}px`;
 		    const rows = Array.from({ length: rowCount }, () => []);
 		    const optionEntries = (options || []).map((v, i) => ({ value: v, index: i }));
 		    const orderedEntries = appSettings.shortcutRankByClicks
@@ -8890,13 +9223,19 @@ const KeyboardConfigManager = {
 
     bindEvents() {
         const openBtn = document.getElementById('settingsKeyboardItem');
+        const openVisualSettingBtn = document.getElementById('settingsKeyboardVisualEditorItem');
         const modal = document.getElementById('keyboardSettingsModal');
         const closeBtn = document.getElementById('closeKeyboardSettingsModal');
         const cancelBtn = document.getElementById('cancelKeyboardConfigBtn');
         const saveBtn = document.getElementById('saveKeyboardConfigBtn');
         const resetBtn = document.getElementById('resetKeyboardConfigBtn');
-        const dynamicVarList = document.getElementById('dynamicVarList');
-        const addDynamicVarBtn = document.getElementById('addDynamicVarBtn');
+        const dynamicVarListVisual = document.getElementById('dynamicVarListVisual');
+        const addDynamicVarBtnVisual = document.getElementById('addDynamicVarBtnVisual');
+        const openVisualBtn = document.getElementById('openKeyboardVisualEditorBtn');
+        const visualDialog = document.getElementById('keyboardVisualEditorDialog');
+        const closeVisualBtn = document.getElementById('closeKeyboardVisualEditorBtn');
+        const cancelVisualBtn = document.getElementById('keyboardVisualCancelBtn');
+        const saveVisualBtn = document.getElementById('keyboardVisualSaveBtn');
         
         const inputs = {
             furnaceId: document.getElementById('furnaceIdConfigInput'),
@@ -8925,14 +9264,15 @@ const KeyboardConfigManager = {
             kind.setAttribute('placement', 'bottom');
             kind.setAttribute('value', item.kind || 'date');
             kind.value = item.kind || 'date';
+            kind.style.width = '100%';
             kind.innerHTML = [
-                '<mdui-menu-item value="date">日期(今天+偏移)</mdui-menu-item>',
-                '<mdui-menu-item value="weekStart">本周一(周起始+偏移)</mdui-menu-item>',
-                '<mdui-menu-item value="weekEnd">本周日(周结束+偏移)</mdui-menu-item>',
-                '<mdui-menu-item value="isoWeek">本周(周序号)</mdui-menu-item>',
-                '<mdui-menu-item value="month">本月(月份)</mdui-menu-item>',
-                '<mdui-menu-item value="day">今日(日)</mdui-menu-item>',
-                '<mdui-menu-item value="year">今年(年份)</mdui-menu-item>'
+                '<mdui-menu-item value="date">日期变量（今天 + 偏移天数）</mdui-menu-item>',
+                '<mdui-menu-item value="weekStart">周起始变量（本周一 + 偏移天数）</mdui-menu-item>',
+                '<mdui-menu-item value="weekEnd">周结束变量（本周日 + 偏移天数）</mdui-menu-item>',
+                '<mdui-menu-item value="isoWeek">周序号变量（ISO 周）</mdui-menu-item>',
+                '<mdui-menu-item value="month">月份变量（当前月）</mdui-menu-item>',
+                '<mdui-menu-item value="day">日变量（当前日期）</mdui-menu-item>',
+                '<mdui-menu-item value="year">年份变量（当前年份）</mdui-menu-item>'
             ].join('');
 
             const format = document.createElement('mdui-text-field');
@@ -8959,24 +9299,24 @@ const KeyboardConfigManager = {
             return row;
         };
 
-        const renderDynamicVars = () => {
-            if (!dynamicVarList) return;
-            dynamicVarList.innerHTML = '';
+        const renderDynamicVars = (targetEl) => {
+            if (!targetEl) return;
+            targetEl.innerHTML = '';
             const vars = Array.isArray(this.config.dynamicVariables) ? this.config.dynamicVariables : [];
             if (vars.length === 0) {
                 const defaults = [
                     { name: '本周', kind: 'isoWeek', format: 'WW', offsetDays: 0 },
                     { name: '本周一', kind: 'weekStart', format: 'YYYYMMDD', offsetDays: 0 }
                 ];
-                defaults.forEach(v => dynamicVarList.appendChild(createDynamicVarRow(v)));
+                defaults.forEach(v => targetEl.appendChild(createDynamicVarRow(v)));
                 return;
             }
-            vars.forEach(v => dynamicVarList.appendChild(createDynamicVarRow(v)));
+            vars.forEach(v => targetEl.appendChild(createDynamicVarRow(v)));
         };
 
-        const readDynamicVars = () => {
-            if (!dynamicVarList) return [];
-            const rows = Array.from(dynamicVarList.children);
+        const readDynamicVars = (targetEl) => {
+            if (!targetEl) return [];
+            const rows = Array.from(targetEl.children);
             return rows.map(r => {
                 const items = r.querySelectorAll('mdui-text-field, mdui-select');
                 const name = items[0]?.value?.trim?.() || '';
@@ -8996,7 +9336,7 @@ const KeyboardConfigManager = {
             inputs.status.value = (this.config.statusTemplates || []).join('\n');
             inputs.position.value = (this.config.positionTemplates || []).join('\n');
             inputs.advancedJson.value = JSON.stringify(this.config);
-            renderDynamicVars();
+            renderDynamicVars(dynamicVarListVisual);
         };
 
         if (openBtn) {
@@ -9016,9 +9356,125 @@ const KeyboardConfigManager = {
         };
 
         [closeBtn, cancelBtn].forEach(btn => btn?.addEventListener('click', closeModal));
-        addDynamicVarBtn?.addEventListener('click', () => {
-            if (!dynamicVarList) return;
-            dynamicVarList.appendChild(createDynamicVarRow({ name: '', kind: 'date', format: 'YYYYMMDD', offsetDays: 0 }));
+        addDynamicVarBtnVisual?.addEventListener('click', () => {
+            if (!dynamicVarListVisual) return;
+            dynamicVarListVisual.appendChild(createDynamicVarRow({ name: '', kind: 'date', format: 'YYYYMMDD', offsetDays: 0 }));
+        });
+
+        let visualLayoutKey = 'text';
+        let visualSelected = { row: -1, col: -1 };
+        const getLayoutRows = () => {
+            if (!this.config.layouts[visualLayoutKey]) this.config.layouts[visualLayoutKey] = [[]];
+            return this.config.layouts[visualLayoutKey];
+        };
+        const getKeyObj = (key) => {
+            if (typeof key === 'object' && key) return { ...key };
+            return { key: String(key ?? '') };
+        };
+        const renderVisualPreview = () => {
+            const preview = document.getElementById('vkVisualPreview');
+            if (!preview) return;
+            preview.innerHTML = '';
+            const rows = getLayoutRows();
+            rows.forEach((row, rIdx) => {
+                const rowEl = document.createElement('div');
+                rowEl.style.display = 'grid';
+                rowEl.style.gridTemplateColumns = 'repeat(12, minmax(0,1fr))';
+                rowEl.style.gap = '6px';
+                (row || []).forEach((rawKey, cIdx) => {
+                    const keyObj = getKeyObj(rawKey);
+                    const btn = document.createElement('mdui-button');
+                    btn.variant = visualSelected.row === rIdx && visualSelected.col === cIdx ? 'filled' : 'tonal';
+                    btn.style.gridColumn = `span ${Math.max(1, Math.min(4, Number(keyObj.flex) || 1))}`;
+                    btn.textContent = keyObj.label || keyObj.key || '(空)';
+                    btn.addEventListener('click', () => {
+                        visualSelected = { row: rIdx, col: cIdx };
+                        const vInput = document.getElementById('vkVisualKeyValueInput');
+                        const lInput = document.getElementById('vkVisualKeyLabelInput');
+                        const fSlider = document.getElementById('vkVisualKeyFlexSlider');
+                        if (vInput) vInput.value = keyObj.key || '';
+                        if (lInput) lInput.value = keyObj.label || '';
+                        if (fSlider) fSlider.value = String(Math.max(1, Math.min(4, Number(keyObj.flex) || 1)));
+                        renderVisualPreview();
+                    });
+                    rowEl.appendChild(btn);
+                });
+                preview.appendChild(rowEl);
+            });
+        };
+        const patchSelectedKey = (patch) => {
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
+            const current = getKeyObj(rows[row][col]);
+            rows[row][col] = { ...current, ...patch };
+            renderVisualPreview();
+        };
+        const moveSelectedKey = (dx, dy) => {
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
+            const newRow = Math.max(0, Math.min(rows.length - 1, row + dy));
+            if (!rows[newRow]) rows[newRow] = [];
+            const newCol = Math.max(0, col + dx);
+            const moving = rows[row].splice(col, 1)[0];
+            rows[newRow].splice(Math.min(newCol, rows[newRow].length), 0, moving);
+            visualSelected = { row: newRow, col: Math.min(newCol, rows[newRow].length - 1) };
+            renderVisualPreview();
+        };
+        document.getElementById('vkVisualLayoutSelect')?.addEventListener('change', (e) => {
+            visualLayoutKey = e.target.value || 'text';
+            visualSelected = { row: -1, col: -1 };
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualAddRowBtn')?.addEventListener('click', () => {
+            getLayoutRows().push([]);
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualAddKeyBtn')?.addEventListener('click', () => {
+            const rows = getLayoutRows();
+            if (!rows.length) rows.push([]);
+            rows[rows.length - 1].push({ key: 'new', label: 'new', flex: 1 });
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualDeleteKeyBtn')?.addEventListener('click', () => {
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row]) return;
+            rows[row].splice(col, 1);
+            visualSelected = { row: -1, col: -1 };
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualMoveLeftBtn')?.addEventListener('click', () => moveSelectedKey(-1, 0));
+        document.getElementById('vkVisualMoveRightBtn')?.addEventListener('click', () => moveSelectedKey(1, 0));
+        document.getElementById('vkVisualMoveUpBtn')?.addEventListener('click', () => moveSelectedKey(0, -1));
+        document.getElementById('vkVisualMoveDownBtn')?.addEventListener('click', () => moveSelectedKey(0, 1));
+        document.getElementById('vkVisualKeyValueInput')?.addEventListener('input', (e) => patchSelectedKey({ key: e.target.value || '' }));
+        document.getElementById('vkVisualKeyLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ label: e.target.value || '' }));
+        document.getElementById('vkVisualKeyFlexSlider')?.addEventListener('input', (e) => patchSelectedKey({ flex: Math.max(1, Math.min(4, Number(e.target.value) || 1)) }));
+        openVisualBtn?.addEventListener('click', () => {
+            visualLayoutKey = 'text';
+            const select = document.getElementById('vkVisualLayoutSelect');
+            if (select) select.value = visualLayoutKey;
+            renderDynamicVars(dynamicVarListVisual);
+            renderVisualPreview();
+            if (visualDialog) visualDialog.open = true;
+        });
+        openVisualSettingBtn?.addEventListener('click', () => {
+            dom.drawer.open = false;
+            visualLayoutKey = 'text';
+            const select = document.getElementById('vkVisualLayoutSelect');
+            if (select) select.value = visualLayoutKey;
+            renderDynamicVars(dynamicVarListVisual);
+            renderVisualPreview();
+            if (visualDialog) visualDialog.open = true;
+        });
+        [closeVisualBtn, cancelVisualBtn].forEach(btn => btn?.addEventListener('click', () => { if (visualDialog) visualDialog.open = false; }));
+        bindImmediateActionButton(saveVisualBtn, () => {
+            this.config.dynamicVariables = readDynamicVars(dynamicVarListVisual);
+            this.config.layouts = this.config.layouts || {};
+            this.save();
+            if (visualDialog) visualDialog.open = false;
         });
 
         if (saveBtn) {
@@ -9034,7 +9490,7 @@ const KeyboardConfigManager = {
                 this.config.steelTypeTemplates = processInput(inputs.steelType);
                 this.config.statusTemplates = processInput(inputs.status);
                 this.config.positionTemplates = processInput(inputs.position);
-                this.config.dynamicVariables = readDynamicVars();
+                this.config.dynamicVariables = readDynamicVars(dynamicVarListVisual);
                 
                 this.save();
                 commitOperation();
