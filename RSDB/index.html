@@ -87,6 +87,12 @@
 		    background-color: var(--background-color); 
 		}
 
+		.settings-item-disabled {
+		    opacity: 0.5;
+		    pointer-events: none;
+		    filter: grayscale(0.25);
+		}
+
         #virtualCursor {
             position: fixed;
             width: 2px;
@@ -1775,7 +1781,7 @@
 
     <!-- 制作者信息（极简） -->
     <div style="text-align: center; font-size: 0.85rem; color: var(--mdui-color-on-surface-variant, #757575); margin: 0 0 16px 0;">
-      制作：Trae (Gemini-3-Pro-Preview) | 功能全覆盖·双端适配
+      制作：GPT5.5 Codex | 功能全覆盖·双端适配
     </div>
 
     <mdui-divider style="margin: 12px 0;"></mdui-divider>
@@ -2250,7 +2256,13 @@
                 </mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>历史记录</mdui-list-subheader>
+                <mdui-list-item headline="启用历史记录存储" description="关闭后不再保存操作历史">
+                    <mdui-switch slot="end-icon" id="settingsHistoryStorageSwitch"></mdui-switch>
+                </mdui-list-item>
                 <mdui-list-item id="settingsHistoryMaxCountItem" icon="history" headline="历史记录保留条数" description=""></mdui-list-item>
+                <mdui-list-item headline="启用撤销/重做记录" description="关闭后不再记录可撤销步骤">
+                    <mdui-switch slot="end-icon" id="settingsUndoRedoEnabledSwitch"></mdui-switch>
+                </mdui-list-item>
                 <mdui-list-item id="settingsUndoRedoMaxStepsItem" icon="redo" headline="撤销/重做步数上限" description=""></mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>信息</mdui-list-subheader>
@@ -2570,8 +2582,15 @@
 
 		const PRIMARY_KEY = "xtd_theme_primary";
 		const themeFlash = document.getElementById("themeFlash");
-		const RSDB_VERSION = '2026.02.04';
+		const RSDB_VERSION = '2026.04.24';
 		const RSDB_CHANGELOG = [
+		    {
+		        version: '2026.04.24',
+		        notes: [
+		            '设置 → 关于 & 操作指南：更新为最新说明版本',
+		            '制作信息更新为 GPT5.5 Codex，并移除 Trae 标识'
+		        ]
+		    },
 		    {
 		        version: '2026.02.04',
 		        notes: [
@@ -2619,7 +2638,9 @@
 		    dialogPositions: ['center'],
 		    virtualKeyboardHeight: null,
 		    virtualKeyboardBottomOffset: 0,
+		    historyStorageEnabled: true,
 		    operationHistoryMaxCount: 8,
+		    undoRedoEnabled: true,
 		    undoRedoMaxSteps: 10
 		};
 		let appSettings = loadAppSettings();
@@ -2683,6 +2704,8 @@
 		        merged.snackbarPlacement = typeof merged.snackbarPlacement === 'string' ? merged.snackbarPlacement : 'bottom-center';
 		        merged.snackbarDismissMode = merged.snackbarDismissMode === 'button' ? 'button' : 'swipe';
 		        merged.animationsEnabled = merged.animationsEnabled !== false;
+		        merged.historyStorageEnabled = merged.historyStorageEnabled !== false;
+		        merged.undoRedoEnabled = merged.undoRedoEnabled !== false;
 		        {
 		            const hc = Number(merged.operationHistoryMaxCount);
 		            merged.operationHistoryMaxCount = Number.isFinite(hc) ? Math.max(1, Math.min(200, Math.round(hc))) : 8;
@@ -2770,6 +2793,7 @@
 		    }
 		    applySnackbarSettings();
 		    updateSettingsUI();
+		    updateHistoryFeatureAvailability();
 		    generateVirtualKeyboard();
 		}
 
@@ -3050,10 +3074,26 @@
 		        const mode = appSettings.snackbarDismissMode === 'button' ? '按钮关闭' : '右滑关闭';
 		        snackbarItem.setAttribute('description', `${placement}，${mode}`);
 		    }
+		    const historyStorageSwitch = document.getElementById('settingsHistoryStorageSwitch');
+		    if (historyStorageSwitch) historyStorageSwitch.checked = appSettings.historyStorageEnabled !== false;
 		    const historyItem = document.getElementById('settingsHistoryMaxCountItem');
-		    if (historyItem) historyItem.setAttribute('description', `最近 ${Number(appSettings.operationHistoryMaxCount) || 8} 条`);
+		    if (historyItem) {
+		        historyItem.setAttribute('description', `最近 ${Number(appSettings.operationHistoryMaxCount) || 8} 条`);
+		        const disabled = appSettings.historyStorageEnabled === false;
+		        historyItem.classList.toggle('settings-item-disabled', disabled);
+		        if (disabled) historyItem.setAttribute('disabled', '');
+		        else historyItem.removeAttribute('disabled');
+		    }
+		    const undoRedoSwitch = document.getElementById('settingsUndoRedoEnabledSwitch');
+		    if (undoRedoSwitch) undoRedoSwitch.checked = appSettings.undoRedoEnabled !== false;
 		    const undoRedoItem = document.getElementById('settingsUndoRedoMaxStepsItem');
-		    if (undoRedoItem) undoRedoItem.setAttribute('description', `最多 ${Number(appSettings.undoRedoMaxSteps) || 10} 步`);
+		    if (undoRedoItem) {
+		        undoRedoItem.setAttribute('description', `最多 ${Number(appSettings.undoRedoMaxSteps) || 10} 步`);
+		        const disabled = appSettings.undoRedoEnabled === false;
+		        undoRedoItem.classList.toggle('settings-item-disabled', disabled);
+		        if (disabled) undoRedoItem.setAttribute('disabled', '');
+		        else undoRedoItem.removeAttribute('disabled');
+		    }
 		    const animSwitch = document.getElementById('settingsAnimationsSwitch');
 		    if (animSwitch) animSwitch.checked = appSettings.animationsEnabled !== false;
 		    const primaryItem = document.getElementById('settingsPrimaryColorItem');
@@ -3126,6 +3166,17 @@
 		    const bNum = Number(appSettings.virtualKeyboardBottomOffset);
 		    if (vkBottomSlider) vkBottomSlider.value = String(Number.isFinite(bNum) && bNum >= 0 ? Math.round(bNum) : 0);
 
+		}
+
+		function updateHistoryFeatureAvailability() {
+		    const undoItem = document.getElementById('undoMenuItem');
+		    const redoItem = document.getElementById('redoMenuItem');
+		    const opHistoryItem = document.getElementById('operationHistoryMenuItem');
+		    const undoDisabled = appSettings.undoRedoEnabled === false;
+		    const historyDisabled = appSettings.historyStorageEnabled === false;
+		    if (undoItem) undoDisabled ? undoItem.setAttribute('disabled', '') : undoItem.removeAttribute('disabled');
+		    if (redoItem) undoDisabled ? redoItem.setAttribute('disabled', '') : redoItem.removeAttribute('disabled');
+		    if (opHistoryItem) historyDisabled ? opHistoryItem.setAttribute('disabled', '') : opHistoryItem.removeAttribute('disabled');
 		}
 		const inputFieldOrder = [
 		  'steelType', 'productId', 'cardId', 'furnaceId',
@@ -4169,14 +4220,26 @@ function initEventListeners() {
     const redoItem = document.getElementById('redoMenuItem');
     const opHistoryItem = document.getElementById('operationHistoryMenuItem');
     undoItem?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) {
+            showSnackbar('撤销/重做记录已关闭', 'info');
+            return;
+        }
         const ok = undoOperation();
         if (!ok) showSnackbar('没有可撤销的操作', 'info');
     });
     redoItem?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) {
+            showSnackbar('撤销/重做记录已关闭', 'info');
+            return;
+        }
         const ok = redoOperation();
         if (!ok) showSnackbar('没有可重做的操作', 'info');
     });
     opHistoryItem?.addEventListener('click', () => {
+        if (appSettings.historyStorageEnabled === false) {
+            showSnackbar('历史记录存储已关闭', 'info');
+            return;
+        }
         renderOperationHistoryList('');
         const dlg = document.getElementById('operationHistoryDialog');
         if (dlg) dlg.open = true;
@@ -4658,6 +4721,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (dlg) dlg.open = true;
     });
     document.getElementById('settingsUndoRedoMaxStepsItem')?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) return;
         updateSettingsUI();
         const dlg = document.getElementById('undoRedoMaxStepsDialog');
         const input = document.getElementById('undoRedoMaxStepsInput');
@@ -4665,6 +4729,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (dlg) dlg.open = true;
     });
     document.getElementById('settingsHistoryMaxCountItem')?.addEventListener('click', () => {
+        if (appSettings.historyStorageEnabled === false) return;
         updateSettingsUI();
         const dlg = document.getElementById('historyMaxCountDialog');
         const input = document.getElementById('historyMaxCountInput');
@@ -4724,6 +4789,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         showSnackbar('已保存 Snackbar 设置', 'success');
     });
     document.getElementById('historyMaxCountOkBtn')?.addEventListener('click', () => {
+        if (appSettings.historyStorageEnabled === false) return;
         const input = document.getElementById('historyMaxCountInput');
         const val = Math.max(1, Math.min(200, Number(input?.value) || 8));
         saveAppSettings({ operationHistoryMaxCount: val });
@@ -4737,6 +4803,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (dlg) dlg.open = false;
     });
     document.getElementById('undoRedoMaxStepsOkBtn')?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) return;
         const input = document.getElementById('undoRedoMaxStepsInput');
         const val = Math.max(1, Math.min(200, Number(input?.value) || 10));
         saveAppSettings({ undoRedoMaxSteps: val });
@@ -4997,6 +5064,34 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     const animSwitch = document.getElementById('settingsAnimationsSwitch');
     animSwitch?.addEventListener('change', () => saveAppSettings({ animationsEnabled: !!animSwitch.checked }));
     bindSwitchListItemToggle(animSwitch);
+    const historyStorageSwitch = document.getElementById('settingsHistoryStorageSwitch');
+    historyStorageSwitch?.addEventListener('change', () => {
+        const enabled = !!historyStorageSwitch.checked;
+        saveAppSettings({ historyStorageEnabled: enabled });
+        if (!enabled) {
+            clearOperationHistoryStorage();
+            showSnackbar('已关闭历史记录存储', 'info');
+        } else {
+            saveOperationHistory();
+            showSnackbar('已开启历史记录存储', 'success');
+        }
+    });
+    bindSwitchListItemToggle(historyStorageSwitch);
+    const undoRedoEnabledSwitch = document.getElementById('settingsUndoRedoEnabledSwitch');
+    undoRedoEnabledSwitch?.addEventListener('change', () => {
+        const enabled = !!undoRedoEnabledSwitch.checked;
+        saveAppSettings({ undoRedoEnabled: enabled });
+        if (!enabled) {
+            operationHistory = [];
+            historyCursor = 0;
+            window.__rsdbPendingOp = null;
+            saveOperationHistory();
+            showSnackbar('已关闭撤销/重做记录', 'info');
+        } else {
+            showSnackbar('已开启撤销/重做记录', 'success');
+        }
+    });
+    bindSwitchListItemToggle(undoRedoEnabledSwitch);
     dom.shortcutQuickAddBtn?.addEventListener('click', () => {
     if (!currentShortcutFieldKey) {
         showSnackbar('请先选择一个字段', 'warning');
@@ -7442,7 +7537,25 @@ function startSearch() {
             const v = Number(localStorage.getItem(HISTORY_CURSOR_KEY) || operationHistory.length);
             return Number.isFinite(v) ? v : operationHistory.length;
         })();
+        function clearOperationHistoryStorage() {
+            operationHistory = [];
+            historyCursor = 0;
+            window.__rsdbPendingOp = null;
+            try {
+                localStorage.removeItem(HISTORY_KEY);
+                localStorage.removeItem(HISTORY_CURSOR_KEY);
+            } catch (e) {}
+            try {
+                saveDataToIndexedDB();
+            } catch (dbErr) {
+                console.error('Failed to clear operation history in IndexedDB:', dbErr);
+            }
+        }
         function saveOperationHistory() {
+            if (appSettings.historyStorageEnabled === false) {
+                clearOperationHistoryStorage();
+                return;
+            }
             const showLimit = Math.max(1, Math.min(200, Number(appSettings.operationHistoryMaxCount) || 8));
             const stepsLimit = Math.max(1, Math.min(200, Number(appSettings.undoRedoMaxSteps) || 10));
             const limit = Math.min(showLimit, stepsLimit);
@@ -7476,6 +7589,10 @@ function startSearch() {
             try { generateVirtualKeyboard(); } catch (e) {}
         }
         function beginOperation(type, description, meta = {}) {
+            if (appSettings.undoRedoEnabled === false) {
+                window.__rsdbPendingOp = null;
+                return;
+            }
             const beforeTable = deepCopyData(tableData);
             const beforeKeyboard = deepCopyKeyboard(KeyboardConfigManager.config);
             window.__rsdbPendingOp = {
@@ -7488,6 +7605,10 @@ function startSearch() {
             };
         }
         function commitOperation() {
+            if (appSettings.undoRedoEnabled === false) {
+                window.__rsdbPendingOp = null;
+                return;
+            }
             const pending = window.__rsdbPendingOp;
             if (!pending) return;
             const afterTable = deepCopyData(tableData);
@@ -7500,6 +7621,7 @@ function startSearch() {
             window.__rsdbPendingOp = null;
         }
         function undoOperation() {
+            if (appSettings.undoRedoEnabled === false) return false;
             if (historyCursor <= 0) return false;
             const idx = historyCursor - 1;
             const entry = operationHistory[idx];
@@ -7515,6 +7637,7 @@ function startSearch() {
             return true;
         }
         function redoOperation() {
+            if (appSettings.undoRedoEnabled === false) return false;
             if (historyCursor >= operationHistory.length) return false;
             const entry = operationHistory[historyCursor];
             tableData = deepCopyData(entry.afterTable);
