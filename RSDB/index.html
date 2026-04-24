@@ -8200,6 +8200,7 @@ function startSearch() {
 		        items.forEach(item => {
 		            const keyElement = document.createElement('div');
 		            keyElement.className = `keyboard-key ${keyClass}`;
+                    keyElement.style.touchAction = 'none';
 		            if (item.kind === 'suggest') {
 		                keyElement.classList.add('suggest-add-key');
 		                keyElement.style.display = 'flex';
@@ -8249,6 +8250,8 @@ function startSearch() {
 		                    pressTimer = null;
 		                };
 		                keyElement.addEventListener('pointerdown', (e) => {
+		                    if (e.cancelable) e.preventDefault();
+		                    e.stopPropagation();
 		                    longPressed = false;
 		                    clearTimer();
 		                    pressTimer = setTimeout(() => {
@@ -8256,7 +8259,7 @@ function startSearch() {
 		                        addSuggestedShortcut(fieldKey, item.value);
 		                    }, 520);
 		                    if (e.pointerId != null) keyElement.setPointerCapture?.(e.pointerId);
-		                }, { passive: true });
+		                }, { passive: false });
 		                keyElement.addEventListener('pointermove', (e) => {
 		                    if (!pressTimer) return;
 		                    if (Math.abs(e.movementX) > 8 || Math.abs(e.movementY) > 8) {
@@ -8264,6 +8267,8 @@ function startSearch() {
 		                    }
 		                }, { passive: true });
 		                keyElement.addEventListener('pointerup', (e) => {
+		                    if (e.cancelable) e.preventDefault();
+		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (!longPressed && currentInput) {
 		                        applyShortcutToCurrentInput(fieldKey, item.value);
@@ -8271,12 +8276,13 @@ function startSearch() {
 		                        currentInput.focus();
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
-		                }, { passive: true });
+		                }, { passive: false });
 		                keyElement.addEventListener('click', (e) => {
 		                    e.preventDefault();
 		                    e.stopPropagation();
 		                }, { passive: false });
 		                keyElement.addEventListener('pointercancel', (e) => {
+		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
 		                }, { passive: true });
@@ -8289,6 +8295,8 @@ function startSearch() {
 		                    pressTimer = null;
 		                };
 		                keyElement.addEventListener('pointerdown', (e) => {
+		                    if (e.cancelable) e.preventDefault();
+		                    e.stopPropagation();
 		                    longPressed = false;
 		                    clearTimer();
 		                    pressTimer = setTimeout(() => {
@@ -8299,7 +8307,7 @@ function startSearch() {
 		                        openShortcutActionDialog(fieldKey, item.index);
 		                    }, 500);
 		                    if (e.pointerId != null) keyElement.setPointerCapture?.(e.pointerId);
-		                }, { passive: true });
+		                }, { passive: false });
 		                keyElement.addEventListener('pointermove', (e) => {
 		                    if (!pressTimer) return;
 		                    if (Math.abs(e.movementX) > 8 || Math.abs(e.movementY) > 8) {
@@ -8307,6 +8315,8 @@ function startSearch() {
 		                    }
 		                }, { passive: true });
 		                keyElement.addEventListener('pointerup', (e) => {
+		                    if (e.cancelable) e.preventDefault();
+		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (!longPressed && currentInput) {
 		                        applyShortcutToCurrentInput(fieldKey, item.value);
@@ -8314,12 +8324,13 @@ function startSearch() {
 		                        currentInput.focus();
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
-		                }, { passive: true });
+		                }, { passive: false });
 		                keyElement.addEventListener('click', (e) => {
 		                    e.preventDefault();
 		                    e.stopPropagation();
 		                }, { passive: false });
 		                keyElement.addEventListener('pointercancel', (e) => {
+		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
 		                }, { passive: true });
