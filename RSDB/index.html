@@ -2219,6 +2219,7 @@
                 <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="快捷短语设置" description="编辑各字段快捷短语与布局"></mdui-list-item>
                 <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
                 <mdui-list-item id="settingsShortcutToolbarResetItem" icon="restart_alt" headline="重置快捷短语工具栏位置" description="拖到屏幕外点不到时，可用此项重置"></mdui-list-item>
+                <mdui-list-item id="settingsFabResetItem" icon="my_location" headline="重置FAB位置" description="恢复到默认右下角"></mdui-list-item>
                 <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
                     <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
                 </mdui-list-item>
@@ -2324,7 +2325,10 @@
     </mdui-dialog>
 
     <mdui-dialog id="shortcutAddDialog" close-on-esc fullscreen headline="添加快捷短语">
-        <mdui-text-field id="shortcutAddValue" label="快捷短语内容" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-dropdown id="shortcutAddAutocompleteDropdown" placement="bottom-start" trigger="manual">
+            <mdui-text-field id="shortcutAddValue" slot="trigger" label="快捷短语内容" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+            <mdui-menu id="shortcutAddAutocompleteMenu"></mdui-menu>
+        </mdui-dropdown>
         <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-secondary);">当前已有：</div>
         <div id="shortcutAddExistingList" style="margin-top: 8px; max-height: 40vh; overflow: auto; display: flex; flex-wrap: wrap; gap: 8px;"></div>
         <mdui-button slot="action" variant="text" id="shortcutAddCancelBtn">取消</mdui-button>
@@ -4095,68 +4099,86 @@ function initEventListeners() {
         });
     }
 
-    // FAB Draggable Logic & Reset
+    // FAB Draggable Logic & Reset（长按拖动，兼容触摸与鼠标）
     const mainFab = document.getElementById('mainFab');
     if (mainFab) {
-        // Load saved position
+        const DEFAULT_RIGHT = '24px';
+        const DEFAULT_BOTTOM = '24px';
         const savedPos = localStorage.getItem('fabPosition');
         if (savedPos) {
             try {
                 const { right, bottom } = JSON.parse(savedPos);
                 mainFab.style.right = right;
                 mainFab.style.bottom = bottom;
-            } catch(e) {}
+            } catch(e) {
+                mainFab.style.right = DEFAULT_RIGHT;
+                mainFab.style.bottom = DEFAULT_BOTTOM;
+            }
+        } else {
+            mainFab.style.right = DEFAULT_RIGHT;
+            mainFab.style.bottom = DEFAULT_BOTTOM;
         }
 
-        let isDragging = false;
-        let startX, startY;
-        let initialRight, initialBottom;
+        let pointerId = null;
+        let dragging = false;
+        let sx = 0, sy = 0;
+        let baseRight = 0, baseBottom = 0;
+        let pressTimer = null;
+        const LONG_PRESS_MS = 280;
 
-        mainFab.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) return;
-            isDragging = false;
-            const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-            
+        const clearPress = () => {
+            if (pressTimer) clearTimeout(pressTimer);
+            pressTimer = null;
+        };
+
+        const finishDrag = (e) => {
+            if (pointerId !== e.pointerId) return;
+            clearPress();
+            if (dragging) {
+                localStorage.setItem('fabPosition', JSON.stringify({
+                    right: mainFab.style.right || DEFAULT_RIGHT,
+                    bottom: mainFab.style.bottom || DEFAULT_BOTTOM
+                }));
+                showSnackbar('已保存FAB位置', 'success');
+            }
+            dragging = false;
+            pointerId = null;
+        };
+
+        mainFab.addEventListener('pointerdown', (e) => {
+            if (pointerId !== null) return;
+            pointerId = e.pointerId;
+            sx = e.clientX;
+            sy = e.clientY;
             const style = window.getComputedStyle(mainFab);
-            initialRight = parseFloat(style.right);
-            initialBottom = parseFloat(style.bottom);
-        }, {passive: false});
-
-        mainFab.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 1) return;
-            const touch = e.touches[0];
-            const deltaX = startX - touch.clientX; // Drag left increases right
-            const deltaY = startY - touch.clientY; // Drag up increases bottom
-
-            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                isDragging = true;
-                if(e.cancelable) e.preventDefault();
-                
-                let newRight = initialRight + deltaX;
-                let newBottom = initialBottom + deltaY;
-                
-                const maxRight = window.innerWidth - 50;
-                const maxBottom = window.innerHeight - 50;
-                
-                newRight = Math.max(10, Math.min(newRight, maxRight));
-                newBottom = Math.max(10, Math.min(newBottom, maxBottom));
-
-                mainFab.style.right = `${newRight}px`;
-                mainFab.style.bottom = `${newBottom}px`;
+            baseRight = parseFloat(style.right) || parseFloat(DEFAULT_RIGHT);
+            baseBottom = parseFloat(style.bottom) || parseFloat(DEFAULT_BOTTOM);
+            dragging = false;
+            clearPress();
+            pressTimer = setTimeout(() => {
+                dragging = true;
+                mainFab.setPointerCapture?.(pointerId);
+                if (navigator.vibrate) navigator.vibrate(12);
+            }, LONG_PRESS_MS);
+        }, { passive: true });
+        mainFab.addEventListener('pointermove', (e) => {
+            if (pointerId !== e.pointerId) return;
+            if (!dragging) {
+                const dx = Math.abs(e.clientX - sx);
+                const dy = Math.abs(e.clientY - sy);
+                if (dx > 6 || dy > 6) clearPress();
+                return;
             }
-        }, {passive: false});
-
-        mainFab.addEventListener('touchend', (e) => {
-            if (isDragging) {
-                const pos = {
-                    right: mainFab.style.right,
-                    bottom: mainFab.style.bottom
-                };
-                localStorage.setItem('fabPosition', JSON.stringify(pos));
-            }
-        });
+            if (e.cancelable) e.preventDefault();
+            const deltaX = sx - e.clientX;
+            const deltaY = sy - e.clientY;
+            const newRight = Math.max(10, Math.min(baseRight + deltaX, window.innerWidth - 48));
+            const newBottom = Math.max(10, Math.min(baseBottom + deltaY, window.innerHeight - 48));
+            mainFab.style.right = `${Math.round(newRight)}px`;
+            mainFab.style.bottom = `${Math.round(newBottom)}px`;
+        }, { passive: false });
+        mainFab.addEventListener('pointerup', finishDrag);
+        mainFab.addEventListener('pointercancel', finishDrag);
     }
 
     // Delete All Data Menu Item
@@ -4710,6 +4732,15 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         window.resetShortcutToolbarWrapPosition?.();
         showSnackbar('已重置快捷短语工具栏位置', 'success');
     });
+    document.getElementById('settingsFabResetItem')?.addEventListener('click', () => {
+        localStorage.removeItem('fabPosition');
+        const fab = document.getElementById('mainFab');
+        if (fab) {
+            fab.style.right = '24px';
+            fab.style.bottom = '24px';
+        }
+        showSnackbar('已重置FAB位置', 'success');
+    });
     document.getElementById('settingsSuggestThresholdItem')?.addEventListener('click', () => {
         updateSettingsUI();
         const dlg = document.getElementById('suggestThresholdDialog');
@@ -5099,7 +5130,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     }
 
     const openAdd = () => {
-        openShortcutInlineAdd(currentShortcutFieldKey, '');
+        openShortcutInlineAdd(currentShortcutFieldKey, (currentInput?.value || '').toString());
     };
 
     if (shortcutEditMode) {
@@ -5405,6 +5436,8 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     if (shortcutAddDlg && !shortcutAddDlg.dataset.rsdbRestoreBound) {
         shortcutAddDlg.dataset.rsdbRestoreBound = '1';
         shortcutAddDlg.addEventListener('close', () => {
+            const dd = document.getElementById('shortcutAddAutocompleteDropdown');
+            if (dd) dd.open = false;
             const dup = document.getElementById('duplicateShortcutConfirmDialog');
             if (dup?.open) return;
             const prev = window.__rsdbShortcutAddPrevInput || null;
@@ -5426,6 +5459,12 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
             setTimeout(updateVirtualCursor, 0);
         });
     }
+    document.getElementById('shortcutAddValue')?.addEventListener('input', () => {
+        refreshShortcutAddAutocomplete();
+    });
+    document.getElementById('shortcutAddValue')?.addEventListener('focus', () => {
+        refreshShortcutAddAutocomplete();
+    });
     bindImmediateActionButton(document.getElementById('shortcutAddOkBtn'), () => {
         if (!shortcutAddContext?.fieldKey) return;
         const fieldKey = shortcutAddContext.fieldKey;
@@ -7395,6 +7434,7 @@ function startSearch() {
 		    shortcutAddContext = { fieldKey, prevInput: restoreInput };
 		    const input = document.getElementById('shortcutAddValue');
 		    if (input) input.value = (presetValue || '').toString();
+            currentInput = null;
 
 		    const list = document.getElementById('shortcutAddExistingList');
 		    if (list) {
@@ -7416,6 +7456,7 @@ function startSearch() {
 		        });
 		    }
 
+            refreshShortcutAddAutocomplete();
 		    dlg.open = true;
 		    setVirtualKeyboardVisible(false);
 		    const vc = document.getElementById('virtualCursor');
@@ -7424,6 +7465,39 @@ function startSearch() {
 		    if (vh) vh.style.display = 'none';
 		    setTimeout(() => input?.focus?.(), 0);
 		}
+
+        function refreshShortcutAddAutocomplete() {
+            const dropdown = document.getElementById('shortcutAddAutocompleteDropdown');
+            const menu = document.getElementById('shortcutAddAutocompleteMenu');
+            const input = document.getElementById('shortcutAddValue');
+            const fieldKey = shortcutAddContext?.fieldKey;
+            if (!dropdown || !menu || !input || !fieldKey) return;
+            const templates = (getTemplatesByField(fieldKey) || []).map(v => (v || '').toString().trim()).filter(Boolean);
+            const query = normalizeShortcutMatchText(input.value || '');
+            const queryCompact = normalizeShortcutMatchTextCompact(input.value || '');
+            const matched = templates
+                .filter((v) => {
+                    if (!query) return false;
+                    const t1 = normalizeShortcutMatchText(v);
+                    if (t1.includes(query)) return true;
+                    if (!queryCompact) return false;
+                    return normalizeShortcutMatchTextCompact(v).includes(queryCompact);
+                })
+                .slice(0, 10);
+            menu.innerHTML = '';
+            matched.forEach((val) => {
+                const item = document.createElement('mdui-menu-item');
+                item.textContent = val;
+                item.addEventListener('click', () => {
+                    input.value = val;
+                    dropdown.open = false;
+                    input.focus?.();
+                    input.select?.();
+                });
+                menu.appendChild(item);
+            });
+            dropdown.open = matched.length > 0;
+        }
 
 		function openShortcutActionDialog(fieldKey, index) {
 		    const templates = getTemplatesByField(fieldKey);
@@ -8017,8 +8091,10 @@ function startSearch() {
 		        const editBtn = document.createElement('div');
 		        editBtn.className = 'keyboard-key';
 		        editBtn.innerHTML = '<mdui-icon name="edit" style="font-size:22px; pointer-events:none;"></mdui-icon>';
-		        editBtn.style.height = '36px';
-		        editBtn.style.minWidth = '44px';
+		        editBtn.style.width = '34px';
+		        editBtn.style.height = '34px';
+		        editBtn.style.minWidth = '34px';
+		        editBtn.style.borderRadius = '999px';
 		        editBtn.style.display = 'flex';
 		        editBtn.style.alignItems = 'center';
 		        editBtn.style.justifyContent = 'center';
@@ -8028,8 +8104,10 @@ function startSearch() {
 		        const okBtn = document.createElement('div');
 		        okBtn.className = 'keyboard-key status-key';
 		        okBtn.innerHTML = '<mdui-icon name="check" style="font-size:22px; pointer-events:none;"></mdui-icon>';
-		        okBtn.style.height = '36px';
-		        okBtn.style.minWidth = '44px';
+		        okBtn.style.width = '34px';
+		        okBtn.style.height = '34px';
+		        okBtn.style.minWidth = '34px';
+		        okBtn.style.borderRadius = '999px';
 		        okBtn.style.display = 'flex';
 		        okBtn.style.alignItems = 'center';
 		        okBtn.style.justifyContent = 'center';
@@ -8039,8 +8117,10 @@ function startSearch() {
 		        const cancelBtn = document.createElement('div');
 		        cancelBtn.className = 'keyboard-key';
 		        cancelBtn.innerHTML = '<mdui-icon name="close" style="font-size:22px; pointer-events:none;"></mdui-icon>';
-		        cancelBtn.style.height = '36px';
-		        cancelBtn.style.minWidth = '44px';
+		        cancelBtn.style.width = '34px';
+		        cancelBtn.style.height = '34px';
+		        cancelBtn.style.minWidth = '34px';
+		        cancelBtn.style.borderRadius = '999px';
 		        cancelBtn.style.display = 'flex';
 		        cancelBtn.style.alignItems = 'center';
 		        cancelBtn.style.justifyContent = 'center';
@@ -8101,7 +8181,7 @@ function startSearch() {
 		        addKey.style.padding = '0 12px';
 		        addKey.style.height = '40px';
 		        addKey.style.borderRadius = '16px';
-		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加此字段在那个位置</span>';
+		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加输入框的文本到快捷短语</span>';
 		        addKey.addEventListener('click', () => openShortcutAddDialog(fieldKey, (currentInput?.value || '').toString()));
 		        row.appendChild(addKey);
 		        targetContainer.appendChild(row);
@@ -12681,6 +12761,7 @@ function initShortcutToolbarDrag() {
     const LONG_PRESS_MS = 280;
     let ignoreClickUntil = 0;
     let dragHintShown = false;
+    let toolbarSavedToastShown = false;
 
     // 禁用/恢复滚动的辅助函数
     const disableScroll = () => {
@@ -12782,7 +12863,10 @@ function initShortcutToolbarDrag() {
                 top: wrap.style.top
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
-            showSnackbar('工具栏位置已保存（双击编辑框可重置）', 'success');
+            if (!toolbarSavedToastShown) {
+                toolbarSavedToastShown = true;
+                showSnackbar('工具栏位置已保存（双击编辑框可重置）', 'success');
+            }
             if (navigator.vibrate) navigator.vibrate(15);
         }
 
