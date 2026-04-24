@@ -43,6 +43,105 @@ function showToast(text) {
   main_snackbar.open = true;
 }
 
+function enableFabDrag(fab, storageKey, defaultPos) {
+  if (!fab) return;
+  const { right, bottom } = defaultPos;
+  const applyPos = (pos) => {
+    if (!pos) return;
+    fab.style.right = pos.right;
+    fab.style.bottom = pos.bottom;
+  };
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      applyPos(JSON.parse(saved));
+    } catch (e) {
+      applyPos({ right, bottom });
+    }
+  } else {
+    applyPos({ right, bottom });
+  }
+
+  let pointerId = null;
+  let dragging = false;
+  let ignoreClick = false;
+  let sx = 0;
+  let sy = 0;
+  let baseRight = 0;
+  let baseBottom = 0;
+  let timer = null;
+  const LONG_PRESS_MS = 280;
+
+  const clearTimer = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+
+  fab.addEventListener("pointerdown", (e) => {
+    if (pointerId !== null) return;
+    pointerId = e.pointerId;
+    dragging = false;
+    sx = e.clientX;
+    sy = e.clientY;
+    const style = window.getComputedStyle(fab);
+    baseRight = parseFloat(style.right) || parseFloat(right);
+    baseBottom = parseFloat(style.bottom) || parseFloat(bottom);
+    clearTimer();
+    timer = setTimeout(() => {
+      dragging = true;
+      ignoreClick = true;
+      fab.setPointerCapture?.(pointerId);
+      navigator.vibrate?.(12);
+    }, LONG_PRESS_MS);
+  });
+  fab.addEventListener(
+    "pointermove",
+    (e) => {
+      if (pointerId !== e.pointerId) return;
+      if (!dragging) {
+        const dx = Math.abs(e.clientX - sx);
+        const dy = Math.abs(e.clientY - sy);
+        if (dx > 6 || dy > 6) clearTimer();
+        return;
+      }
+      if (e.cancelable) e.preventDefault();
+      const nextRight = Math.max(10, Math.min(baseRight + (sx - e.clientX), window.innerWidth - 48));
+      const nextBottom = Math.max(
+        10,
+        Math.min(baseBottom + (sy - e.clientY), window.innerHeight - 48),
+      );
+      fab.style.right = `${Math.round(nextRight)}px`;
+      fab.style.bottom = `${Math.round(nextBottom)}px`;
+    },
+    { passive: false },
+  );
+  const finish = (e) => {
+    if (pointerId !== e.pointerId) return;
+    clearTimer();
+    if (dragging) {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ right: fab.style.right || right, bottom: fab.style.bottom || bottom }),
+      );
+      showToast("已保存 FAB 位置");
+    }
+    pointerId = null;
+    dragging = false;
+  };
+  fab.addEventListener("pointerup", finish);
+  fab.addEventListener("pointercancel", finish);
+  fab.addEventListener(
+    "click",
+    (e) => {
+      if (!ignoreClick) return;
+      e.preventDefault();
+      e.stopPropagation();
+      ignoreClick = false;
+    },
+    true,
+  );
+}
+
 function setFabMode(mode) {
   main_fab_click_change = mode;
   const animateFabIcon = (fab, nextIcon) => {
@@ -323,6 +422,7 @@ activeTab = "saying";
 syncMobileNav("saying");
 initTheme();
 applyDesktopTabsInsetIfOverlapped();
+enableFabDrag(main_fab_mobile, "main_fab_mobile_pos", { right: "32px", bottom: "104px" });
 
 window.addEventListener("resize", () => {
   applyDesktopTabsInsetIfOverlapped();
