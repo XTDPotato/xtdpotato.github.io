@@ -841,23 +841,41 @@
 
 
         /* 虚拟键盘可视化编辑器：使用与实际虚拟键盘一致的自定义按键 */
+        .vk-visual-editor-body {
+            padding: 14px;
+            padding-bottom: 260px;
+            overflow-y: auto;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
         .vk-visual-panel {
-            margin-top: 10px;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 72px;
             display: grid;
-            gap: 10px;
+            gap: 0;
+            padding: 6px 0;
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 21020;
+            box-sizing: border-box;
         }
 
         .vk-visual-row {
             display: flex;
             flex-wrap: nowrap;
+            justify-content: center;
             align-items: stretch;
             gap: 0;
-            min-height: 52px;
-            padding: 6px 4px;
+            min-height: 42px;
+            padding: 0 4px;
             border: 2px solid transparent;
-            border-radius: 18px;
-            background: rgba(var(--primary-color-rgb), 0.04);
-            overflow-x: auto;
+            border-radius: 12px;
+            background: transparent;
+            overflow: visible;
         }
 
         .vk-visual-row.selected-row {
@@ -870,6 +888,11 @@
             cursor: pointer;
             user-select: none;
             touch-action: manipulation;
+            min-width: 0;
+        }
+
+        .vk-visual-key.keep-size {
+            flex: 1 1 0;
         }
 
         .vk-visual-key.selected-key {
@@ -2726,7 +2749,7 @@
             <div style="flex:1"></div>
             <mdui-button-icon icon="close" id="closeKeyboardVisualEditorBtn"></mdui-button-icon>
         </mdui-top-app-bar>
-        <div style="padding: 14px; overflow-y:auto; height:100%; box-sizing:border-box;">
+        <div class="vk-visual-editor-body">
             <mdui-select id="vkVisualLayoutSelect" variant="outlined" label="编辑布局" style="width:100%;">
                 <mdui-menu-item value="text">文本键盘</mdui-menu-item>
                 <mdui-menu-item value="textShift">大写键盘</mdui-menu-item>
@@ -9471,8 +9494,9 @@ const KeyboardConfigManager = {
         };
         const getKeyPercentSize = (keyObj) => {
             const style = (keyObj.style && typeof keyObj.style === 'object') ? keyObj.style : {};
-            const width = keyObj.keepSize ? '' : (keyObj.widthPercent || String(style.width || '').replace('%', ''));
-            const height = keyObj.keepSize ? '' : (keyObj.heightPercent || String(style.height || '').replace('%', ''));
+            const keepDefaultSize = keyObj.keepSize !== false;
+            const width = keepDefaultSize ? '' : (keyObj.widthPercent || String(style.width || '').replace('%', ''));
+            const height = keepDefaultSize ? '' : (keyObj.heightPercent || String(style.height || '').replace('%', ''));
             return { width: clampPercent(width, 1, 100), height: clampPercent(height, 1, 300) };
         };
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -9509,7 +9533,7 @@ const KeyboardConfigManager = {
             if (swipeColorInput) swipeColorInput.value = keyObj.swipeColor || '';
             if (wInput) wInput.value = size.width;
             if (hInput) hInput.value = size.height;
-            if (keepInput) keepInput.checked = !!keyObj.keepSize;
+            if (keepInput) keepInput.checked = keyObj.keepSize !== false;
         };
         const renderVisualPreview = () => {
             const preview = document.getElementById('vkVisualPreview');
@@ -9529,14 +9553,15 @@ const KeyboardConfigManager = {
                 (row || []).forEach((rawKey, cIdx) => {
                     const keyObj = getKeyObj(rawKey);
                     const keyEl = document.createElement('div');
-                    keyEl.className = `keyboard-key vk-visual-key${visualSelected.row === rIdx && visualSelected.col === cIdx ? ' selected-key' : ''}`;
+                    const keepDefaultSize = keyObj.keepSize !== false;
+                    keyEl.className = `keyboard-key vk-visual-key${keepDefaultSize ? ' keep-size' : ''}${visualSelected.row === rIdx && visualSelected.col === cIdx ? ' selected-key' : ''}`;
                     const size = getKeyPercentSize(keyObj);
-                    keyEl.style.flex = keyObj.keepSize ? (keyObj.flex ? `${keyObj.flex} 1 0` : '1 1 0') : '0 0 auto';
-                    if (!keyObj.keepSize && size.width) keyEl.style.width = `${size.width}%`;
-                    if (!keyObj.keepSize && size.height) keyEl.style.height = `${size.height}%`;
+                    keyEl.style.flex = keepDefaultSize ? (keyObj.flex ? `${keyObj.flex} 1 0` : '1 1 0') : '0 0 auto';
+                    if (!keepDefaultSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
                     if (keyObj.style && typeof keyObj.style === 'object') Object.assign(keyEl.style, keyObj.style);
-                    if (!keyObj.keepSize && size.width) keyEl.style.width = `${size.width}%`;
-                    if (!keyObj.keepSize && size.height) keyEl.style.height = `${size.height}%`;
+                    if (!keepDefaultSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
                     const displayLabel = keyObj.label || keyObj.key || '(空)';
                     const swipeSymbol = getVisualSwipeSymbol(keyObj);
                     if (swipeSymbol) {
