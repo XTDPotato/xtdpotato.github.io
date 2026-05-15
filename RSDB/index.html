@@ -839,6 +839,135 @@
 		    background: rgba(76, 175, 80, 0.16);
 		}
 
+
+        /* 虚拟键盘可视化编辑器：使用与实际虚拟键盘一致的自定义按键 */
+        .vk-visual-editor-body {
+            padding: 14px;
+            padding-bottom: 260px;
+            overflow-y: auto;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .vk-visual-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 72px;
+            display: grid;
+            gap: 0;
+            padding: 6px 0;
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 21020;
+            box-sizing: border-box;
+        }
+
+        .vk-visual-row {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: stretch;
+            gap: 0;
+            min-height: 42px;
+            padding: 0 4px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: transparent;
+            overflow: visible;
+        }
+
+        .vk-visual-row.selected-row {
+            border-color: var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.12);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+        }
+
+        .vk-visual-key {
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            min-width: 0;
+        }
+
+        .vk-visual-key.keep-size {
+            flex: 1 1 0;
+        }
+
+        .vk-visual-panel.keyboard-hidden {
+            display: none;
+        }
+
+        .vk-visual-selected-info {
+            margin-right: auto;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            opacity: 0.78;
+            max-width: 42vw;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .vk-visual-key.selected-key {
+            outline: 3px solid var(--primary-color);
+            outline-offset: -3px;
+            border-radius: 18px;
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.18);
+        }
+
+        .vk-visual-key.selected-key::before {
+            border: 2px solid var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.18);
+        }
+
+        .vk-visual-tool-btn {
+            min-height: 38px;
+            padding: 0 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font: inherit;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+        }
+
+        .vk-visual-tool-btn.primary {
+            border-color: rgba(var(--primary-color-rgb), 0.45);
+            background: rgba(var(--primary-color-rgb), 0.12);
+            color: var(--primary-color);
+        }
+
+        .vk-visual-tool-btn.danger {
+            border-color: rgba(244, 67, 54, 0.45);
+            background: rgba(244, 67, 54, 0.10);
+            color: #f44336;
+        }
+
+        .vk-visual-tool-btn:active {
+            transform: translateY(1px);
+        }
+
+        .vk-program-var-row {
+            display: grid;
+            grid-template-columns: minmax(120px, 0.8fr) minmax(220px, 2fr) 36px;
+            gap: 8px;
+            align-items: start;
+        }
+
+        @media (max-width: 720px) {
+            .vk-program-var-row {
+                grid-template-columns: 1fr 36px;
+            }
+            .vk-program-var-row .vk-program-code {
+                grid-column: 1 / -1;
+                order: 3;
+            }
+        }
+
 		#keyboardSettingsModal {
 		    z-index: 20000;
 		}
@@ -2233,7 +2362,8 @@
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>快捷短语</mdui-list-subheader>
                 <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="快捷短语设置" description="编辑各字段快捷短语与布局"></mdui-list-item>
-                <mdui-list-item id="settingsKeyboardVisualEditorItem" icon="view_quilt" headline="虚拟键盘可视化编辑器" description="编辑键位/变量/大小与位置"></mdui-list-item>
+                <mdui-list-item id="settingsKeyboardVisualEditorItem" icon="view_quilt" headline="虚拟键盘可视化编辑器" description="编辑键位/大小与位置"></mdui-list-item>
+                <mdui-list-item id="settingsDynamicVariablesItem" icon="data_object" headline="自定义变量（可编程）" description="搜索、测试、编辑和批量删除变量"></mdui-list-item>
                 <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
                 <mdui-list-item id="settingsShortcutToolbarResetItem" icon="restart_alt" headline="重置快捷短语工具栏位置" description="拖到屏幕外点不到时，可用此项重置"></mdui-list-item>
                 <mdui-list-item id="settingsFabPositionItem" icon="open_with" headline="自定义FAB位置" description="X/Y滑块实时预览"></mdui-list-item>
@@ -2635,7 +2765,8 @@
             <div style="flex:1"></div>
             <mdui-button-icon icon="close" id="closeKeyboardVisualEditorBtn"></mdui-button-icon>
         </mdui-top-app-bar>
-        <div style="padding: 14px; overflow-y:auto; height:100%; box-sizing:border-box;">
+        <div class="vk-visual-editor-body">
+            <div id="vkVisualSelectedInfo" class="vk-visual-selected-info" style="max-width:none;margin:0 0 8px 0;">未选择</div>
             <mdui-select id="vkVisualLayoutSelect" variant="outlined" label="编辑布局" style="width:100%;">
                 <mdui-menu-item value="text">文本键盘</mdui-menu-item>
                 <mdui-menu-item value="textShift">大写键盘</mdui-menu-item>
@@ -2644,31 +2775,59 @@
                 <mdui-menu-item value="position">位置键盘</mdui-menu-item>
                 <mdui-menu-item value="symbol">符号键盘</mdui-menu-item>
             </mdui-select>
-            <div id="vkVisualPreview" style="margin-top:10px;display:grid;gap:8px;"></div>
+            <div id="vkVisualPreview" class="vk-visual-panel"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-                <mdui-button variant="tonal" id="vkVisualAddKeyBtn" icon="add">新增按键</mdui-button>
-                <mdui-button variant="tonal" id="vkVisualAddRowBtn" icon="playlist_add">新增一行</mdui-button>
-                <mdui-button variant="outlined" color="error" id="vkVisualDeleteKeyBtn" icon="delete">删除选中键</mdui-button>
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddKeyBtn">＋ 新增按键</button>
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddRowBtn">＋ 新增一行</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteKeyBtn">删除选中键</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteRowBtn">删除选中行</button>
             </div>
             <div style="margin-top:10px;display:grid;gap:8px;">
                 <mdui-text-field id="vkVisualKeyValueInput" label="键值(key)" variant="outlined"></mdui-text-field>
                 <mdui-text-field id="vkVisualKeyLabelInput" label="显示文本(label，可空)" variant="outlined"></mdui-text-field>
-                <mdui-slider id="vkVisualKeyFlexSlider" min="1" max="4" step="1"></mdui-slider>
-                <div style="font-size:0.85rem;color:#757575;">键宽（flex）</div>
+                <mdui-text-field id="vkVisualKeyFlexInput" label="键宽 flex（不改变长宽时可编辑）" variant="outlined" type="number" min="0.2" max="12" step="0.1"></mdui-text-field>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeySwipeInput" label="上滑输入符号(swipe)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeLabelInput" label="上滑显示文本(可空)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeColorInput" label="上滑颜色(可空)" variant="outlined" placeholder="#4caf50"></mdui-text-field>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeyWidthInput" label="宽度百分比(%)" variant="outlined" type="number" min="1" max="100"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeyHeightInput" label="高度百分比(%)" variant="outlined" type="number" min="1" max="300"></mdui-text-field>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.95rem;">
+                    <input type="checkbox" id="vkVisualKeyKeepSizeInput">
+                    不改变长宽（跟随虚拟键盘默认尺寸）
+                </label>
+                <div style="font-size:0.85rem;color:#757575;">选中行会显示外框高亮；选中按键会显示主色高亮。宽高百分比会写入按键 style。</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <mdui-button variant="text" id="vkVisualMoveLeftBtn">左移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveRightBtn">右移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveUpBtn">上移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveDownBtn">下移</mdui-button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveLeftBtn">左移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveRightBtn">右移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveUpBtn">上移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveDownBtn">下移</button>
                 </div>
             </div>
-            <mdui-divider style="margin:14px 0;"></mdui-divider>
-            <div style="font-weight:500;">自定义变量（动态）</div>
-            <div id="dynamicVarListVisual" style="display:grid;gap:10px;margin-top:8px;"></div>
-            <mdui-button variant="tonal" id="addDynamicVarBtnVisual" icon="add" style="margin-top:8px;">新增变量</mdui-button>
+            <div id="dynamicVarListVisual" style="display:none;"></div>
         </div>
+        <mdui-button slot="action" variant="text" id="vkVisualResetCurrentBtn" color="error">重置当前键盘为默认</mdui-button>
+        <mdui-button slot="action" variant="tonal" id="vkVisualToggleKeyboardBtn">关闭键盘</mdui-button>
         <mdui-button slot="action" variant="text" id="keyboardVisualCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="keyboardVisualSaveBtn">保存并应用</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="dynamicVariablesDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header"><mdui-top-app-bar-title>自定义变量（可编程）</mdui-top-app-bar-title><div style="flex:1"></div><mdui-button-icon icon="close" id="closeDynamicVariablesBtn"></mdui-button-icon></mdui-top-app-bar>
+        <div style="padding:14px;overflow-y:auto;height:100%;box-sizing:border-box;">
+            <mdui-text-field id="dynamicVarSearchInput" label="搜索变量" variant="outlined" clearable style="width:100%;"></mdui-text-field>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;"><mdui-checkbox id="dynamicVarSelectAllCheckbox">全选</mdui-checkbox><button type="button" class="vk-visual-tool-btn primary" id="dynamicVarAddBtn">＋ 新增变量</button><button type="button" class="vk-visual-tool-btn danger" id="dynamicVarDeleteSelectedBtn">删除选中</button></div>
+            <div id="dynamicVarManageList" style="display:grid;gap:10px;margin-top:12px;"></div>
+        </div>
+        <mdui-button slot="action" variant="text" id="dynamicVariablesCancelBtn">关闭</mdui-button><mdui-button slot="action" variant="filled" id="dynamicVariablesSaveBtn">保存并应用</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="dynamicVarEditDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header"><mdui-top-app-bar-title id="dynamicVarEditTitle">编辑变量</mdui-top-app-bar-title><div style="flex:1"></div><mdui-button-icon icon="close" id="dynamicVarEditCloseBtn"></mdui-button-icon></mdui-top-app-bar>
+        <div style="padding:14px;display:grid;gap:10px;"><mdui-text-field id="dynamicVarEditName" label="变量名" variant="outlined"></mdui-text-field><mdui-text-field id="dynamicVarEditCode" label="变量程序" variant="outlined" type="textarea" rows="14"></mdui-text-field><div id="dynamicVarTestResult" style="font-size:0.9rem;color:#757575;white-space:pre-wrap;"></div></div>
+        <mdui-button slot="action" variant="text" id="dynamicVarEditCancelBtn">取消</mdui-button><mdui-button slot="action" variant="tonal" id="dynamicVarTestBtn">测试校验</mdui-button><mdui-button slot="action" variant="filled" id="dynamicVarEditSaveBtn">保存变量</mdui-button>
     </mdui-dialog>
 
 	<script>
@@ -3216,7 +3375,12 @@
 		        keyboardSizeItem.setAttribute('description', `高度 ${hText}，底部 ${bText}`);
 		    }
             const vkVisualItem = document.getElementById('settingsKeyboardVisualEditorItem');
-            if (vkVisualItem) vkVisualItem.setAttribute('description', '可视化编辑键位并管理动态变量');
+            if (vkVisualItem) vkVisualItem.setAttribute('description', '可视化编辑键位、大小与位置');
+            const dynamicVarsItem = document.getElementById('settingsDynamicVariablesItem');
+            if (dynamicVarsItem) {
+                const count = Array.isArray(KeyboardConfigManager?.config?.dynamicVariables) ? KeyboardConfigManager.config.dynamicVariables.length : 0;
+                dynamicVarsItem.setAttribute('description', `${count} 个变量，可搜索/测试/批量删除`);
+            }
             const tableViewItem = document.getElementById('settingsTableViewItem');
             if (tableViewItem) {
                 const s = Number(appSettings.tableScaleDefault) || 0.5;
@@ -3882,13 +4046,6 @@ function openCompareEditDialog(suggestedFields) {
         newInput.style.width = '100%';
         newInput.style.boxSizing = 'border-box';
 
-        newInput.addEventListener('dblclick', () => {
-            newInput.removeAttribute('readonly');
-            newInput.classList.remove('readonly-input');
-            newInput.focus();
-            setVirtualKeyboardVisible(false);
-        });
-
         newInput.addEventListener('click', (e) => {
             e.stopPropagation();
             currentInput = newInput;
@@ -4285,7 +4442,7 @@ function initEventListeners() {
         });
     }
 
-    // FAB Draggable Logic & Reset（长按拖动，兼容触摸与鼠标）
+    // FAB Draggable Logic & Reset（长按进入拖动模式，再次长按保存位置）
     const mainFab = document.getElementById('mainFab');
     if (mainFab) {
         const DEFAULT_RIGHT = '24px';
@@ -4306,11 +4463,12 @@ function initEventListeners() {
         }
 
         let pointerId = null;
+        let fabMoveMode = false;
         let dragging = false;
         let sx = 0, sy = 0;
         let baseRight = 0, baseBottom = 0;
         let pressTimer = null;
-        const LONG_PRESS_MS = 280;
+        const LONG_PRESS_MS = 420;
         let scrollGuardUntil = 0;
         window.addEventListener('scroll', () => { scrollGuardUntil = Date.now() + 180; }, { passive: true });
 
@@ -4318,17 +4476,20 @@ function initEventListeners() {
             if (pressTimer) clearTimeout(pressTimer);
             pressTimer = null;
         };
+        const saveFabPosition = () => {
+            localStorage.setItem('fabPosition', JSON.stringify({
+                right: mainFab.style.right || DEFAULT_RIGHT,
+                bottom: mainFab.style.bottom || DEFAULT_BOTTOM
+            }));
+            fabMoveMode = false;
+            dragging = false;
+            showSnackbar('已保存FAB位置', 'success');
+        };
 
         const finishDrag = (e) => {
             if (pointerId !== e.pointerId) return;
             clearPress();
-            if (dragging) {
-                localStorage.setItem('fabPosition', JSON.stringify({
-                    right: mainFab.style.right || DEFAULT_RIGHT,
-                    bottom: mainFab.style.bottom || DEFAULT_BOTTOM
-                }));
-                showSnackbar('已保存FAB位置', 'success');
-            }
+            if (dragging && fabMoveMode) showSnackbar('FAB位置已移动，再次长按FAB保存位置', 'info');
             dragging = false;
             pointerId = null;
         };
@@ -4345,18 +4506,34 @@ function initEventListeners() {
             dragging = false;
             clearPress();
             pressTimer = setTimeout(() => {
+                if (fabMoveMode) {
+                    saveFabPosition();
+                    return;
+                }
+                fabMoveMode = true;
                 dragging = true;
                 mainFab.setPointerCapture?.(pointerId);
+                showSnackbar('已进入FAB拖动模式，拖动后再次长按保存位置', 'info');
                 if (navigator.vibrate) navigator.vibrate(12);
             }, LONG_PRESS_MS);
         }, { passive: true });
         mainFab.addEventListener('pointermove', (e) => {
             if (pointerId !== e.pointerId) return;
-            if (!dragging) {
+            if (!fabMoveMode && !dragging) {
                 const dx = Math.abs(e.clientX - sx);
                 const dy = Math.abs(e.clientY - sy);
                 if (dx > 12 || dy > 12) clearPress();
                 return;
+            }
+            if (fabMoveMode && !dragging) {
+                const dx = Math.abs(e.clientX - sx);
+                const dy = Math.abs(e.clientY - sy);
+                if (dx > 4 || dy > 4) {
+                    clearPress();
+                    dragging = true;
+                } else {
+                    return;
+                }
             }
             if (e.cancelable) e.preventDefault();
             const deltaX = sx - e.clientX;
@@ -5386,7 +5563,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     }
 
     const openAdd = () => {
-        openShortcutInlineAdd(currentShortcutFieldKey, (currentInput?.value || '').toString());
+        openShortcutAddDialog(currentShortcutFieldKey, (currentInput?.value || '').toString());
     };
 
     if (shortcutEditMode) {
@@ -5666,7 +5843,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     });
     document.getElementById('shortcutActionAddBtn')?.addEventListener('click', () => {
         if (!shortcutActionContext?.fieldKey) return;
-        openShortcutInlineAdd(shortcutActionContext.fieldKey, '');
+        openShortcutAddDialog(shortcutActionContext.fieldKey, '');
     });
     document.getElementById('shortcutSaveBtn')?.addEventListener('click', () => {
         if (!shortcutActionContext) return;
@@ -8559,7 +8736,13 @@ function startSearch() {
 		        addKey.style.height = '40px';
 		        addKey.style.borderRadius = '16px';
 		        addKey.innerHTML = '<mdui-icon name="add" style="font-size:20px; pointer-events:none;"></mdui-icon><span style="white-space:nowrap; pointer-events:none;">添加输入框的文本到快捷短语</span>';
-		        addKey.addEventListener('click', () => openShortcutAddDialog(fieldKey, (currentInput?.value || '').toString()));
+		        addKey.addEventListener('click', () => {
+                    const val = (currentInput?.value || '').toString().trim();
+                    if (!val) return openShortcutAddDialog(fieldKey, '');
+                    addShortcutTemplate(fieldKey, val);
+                    showSnackbar('已添加输入框内容到快捷短语', 'success');
+                    refreshShortcutKeysForCurrentInput();
+                });
 		        row.appendChild(addKey);
 		        targetContainer.appendChild(row);
 		        return;
@@ -8730,7 +8913,7 @@ function startSearch() {
 // 默认配置
 const DEFAULT_KEYBOARD_CONFIG = {
   "customVariables": {},
-  "dynamicVariables": {},
+  "dynamicVariables": [],
   "furnaceIdTemplates": [
     "265001649",
     "25C06550",
@@ -9224,6 +9407,7 @@ const KeyboardConfigManager = {
     bindEvents() {
         const openBtn = document.getElementById('settingsKeyboardItem');
         const openVisualSettingBtn = document.getElementById('settingsKeyboardVisualEditorItem');
+        const openDynamicVariablesSettingBtn = document.getElementById('settingsDynamicVariablesItem');
         const modal = document.getElementById('keyboardSettingsModal');
         const closeBtn = document.getElementById('closeKeyboardSettingsModal');
         const cancelBtn = document.getElementById('cancelKeyboardConfigBtn');
@@ -9236,6 +9420,12 @@ const KeyboardConfigManager = {
         const closeVisualBtn = document.getElementById('closeKeyboardVisualEditorBtn');
         const cancelVisualBtn = document.getElementById('keyboardVisualCancelBtn');
         const saveVisualBtn = document.getElementById('keyboardVisualSaveBtn');
+        const resetCurrentVisualBtn = document.getElementById('vkVisualResetCurrentBtn');
+        const toggleVisualKeyboardBtn = document.getElementById('vkVisualToggleKeyboardBtn');
+        const visualSelectedInfo = document.getElementById('vkVisualSelectedInfo');
+        const dynamicVariablesDialog = document.getElementById('dynamicVariablesDialog');
+        const dynamicVarManageList = document.getElementById('dynamicVarManageList');
+        let dynamicVarEditIndex = -1;
         
         const inputs = {
             furnaceId: document.getElementById('furnaceIdConfigInput'),
@@ -9247,44 +9437,36 @@ const KeyboardConfigManager = {
             advancedJson: document.getElementById('advancedJsonConfigInput')
         };
 
+        const dynamicVarToProgram = (item = {}) => {
+            if (item.code || item.program) return item.code || item.program;
+            const kind = (item.kind || 'date').toString();
+            const fmt = (item.format || '').toString();
+            const offsetDays = Number.isFinite(Number(item.offsetDays)) ? Math.round(Number(item.offsetDays)) : 0;
+            if (kind === 'isoWeek') return `int week = isoWeek();\nreturn ${JSON.stringify(fmt === 'W' ? 'RAW_WEEK' : 'PAD_WEEK')}.replace('RAW_WEEK', week).replace('PAD_WEEK', pad2(week));`;
+            if (kind === 'month') return `int month = now.getMonth() + 1;\nreturn ${fmt === 'MM' ? 'pad2(month)' : 'month'};`;
+            if (kind === 'day') return `int day = now.getDate();\nreturn ${fmt === 'DD' ? 'pad2(day)' : 'day'};`;
+            if (kind === 'year') return `int year = now.getFullYear();\nreturn ${fmt === 'YYYY' ? 'year' : 'String(year).slice(2)'};`;
+            if (kind === 'weekStart') return `return formatDate(addDays(weekStart(), ${offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+            if (kind === 'weekEnd') return `return formatDate(addDays(weekStart(), ${6 + offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+            return `return formatDate(addDays(today(), ${offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+        };
+
         const createDynamicVarRow = (item = {}) => {
             const row = document.createElement('div');
-            row.style.display = 'grid';
-            row.style.gridTemplateColumns = '1.1fr 1.2fr 1fr 0.9fr 36px';
-            row.style.gap = '8px';
-            row.style.alignItems = 'center';
+            row.className = 'vk-program-var-row';
 
             const name = document.createElement('mdui-text-field');
             name.setAttribute('label', '变量名');
             name.setAttribute('variant', 'outlined');
             name.value = item.name || '';
 
-            const kind = document.createElement('mdui-select');
-            kind.setAttribute('variant', 'outlined');
-            kind.setAttribute('placement', 'bottom');
-            kind.setAttribute('value', item.kind || 'date');
-            kind.value = item.kind || 'date';
-            kind.style.width = '100%';
-            kind.innerHTML = [
-                '<mdui-menu-item value="date">日期变量（今天 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="weekStart">周起始变量（本周一 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="weekEnd">周结束变量（本周日 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="isoWeek">周序号变量（ISO 周）</mdui-menu-item>',
-                '<mdui-menu-item value="month">月份变量（当前月）</mdui-menu-item>',
-                '<mdui-menu-item value="day">日变量（当前日期）</mdui-menu-item>',
-                '<mdui-menu-item value="year">年份变量（当前年份）</mdui-menu-item>'
-            ].join('');
-
-            const format = document.createElement('mdui-text-field');
-            format.setAttribute('label', '格式');
-            format.setAttribute('variant', 'outlined');
-            format.value = item.format || '';
-
-            const offset = document.createElement('mdui-text-field');
-            offset.setAttribute('label', '偏移(天)');
-            offset.setAttribute('variant', 'outlined');
-            offset.setAttribute('type', 'number');
-            offset.value = item.offsetDays != null ? String(item.offsetDays) : '0';
+            const code = document.createElement('mdui-text-field');
+            code.className = 'vk-program-code';
+            code.setAttribute('label', '变量程序（类似 C / JS，return 返回值）');
+            code.setAttribute('variant', 'outlined');
+            code.setAttribute('type', 'textarea');
+            code.setAttribute('rows', '3');
+            code.value = item.code || item.program || dynamicVarToProgram(item);
 
             const del = document.createElement('mdui-button-icon');
             del.setAttribute('icon', 'delete');
@@ -9292,9 +9474,7 @@ const KeyboardConfigManager = {
             del.addEventListener('click', () => row.remove());
 
             row.appendChild(name);
-            row.appendChild(kind);
-            row.appendChild(format);
-            row.appendChild(offset);
+            row.appendChild(code);
             row.appendChild(del);
             return row;
         };
@@ -9305,8 +9485,8 @@ const KeyboardConfigManager = {
             const vars = Array.isArray(this.config.dynamicVariables) ? this.config.dynamicVariables : [];
             if (vars.length === 0) {
                 const defaults = [
-                    { name: '本周', kind: 'isoWeek', format: 'WW', offsetDays: 0 },
-                    { name: '本周一', kind: 'weekStart', format: 'YYYYMMDD', offsetDays: 0 }
+                    { name: '本周', code: 'int week = isoWeek();\nreturn pad2(week);' },
+                    { name: '本周一', code: 'return formatDate(addDays(weekStart(), 0), "YYYYMMDD");' }
                 ];
                 defaults.forEach(v => targetEl.appendChild(createDynamicVarRow(v)));
                 return;
@@ -9318,14 +9498,57 @@ const KeyboardConfigManager = {
             if (!targetEl) return [];
             const rows = Array.from(targetEl.children);
             return rows.map(r => {
-                const items = r.querySelectorAll('mdui-text-field, mdui-select');
+                const items = r.querySelectorAll('mdui-text-field');
                 const name = items[0]?.value?.trim?.() || '';
-                const kind = items[1]?.value || 'date';
-                const format = items[2]?.value?.trim?.() || '';
-                const offsetDaysRaw = Number(items[3]?.value);
-                const offsetDays = Number.isFinite(offsetDaysRaw) ? Math.max(-3660, Math.min(3660, Math.round(offsetDaysRaw))) : 0;
-                return { name, kind, format, offsetDays };
-            }).filter(v => v.name);
+                const code = items[1]?.value?.trim?.() || '';
+                return { name, code };
+            }).filter(v => v.name && v.code);
+        };
+
+        const getDynamicVariables = () => {
+            if (!Array.isArray(this.config.dynamicVariables)) this.config.dynamicVariables = [];
+            return this.config.dynamicVariables;
+        };
+        const renderDynamicVarManager = () => {
+            if (!dynamicVarManageList) return;
+            const query = (document.getElementById('dynamicVarSearchInput')?.value || '').toLowerCase();
+            dynamicVarManageList.innerHTML = '';
+            getDynamicVariables().forEach((v, i) => {
+                const code = v.code || v.program || dynamicVarToProgram(v);
+                const text = `${v.name || ''}
+${code}`;
+                if (query && !text.toLowerCase().includes(query)) return;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:grid;grid-template-columns:36px 1fr auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--border-color);border-radius:12px;background:var(--background-color);';
+                row.innerHTML = `<mdui-checkbox class="dynamic-var-check" data-index="${i}"></mdui-checkbox><div><b>${escapeHtml(v.name || '(未命名)')}</b><div style="font-size:.82rem;color:#757575;white-space:pre-wrap;max-height:4em;overflow:hidden;">${escapeHtml(code)}</div></div>`;
+                const edit = document.createElement('mdui-button-icon'); edit.setAttribute('icon','edit'); edit.title='全屏编辑';
+                edit.addEventListener('click', () => openDynamicVarEdit(i));
+                const del = document.createElement('mdui-button-icon'); del.setAttribute('icon','delete');
+                del.addEventListener('click', () => { if (confirm(`确定删除变量？\n\n${v.name || '(未命名)'}\n${code}`)) { getDynamicVariables().splice(i,1); renderDynamicVarManager(); } });
+                row.appendChild(edit); row.appendChild(del); dynamicVarManageList.appendChild(row);
+            });
+        };
+        const openDynamicVarEdit = (index = -1) => {
+            dynamicVarEditIndex = index;
+            const v = index >= 0 ? getDynamicVariables()[index] : { name:'', code:'int i = 0;\ni++;\nreturn i;' };
+            document.getElementById('dynamicVarEditName').value = v.name || '';
+            document.getElementById('dynamicVarEditCode').value = v.code || v.program || dynamicVarToProgram(v);
+            document.getElementById('dynamicVarTestResult').textContent = '';
+            document.getElementById('dynamicVarEditTitle').textContent = index >= 0 ? '编辑变量' : '新增变量';
+            document.getElementById('dynamicVarEditDialog').open = true;
+        };
+        const testDynamicVarCode = () => {
+            const code = document.getElementById('dynamicVarEditCode')?.value || '';
+            try {
+                const fn = new Function('now','pad2', `"use strict";
+${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsigned|signed)\s+/g, 'let ')}`);
+                const out = fn(new Date(), n => String(n).padStart(2,'0'));
+                document.getElementById('dynamicVarTestResult').textContent = `校验通过：${out ?? ''}`;
+                showSnackbar('变量校验通过', 'success');
+            } catch (e) {
+                document.getElementById('dynamicVarTestResult').textContent = `校验失败：${e.message}`;
+                showSnackbar('变量校验失败', 'error');
+            }
         };
 
         const updateInputsFromConfig = () => {
@@ -9358,11 +9581,79 @@ const KeyboardConfigManager = {
         [closeBtn, cancelBtn].forEach(btn => btn?.addEventListener('click', closeModal));
         addDynamicVarBtnVisual?.addEventListener('click', () => {
             if (!dynamicVarListVisual) return;
-            dynamicVarListVisual.appendChild(createDynamicVarRow({ name: '', kind: 'date', format: 'YYYYMMDD', offsetDays: 0 }));
+            dynamicVarListVisual.appendChild(createDynamicVarRow({ name: '', code: 'int i = 0;\ni++;\nreturn i;' }));
         });
+
+        openDynamicVariablesSettingBtn?.addEventListener('click', () => { dom.drawer.open = false; renderDynamicVarManager(); if (dynamicVariablesDialog) dynamicVariablesDialog.open = true; });
+        document.getElementById('closeDynamicVariablesBtn')?.addEventListener('click', () => { if (dynamicVariablesDialog) dynamicVariablesDialog.open = false; });
+        document.getElementById('dynamicVariablesCancelBtn')?.addEventListener('click', () => { if (dynamicVariablesDialog) dynamicVariablesDialog.open = false; });
+        document.getElementById('dynamicVarSearchInput')?.addEventListener('input', renderDynamicVarManager);
+        document.getElementById('dynamicVarSelectAllCheckbox')?.addEventListener('change', (e) => dynamicVarManageList?.querySelectorAll('.dynamic-var-check').forEach(cb => cb.checked = !!e.target.checked));
+        document.getElementById('dynamicVarAddBtn')?.addEventListener('click', () => openDynamicVarEdit(-1));
+        document.getElementById('dynamicVarDeleteSelectedBtn')?.addEventListener('click', () => {
+            const selected = Array.from(dynamicVarManageList?.querySelectorAll('.dynamic-var-check') || []).filter(cb => cb.checked).map(cb => Number(cb.dataset.index)).sort((a,b)=>b-a);
+            if (!selected.length) return showSnackbar('请先选择要删除的变量', 'warning');
+            if (!confirm(`确定删除选中的 ${selected.length} 个变量吗？`)) return;
+            selected.forEach(i => getDynamicVariables().splice(i, 1)); renderDynamicVarManager(); showSnackbar(`已删除 ${selected.length} 个变量`, 'success');
+        });
+        document.getElementById('dynamicVarEditCloseBtn')?.addEventListener('click', () => document.getElementById('dynamicVarEditDialog').open = false);
+        document.getElementById('dynamicVarEditCancelBtn')?.addEventListener('click', () => document.getElementById('dynamicVarEditDialog').open = false);
+        document.getElementById('dynamicVarTestBtn')?.addEventListener('click', testDynamicVarCode);
+        document.getElementById('dynamicVarEditSaveBtn')?.addEventListener('click', () => {
+            const name = document.getElementById('dynamicVarEditName')?.value?.trim?.() || '';
+            const code = document.getElementById('dynamicVarEditCode')?.value?.trim?.() || '';
+            if (!name || !code) return showSnackbar('变量名和程序不能为空', 'warning');
+            if (dynamicVarEditIndex >= 0) getDynamicVariables()[dynamicVarEditIndex] = { name, code }; else getDynamicVariables().push({ name, code });
+            document.getElementById('dynamicVarEditDialog').open = false; renderDynamicVarManager();
+        });
+        bindImmediateActionButton(document.getElementById('dynamicVariablesSaveBtn'), () => { this.save(); if (dynamicVariablesDialog) dynamicVariablesDialog.open = false; });
 
         let visualLayoutKey = 'text';
         let visualSelected = { row: -1, col: -1 };
+        let visualKeyboardVisible = true;
+        const cloneKeyboardLayout = (layout) => JSON.parse(JSON.stringify(layout || [[]]));
+        const getVisualSelectedKeyObj = () => {
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return null;
+            return getKeyObj(rows[row][col]);
+        };
+        const getVisualSelectedText = () => {
+            const { row, col } = visualSelected;
+            if (row < 0) return '未选择';
+            if (col < 0) return `已选中：第 ${row + 1} 行`;
+            const keyObj = getVisualSelectedKeyObj();
+            const keyText = keyObj ? (keyObj.label || keyObj.key || '(空)') : '(空)';
+            const swipeText = keyObj && (keyObj.swipe || getVisualSwipeSymbol(keyObj));
+            return `已选中：第 ${row + 1} 行 / 第 ${col + 1} 键：${keyText}${swipeText ? `（上滑：${swipeText}）` : ''}`;
+        };
+        const updateVisualKeyboardState = () => {
+            const preview = document.getElementById('vkVisualPreview');
+            if (preview) preview.classList.toggle('keyboard-hidden', !visualKeyboardVisible);
+            if (toggleVisualKeyboardBtn) toggleVisualKeyboardBtn.textContent = visualKeyboardVisible ? '关闭键盘' : '打开键盘';
+            if (visualSelectedInfo) visualSelectedInfo.textContent = getVisualSelectedText();
+        };
+        const focusVisualEditControls = () => {
+            const target = document.getElementById('vkVisualKeyValueInput') || document.getElementById('vkVisualLayoutSelect');
+            target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            target?.focus?.();
+        };
+        const bindVisualLongPress = (el, onLongPress) => {
+            let timer = null;
+            const clearTimer = () => {
+                if (timer) clearTimeout(timer);
+                timer = null;
+            };
+            el.addEventListener('pointerdown', (e) => {
+                el.__visualLongPressed = false;
+                clearTimer();
+                timer = setTimeout(() => {
+                    el.__visualLongPressed = true;
+                    onLongPress(e);
+                }, 560);
+            }, { passive: true });
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => el.addEventListener(type, clearTimer, { passive: true }));
+        };
         const getLayoutRows = () => {
             if (!this.config.layouts[visualLayoutKey]) this.config.layouts[visualLayoutKey] = [[]];
             return this.config.layouts[visualLayoutKey];
@@ -9371,44 +9662,169 @@ const KeyboardConfigManager = {
             if (typeof key === 'object' && key) return { ...key };
             return { key: String(key ?? '') };
         };
+        const clampPercent = (value, min, max, fallback = '') => {
+            if (value === '' || value == null) return fallback;
+            const num = Number(value);
+            if (!Number.isFinite(num)) return fallback;
+            return String(Math.max(min, Math.min(max, Math.round(num))));
+        };
+        const getKeyPercentSize = (keyObj) => {
+            const style = (keyObj.style && typeof keyObj.style === 'object') ? keyObj.style : {};
+            const keepDefaultSize = keyObj.keepSize !== false;
+            const width = keepDefaultSize ? '' : (keyObj.widthPercent || String(style.width || '').replace('%', ''));
+            const height = keepDefaultSize ? '' : (keyObj.heightPercent || String(style.height || '').replace('%', ''));
+            return { width: clampPercent(width, 1, 100), height: clampPercent(height, 1, 300) };
+        };
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        const getVisualSwipeSymbol = (keyObj) => {
+            const key = String(keyObj.key || '');
+            const lowerKey = key.toLowerCase();
+            return keyObj.swipe || KeyboardConfigManager.config.symbolMap?.[lowerKey] || '';
+        };
+        const syncVisualInputs = (keyObj = null) => {
+            const vInput = document.getElementById('vkVisualKeyValueInput');
+            const lInput = document.getElementById('vkVisualKeyLabelInput');
+            const flexInput = document.getElementById('vkVisualKeyFlexInput');
+            const swipeInput = document.getElementById('vkVisualKeySwipeInput');
+            const swipeLabelInput = document.getElementById('vkVisualKeySwipeLabelInput');
+            const swipeColorInput = document.getElementById('vkVisualKeySwipeColorInput');
+            const wInput = document.getElementById('vkVisualKeyWidthInput');
+            const hInput = document.getElementById('vkVisualKeyHeightInput');
+            const keepInput = document.getElementById('vkVisualKeyKeepSizeInput');
+            if (!keyObj) {
+                if (vInput) vInput.value = '';
+                if (lInput) lInput.value = '';
+                if (flexInput) flexInput.value = '';
+                if (swipeInput) swipeInput.value = '';
+                if (swipeLabelInput) swipeLabelInput.value = '';
+                if (swipeColorInput) swipeColorInput.value = '';
+                if (wInput) wInput.value = '';
+                if (hInput) hInput.value = '';
+                if (keepInput) keepInput.checked = false;
+                return;
+            }
+            const size = getKeyPercentSize(keyObj);
+            if (vInput) vInput.value = keyObj.key || '';
+            if (lInput) lInput.value = keyObj.label || '';
+            if (flexInput) flexInput.value = keyObj.flex != null ? String(keyObj.flex) : '';
+            if (swipeInput) swipeInput.value = getVisualSwipeSymbol(keyObj);
+            if (swipeLabelInput) swipeLabelInput.value = keyObj.swipeLabel || '';
+            if (swipeColorInput) swipeColorInput.value = keyObj.swipeColor || '';
+            if (wInput) wInput.value = size.width;
+            if (hInput) hInput.value = size.height;
+            if (keepInput) keepInput.checked = keyObj.keepSize !== false;
+        };
         const renderVisualPreview = () => {
             const preview = document.getElementById('vkVisualPreview');
             if (!preview) return;
             preview.innerHTML = '';
+            preview.classList.toggle('keyboard-hidden', !visualKeyboardVisible);
             const rows = getLayoutRows();
+            if (!rows.length) rows.push([]);
             rows.forEach((row, rIdx) => {
                 const rowEl = document.createElement('div');
-                rowEl.style.display = 'grid';
-                rowEl.style.gridTemplateColumns = 'repeat(12, minmax(0,1fr))';
-                rowEl.style.gap = '6px';
+                rowEl.className = `vk-visual-row${visualSelected.row === rIdx ? ' selected-row' : ''}`;
+                rowEl.addEventListener('click', (e) => {
+                    if (rowEl.__visualLongPressed) {
+                        rowEl.__visualLongPressed = false;
+                        e.preventDefault();
+                        return;
+                    }
+                    if (e.target.closest('.vk-visual-key')) return;
+                    visualSelected = { row: rIdx, col: -1 };
+                    syncVisualInputs(null);
+                    renderVisualPreview();
+                });
+                bindVisualLongPress(rowEl, (e) => {
+                    if (e.target?.closest?.('.vk-visual-key')) return;
+                    visualSelected = { row: rIdx, col: -1 };
+                    visualKeyboardVisible = false;
+                    syncVisualInputs(null);
+                    renderVisualPreview();
+                    focusVisualEditControls();
+                    showSnackbar(`已长按选中第 ${rIdx + 1} 行，可编辑、添加或删除行`, 'info');
+                });
                 (row || []).forEach((rawKey, cIdx) => {
                     const keyObj = getKeyObj(rawKey);
-                    const btn = document.createElement('mdui-button');
-                    btn.variant = visualSelected.row === rIdx && visualSelected.col === cIdx ? 'filled' : 'tonal';
-                    btn.style.gridColumn = `span ${Math.max(1, Math.min(4, Number(keyObj.flex) || 1))}`;
-                    btn.textContent = keyObj.label || keyObj.key || '(空)';
-                    btn.addEventListener('click', () => {
+                    const keyEl = document.createElement('div');
+                    const keepDefaultSize = keyObj.keepSize !== false;
+                    keyEl.className = `keyboard-key vk-visual-key${keepDefaultSize ? ' keep-size' : ''}${visualSelected.row === rIdx && visualSelected.col === cIdx ? ' selected-key' : ''}`;
+                    const size = getKeyPercentSize(keyObj);
+                    keyEl.style.flex = keepDefaultSize ? (keyObj.flex ? `${keyObj.flex} 1 0` : '1 1 0') : '0 0 auto';
+                    if (!keepDefaultSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
+                    if (keyObj.style && typeof keyObj.style === 'object') Object.assign(keyEl.style, keyObj.style);
+                    if (!keepDefaultSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
+                    const displayLabel = keyObj.label || keyObj.key || '(空)';
+                    const swipeSymbol = getVisualSwipeSymbol(keyObj);
+                    if (swipeSymbol) {
+                        const swipeLabel = keyObj.swipeLabel || swipeSymbol;
+                        const swipeStyle = keyObj.swipeColor ? ` style="color:${escapeHtml(keyObj.swipeColor)}"` : '';
+                        keyEl.innerHTML = `
+                            <div class="key-inner">
+                                <span class="key-symbol"${swipeStyle}>${escapeHtml(swipeLabel)}</span>
+                                <span class="key-char">${escapeHtml(displayLabel)}</span>
+                            </div>
+                        `;
+                    } else {
+                        keyEl.textContent = displayLabel;
+                    }
+                    keyEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (keyEl.__visualLongPressed) {
+                            keyEl.__visualLongPressed = false;
+                            e.preventDefault();
+                            return;
+                        }
                         visualSelected = { row: rIdx, col: cIdx };
-                        const vInput = document.getElementById('vkVisualKeyValueInput');
-                        const lInput = document.getElementById('vkVisualKeyLabelInput');
-                        const fSlider = document.getElementById('vkVisualKeyFlexSlider');
-                        if (vInput) vInput.value = keyObj.key || '';
-                        if (lInput) lInput.value = keyObj.label || '';
-                        if (fSlider) fSlider.value = String(Math.max(1, Math.min(4, Number(keyObj.flex) || 1)));
+                        syncVisualInputs(keyObj);
                         renderVisualPreview();
                     });
-                    rowEl.appendChild(btn);
+                    bindVisualLongPress(keyEl, (e) => {
+                        e.stopPropagation?.();
+                        visualSelected = { row: rIdx, col: cIdx };
+                        visualKeyboardVisible = false;
+                        syncVisualInputs(keyObj);
+                        renderVisualPreview();
+                        focusVisualEditControls();
+                        showSnackbar('已长按选中按键，键盘已关闭，可在上方编辑或删除', 'info');
+                    });
+                    rowEl.appendChild(keyEl);
                 });
                 preview.appendChild(rowEl);
             });
+            updateVisualKeyboardState();
         };
         const patchSelectedKey = (patch) => {
             const rows = getLayoutRows();
             const { row, col } = visualSelected;
             if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
             const current = getKeyObj(rows[row][col]);
-            rows[row][col] = { ...current, ...patch };
+            const next = { ...current, ...patch };
+            if (patch.keepSize) {
+                delete next.widthPercent;
+                delete next.heightPercent;
+                if (next.style) {
+                    delete next.style.width;
+                    delete next.style.height;
+                }
+            }
+            ['swipe', 'swipeLabel', 'swipeColor', 'label', 'flex'].forEach(prop => {
+                if (next[prop] == null || next[prop] === '') delete next[prop];
+            });
+            rows[row][col] = next;
             renderVisualPreview();
+        };
+        const patchSelectedKeySize = (part, value) => {
+            const percent = clampPercent(value, part === 'width' ? 1 : 1, part === 'width' ? 100 : 300);
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
+            const current = getKeyObj(rows[row][col]);
+            const style = { ...((current.style && typeof current.style === 'object') ? current.style : {}) };
+            if (percent) style[part] = `${percent}%`; else delete style[part];
+            patchSelectedKey({ [`${part}Percent`]: percent, style, keepSize: false });
         };
         const moveSelectedKey = (dx, dy) => {
             const rows = getLayoutRows();
@@ -9420,21 +9836,39 @@ const KeyboardConfigManager = {
             const moving = rows[row].splice(col, 1)[0];
             rows[newRow].splice(Math.min(newCol, rows[newRow].length), 0, moving);
             visualSelected = { row: newRow, col: Math.min(newCol, rows[newRow].length - 1) };
+            syncVisualInputs(getKeyObj(rows[visualSelected.row][visualSelected.col]));
             renderVisualPreview();
         };
         document.getElementById('vkVisualLayoutSelect')?.addEventListener('change', (e) => {
             visualLayoutKey = e.target.value || 'text';
             visualSelected = { row: -1, col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
         });
         document.getElementById('vkVisualAddRowBtn')?.addEventListener('click', () => {
-            getLayoutRows().push([]);
+            const rows = getLayoutRows();
+            rows.push([]);
+            visualSelected = { row: rows.length - 1, col: -1 };
+            syncVisualInputs(null);
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualDeleteRowBtn')?.addEventListener('click', () => {
+            const rows = getLayoutRows();
+            const targetRow = visualSelected.row;
+            if (targetRow < 0 || !rows[targetRow]) return;
+            rows.splice(targetRow, 1);
+            if (!rows.length) rows.push([]);
+            visualSelected = { row: Math.min(targetRow, rows.length - 1), col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
         });
         document.getElementById('vkVisualAddKeyBtn')?.addEventListener('click', () => {
             const rows = getLayoutRows();
             if (!rows.length) rows.push([]);
-            rows[rows.length - 1].push({ key: 'new', label: 'new', flex: 1 });
+            const targetRow = visualSelected.row >= 0 ? visualSelected.row : rows.length - 1;
+            rows[targetRow].push({ key: 'new', label: 'new', keepSize: true });
+            visualSelected = { row: targetRow, col: rows[targetRow].length - 1 };
+            syncVisualInputs(getKeyObj(rows[targetRow][visualSelected.col]));
             renderVisualPreview();
         });
         document.getElementById('vkVisualDeleteKeyBtn')?.addEventListener('click', () => {
@@ -9442,20 +9876,47 @@ const KeyboardConfigManager = {
             const { row, col } = visualSelected;
             if (row < 0 || col < 0 || !rows[row]) return;
             rows[row].splice(col, 1);
-            visualSelected = { row: -1, col: -1 };
+            visualSelected = { row, col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
+        });
+        resetCurrentVisualBtn?.addEventListener('click', () => {
+            const layoutName = document.getElementById('vkVisualLayoutSelect')?.selectedOptions?.[0]?.textContent?.trim?.() || visualLayoutKey;
+            if (!confirm(`确定要将“${layoutName}”重置为默认键盘吗？`)) return;
+            this.config.layouts = this.config.layouts || {};
+            this.config.layouts[visualLayoutKey] = cloneKeyboardLayout(DEFAULT_KEYBOARD_CONFIG.layouts?.[visualLayoutKey] || [[]]);
+            visualSelected = { row: -1, col: -1 };
+            visualKeyboardVisible = true;
+            syncVisualInputs(null);
+            renderVisualPreview();
+            showSnackbar('已重置当前键盘为默认', 'success');
+        });
+        toggleVisualKeyboardBtn?.addEventListener('click', () => {
+            visualKeyboardVisible = !visualKeyboardVisible;
+            updateVisualKeyboardState();
+            showSnackbar(visualKeyboardVisible ? '已打开可视化键盘预览' : `${getVisualSelectedText()}，已关闭键盘预览`, 'info');
         });
         document.getElementById('vkVisualMoveLeftBtn')?.addEventListener('click', () => moveSelectedKey(-1, 0));
         document.getElementById('vkVisualMoveRightBtn')?.addEventListener('click', () => moveSelectedKey(1, 0));
         document.getElementById('vkVisualMoveUpBtn')?.addEventListener('click', () => moveSelectedKey(0, -1));
         document.getElementById('vkVisualMoveDownBtn')?.addEventListener('click', () => moveSelectedKey(0, 1));
         document.getElementById('vkVisualKeyValueInput')?.addEventListener('input', (e) => patchSelectedKey({ key: e.target.value || '' }));
-        document.getElementById('vkVisualKeyLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ label: e.target.value || '' }));
-        document.getElementById('vkVisualKeyFlexSlider')?.addEventListener('input', (e) => patchSelectedKey({ flex: Math.max(1, Math.min(4, Number(e.target.value) || 1)) }));
+        document.getElementById('vkVisualKeyLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ label: e.target.value || null }));
+        document.getElementById('vkVisualKeyFlexInput')?.addEventListener('input', (e) => {
+            const flex = Number(e.target.value);
+            patchSelectedKey({ flex: Number.isFinite(flex) && flex > 0 ? Math.max(0.2, Math.min(12, flex)) : null });
+        });
+        document.getElementById('vkVisualKeySwipeInput')?.addEventListener('input', (e) => patchSelectedKey({ swipe: e.target.value || null }));
+        document.getElementById('vkVisualKeySwipeLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ swipeLabel: e.target.value || null }));
+        document.getElementById('vkVisualKeySwipeColorInput')?.addEventListener('input', (e) => patchSelectedKey({ swipeColor: e.target.value || null }));
+        document.getElementById('vkVisualKeyWidthInput')?.addEventListener('input', (e) => patchSelectedKeySize('width', e.target.value));
+        document.getElementById('vkVisualKeyHeightInput')?.addEventListener('input', (e) => patchSelectedKeySize('height', e.target.value));
+        document.getElementById('vkVisualKeyKeepSizeInput')?.addEventListener('change', (e) => patchSelectedKey({ keepSize: !!e.target.checked }));
         openVisualBtn?.addEventListener('click', () => {
             visualLayoutKey = 'text';
             const select = document.getElementById('vkVisualLayoutSelect');
             if (select) select.value = visualLayoutKey;
+            visualKeyboardVisible = true;
             renderDynamicVars(dynamicVarListVisual);
             renderVisualPreview();
             if (visualDialog) visualDialog.open = true;
@@ -9465,13 +9926,13 @@ const KeyboardConfigManager = {
             visualLayoutKey = 'text';
             const select = document.getElementById('vkVisualLayoutSelect');
             if (select) select.value = visualLayoutKey;
+            visualKeyboardVisible = true;
             renderDynamicVars(dynamicVarListVisual);
             renderVisualPreview();
             if (visualDialog) visualDialog.open = true;
         });
         [closeVisualBtn, cancelVisualBtn].forEach(btn => btn?.addEventListener('click', () => { if (visualDialog) visualDialog.open = false; }));
         bindImmediateActionButton(saveVisualBtn, () => {
-            this.config.dynamicVariables = readDynamicVars(dynamicVarListVisual);
             this.config.layouts = this.config.layouts || {};
             this.save();
             if (visualDialog) visualDialog.open = false;
@@ -9490,7 +9951,6 @@ const KeyboardConfigManager = {
                 this.config.steelTypeTemplates = processInput(inputs.steelType);
                 this.config.statusTemplates = processInput(inputs.status);
                 this.config.positionTemplates = processInput(inputs.position);
-                this.config.dynamicVariables = readDynamicVars(dynamicVarListVisual);
                 
                 this.save();
                 commitOperation();
@@ -9641,37 +10101,58 @@ function processKeyboardTemplates(templates) {
         date.setHours(0, 0, 0, 0);
         return date;
     };
+    const today = () => new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const addDays = (date, days = 0) => {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        d.setDate(d.getDate() + Number(days || 0));
+        return d;
+    };
+    const weekStart = () => startOfIsoWeek(now);
+    const normalizeProgramCode = (code) => String(code || '')
+        .replace(/\b(?:int|float|double|string|char|bool|long|short|unsigned|signed)\s+/g, 'let ')
+        .replace(/\btrue\b/g, 'true')
+        .replace(/\bfalse\b/g, 'false');
+    const runProgramVariable = (def) => {
+        const name = (def?.name || '').toString().trim();
+        if (!name) return null;
+        if (!def.code && !def.program) {
+            const kind = (def?.kind || 'date').toString();
+            const fmt = (def?.format || '').toString().trim();
+            const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
+            if (kind === 'isoWeek') {
+                const w = isoWeekNumber(now);
+                return (fmt === 'W') ? String(w) : pad2(w);
+            }
+            if (kind === 'month') {
+                const m = now.getMonth() + 1;
+                return (fmt === 'MM') ? pad2(m) : String(m);
+            }
+            if (kind === 'day') {
+                const dd = now.getDate();
+                return (fmt === 'DD') ? pad2(dd) : String(dd);
+            }
+            if (kind === 'year') return (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
+            if (kind === 'weekStart') return formatDate(addDays(weekStart(), offsetDays), fmt);
+            if (kind === 'weekEnd') return formatDate(addDays(weekStart(), 6 + offsetDays), fmt);
+            return formatDate(addDays(today(), offsetDays), fmt);
+        }
+        try {
+            const program = normalizeProgramCode(def.code || def.program);
+            const fn = new Function(
+                'now', 'map', 'pad2', 'formatDate', 'isoWeek', 'today', 'weekStart', 'addDays',
+                `"use strict";\n${program}`
+            );
+            const result = fn(now, map, pad2, formatDate, () => isoWeekNumber(now), today, weekStart, addDays);
+            return result == null ? '' : String(result);
+        } catch (err) {
+            console.warn(`自定义变量 ${name} 执行失败:`, err);
+            return '';
+        }
+    };
     dynamic.forEach(def => {
         const name = (def?.name || '').toString().trim();
         if (!name) return;
-        const kind = (def?.kind || 'date').toString();
-        const fmt = (def?.format || '').toString().trim();
-        const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
-        let value = null;
-        if (kind === 'isoWeek') {
-            const w = isoWeekNumber(now);
-            value = (fmt === 'W') ? String(w) : pad2(w);
-        } else if (kind === 'month') {
-            const m = now.getMonth() + 1;
-            value = (fmt === 'MM') ? pad2(m) : String(m);
-        } else if (kind === 'day') {
-            const dd = now.getDate();
-            value = (fmt === 'DD') ? pad2(dd) : String(dd);
-        } else if (kind === 'year') {
-            value = (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
-        } else if (kind === 'weekStart') {
-            const d0 = startOfIsoWeek(now);
-            d0.setDate(d0.getDate() + offsetDays);
-            value = formatDate(d0, fmt);
-        } else if (kind === 'weekEnd') {
-            const d0 = startOfIsoWeek(now);
-            d0.setDate(d0.getDate() + 6 + offsetDays);
-            value = formatDate(d0, fmt);
-        } else {
-            const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            d0.setDate(d0.getDate() + offsetDays);
-            value = formatDate(d0, fmt);
-        }
+        const value = runProgramVariable(def);
         if (value != null) map[name] = String(value);
     });
     Object.keys(custom).forEach(k => {
@@ -9765,6 +10246,11 @@ function generateVirtualKeyboard() {
 		      break;
 
 		    case 'symbol':
+              {
+                  const fieldKey = currentInput?.id;
+                  const templates = getTemplatesByField(fieldKey) || [];
+                  if (templates.length) createShortcutKeys(processTemplates(templates), 'shortcut-key', fieldKey);
+              }
 		      keyRows = layouts.symbol;
 		      break;
 		  }
@@ -9791,6 +10277,7 @@ function generateVirtualKeyboard() {
           let customStyles = {};
           let customLabel = null;
           let swipeColor = '#4caf50'; // Default green
+          let hasCustomSwipeColor = false;
 
           // Support object definition for custom size/style/swipe via JSON
           if (typeof keyData === 'object' && keyData !== null) {
@@ -9802,10 +10289,18 @@ function generateVirtualKeyboard() {
               if (keyData.swipe) customSwipe = keyData.swipe;
               if (keyData.swipeLabel) customSwipeLabel = keyData.swipeLabel;
               if (keyData.label) customLabel = keyData.label;
-              if (keyData.swipeColor) swipeColor = keyData.swipeColor;
+              if (keyData.swipeColor) {
+                  swipeColor = keyData.swipeColor;
+                  hasCustomSwipeColor = true;
+              }
               
               if (keyData.style) {
                   Object.assign(keyElement.style, keyData.style);
+              }
+              if (keyData.keepSize === false) {
+                  keyElement.style.flex = '0 0 auto';
+                  if (keyData.widthPercent) keyElement.style.width = `${keyData.widthPercent}%`;
+                  if (keyData.heightPercent) keyElement.style.height = `${keyData.heightPercent}%`;
               }
           }
 
@@ -10054,7 +10549,7 @@ function generateVirtualKeyboard() {
               // Character Key with Symbol OR Custom Swipe Key
               keyElement.innerHTML = `
                   <div class="key-inner">
-                      <span class="key-symbol" style="color: ${customSwipe ? swipeColor : ''}">${customSwipeLabel || symbol}</span>
+                      <span class="key-symbol" style="color: ${customSwipe || hasCustomSwipeColor ? swipeColor : ''}">${customSwipeLabel || symbol}</span>
                       <span class="key-char">${displayLabel}</span>
                   </div>
               `;
@@ -10100,7 +10595,7 @@ function generateVirtualKeyboard() {
                           // If it was custom static, we keep it. 
                           // If it was default grey and turned green, we revert.
                           const symbolEl = keyElement.querySelector('.key-symbol');
-                          if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                          if (symbolEl) symbolEl.style.color = customSwipe || hasCustomSwipeColor ? swipeColor : ''; 
                       }
                   }
               });
@@ -10112,7 +10607,7 @@ function generateVirtualKeyboard() {
                   
                   // Revert color cleanup
                   const symbolEl = keyElement.querySelector('.key-symbol');
-                  if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                  if (symbolEl) symbolEl.style.color = customSwipe || hasCustomSwipeColor ? swipeColor : ''; 
                   
                   if (e.type === 'pointercancel') return;
 
@@ -13314,7 +13809,7 @@ function initShortcutToolbarDrag() {
             ignoreClickUntil = Date.now() + 450;
             if (!dragHintShown) {
                 dragHintShown = true;
-                showSnackbar('提示：双击编辑框可重置快捷短语工具栏位置', 'info');
+                showSnackbar('提示：长按工具栏可拖动位置', 'info');
             }
 
             if (navigator.vibrate) navigator.vibrate(12);
@@ -13376,7 +13871,7 @@ function initShortcutToolbarDrag() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
             if (!toolbarSavedToastShown) {
                 toolbarSavedToastShown = true;
-                showSnackbar('工具栏位置已保存（双击编辑框可重置）', 'success');
+                showSnackbar('工具栏位置已保存', 'success');
             }
             if (navigator.vibrate) navigator.vibrate(15);
         }
@@ -13403,18 +13898,6 @@ function initShortcutToolbarDrag() {
         }, true);
     }
 
-    if (!document.documentElement.dataset.boundShortcutToolbarResetDblclick) {
-        document.documentElement.dataset.boundShortcutToolbarResetDblclick = '1';
-        document.addEventListener('dblclick', (e) => {
-            const target = e.target;
-            if (!(target instanceof Element)) return;
-            const vk = document.getElementById('virtualKeyboard');
-            if (!vk || vk.style.display === 'none') return;
-            if (!target.matches('input.readonly-input, textarea.readonly-input')) return;
-            window.resetShortcutToolbarWrapPosition?.();
-            showSnackbar('工具栏已重置到右上角', 'info');
-        });
-    }
 }
 
 
