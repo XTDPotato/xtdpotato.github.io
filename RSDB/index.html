@@ -839,6 +839,97 @@
 		    background: rgba(76, 175, 80, 0.16);
 		}
 
+
+        /* 虚拟键盘可视化编辑器：使用与实际虚拟键盘一致的自定义按键 */
+        .vk-visual-panel {
+            margin-top: 10px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .vk-visual-row {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 0;
+            min-height: 52px;
+            padding: 6px 4px;
+            border: 2px solid transparent;
+            border-radius: 18px;
+            background: rgba(var(--primary-color-rgb), 0.04);
+            overflow-x: auto;
+        }
+
+        .vk-visual-row.selected-row {
+            border-color: var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.12);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+        }
+
+        .vk-visual-key {
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .vk-visual-key.selected-key {
+            outline: 3px solid var(--primary-color);
+            outline-offset: -3px;
+            border-radius: 18px;
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.18);
+        }
+
+        .vk-visual-key.selected-key::before {
+            border: 2px solid var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.18);
+        }
+
+        .vk-visual-tool-btn {
+            min-height: 38px;
+            padding: 0 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font: inherit;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+        }
+
+        .vk-visual-tool-btn.primary {
+            border-color: rgba(var(--primary-color-rgb), 0.45);
+            background: rgba(var(--primary-color-rgb), 0.12);
+            color: var(--primary-color);
+        }
+
+        .vk-visual-tool-btn.danger {
+            border-color: rgba(244, 67, 54, 0.45);
+            background: rgba(244, 67, 54, 0.10);
+            color: #f44336;
+        }
+
+        .vk-visual-tool-btn:active {
+            transform: translateY(1px);
+        }
+
+        .vk-program-var-row {
+            display: grid;
+            grid-template-columns: minmax(120px, 0.8fr) minmax(220px, 2fr) 36px;
+            gap: 8px;
+            align-items: start;
+        }
+
+        @media (max-width: 720px) {
+            .vk-program-var-row {
+                grid-template-columns: 1fr 36px;
+            }
+            .vk-program-var-row .vk-program-code {
+                grid-column: 1 / -1;
+                order: 3;
+            }
+        }
+
 		#keyboardSettingsModal {
 		    z-index: 20000;
 		}
@@ -2644,28 +2735,42 @@
                 <mdui-menu-item value="position">位置键盘</mdui-menu-item>
                 <mdui-menu-item value="symbol">符号键盘</mdui-menu-item>
             </mdui-select>
-            <div id="vkVisualPreview" style="margin-top:10px;display:grid;gap:8px;"></div>
+            <div id="vkVisualPreview" class="vk-visual-panel"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-                <mdui-button variant="tonal" id="vkVisualAddKeyBtn" icon="add">新增按键</mdui-button>
-                <mdui-button variant="tonal" id="vkVisualAddRowBtn" icon="playlist_add">新增一行</mdui-button>
-                <mdui-button variant="outlined" color="error" id="vkVisualDeleteKeyBtn" icon="delete">删除选中键</mdui-button>
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddKeyBtn">＋ 新增按键</button>
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddRowBtn">＋ 新增一行</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteKeyBtn">删除选中键</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteRowBtn">删除选中行</button>
             </div>
             <div style="margin-top:10px;display:grid;gap:8px;">
                 <mdui-text-field id="vkVisualKeyValueInput" label="键值(key)" variant="outlined"></mdui-text-field>
                 <mdui-text-field id="vkVisualKeyLabelInput" label="显示文本(label，可空)" variant="outlined"></mdui-text-field>
-                <mdui-slider id="vkVisualKeyFlexSlider" min="1" max="4" step="1"></mdui-slider>
-                <div style="font-size:0.85rem;color:#757575;">键宽（flex）</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeySwipeInput" label="上滑输入符号(swipe)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeLabelInput" label="上滑显示文本(可空)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeColorInput" label="上滑颜色(可空)" variant="outlined" placeholder="#4caf50"></mdui-text-field>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeyWidthInput" label="宽度百分比(%)" variant="outlined" type="number" min="1" max="100"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeyHeightInput" label="高度百分比(%)" variant="outlined" type="number" min="1" max="300"></mdui-text-field>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.95rem;">
+                    <input type="checkbox" id="vkVisualKeyKeepSizeInput">
+                    不改变长宽（跟随虚拟键盘默认尺寸）
+                </label>
+                <div style="font-size:0.85rem;color:#757575;">选中行会显示外框高亮；选中按键会显示主色高亮。宽高百分比会写入按键 style。</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <mdui-button variant="text" id="vkVisualMoveLeftBtn">左移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveRightBtn">右移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveUpBtn">上移</mdui-button>
-                    <mdui-button variant="text" id="vkVisualMoveDownBtn">下移</mdui-button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveLeftBtn">左移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveRightBtn">右移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveUpBtn">上移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveDownBtn">下移</button>
                 </div>
             </div>
             <mdui-divider style="margin:14px 0;"></mdui-divider>
-            <div style="font-weight:500;">自定义变量（动态）</div>
+            <div style="font-weight:500;">自定义变量（可编程）</div>
+            <div style="font-size:0.85rem;color:#757575;margin-top:4px;">代码支持类似 C 的声明写法，例如：<code>int i = 0; i++; return i;</code>。在模板中用 <code>${变量名}</code> 引用。</div>
             <div id="dynamicVarListVisual" style="display:grid;gap:10px;margin-top:8px;"></div>
-            <mdui-button variant="tonal" id="addDynamicVarBtnVisual" icon="add" style="margin-top:8px;">新增变量</mdui-button>
+            <button type="button" class="vk-visual-tool-btn primary" id="addDynamicVarBtnVisual" style="margin-top:8px;">＋ 新增变量</button>
         </div>
         <mdui-button slot="action" variant="text" id="keyboardVisualCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="keyboardVisualSaveBtn">保存并应用</mdui-button>
@@ -8730,7 +8835,7 @@ function startSearch() {
 // 默认配置
 const DEFAULT_KEYBOARD_CONFIG = {
   "customVariables": {},
-  "dynamicVariables": {},
+  "dynamicVariables": [],
   "furnaceIdTemplates": [
     "265001649",
     "25C06550",
@@ -9247,44 +9352,36 @@ const KeyboardConfigManager = {
             advancedJson: document.getElementById('advancedJsonConfigInput')
         };
 
+        const dynamicVarToProgram = (item = {}) => {
+            if (item.code || item.program) return item.code || item.program;
+            const kind = (item.kind || 'date').toString();
+            const fmt = (item.format || '').toString();
+            const offsetDays = Number.isFinite(Number(item.offsetDays)) ? Math.round(Number(item.offsetDays)) : 0;
+            if (kind === 'isoWeek') return `int week = isoWeek();\nreturn ${JSON.stringify(fmt === 'W' ? 'RAW_WEEK' : 'PAD_WEEK')}.replace('RAW_WEEK', week).replace('PAD_WEEK', pad2(week));`;
+            if (kind === 'month') return `int month = now.getMonth() + 1;\nreturn ${fmt === 'MM' ? 'pad2(month)' : 'month'};`;
+            if (kind === 'day') return `int day = now.getDate();\nreturn ${fmt === 'DD' ? 'pad2(day)' : 'day'};`;
+            if (kind === 'year') return `int year = now.getFullYear();\nreturn ${fmt === 'YYYY' ? 'year' : 'String(year).slice(2)'};`;
+            if (kind === 'weekStart') return `return formatDate(addDays(weekStart(), ${offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+            if (kind === 'weekEnd') return `return formatDate(addDays(weekStart(), ${6 + offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+            return `return formatDate(addDays(today(), ${offsetDays}), ${JSON.stringify(fmt || 'YYYYMMDD')});`;
+        };
+
         const createDynamicVarRow = (item = {}) => {
             const row = document.createElement('div');
-            row.style.display = 'grid';
-            row.style.gridTemplateColumns = '1.1fr 1.2fr 1fr 0.9fr 36px';
-            row.style.gap = '8px';
-            row.style.alignItems = 'center';
+            row.className = 'vk-program-var-row';
 
             const name = document.createElement('mdui-text-field');
             name.setAttribute('label', '变量名');
             name.setAttribute('variant', 'outlined');
             name.value = item.name || '';
 
-            const kind = document.createElement('mdui-select');
-            kind.setAttribute('variant', 'outlined');
-            kind.setAttribute('placement', 'bottom');
-            kind.setAttribute('value', item.kind || 'date');
-            kind.value = item.kind || 'date';
-            kind.style.width = '100%';
-            kind.innerHTML = [
-                '<mdui-menu-item value="date">日期变量（今天 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="weekStart">周起始变量（本周一 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="weekEnd">周结束变量（本周日 + 偏移天数）</mdui-menu-item>',
-                '<mdui-menu-item value="isoWeek">周序号变量（ISO 周）</mdui-menu-item>',
-                '<mdui-menu-item value="month">月份变量（当前月）</mdui-menu-item>',
-                '<mdui-menu-item value="day">日变量（当前日期）</mdui-menu-item>',
-                '<mdui-menu-item value="year">年份变量（当前年份）</mdui-menu-item>'
-            ].join('');
-
-            const format = document.createElement('mdui-text-field');
-            format.setAttribute('label', '格式');
-            format.setAttribute('variant', 'outlined');
-            format.value = item.format || '';
-
-            const offset = document.createElement('mdui-text-field');
-            offset.setAttribute('label', '偏移(天)');
-            offset.setAttribute('variant', 'outlined');
-            offset.setAttribute('type', 'number');
-            offset.value = item.offsetDays != null ? String(item.offsetDays) : '0';
+            const code = document.createElement('mdui-text-field');
+            code.className = 'vk-program-code';
+            code.setAttribute('label', '变量程序（类似 C / JS，return 返回值）');
+            code.setAttribute('variant', 'outlined');
+            code.setAttribute('type', 'textarea');
+            code.setAttribute('rows', '3');
+            code.value = item.code || item.program || dynamicVarToProgram(item);
 
             const del = document.createElement('mdui-button-icon');
             del.setAttribute('icon', 'delete');
@@ -9292,9 +9389,7 @@ const KeyboardConfigManager = {
             del.addEventListener('click', () => row.remove());
 
             row.appendChild(name);
-            row.appendChild(kind);
-            row.appendChild(format);
-            row.appendChild(offset);
+            row.appendChild(code);
             row.appendChild(del);
             return row;
         };
@@ -9305,8 +9400,8 @@ const KeyboardConfigManager = {
             const vars = Array.isArray(this.config.dynamicVariables) ? this.config.dynamicVariables : [];
             if (vars.length === 0) {
                 const defaults = [
-                    { name: '本周', kind: 'isoWeek', format: 'WW', offsetDays: 0 },
-                    { name: '本周一', kind: 'weekStart', format: 'YYYYMMDD', offsetDays: 0 }
+                    { name: '本周', code: 'int week = isoWeek();\nreturn pad2(week);' },
+                    { name: '本周一', code: 'return formatDate(addDays(weekStart(), 0), "YYYYMMDD");' }
                 ];
                 defaults.forEach(v => targetEl.appendChild(createDynamicVarRow(v)));
                 return;
@@ -9318,14 +9413,11 @@ const KeyboardConfigManager = {
             if (!targetEl) return [];
             const rows = Array.from(targetEl.children);
             return rows.map(r => {
-                const items = r.querySelectorAll('mdui-text-field, mdui-select');
+                const items = r.querySelectorAll('mdui-text-field');
                 const name = items[0]?.value?.trim?.() || '';
-                const kind = items[1]?.value || 'date';
-                const format = items[2]?.value?.trim?.() || '';
-                const offsetDaysRaw = Number(items[3]?.value);
-                const offsetDays = Number.isFinite(offsetDaysRaw) ? Math.max(-3660, Math.min(3660, Math.round(offsetDaysRaw))) : 0;
-                return { name, kind, format, offsetDays };
-            }).filter(v => v.name);
+                const code = items[1]?.value?.trim?.() || '';
+                return { name, code };
+            }).filter(v => v.name && v.code);
         };
 
         const updateInputsFromConfig = () => {
@@ -9358,7 +9450,7 @@ const KeyboardConfigManager = {
         [closeBtn, cancelBtn].forEach(btn => btn?.addEventListener('click', closeModal));
         addDynamicVarBtnVisual?.addEventListener('click', () => {
             if (!dynamicVarListVisual) return;
-            dynamicVarListVisual.appendChild(createDynamicVarRow({ name: '', kind: 'date', format: 'YYYYMMDD', offsetDays: 0 }));
+            dynamicVarListVisual.appendChild(createDynamicVarRow({ name: '', code: 'int i = 0;\ni++;\nreturn i;' }));
         });
 
         let visualLayoutKey = 'text';
@@ -9371,33 +9463,101 @@ const KeyboardConfigManager = {
             if (typeof key === 'object' && key) return { ...key };
             return { key: String(key ?? '') };
         };
+        const clampPercent = (value, min, max, fallback = '') => {
+            if (value === '' || value == null) return fallback;
+            const num = Number(value);
+            if (!Number.isFinite(num)) return fallback;
+            return String(Math.max(min, Math.min(max, Math.round(num))));
+        };
+        const getKeyPercentSize = (keyObj) => {
+            const style = (keyObj.style && typeof keyObj.style === 'object') ? keyObj.style : {};
+            const width = keyObj.keepSize ? '' : (keyObj.widthPercent || String(style.width || '').replace('%', ''));
+            const height = keyObj.keepSize ? '' : (keyObj.heightPercent || String(style.height || '').replace('%', ''));
+            return { width: clampPercent(width, 1, 100), height: clampPercent(height, 1, 300) };
+        };
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        const getVisualSwipeSymbol = (keyObj) => {
+            const key = String(keyObj.key || '');
+            const lowerKey = key.toLowerCase();
+            return keyObj.swipe || KeyboardConfigManager.config.symbolMap?.[lowerKey] || '';
+        };
+        const syncVisualInputs = (keyObj = null) => {
+            const vInput = document.getElementById('vkVisualKeyValueInput');
+            const lInput = document.getElementById('vkVisualKeyLabelInput');
+            const swipeInput = document.getElementById('vkVisualKeySwipeInput');
+            const swipeLabelInput = document.getElementById('vkVisualKeySwipeLabelInput');
+            const swipeColorInput = document.getElementById('vkVisualKeySwipeColorInput');
+            const wInput = document.getElementById('vkVisualKeyWidthInput');
+            const hInput = document.getElementById('vkVisualKeyHeightInput');
+            const keepInput = document.getElementById('vkVisualKeyKeepSizeInput');
+            if (!keyObj) {
+                if (vInput) vInput.value = '';
+                if (lInput) lInput.value = '';
+                if (swipeInput) swipeInput.value = '';
+                if (swipeLabelInput) swipeLabelInput.value = '';
+                if (swipeColorInput) swipeColorInput.value = '';
+                if (wInput) wInput.value = '';
+                if (hInput) hInput.value = '';
+                if (keepInput) keepInput.checked = false;
+                return;
+            }
+            const size = getKeyPercentSize(keyObj);
+            if (vInput) vInput.value = keyObj.key || '';
+            if (lInput) lInput.value = keyObj.label || '';
+            if (swipeInput) swipeInput.value = keyObj.swipe || '';
+            if (swipeLabelInput) swipeLabelInput.value = keyObj.swipeLabel || '';
+            if (swipeColorInput) swipeColorInput.value = keyObj.swipeColor || '';
+            if (wInput) wInput.value = size.width;
+            if (hInput) hInput.value = size.height;
+            if (keepInput) keepInput.checked = !!keyObj.keepSize;
+        };
         const renderVisualPreview = () => {
             const preview = document.getElementById('vkVisualPreview');
             if (!preview) return;
             preview.innerHTML = '';
             const rows = getLayoutRows();
+            if (!rows.length) rows.push([]);
             rows.forEach((row, rIdx) => {
                 const rowEl = document.createElement('div');
-                rowEl.style.display = 'grid';
-                rowEl.style.gridTemplateColumns = 'repeat(12, minmax(0,1fr))';
-                rowEl.style.gap = '6px';
+                rowEl.className = `vk-visual-row${visualSelected.row === rIdx ? ' selected-row' : ''}`;
+                rowEl.addEventListener('click', (e) => {
+                    if (e.target.closest('.vk-visual-key')) return;
+                    visualSelected = { row: rIdx, col: -1 };
+                    syncVisualInputs(null);
+                    renderVisualPreview();
+                });
                 (row || []).forEach((rawKey, cIdx) => {
                     const keyObj = getKeyObj(rawKey);
-                    const btn = document.createElement('mdui-button');
-                    btn.variant = visualSelected.row === rIdx && visualSelected.col === cIdx ? 'filled' : 'tonal';
-                    btn.style.gridColumn = `span ${Math.max(1, Math.min(4, Number(keyObj.flex) || 1))}`;
-                    btn.textContent = keyObj.label || keyObj.key || '(空)';
-                    btn.addEventListener('click', () => {
+                    const keyEl = document.createElement('div');
+                    keyEl.className = `keyboard-key vk-visual-key${visualSelected.row === rIdx && visualSelected.col === cIdx ? ' selected-key' : ''}`;
+                    const size = getKeyPercentSize(keyObj);
+                    keyEl.style.flex = keyObj.keepSize ? (keyObj.flex ? `${keyObj.flex} 1 0` : '1 1 0') : '0 0 auto';
+                    if (!keyObj.keepSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keyObj.keepSize && size.height) keyEl.style.height = `${size.height}%`;
+                    if (keyObj.style && typeof keyObj.style === 'object') Object.assign(keyEl.style, keyObj.style);
+                    if (!keyObj.keepSize && size.width) keyEl.style.width = `${size.width}%`;
+                    if (!keyObj.keepSize && size.height) keyEl.style.height = `${size.height}%`;
+                    const displayLabel = keyObj.label || keyObj.key || '(空)';
+                    const swipeSymbol = getVisualSwipeSymbol(keyObj);
+                    if (swipeSymbol) {
+                        const swipeLabel = keyObj.swipeLabel || swipeSymbol;
+                        const swipeStyle = keyObj.swipeColor ? ` style="color:${escapeHtml(keyObj.swipeColor)}"` : '';
+                        keyEl.innerHTML = `
+                            <div class="key-inner">
+                                <span class="key-symbol"${swipeStyle}>${escapeHtml(swipeLabel)}</span>
+                                <span class="key-char">${escapeHtml(displayLabel)}</span>
+                            </div>
+                        `;
+                    } else {
+                        keyEl.textContent = displayLabel;
+                    }
+                    keyEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         visualSelected = { row: rIdx, col: cIdx };
-                        const vInput = document.getElementById('vkVisualKeyValueInput');
-                        const lInput = document.getElementById('vkVisualKeyLabelInput');
-                        const fSlider = document.getElementById('vkVisualKeyFlexSlider');
-                        if (vInput) vInput.value = keyObj.key || '';
-                        if (lInput) lInput.value = keyObj.label || '';
-                        if (fSlider) fSlider.value = String(Math.max(1, Math.min(4, Number(keyObj.flex) || 1)));
+                        syncVisualInputs(keyObj);
                         renderVisualPreview();
                     });
-                    rowEl.appendChild(btn);
+                    rowEl.appendChild(keyEl);
                 });
                 preview.appendChild(rowEl);
             });
@@ -9407,8 +9567,30 @@ const KeyboardConfigManager = {
             const { row, col } = visualSelected;
             if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
             const current = getKeyObj(rows[row][col]);
-            rows[row][col] = { ...current, ...patch };
+            const next = { ...current, ...patch };
+            if (patch.keepSize) {
+                delete next.widthPercent;
+                delete next.heightPercent;
+                if (next.style) {
+                    delete next.style.width;
+                    delete next.style.height;
+                }
+            }
+            ['swipe', 'swipeLabel', 'swipeColor', 'label'].forEach(prop => {
+                if (next[prop] == null || next[prop] === '') delete next[prop];
+            });
+            rows[row][col] = next;
             renderVisualPreview();
+        };
+        const patchSelectedKeySize = (part, value) => {
+            const percent = clampPercent(value, part === 'width' ? 1 : 1, part === 'width' ? 100 : 300);
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return;
+            const current = getKeyObj(rows[row][col]);
+            const style = { ...((current.style && typeof current.style === 'object') ? current.style : {}) };
+            if (percent) style[part] = `${percent}%`; else delete style[part];
+            patchSelectedKey({ [`${part}Percent`]: percent, style, keepSize: false });
         };
         const moveSelectedKey = (dx, dy) => {
             const rows = getLayoutRows();
@@ -9420,21 +9602,39 @@ const KeyboardConfigManager = {
             const moving = rows[row].splice(col, 1)[0];
             rows[newRow].splice(Math.min(newCol, rows[newRow].length), 0, moving);
             visualSelected = { row: newRow, col: Math.min(newCol, rows[newRow].length - 1) };
+            syncVisualInputs(getKeyObj(rows[visualSelected.row][visualSelected.col]));
             renderVisualPreview();
         };
         document.getElementById('vkVisualLayoutSelect')?.addEventListener('change', (e) => {
             visualLayoutKey = e.target.value || 'text';
             visualSelected = { row: -1, col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
         });
         document.getElementById('vkVisualAddRowBtn')?.addEventListener('click', () => {
-            getLayoutRows().push([]);
+            const rows = getLayoutRows();
+            rows.push([]);
+            visualSelected = { row: rows.length - 1, col: -1 };
+            syncVisualInputs(null);
+            renderVisualPreview();
+        });
+        document.getElementById('vkVisualDeleteRowBtn')?.addEventListener('click', () => {
+            const rows = getLayoutRows();
+            const targetRow = visualSelected.row;
+            if (targetRow < 0 || !rows[targetRow]) return;
+            rows.splice(targetRow, 1);
+            if (!rows.length) rows.push([]);
+            visualSelected = { row: Math.min(targetRow, rows.length - 1), col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
         });
         document.getElementById('vkVisualAddKeyBtn')?.addEventListener('click', () => {
             const rows = getLayoutRows();
             if (!rows.length) rows.push([]);
-            rows[rows.length - 1].push({ key: 'new', label: 'new', flex: 1 });
+            const targetRow = visualSelected.row >= 0 ? visualSelected.row : rows.length - 1;
+            rows[targetRow].push({ key: 'new', label: 'new', keepSize: true });
+            visualSelected = { row: targetRow, col: rows[targetRow].length - 1 };
+            syncVisualInputs(getKeyObj(rows[targetRow][visualSelected.col]));
             renderVisualPreview();
         });
         document.getElementById('vkVisualDeleteKeyBtn')?.addEventListener('click', () => {
@@ -9442,7 +9642,8 @@ const KeyboardConfigManager = {
             const { row, col } = visualSelected;
             if (row < 0 || col < 0 || !rows[row]) return;
             rows[row].splice(col, 1);
-            visualSelected = { row: -1, col: -1 };
+            visualSelected = { row, col: -1 };
+            syncVisualInputs(null);
             renderVisualPreview();
         });
         document.getElementById('vkVisualMoveLeftBtn')?.addEventListener('click', () => moveSelectedKey(-1, 0));
@@ -9450,8 +9651,13 @@ const KeyboardConfigManager = {
         document.getElementById('vkVisualMoveUpBtn')?.addEventListener('click', () => moveSelectedKey(0, -1));
         document.getElementById('vkVisualMoveDownBtn')?.addEventListener('click', () => moveSelectedKey(0, 1));
         document.getElementById('vkVisualKeyValueInput')?.addEventListener('input', (e) => patchSelectedKey({ key: e.target.value || '' }));
-        document.getElementById('vkVisualKeyLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ label: e.target.value || '' }));
-        document.getElementById('vkVisualKeyFlexSlider')?.addEventListener('input', (e) => patchSelectedKey({ flex: Math.max(1, Math.min(4, Number(e.target.value) || 1)) }));
+        document.getElementById('vkVisualKeyLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ label: e.target.value || null }));
+        document.getElementById('vkVisualKeySwipeInput')?.addEventListener('input', (e) => patchSelectedKey({ swipe: e.target.value || null }));
+        document.getElementById('vkVisualKeySwipeLabelInput')?.addEventListener('input', (e) => patchSelectedKey({ swipeLabel: e.target.value || null }));
+        document.getElementById('vkVisualKeySwipeColorInput')?.addEventListener('input', (e) => patchSelectedKey({ swipeColor: e.target.value || null }));
+        document.getElementById('vkVisualKeyWidthInput')?.addEventListener('input', (e) => patchSelectedKeySize('width', e.target.value));
+        document.getElementById('vkVisualKeyHeightInput')?.addEventListener('input', (e) => patchSelectedKeySize('height', e.target.value));
+        document.getElementById('vkVisualKeyKeepSizeInput')?.addEventListener('change', (e) => patchSelectedKey({ keepSize: !!e.target.checked }));
         openVisualBtn?.addEventListener('click', () => {
             visualLayoutKey = 'text';
             const select = document.getElementById('vkVisualLayoutSelect');
@@ -9641,37 +9847,58 @@ function processKeyboardTemplates(templates) {
         date.setHours(0, 0, 0, 0);
         return date;
     };
+    const today = () => new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const addDays = (date, days = 0) => {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        d.setDate(d.getDate() + Number(days || 0));
+        return d;
+    };
+    const weekStart = () => startOfIsoWeek(now);
+    const normalizeProgramCode = (code) => String(code || '')
+        .replace(/\b(?:int|float|double|string|char|bool|long|short|unsigned|signed)\s+/g, 'let ')
+        .replace(/\btrue\b/g, 'true')
+        .replace(/\bfalse\b/g, 'false');
+    const runProgramVariable = (def) => {
+        const name = (def?.name || '').toString().trim();
+        if (!name) return null;
+        if (!def.code && !def.program) {
+            const kind = (def?.kind || 'date').toString();
+            const fmt = (def?.format || '').toString().trim();
+            const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
+            if (kind === 'isoWeek') {
+                const w = isoWeekNumber(now);
+                return (fmt === 'W') ? String(w) : pad2(w);
+            }
+            if (kind === 'month') {
+                const m = now.getMonth() + 1;
+                return (fmt === 'MM') ? pad2(m) : String(m);
+            }
+            if (kind === 'day') {
+                const dd = now.getDate();
+                return (fmt === 'DD') ? pad2(dd) : String(dd);
+            }
+            if (kind === 'year') return (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
+            if (kind === 'weekStart') return formatDate(addDays(weekStart(), offsetDays), fmt);
+            if (kind === 'weekEnd') return formatDate(addDays(weekStart(), 6 + offsetDays), fmt);
+            return formatDate(addDays(today(), offsetDays), fmt);
+        }
+        try {
+            const program = normalizeProgramCode(def.code || def.program);
+            const fn = new Function(
+                'now', 'map', 'pad2', 'formatDate', 'isoWeek', 'today', 'weekStart', 'addDays',
+                `"use strict";\n${program}`
+            );
+            const result = fn(now, map, pad2, formatDate, () => isoWeekNumber(now), today, weekStart, addDays);
+            return result == null ? '' : String(result);
+        } catch (err) {
+            console.warn(`自定义变量 ${name} 执行失败:`, err);
+            return '';
+        }
+    };
     dynamic.forEach(def => {
         const name = (def?.name || '').toString().trim();
         if (!name) return;
-        const kind = (def?.kind || 'date').toString();
-        const fmt = (def?.format || '').toString().trim();
-        const offsetDays = Number.isFinite(Number(def?.offsetDays)) ? Math.round(Number(def.offsetDays)) : 0;
-        let value = null;
-        if (kind === 'isoWeek') {
-            const w = isoWeekNumber(now);
-            value = (fmt === 'W') ? String(w) : pad2(w);
-        } else if (kind === 'month') {
-            const m = now.getMonth() + 1;
-            value = (fmt === 'MM') ? pad2(m) : String(m);
-        } else if (kind === 'day') {
-            const dd = now.getDate();
-            value = (fmt === 'DD') ? pad2(dd) : String(dd);
-        } else if (kind === 'year') {
-            value = (fmt === 'YYYY') ? String(now.getFullYear()) : String(now.getFullYear()).slice(2);
-        } else if (kind === 'weekStart') {
-            const d0 = startOfIsoWeek(now);
-            d0.setDate(d0.getDate() + offsetDays);
-            value = formatDate(d0, fmt);
-        } else if (kind === 'weekEnd') {
-            const d0 = startOfIsoWeek(now);
-            d0.setDate(d0.getDate() + 6 + offsetDays);
-            value = formatDate(d0, fmt);
-        } else {
-            const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            d0.setDate(d0.getDate() + offsetDays);
-            value = formatDate(d0, fmt);
-        }
+        const value = runProgramVariable(def);
         if (value != null) map[name] = String(value);
     });
     Object.keys(custom).forEach(k => {
@@ -9791,6 +10018,7 @@ function generateVirtualKeyboard() {
           let customStyles = {};
           let customLabel = null;
           let swipeColor = '#4caf50'; // Default green
+          let hasCustomSwipeColor = false;
 
           // Support object definition for custom size/style/swipe via JSON
           if (typeof keyData === 'object' && keyData !== null) {
@@ -9802,10 +10030,18 @@ function generateVirtualKeyboard() {
               if (keyData.swipe) customSwipe = keyData.swipe;
               if (keyData.swipeLabel) customSwipeLabel = keyData.swipeLabel;
               if (keyData.label) customLabel = keyData.label;
-              if (keyData.swipeColor) swipeColor = keyData.swipeColor;
+              if (keyData.swipeColor) {
+                  swipeColor = keyData.swipeColor;
+                  hasCustomSwipeColor = true;
+              }
               
               if (keyData.style) {
                   Object.assign(keyElement.style, keyData.style);
+              }
+              if (keyData.keepSize === false) {
+                  keyElement.style.flex = '0 0 auto';
+                  if (keyData.widthPercent) keyElement.style.width = `${keyData.widthPercent}%`;
+                  if (keyData.heightPercent) keyElement.style.height = `${keyData.heightPercent}%`;
               }
           }
 
@@ -10054,7 +10290,7 @@ function generateVirtualKeyboard() {
               // Character Key with Symbol OR Custom Swipe Key
               keyElement.innerHTML = `
                   <div class="key-inner">
-                      <span class="key-symbol" style="color: ${customSwipe ? swipeColor : ''}">${customSwipeLabel || symbol}</span>
+                      <span class="key-symbol" style="color: ${customSwipe || hasCustomSwipeColor ? swipeColor : ''}">${customSwipeLabel || symbol}</span>
                       <span class="key-char">${displayLabel}</span>
                   </div>
               `;
@@ -10100,7 +10336,7 @@ function generateVirtualKeyboard() {
                           // If it was custom static, we keep it. 
                           // If it was default grey and turned green, we revert.
                           const symbolEl = keyElement.querySelector('.key-symbol');
-                          if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                          if (symbolEl) symbolEl.style.color = customSwipe || hasCustomSwipeColor ? swipeColor : ''; 
                       }
                   }
               });
@@ -10112,7 +10348,7 @@ function generateVirtualKeyboard() {
                   
                   // Revert color cleanup
                   const symbolEl = keyElement.querySelector('.key-symbol');
-                  if (symbolEl) symbolEl.style.color = customSwipe ? swipeColor : ''; 
+                  if (symbolEl) symbolEl.style.color = customSwipe || hasCustomSwipeColor ? swipeColor : ''; 
                   
                   if (e.type === 'pointercancel') return;
 
