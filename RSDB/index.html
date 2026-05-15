@@ -895,6 +895,21 @@
             flex: 1 1 0;
         }
 
+        .vk-visual-panel.keyboard-hidden {
+            display: none;
+        }
+
+        .vk-visual-selected-info {
+            margin-right: auto;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            opacity: 0.78;
+            max-width: 42vw;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
         .vk-visual-key.selected-key {
             outline: 3px solid var(--primary-color);
             outline-offset: -3px;
@@ -2795,6 +2810,9 @@
             <div id="dynamicVarListVisual" style="display:grid;gap:10px;margin-top:8px;"></div>
             <button type="button" class="vk-visual-tool-btn primary" id="addDynamicVarBtnVisual" style="margin-top:8px;">＋ 新增变量</button>
         </div>
+        <span slot="action" id="vkVisualSelectedInfo" class="vk-visual-selected-info">未选择</span>
+        <mdui-button slot="action" variant="text" id="vkVisualResetCurrentBtn" color="error">重置当前键盘为默认</mdui-button>
+        <mdui-button slot="action" variant="tonal" id="vkVisualToggleKeyboardBtn">关闭键盘</mdui-button>
         <mdui-button slot="action" variant="text" id="keyboardVisualCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="keyboardVisualSaveBtn">保存并应用</mdui-button>
     </mdui-dialog>
@@ -9364,6 +9382,9 @@ const KeyboardConfigManager = {
         const closeVisualBtn = document.getElementById('closeKeyboardVisualEditorBtn');
         const cancelVisualBtn = document.getElementById('keyboardVisualCancelBtn');
         const saveVisualBtn = document.getElementById('keyboardVisualSaveBtn');
+        const resetCurrentVisualBtn = document.getElementById('vkVisualResetCurrentBtn');
+        const toggleVisualKeyboardBtn = document.getElementById('vkVisualToggleKeyboardBtn');
+        const visualSelectedInfo = document.getElementById('vkVisualSelectedInfo');
         
         const inputs = {
             furnaceId: document.getElementById('furnaceIdConfigInput'),
@@ -9478,6 +9499,50 @@ const KeyboardConfigManager = {
 
         let visualLayoutKey = 'text';
         let visualSelected = { row: -1, col: -1 };
+        let visualKeyboardVisible = true;
+        const cloneKeyboardLayout = (layout) => JSON.parse(JSON.stringify(layout || [[]]));
+        const getVisualSelectedKeyObj = () => {
+            const rows = getLayoutRows();
+            const { row, col } = visualSelected;
+            if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return null;
+            return getKeyObj(rows[row][col]);
+        };
+        const getVisualSelectedText = () => {
+            const { row, col } = visualSelected;
+            if (row < 0) return '未选择';
+            if (col < 0) return `已选中：第 ${row + 1} 行`;
+            const keyObj = getVisualSelectedKeyObj();
+            const keyText = keyObj ? (keyObj.label || keyObj.key || '(空)') : '(空)';
+            const swipeText = keyObj && (keyObj.swipe || getVisualSwipeSymbol(keyObj));
+            return `已选中：第 ${row + 1} 行 / 第 ${col + 1} 键：${keyText}${swipeText ? `（上滑：${swipeText}）` : ''}`;
+        };
+        const updateVisualKeyboardState = () => {
+            const preview = document.getElementById('vkVisualPreview');
+            if (preview) preview.classList.toggle('keyboard-hidden', !visualKeyboardVisible);
+            if (toggleVisualKeyboardBtn) toggleVisualKeyboardBtn.textContent = visualKeyboardVisible ? '关闭键盘' : '打开键盘';
+            if (visualSelectedInfo) visualSelectedInfo.textContent = getVisualSelectedText();
+        };
+        const focusVisualEditControls = () => {
+            const target = document.getElementById('vkVisualKeyValueInput') || document.getElementById('vkVisualLayoutSelect');
+            target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            target?.focus?.();
+        };
+        const bindVisualLongPress = (el, onLongPress) => {
+            let timer = null;
+            const clearTimer = () => {
+                if (timer) clearTimeout(timer);
+                timer = null;
+            };
+            el.addEventListener('pointerdown', (e) => {
+                el.__visualLongPressed = false;
+                clearTimer();
+                timer = setTimeout(() => {
+                    el.__visualLongPressed = true;
+                    onLongPress(e);
+                }, 560);
+            }, { passive: true });
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => el.addEventListener(type, clearTimer, { passive: true }));
+        };
         const getLayoutRows = () => {
             if (!this.config.layouts[visualLayoutKey]) this.config.layouts[visualLayoutKey] = [[]];
             return this.config.layouts[visualLayoutKey];
@@ -9539,16 +9604,31 @@ const KeyboardConfigManager = {
             const preview = document.getElementById('vkVisualPreview');
             if (!preview) return;
             preview.innerHTML = '';
+            preview.classList.toggle('keyboard-hidden', !visualKeyboardVisible);
             const rows = getLayoutRows();
             if (!rows.length) rows.push([]);
             rows.forEach((row, rIdx) => {
                 const rowEl = document.createElement('div');
                 rowEl.className = `vk-visual-row${visualSelected.row === rIdx ? ' selected-row' : ''}`;
                 rowEl.addEventListener('click', (e) => {
+                    if (rowEl.__visualLongPressed) {
+                        rowEl.__visualLongPressed = false;
+                        e.preventDefault();
+                        return;
+                    }
                     if (e.target.closest('.vk-visual-key')) return;
                     visualSelected = { row: rIdx, col: -1 };
                     syncVisualInputs(null);
                     renderVisualPreview();
+                });
+                bindVisualLongPress(rowEl, (e) => {
+                    if (e.target?.closest?.('.vk-visual-key')) return;
+                    visualSelected = { row: rIdx, col: -1 };
+                    visualKeyboardVisible = false;
+                    syncVisualInputs(null);
+                    renderVisualPreview();
+                    focusVisualEditControls();
+                    showSnackbar(`已长按选中第 ${rIdx + 1} 行，可编辑、添加或删除行`, 'info');
                 });
                 (row || []).forEach((rawKey, cIdx) => {
                     const keyObj = getKeyObj(rawKey);
@@ -9578,14 +9658,29 @@ const KeyboardConfigManager = {
                     }
                     keyEl.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        if (keyEl.__visualLongPressed) {
+                            keyEl.__visualLongPressed = false;
+                            e.preventDefault();
+                            return;
+                        }
                         visualSelected = { row: rIdx, col: cIdx };
                         syncVisualInputs(keyObj);
                         renderVisualPreview();
+                    });
+                    bindVisualLongPress(keyEl, (e) => {
+                        e.stopPropagation?.();
+                        visualSelected = { row: rIdx, col: cIdx };
+                        visualKeyboardVisible = false;
+                        syncVisualInputs(keyObj);
+                        renderVisualPreview();
+                        focusVisualEditControls();
+                        showSnackbar('已长按选中按键，键盘已关闭，可在上方编辑或删除', 'info');
                     });
                     rowEl.appendChild(keyEl);
                 });
                 preview.appendChild(rowEl);
             });
+            updateVisualKeyboardState();
         };
         const patchSelectedKey = (patch) => {
             const rows = getLayoutRows();
@@ -9671,6 +9766,22 @@ const KeyboardConfigManager = {
             syncVisualInputs(null);
             renderVisualPreview();
         });
+        resetCurrentVisualBtn?.addEventListener('click', () => {
+            const layoutName = document.getElementById('vkVisualLayoutSelect')?.selectedOptions?.[0]?.textContent?.trim?.() || visualLayoutKey;
+            if (!confirm(`确定要将“${layoutName}”重置为默认键盘吗？`)) return;
+            this.config.layouts = this.config.layouts || {};
+            this.config.layouts[visualLayoutKey] = cloneKeyboardLayout(DEFAULT_KEYBOARD_CONFIG.layouts?.[visualLayoutKey] || [[]]);
+            visualSelected = { row: -1, col: -1 };
+            visualKeyboardVisible = true;
+            syncVisualInputs(null);
+            renderVisualPreview();
+            showSnackbar('已重置当前键盘为默认', 'success');
+        });
+        toggleVisualKeyboardBtn?.addEventListener('click', () => {
+            visualKeyboardVisible = !visualKeyboardVisible;
+            updateVisualKeyboardState();
+            showSnackbar(visualKeyboardVisible ? '已打开可视化键盘预览' : `${getVisualSelectedText()}，已关闭键盘预览`, 'info');
+        });
         document.getElementById('vkVisualMoveLeftBtn')?.addEventListener('click', () => moveSelectedKey(-1, 0));
         document.getElementById('vkVisualMoveRightBtn')?.addEventListener('click', () => moveSelectedKey(1, 0));
         document.getElementById('vkVisualMoveUpBtn')?.addEventListener('click', () => moveSelectedKey(0, -1));
@@ -9687,6 +9798,7 @@ const KeyboardConfigManager = {
             visualLayoutKey = 'text';
             const select = document.getElementById('vkVisualLayoutSelect');
             if (select) select.value = visualLayoutKey;
+            visualKeyboardVisible = true;
             renderDynamicVars(dynamicVarListVisual);
             renderVisualPreview();
             if (visualDialog) visualDialog.open = true;
@@ -9696,6 +9808,7 @@ const KeyboardConfigManager = {
             visualLayoutKey = 'text';
             const select = document.getElementById('vkVisualLayoutSelect');
             if (select) select.value = visualLayoutKey;
+            visualKeyboardVisible = true;
             renderDynamicVars(dynamicVarListVisual);
             renderVisualPreview();
             if (visualDialog) visualDialog.open = true;
