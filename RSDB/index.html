@@ -2867,6 +2867,8 @@
 		};
 		const APP_SETTINGS_KEY = 'rsdb_app_settings_v1';
 		const INPUT_STATS_KEY = 'rsdb_input_stats_v1';
+		const DYNAMIC_VAR_STATE_KEY = 'rsdb_dynamic_variable_state_v1';
+		let dynamicVariableState = loadDynamicVariableState();
 		const DEFAULT_APP_SETTINGS = {
 		    shortcutRows: 2,
 		    shortcutRowsByField: {},
@@ -3000,6 +3002,25 @@
 		    appSettings = { ...appSettings, ...(partial || {}) };
 		    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appSettings));
 		    applyAppSettings();
+		}
+
+
+		function loadDynamicVariableState() {
+		    try {
+		        const raw = localStorage.getItem(DYNAMIC_VAR_STATE_KEY);
+		        const parsed = raw ? JSON.parse(raw) : {};
+		        return parsed && typeof parsed === 'object' ? parsed : {};
+		    } catch (e) {
+		        return {};
+		    }
+		}
+
+		function saveDynamicVariableState() {
+		    try {
+		        localStorage.setItem(DYNAMIC_VAR_STATE_KEY, JSON.stringify(dynamicVariableState || {}));
+		    } catch (e) {
+		        console.warn('保存自定义变量状态失败', e);
+		    }
 		}
 
 		function loadInputStats() {
@@ -8522,7 +8543,7 @@ function startSearch() {
 		    showSnackbar('已添加快捷短语', 'success');
 		}
 
-		function createShortcutKeys(options, keyClass, fieldKey) {
+		function createShortcutKeys(options, keyClass, fieldKey, rawOptions = null) {
 		    currentShortcutFieldKey = fieldKey || null;
 		    const toolbar = document.getElementById('shortcutToolbar');
 		    const toolbarWrap = document.getElementById('shortcutToolbarWrap');
@@ -8693,7 +8714,7 @@ function startSearch() {
             const shortcutRowHeight = 44;
             targetContainer.style.minHeight = `${rowCount * shortcutRowHeight}px`;
 		    const rows = Array.from({ length: rowCount }, () => []);
-		    const optionEntries = (options || []).map((v, i) => ({ value: v, index: i }));
+		    const optionEntries = (options || []).map((v, i) => ({ value: v, rawValue: Array.isArray(rawOptions) && rawOptions[i] !== undefined ? rawOptions[i] : v, index: i }));
 		    const orderedEntries = appSettings.shortcutRankByClicks
 		        ? optionEntries
 		              .slice()
@@ -8751,7 +8772,7 @@ function startSearch() {
 		        rows[0].push({ kind: 'suggest', value: v, order: i });
 		    });
 		    filteredOptions.forEach((option, idx) => {
-		        rows[idx % rowCount].push({ kind: 'template', value: option.value, index: option.index });
+		        rows[idx % rowCount].push({ kind: 'template', value: option.value, rawValue: option.rawValue, index: option.index });
 		    });
 
 		    const createRow = (items) => {
@@ -8831,8 +8852,11 @@ function startSearch() {
 		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (!longPressed && currentInput) {
-		                        applyShortcutToCurrentInput(fieldKey, item.value);
-		                        recordShortcutClick(fieldKey, item.value);
+		                        const liveValue = processKeyboardTemplates([item.rawValue ?? item.value], { commitState: true })[0] ?? item.value;
+		                        applyShortcutToCurrentInput(fieldKey, liveValue);
+		                        keyElement.textContent = liveValue;
+		                        item.value = liveValue;
+		                        recordShortcutClick(fieldKey, liveValue);
 		                        currentInput.focus();
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
@@ -8879,8 +8903,11 @@ function startSearch() {
 		                    e.stopPropagation();
 		                    clearTimer();
 		                    if (!longPressed && currentInput) {
-		                        applyShortcutToCurrentInput(fieldKey, item.value);
-		                        recordShortcutClick(fieldKey, item.value);
+		                        const liveValue = processKeyboardTemplates([item.rawValue ?? item.value], { commitState: true })[0] ?? item.value;
+		                        applyShortcutToCurrentInput(fieldKey, liveValue);
+		                        keyElement.textContent = liveValue;
+		                        item.value = liveValue;
+		                        recordShortcutClick(fieldKey, liveValue);
 		                        currentInput.focus();
 		                    }
 		                    if (e.pointerId != null) keyElement.releasePointerCapture?.(e.pointerId);
@@ -9540,9 +9567,13 @@ ${code}`;
         const testDynamicVarCode = () => {
             const code = document.getElementById('dynamicVarEditCode')?.value || '';
             try {
-                const fn = new Function('now','pad2', `"use strict";
+                const fn = new Function('now','pad2','state','getVar','setVar','incVar', `"use strict";
 ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsigned|signed)\s+/g, 'let ')}`);
-                const out = fn(new Date(), n => String(n).padStart(2,'0'));
+                const testState = { ...dynamicVariableState };
+                const getVar = (key, fallback = 0) => Object.prototype.hasOwnProperty.call(testState, key) ? testState[key] : fallback;
+                const setVar = (key, value) => { testState[key] = value; return value; };
+                const incVar = (key, step = 1, start = 0) => { const next = Number(getVar(key, start)) + Number(step || 0); testState[key] = next; return next; };
+                const out = fn(new Date(), n => String(n).padStart(2,'0'), testState, getVar, setVar, incVar);
                 document.getElementById('dynamicVarTestResult').textContent = `校验通过：${out ?? ''}`;
                 showSnackbar('变量校验通过', 'success');
             } catch (e) {
@@ -10049,8 +10080,9 @@ ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsign
     }
 };
 
-function processKeyboardTemplates(templates) {
+function processKeyboardTemplates(templates, options = {}) {
     if (!Array.isArray(templates)) return [];
+    const commitState = !!options.commitState;
     const now = new Date();
     const yearFull = now.getFullYear().toString();
     const year = yearFull.slice(2);
@@ -10139,10 +10171,15 @@ function processKeyboardTemplates(templates) {
         try {
             const program = normalizeProgramCode(def.code || def.program);
             const fn = new Function(
-                'now', 'map', 'pad2', 'formatDate', 'isoWeek', 'today', 'weekStart', 'addDays',
+                'now', 'map', 'pad2', 'formatDate', 'isoWeek', 'today', 'weekStart', 'addDays', 'state', 'getVar', 'setVar', 'incVar',
                 `"use strict";\n${program}`
             );
-            const result = fn(now, map, pad2, formatDate, () => isoWeekNumber(now), today, weekStart, addDays);
+            const state = commitState ? (dynamicVariableState || (dynamicVariableState = {})) : { ...(dynamicVariableState || {}) };
+            const getVar = (key, fallback = 0) => Object.prototype.hasOwnProperty.call(state, key) ? state[key] : fallback;
+            const setVar = (key, value) => { state[key] = value; if (commitState) saveDynamicVariableState(); return value; };
+            const incVar = (key, step = 1, start = 0) => { const next = Number(getVar(key, start)) + Number(step || 0); state[key] = next; if (commitState) saveDynamicVariableState(); return next; };
+            const result = fn(now, map, pad2, formatDate, () => isoWeekNumber(now), today, weekStart, addDays, state, getVar, setVar, incVar);
+            if (commitState) saveDynamicVariableState();
             return result == null ? '' : String(result);
         } catch (err) {
             console.warn(`自定义变量 ${name} 执行失败:`, err);
@@ -10200,38 +10237,38 @@ function generateVirtualKeyboard() {
               ) {
                   const templates = getTemplatesByField(nk) || [];
                   const list = processTemplates(templates);
-                  createShortcutKeys(list, 'shortcut-key', nk);
+                  createShortcutKeys(list, 'shortcut-key', nk, templates);
               }
 		      keyRows = layouts.number;
 		      break;
 
 		    case 'status':
               const statusShortcuts = processTemplates(KeyboardConfigManager.config.statusTemplates);
-		      createShortcutKeys(statusShortcuts, 'status-key', 'status');
+		      createShortcutKeys(statusShortcuts, 'status-key', 'status', KeyboardConfigManager.config.statusTemplates);
 		      keyRows = layouts.status;
 		      break;
 
 		    case 'cardId':
 		      const cardShortcuts = processTemplates(KeyboardConfigManager.config.cardIdTemplates);
-              createShortcutKeys(cardShortcuts, 'shortcut-key', 'cardId');
+              createShortcutKeys(cardShortcuts, 'shortcut-key', 'cardId', KeyboardConfigManager.config.cardIdTemplates);
               // fallthrough to text keyboard
 
 		    case 'steelType':
               if (keyboardState.inputType === 'steelType') {
                   const steelShortcuts = processTemplates(KeyboardConfigManager.config.steelTypeTemplates);
-                  createShortcutKeys(steelShortcuts, 'shortcut-key', 'steelType');
+                  createShortcutKeys(steelShortcuts, 'shortcut-key', 'steelType', KeyboardConfigManager.config.steelTypeTemplates);
               }
 
 		    case 'productId':
               if (keyboardState.inputType === 'productId') {
                   const productShortcuts = processTemplates(KeyboardConfigManager.config.productIdTemplates);
-                  createShortcutKeys(productShortcuts, 'shortcut-key', 'productId');
+                  createShortcutKeys(productShortcuts, 'shortcut-key', 'productId', KeyboardConfigManager.config.productIdTemplates);
               }
  
 		    case 'furnaceId':
               if (keyboardState.inputType === 'furnaceId') {
                   const furnaceShortcuts = processTemplates(KeyboardConfigManager.config.furnaceIdTemplates);
-                  createShortcutKeys(furnaceShortcuts, 'shortcut-key', 'furnaceId');
+                  createShortcutKeys(furnaceShortcuts, 'shortcut-key', 'furnaceId', KeyboardConfigManager.config.furnaceIdTemplates);
               }
               // Fallthrough to text keyboard for all above IDs
 		    case 'text':
@@ -10241,7 +10278,7 @@ function generateVirtualKeyboard() {
 
 		    case 'position':
               const positionShortcuts = processTemplates(KeyboardConfigManager.config.positionTemplates);
-		      createShortcutKeys(positionShortcuts, 'shortcut-key', 'position');
+		      createShortcutKeys(positionShortcuts, 'shortcut-key', 'position', KeyboardConfigManager.config.positionTemplates);
 		      keyRows = layouts.position;
 		      break;
 
@@ -10249,7 +10286,7 @@ function generateVirtualKeyboard() {
               {
                   const fieldKey = currentInput?.id;
                   const templates = getTemplatesByField(fieldKey) || [];
-                  if (templates.length) createShortcutKeys(processTemplates(templates), 'shortcut-key', fieldKey);
+                  if (templates.length) createShortcutKeys(processTemplates(templates), 'shortcut-key', fieldKey, templates);
               }
 		      keyRows = layouts.symbol;
 		      break;
