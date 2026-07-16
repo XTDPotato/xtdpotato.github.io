@@ -45,3 +45,56 @@
     font-size: 12px;
   }
 }
+
+/* RSDB polish: smoother cards, keyboard feedback, and variable manager readability */
+.keyboard-key::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0) 62%);
+  opacity: 0;
+  transform: scale(0.68);
+  transition: opacity 160ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.keyboard-key:active::after,
+.keyboard-key.swipe-active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shortcut-key,
+.status-key {
+  transition: transform 140ms cubic-bezier(.2, .8, .2, 1), filter 140ms ease;
+}
+
+.shortcut-key:active,
+.status-key:active {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(1.04);
+}
+
+.vk-program-var-row,
+#dynamicVarManageList > div {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.vk-program-var-row:focus-within,
+#dynamicVarManageList > div:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--primary-color-rgb), 0.45) !important;
+  box-shadow: 0 12px 28px rgba(var(--primary-color-rgb), 0.12);
+}
+
+mdui-dialog::part(panel) {
+  border-radius: 24px;
+}
+
+@media (max-width: 600px) {
+  mdui-dialog::part(panel) {
+    border-radius: 18px 18px 0 0;
+  }
+}
