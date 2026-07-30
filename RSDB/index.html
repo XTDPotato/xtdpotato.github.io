@@ -1766,6 +1766,7 @@
 			<input type="hidden" id="quickEditField">
 		</div>
 		<div slot="action">
+			<mdui-button variant="text" id="quickEditStyleBtn">格式</mdui-button>
 			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
 			<mdui-button variant="filled" id="saveQuickEditBtn">保存</mdui-button>
 		</div>
@@ -2720,6 +2721,11 @@
             <mdui-button-icon icon="close" id="closeMoveRowDialogBtn"></mdui-button-icon>
         </mdui-top-app-bar>
         <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="moveRowSourceText" style="font-size:0.95rem;color:var(--mdui-color-on-surface-variant,#757575);margin-bottom:10px;"></div>
+            <mdui-segmented-button-group id="moveRowPositionGroup" selects="single" value="after" style="width:100%;margin-bottom:10px;">
+                <mdui-segmented-button value="before">移动到目标上方</mdui-segmented-button>
+                <mdui-segmented-button value="after">移动到目标下方</mdui-segmented-button>
+            </mdui-segmented-button-group>
             <mdui-text-field id="moveRowSearchInput" label="搜索（产品号/卡片号/钢种/行号）" variant="outlined" clearable></mdui-text-field>
             <mdui-list id="moveRowList" style="margin-top: 10px;"></mdui-list>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px;">
@@ -3090,6 +3096,25 @@
                     ZoomManager.currentScale = nextScale;
                 }
             }
+        }
+
+        function getCellStyleForEditor(rowIndex, fieldKey) {
+            const key = `${rowIndex}:${fieldKey}`;
+            const saved = appSettings.tableCellStyles?.[key];
+            if (saved && typeof saved === 'object') return { ...saved };
+            const cell = document.querySelector(`#dataTable tbody tr[data-index="${rowIndex}"] td[data-field="${fieldKey}"]`);
+            if (!cell) return {};
+            const computed = getComputedStyle(cell);
+            const toHex = (rgb) => {
+                const m = String(rgb || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+                return m ? '#' + [m[1], m[2], m[3]].map(v => Number(v).toString(16).padStart(2, '0')).join('') : '';
+            };
+            return {
+                fontSize: parseInt(computed.fontSize, 10) || '',
+                color: toHex(computed.color),
+                backgroundColor: toHex(computed.backgroundColor),
+                fontWeight: computed.fontWeight || ''
+            };
         }
 
         function applyCellCustomStyle(cellEl, rowIndex, fieldKey) {
@@ -4992,11 +5017,13 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         });
     }
 
+    let searchInputTimer = null;
     dom.searchInput.addEventListener('input', (e) => {
-        const newQuery = e.target.value.trim();
-        if (newQuery !== dom.searchInput.value.trim()) return;
-        startSearch();
-        updateTable();
+        searchTerm = e.target.value.trim();
+        clearTimeout(searchInputTimer);
+        searchInputTimer = setTimeout(() => {
+            startSearch();
+        }, 160);
     });
 
     dom.replaceQueryInput.addEventListener('input', () => {
@@ -5731,6 +5758,11 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         const dlg = document.getElementById('tableViewDialog');
         if (dlg) dlg.open = false;
     });
+    document.getElementById('quickEditStyleBtn')?.addEventListener('click', () => {
+        const index = parseInt(dom.quickEditIndex?.value);
+        const fieldId = dom.quickEditField?.value;
+        if (Number.isFinite(index) && fieldId) openCellStyleDialog(index, fieldId);
+    });
     document.getElementById('cellStyleCancelBtn')?.addEventListener('click', () => {
         const dlg = document.getElementById('cellStyleDialog');
         if (dlg) dlg.open = false;
@@ -5838,21 +5870,14 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     moveRowPageInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyMoveRowPage(); });
     document.getElementById('moveRowOkBtn')?.addEventListener('click', () => {
         if (!moveRowDialogState) return;
-        const src = moveRowDialogState.sourceIndex;
-        const dir = moveRowDialogState.direction;
         let target = moveRowDialogState.selectedIndex;
-        if (target == null || target < 0 || target === src) {
+        if (target == null || target < 0 || moveRowDialogState.sourceIndexes.includes(target)) {
             showSnackbar('请选择有效的目标行', 'warning');
             return;
         }
-        const moved = tableData.splice(src, 1)[0];
-        if (src < target) target -= 1;
-        const insertIndex = dir === -1 ? target : target + 1;
-        tableData.splice(insertIndex, 0, moved);
-        saveDataToIndexedDB();
-        currentPage = Math.floor(insertIndex / PAGE_SIZE) + 1;
-        updateTable();
-        showSnackbar(`已移动至第 ${insertIndex + 1} 行`, 'success');
+        const positionGroup = document.getElementById('moveRowPositionGroup');
+        const position = positionGroup?.value === 'before' ? 'before' : 'after';
+        moveRowsToTarget(moveRowDialogState.sourceIndexes, target, position);
         closeMoveRowDlg();
     });
 
@@ -6100,44 +6125,7 @@ dom.tableBody.addEventListener('dblclick', (e) => {
     openEditModal(index, targetFieldId);
 });
 
-let cellStylePressTimer = null;
-let cellStylePressTarget = null;
-let suppressCellClickUntil = 0;
-dom.tableBody.addEventListener('pointerdown', (e) => {
-    if (isMultiSelectMode) return;
-    const cell = e.target.closest('td[data-field]');
-    if (!cell) return;
-    const row = e.target.closest('tr');
-    const field = cell.getAttribute('data-field');
-    if (!row || !field) return;
-    if (field === 'cardImage' || field === 'seq') return;
-    const index = Number(row.getAttribute('data-index'));
-    if (!Number.isFinite(index)) return;
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = { index, field };
-    cellStylePressTimer = setTimeout(() => {
-        suppressCellClickUntil = Date.now() + 700;
-        openCellStyleDialog(index, field);
-    }, 500);
-}, { passive: true });
-dom.tableBody.addEventListener('pointermove', () => {
-    clearTimeout(cellStylePressTimer);
-}, { passive: true });
-dom.tableBody.addEventListener('pointerup', () => {
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = null;
-}, { passive: true });
-dom.tableBody.addEventListener('pointercancel', () => {
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = null;
-}, { passive: true });
-
  dom.tableBody.addEventListener('click', (e) => {
-    if (Date.now() < suppressCellClickUntil) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-    }
 
     if (isMultiSelectMode) return;
 
@@ -6419,6 +6407,8 @@ function updateTable() {
     dom.selectedCount.textContent = selectedRows.size;
 
     const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+    const dataIndexMap = new WeakMap();
+    tableData.forEach((item, index) => dataIndexMap.set(item, index));
 
     const checkboxHeader = document.querySelector('#dataTable thead th.checkbox-col');
     if (checkboxHeader) {
@@ -6459,7 +6449,7 @@ function updateTable() {
     }
 
     pageData.forEach((item, displayIdx) => {
-        const originalIndex = item.__index || tableData.findIndex(row => row === item);
+        const originalIndex = dataIndexMap.get(item) ?? tableData.findIndex(row => row === item);
         const globalSeq = originalIndex + 1;
 
         const row = document.createElement('tr');
@@ -6486,11 +6476,8 @@ function updateTable() {
             <td class="seq-col">
     ${globalSeq}
     <div class="move-buttons">
-        <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''} title="上移">
-            <i class="material-icons" style="font-size:14px;">arrow_upward</i>
-        </button>
-        <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex >= tableData.length - 1 ? 'disabled' : ''} title="下移">
-            <i class="material-icons" style="font-size:14px;">arrow_downward</i>
+        <button class="move-btn move-row-menu-btn" data-index="${originalIndex}" ${tableData.length <= 1 ? 'disabled' : ''} title="移动行">
+            <i class="material-icons" style="font-size:16px;">open_with</i>
         </button>
     </div>
 </td>
@@ -7182,80 +7169,15 @@ document.querySelectorAll('.delete-row-btn').forEach(btn => {
             };
         }
 
-// ========== 上移按钮 【手机+电脑通用】纯按压长按检测 (无鼠标事件，保留不变) ==========
-const upBtn = row.querySelector('.up-btn');
-if (upBtn) {
-    let pressTimer = null;
-    let isLongPress = false;
-    let isPressed = false;
-    const moveIdx = parseInt(upBtn.getAttribute('data-index'));
-    const handleStart = (e) => {
+// ========== 移动按钮：打开目标选择弹窗，支持当前行或多选行批量移动 ==========
+const moveMenuBtn = row.querySelector('.move-row-menu-btn');
+if (moveMenuBtn) {
+    moveMenuBtn.onclick = (e) => {
         e.stopPropagation();
         e.preventDefault();
-        isPressed = true;
-        isLongPress = false;
-        pressTimer = setTimeout(() => {
-            if (isPressed) {
-                isLongPress = true;
-                moveRowToAssignPosition(moveIdx, -1);
-            }
-        }, 500);
+        const moveIdx = parseInt(moveMenuBtn.getAttribute('data-index'));
+        openMoveRowDialog(moveIdx, 1);
     };
-    const handleEnd = (e) => {
-        if (!isPressed) return;
-        e.stopPropagation();
-        e.preventDefault();
-        isPressed = false;
-        clearTimeout(pressTimer);
-        if (!isLongPress) {
-            moveRow(moveIdx, -1);
-        }
-        isLongPress = false;
-    };
-    upBtn.addEventListener('touchstart', handleStart);
-    upBtn.addEventListener('mousedown', handleStart);
-    upBtn.addEventListener('touchend', handleEnd);
-    upBtn.addEventListener('mouseup', handleEnd);
-    upBtn.addEventListener('touchcancel', handleEnd);
-    upBtn.addEventListener('mouseleave', handleEnd);
-}
-
-// ========== 下移按钮 【手机+电脑通用】纯按压长按检测 (无鼠标事件，保留不变) ==========
-const downBtn = row.querySelector('.down-btn');
-if (downBtn) {
-    let pressTimer = null;
-    let isLongPress = false;
-    let isPressed = false;
-    const moveIdx = parseInt(downBtn.getAttribute('data-index'));
-    const handleStart = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        isPressed = true;
-        isLongPress = false;
-        pressTimer = setTimeout(() => {
-            if (isPressed) {
-                isLongPress = true;
-                moveRowToAssignPosition(moveIdx, 1);
-            }
-        }, 500);
-    };
-    const handleEnd = (e) => {
-        if (!isPressed) return;
-        e.stopPropagation();
-        e.preventDefault();
-        isPressed = false;
-        clearTimeout(pressTimer);
-        if (!isLongPress) {
-            moveRow(moveIdx, 1);
-        }
-        isLongPress = false;
-    };
-    downBtn.addEventListener('touchstart', handleStart);
-    downBtn.addEventListener('mousedown', handleStart);
-    downBtn.addEventListener('touchend', handleEnd);
-    downBtn.addEventListener('mouseup', handleEnd);
-    downBtn.addEventListener('touchcancel', handleEnd);
-    downBtn.addEventListener('mouseleave', handleEnd);
 }
     });
 
@@ -7432,7 +7354,9 @@ function renderMoveRowDialog() {
   const title = document.getElementById('moveRowDialogTitle');
   if (!list || !search || !pageInfo || !pageInput) return;
 
-  if (title) title.textContent = moveRowDialogState.direction === -1 ? '移动到指定行（上方）' : '移动到指定行（下方）';
+  if (title) title.textContent = '移动到指定行';
+  const sourceText = document.getElementById('moveRowSourceText');
+  if (sourceText) sourceText.textContent = `将移动 ${moveRowDialogState.sourceIndexes.length} 个项目，请选择目标行和插入位置。`;
   const q = (moveRowDialogState.query || '').trim().toLowerCase();
   const filtered = q
     ? moveRowDialogState.items.filter(it => it.search.includes(q))
@@ -7472,9 +7396,23 @@ function renderMoveRowDialog() {
 function openMoveRowDialog(sourceIndex, direction) {
   const dlg = document.getElementById('moveRowDialog');
   if (!dlg) return;
-  const items = tableData
+  const sourceIndexes = (selectedRows.size > 1 && selectedRows.has(sourceIndex))
+    ? Array.from(selectedRows).sort((a, b) => a - b)
+    : [sourceIndex];
+
+  moveRowDialogState = {
+    sourceIndex,
+    sourceIndexes,
+    direction,
+    items: [],
+    query: '',
+    page: 1,
+    pageSize: 50,
+    selectedIndex: -1
+  };
+  moveRowDialogState.items = tableData
     .map((item, idx) => ({ item, idx }))
-    .filter(x => x.idx !== sourceIndex)
+    .filter(x => !sourceIndexes.includes(x.idx))
     .map(x => {
       const productId = x.item?.productId || '';
       const cardId = x.item?.cardId || '';
@@ -7483,22 +7421,36 @@ function openMoveRowDialog(sourceIndex, direction) {
       return { index: x.idx, productId, cardId, steelType, search: label.toLowerCase() };
     });
 
-  moveRowDialogState = {
-    sourceIndex,
-    direction,
-    items,
-    query: '',
-    page: 1,
-    pageSize: 50,
-    selectedIndex: -1
-  };
-
   const search = document.getElementById('moveRowSearchInput');
   if (search) search.value = '';
   renderMoveRowDialog();
   document.body.appendChild(dlg);
   dlg.style.zIndex = '20000';
   dlg.open = true;
+}
+
+function moveRowsToTarget(sourceIndexes, targetIndex, position) {
+  const sources = Array.from(new Set(sourceIndexes)).filter(i => i >= 0 && i < tableData.length).sort((a, b) => a - b);
+  if (!sources.length || sources.includes(targetIndex)) return;
+  beginOperation('move_rows', `移动 ${sources.length} 行`);
+  const moving = sources.map(i => tableData[i]);
+  const sourceSet = new Set(sources);
+  const remaining = tableData.filter((_, idx) => !sourceSet.has(idx));
+  let adjustedTarget = targetIndex - sources.filter(i => i < targetIndex).length;
+  adjustedTarget = Math.max(0, Math.min(remaining.length - 1, adjustedTarget));
+  const insertIndex = position === 'before' ? adjustedTarget : adjustedTarget + 1;
+  remaining.splice(insertIndex, 0, ...moving);
+  tableData = remaining;
+  selectedRows.clear();
+  moving.forEach(item => {
+    const nextIndex = tableData.indexOf(item);
+    if (nextIndex >= 0) selectedRows.add(nextIndex);
+  });
+  saveDataToIndexedDB();
+  currentPage = Math.floor(insertIndex / PAGE_SIZE) + 1;
+  updateTable();
+  showSnackbar(`已移动 ${moving.length} 行`, 'success');
+  commitOperation();
 }
 
 function moveRowToAssignPosition(sourceIndex, direction) {
@@ -7701,7 +7653,7 @@ function findDuplicates(newItem) {
             window.__rsdbEditingCellKey = key;
             const targetText = document.getElementById('cellStyleTargetText');
             if (targetText) targetText.textContent = `第 ${index + 1} 行 · ${fieldLabels[fieldId] || fieldId}`;
-            const current = appSettings.tableCellStyles?.[key] || {};
+            const current = getCellStyleForEditor(index, fieldId);
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -11513,6 +11465,25 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
     showSnackbar(isEditMode ? '数据修改成功' : '数据添加成功', 'success');
 }
 
+
+function normalizeImportedCellStyle(cell) {
+    const style = cell?.s;
+    if (!style || typeof style !== 'object') return null;
+    const out = {};
+    const rgbToHex = (rgb) => {
+        if (!rgb) return '';
+        const clean = String(rgb).replace(/^#/, '').replace(/^FF/i, '');
+        return /^[0-9a-fA-F]{6}$/.test(clean) ? `#${clean}` : '';
+    };
+    if (style.font?.sz) out.fontSize = Math.max(10, Math.min(48, Number(style.font.sz)));
+    if (style.font?.bold) out.fontWeight = 'bold';
+    const fontColor = rgbToHex(style.font?.color?.rgb);
+    if (fontColor) out.color = fontColor;
+    const bgColor = rgbToHex(style.fill?.fgColor?.rgb || style.fill?.bgColor?.rgb);
+    if (bgColor) out.backgroundColor = bgColor;
+    return Object.keys(out).length ? out : null;
+}
+
 function finalizeImport(newData, duplicateEntries, totalImported) {
     let actuallyAdded = newData.length;
     let actuallyOverridden = 0;
@@ -11536,8 +11507,19 @@ function finalizeImport(newData, duplicateEntries, totalImported) {
     });
 
     if (newData.length > 0) {
+        const startIndex = tableData.length;
         tableData = [...tableData, ...newData];
-        console.log('【导入新增】成功添加', newData.length, '条数据，包括图片');
+        const nextStyles = { ...(appSettings.tableCellStyles || {}) };
+        newData.forEach((item, offset) => {
+            const rowStyles = item.__cellStyles;
+            if (!rowStyles || typeof rowStyles !== 'object') return;
+            Object.entries(rowStyles).forEach(([field, style]) => {
+                if (style && typeof style === 'object') nextStyles[`${startIndex + offset}:${field}`] = style;
+            });
+            delete item.__cellStyles;
+        });
+        saveAppSettings({ tableCellStyles: nextStyles });
+        console.log('【导入新增】成功添加', newData.length, '条数据，包括图片和单元格格式');
     }
 
     if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
@@ -11798,7 +11780,7 @@ function handleFileImport(e) {
                     }
                 }
 
-                const wb = XLSX.read(data, { type: 'array' });
+                const wb = XLSX.read(data, { type: 'array', cellStyles: true });
                 processWorkbookImport(wb, {}, embeddedImages);
             } catch (err) {
                 console.error('【导入】Excel + 嵌入图片解析失败：', err);
@@ -11998,6 +11980,26 @@ function handleFileImport(e) {
 		    }
 		}
 
+        function applySavedCellStylesToExcelRow(excelRow, dataItem, columns) {
+            const dataIndex = tableData.indexOf(dataItem);
+            if (dataIndex < 0) return;
+            columns.forEach((col, columnOffset) => {
+                if (!col.key || col.key === 'seq' || col.key === 'cardImage' || col.key === 'cardImageFile') return;
+                const style = appSettings.tableCellStyles?.[`${dataIndex}:${col.key}`];
+                if (!style || typeof style !== 'object') return;
+                const cell = excelRow.getCell(columnOffset + 1);
+                const font = { ...(cell.font || {}) };
+                if (style.fontSize) font.size = Math.max(10, Math.min(48, Number(style.fontSize) || 11));
+                if (style.color) font.color = { argb: style.color.replace('#', '').padStart(8, 'FF').toUpperCase() };
+                if (style.fontWeight) font.bold = String(style.fontWeight).toLowerCase() === 'bold' || Number(style.fontWeight) >= 600;
+                cell.font = font;
+                if (style.backgroundColor) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.backgroundColor.replace('#', '').padStart(8, 'FF').toUpperCase() } };
+                }
+            });
+        }
+
+
 		async function exportToExcel() {
 		    const exportData = getFilteredData();
 		    if (exportData.length === 0) {
@@ -12060,6 +12062,7 @@ function handleFileImport(e) {
 		            });
 
 		            row.height = 22;
+                    applySavedCellStylesToExcelRow(row, item, columns);
 
 		            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
 		                const base64Data = item.cardImage.split(',')[1];
@@ -12201,7 +12204,7 @@ function handleFileImport(e) {
 		                }
 		            }
 
-		            worksheet.addRow({
+		            const row = worksheet.addRow({
 		                seq: index + 1,
 		                steelType: item.steelType || '',
 		                productId: item.productId || '',
@@ -12217,6 +12220,7 @@ function handleFileImport(e) {
 		                remarks: item.remarks || '',
 		                cardImageFile: imageFileName ? `images/${imageFileName}` : ''
 		            });
+                    applySavedCellStylesToExcelRow(row, item, columns);
 		        }
 
 		        updateExportProgress(exportData.length + 1, total, '正在生成 Excel 文件...');
