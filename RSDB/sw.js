@@ -1,6 +1,6 @@
 // sw.js - 简单高效的缓存策略（2025-2026 推荐 Cache-First + Network-Fallback）
 
-const CACHE_NAME = 'roundbar-app-v1.8';  // 改版本号会强制更新缓存
+const CACHE_NAME = 'roundbar-app-v2.0';  // 改版本号会强制更新缓存
 const urlsToCache = [
     './',
     './index.html',
@@ -41,6 +41,21 @@ self.addEventListener('fetch', event => {
     // 可选：只处理同源请求，避免 CDN 资源被 SW 拦截导致问题
     if (!event.request.url.startsWith(self.location.origin)) {
         return; // 直接走网络
+    }
+
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    if (response?.ok) {
+                        const copy = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match('./index.html'))
+        );
+        return;
     }
 
     event.respondWith(

@@ -656,13 +656,45 @@
 
 /* 快捷短语悬浮工具栏（可长按拖动） */
 #shortcutToolbarWrap {
-    position: absolute;
+    position: fixed;
     top: -48px;
     right: 6px;
     z-index: 12;
     pointer-events: none;
     touch-action: none;
     background: transparent;
+}
+
+#mainFab,
+#general-snackbar {
+    touch-action: none;
+}
+
+.rsdb-active-input {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2) !important;
+}
+
+.quick-edit-format-panel {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    animation: quickEditFormatIn 180ms ease-out both;
+}
+
+.quick-edit-format-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@keyframes quickEditFormatIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+    .quick-edit-format-grid { grid-template-columns: 1fr; }
 }
 
 #shortcutToolbar {
@@ -1070,6 +1102,14 @@
 		    background: var(--background-color);
 		    z-index: 10;
 		    color: var(--text-color);
+		    box-sizing: border-box;
+		    padding: 24px;
+		}
+		.empty-state p {
+		    max-width: 100%;
+		    margin: 12px 0 0;
+		    text-align: center;
+		    overflow-wrap: anywhere;
 		}
 		
 		
@@ -1764,6 +1804,29 @@
 			</div>
 			<input type="hidden" id="quickEditIndex">
 			<input type="hidden" id="quickEditField">
+			<div id="quickEditStylePanel" class="quick-edit-format-panel">
+				<div id="cellStyleTargetText" style="font-weight:600;margin-bottom:10px;">单元格格式</div>
+				<div class="quick-edit-format-grid">
+					<mdui-text-field id="cellStyleFontNameInput" label="字体" variant="outlined"></mdui-text-field>
+					<mdui-text-field id="cellStyleFontSizeInput" label="字号（px）" type="number" min="8" max="72" variant="outlined"></mdui-text-field>
+					<mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+					<mdui-text-field id="cellStyleBgColorInput" label="填充颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+					<mdui-select id="cellStyleAlignInput" label="水平对齐" variant="outlined" value="general">
+						<mdui-menu-item value="general">常规</mdui-menu-item>
+						<mdui-menu-item value="left">左对齐</mdui-menu-item>
+						<mdui-menu-item value="center">居中</mdui-menu-item>
+						<mdui-menu-item value="right">右对齐</mdui-menu-item>
+					</mdui-select>
+					<mdui-text-field id="cellStyleNumberFormatInput" label="数字格式（如 0.00）" variant="outlined"></mdui-text-field>
+				</div>
+				<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;">
+					<mdui-checkbox id="cellStyleBoldInput">粗体</mdui-checkbox>
+					<mdui-checkbox id="cellStyleItalicInput">斜体</mdui-checkbox>
+					<mdui-checkbox id="cellStyleUnderlineInput">下划线</mdui-checkbox>
+					<mdui-checkbox id="cellStyleWrapInput">自动换行</mdui-checkbox>
+				</div>
+				<mdui-button variant="text" id="cellStyleResetBtn" style="margin-top:10px;">重置当前格格式</mdui-button>
+			</div>
 		</div>
 		<div slot="action">
 			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
@@ -1984,9 +2047,9 @@
         </div>
         <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
           <li style="margin-bottom: 4px;">• 电脑端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">单击</strong> = 上/下移一行</li>
-          <li style="margin-bottom: 4px;">• 电脑端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">长按≥0.5秒</strong> = 弹窗选择指定行，精准移动到目标行「上/下方」</li>
+          <li style="margin-bottom: 4px;">• 点击表格首列的移动按钮，在弹窗中选择目标项目及其上方或下方</li>
           <li style="margin-bottom: 4px;">• 手机端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">轻触</strong> = 上/下移一行</li>
-          <li style="margin-bottom: 4px;">• 手机端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">长按≥0.5秒</strong> = 弹窗选择指定行，精准移动位置</li>
+          <li style="margin-bottom: 4px;">• 勾选多个项目可保持原顺序批量移动，支持搜索和分页</li>
           <li>• 移动兼容：支持分页/搜索过滤，移动后自动跳转对应页码，行序永久保存</li>
         </ul>
       </div>
@@ -2356,6 +2419,7 @@
   overflow-y: auto;
   box-sizing: border-box;
 ">
+            <mdui-text-field id="settingsSearchInput" label="搜索设置" variant="outlined" clearable style="width:calc(100% - 24px);margin:0 12px 10px;"></mdui-text-field>
             <mdui-list>
                 <mdui-list-subheader>主题</mdui-list-subheader>
                 <mdui-list-item id="settingsPrimaryColorItem" icon="palette" headline="主题主色" description=""></mdui-list-item>
@@ -2395,11 +2459,15 @@
                     <mdui-switch slot="end-icon" id="settingsAlwaysForceSwitch"></mdui-switch>
                 </mdui-list-item>
                 <mdui-list-item id="settingsImageCompressItem" icon="photo_size_select_large" headline="图片压缩设置" description=""></mdui-list-item>
+                <mdui-list-item headline="切换图片时保留缩放和位置" description="关闭后切换图片会重置视图">
+                    <mdui-switch slot="end-icon" id="settingsImageKeepTransformSwitch"></mdui-switch>
+                </mdui-list-item>
                 <mdui-divider></mdui-divider>
                 <mdui-list-subheader>界面</mdui-list-subheader>
                 <mdui-list-item id="settingsDialogPositionItem" icon="vertical_align_top" headline="对话框默认位置" description=""></mdui-list-item>
                 <mdui-list-item id="settingsKeyboardSizeItem" icon="height" headline="虚拟键盘高度/底部留空" description=""></mdui-list-item>
                 <mdui-list-item id="settingsTableViewItem" icon="table_chart" headline="表格视图参数" description=""></mdui-list-item>
+                <mdui-list-item id="settingsCursorHandleItem" icon="text_fields" headline="光标水滴显示时长" description=""></mdui-list-item>
                 <mdui-list-item id="settingsSnackbarItem" icon="notifications" headline="Snackbar 设置" description=""></mdui-list-item>
                 <mdui-list-item headline="动画效果" description="关闭部分动画（含自定义弹窗过渡）">
                     <mdui-switch slot="end-icon" id="settingsAnimationsSwitch"></mdui-switch>
@@ -2654,18 +2722,14 @@
         <mdui-text-field id="tableCellWidthInput" label="单元格最小宽度（px）" type="number" min="48" max="320" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
         <mdui-text-field id="tableCellHeightInput" label="单元格高度（px）" type="number" min="30" max="160" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
         <mdui-text-field id="tableCellFontSizeInput" label="单元格字体大小（px）" type="number" min="10" max="40" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tablePageSizeInput" label="每页数据量（10-200）" type="number" min="10" max="200" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
         <mdui-button slot="action" variant="text" id="tableViewCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" id="tableViewOkBtn">确定</mdui-button>
     </mdui-dialog>
-    <mdui-dialog id="cellStyleDialog" close-on-esc close-on-overlay-click headline="单元格样式">
-        <div id="cellStyleTargetText" style="font-size:0.9rem;color:#757575;margin-bottom:8px;"></div>
-        <mdui-text-field id="cellStyleFontSizeInput" label="字体大小（px）" type="number" min="10" max="48" variant="outlined"></mdui-text-field>
-        <mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
-        <mdui-text-field id="cellStyleBgColorInput" label="背景颜色（#RRGGBB）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
-        <mdui-text-field id="cellStyleFontWeightInput" label="字重（normal / bold / 100-900）" variant="outlined" style="margin-top: 10px;"></mdui-text-field>
-        <mdui-button slot="action" variant="text" id="cellStyleResetBtn">重置当前格</mdui-button>
-        <mdui-button slot="action" variant="text" id="cellStyleCancelBtn">取消</mdui-button>
-        <mdui-button slot="action" variant="filled" id="cellStyleOkBtn">保存</mdui-button>
+    <mdui-dialog id="cursorHandleSettingsDialog" close-on-esc close-on-overlay-click headline="光标水滴显示时长">
+        <mdui-text-field id="cursorHandleDurationInput" label="点击编辑框后显示（毫秒）" type="number" min="0" max="10000" step="100" variant="outlined"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="cursorHandleDurationCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="cursorHandleDurationOkBtn">保存</mdui-button>
     </mdui-dialog>
 
     <mdui-dialog id="imageCompressSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
@@ -2705,6 +2769,18 @@
         <mdui-button slot="action" variant="filled" id="exportChoiceOkBtn">导出</mdui-button>
     </mdui-dialog>
 
+    <mdui-dialog id="configExportDialog" close-on-esc close-on-overlay-click headline="选择导出的配置">
+        <div style="display:grid;gap:10px;padding:4px 0;">
+            <mdui-checkbox id="configExportTheme" checked>主题与主色</mdui-checkbox>
+            <mdui-checkbox id="configExportAppSettings" checked>应用设置</mdui-checkbox>
+            <mdui-checkbox id="configExportKeyboard" checked>键盘与快捷短语</mdui-checkbox>
+            <mdui-checkbox id="configExportInputStats">inputStats</mdui-checkbox>
+            <mdui-checkbox id="configExportShortcutStats">shortcutClickStats</mdui-checkbox>
+        </div>
+        <mdui-button slot="action" variant="text" id="configExportCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="configExportOkBtn">导出</mdui-button>
+    </mdui-dialog>
+
     <mdui-dialog id="exportProgressDialog" headline="正在导出" close-on-esc>
         <div style="padding: 0 24px 24px; display: grid; gap: 12px;">
             <div id="exportProgressText" style="font-size: 0.95rem; color: var(--mdui-color-on-surface-variant, #757575);"></div>
@@ -2720,6 +2796,11 @@
             <mdui-button-icon icon="close" id="closeMoveRowDialogBtn"></mdui-button-icon>
         </mdui-top-app-bar>
         <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="moveRowSourceSummary" style="font-weight:600;margin-bottom:10px;"></div>
+            <mdui-segmented-button-group id="moveRowPlacementGroup" selects="single" value="before" style="width:100%;">
+                <mdui-segmented-button value="before">移动到目标上方</mdui-segmented-button>
+                <mdui-segmented-button value="after">移动到目标下方</mdui-segmented-button>
+            </mdui-segmented-button-group>
             <mdui-text-field id="moveRowSearchInput" label="搜索（产品号/卡片号/钢种/行号）" variant="outlined" clearable></mdui-text-field>
             <mdui-list id="moveRowList" style="margin-top: 10px;"></mdui-list>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px;">
@@ -2834,8 +2915,19 @@
 
 		const PRIMARY_KEY = "xtd_theme_primary";
 		const themeFlash = document.getElementById("themeFlash");
-		const RSDB_VERSION = '2026.04.24';
+		const RSDB_VERSION = '2026.07.30';
 		const RSDB_CHANGELOG = [
+		    {
+		        version: '2026.07.30',
+		        notes: [
+		            '数据列表：减少重复渲染与整库写入，搜索改为防抖处理',
+		            '行移动：合并为单一按钮，支持多选项目并移动到目标上方或下方',
+		            '单元格：点击即可编辑内容和 Excel 基本格式，导入导出保留格式',
+		            '图片：修复重复选择、拍照、相册和删除；预览切换可保留缩放位置',
+		            '交互：修复 Snackbar 右滑、FAB 连续拖动、键盘滑动误输入和光标水滴显示',
+		            '设置：新增搜索、更多显示选项以及可选配置导出'
+		        ]
+		    },
 		    {
 		        version: '2026.04.24',
 		        notes: [
@@ -2886,8 +2978,10 @@
 		    imageCompressMaxWidth: 1280,
 		    imageCompressMaxHeight: 1280,
 		    imageCompressQuality: 0.8,
+		    imagePreviewKeepTransform: true,
 		    snackbarPlacement: 'bottom-center',
 		    snackbarDismissMode: 'swipe',
+		    cursorHandleDuration: 2000,
 		    animationsEnabled: true,
 		    dialogPositions: ['center'],
 		    virtualKeyboardHeight: null,
@@ -2900,6 +2994,7 @@
             tableCellWidth: 80,
             tableCellHeight: 48,
             tableCellFontSize: 16,
+            tablePageSize: 50,
             tableCellStyles: {}
 		};
 		let appSettings = loadAppSettings();
@@ -2919,7 +3014,7 @@
 		let searchTerm = '';             
 		let isSearchReplaceVisible = false;  
 		let currentPage = 1;
-		        const PAGE_SIZE = 50;  
+		        let PAGE_SIZE = Math.max(10, Math.min(200, Number(appSettings.tablePageSize) || 50));
 		        let totalPages = 1;
 
 		let searchMatches = [];         
@@ -2929,6 +3024,15 @@
 		    'steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 
 		    'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'
 		];
+		const rowSearchCache = new WeakMap();
+		function getNormalizedSearchValues(item) {
+		    const signature = searchableFields.map(field => String(item?.[field] ?? '')).join('\u0001');
+		    const cached = rowSearchCache.get(item);
+		    if (cached?.signature === signature) return cached.values;
+		    const values = searchableFields.map(field => String(item?.[field] ?? '').toLowerCase());
+		    rowSearchCache.set(item, { signature, values });
+		    return values;
+		}
 		let duplicateCurrentPage = 1;
 		        const DUPLICATE_PAGE_SIZE = 10;  
 		        let duplicateTotalPages = 1;
@@ -2962,6 +3066,11 @@
 		        merged.largeImageThresholdMB = Number.isFinite(mb) ? Math.max(0.5, Math.min(50, mb)) : 5;
 		        merged.snackbarPlacement = typeof merged.snackbarPlacement === 'string' ? merged.snackbarPlacement : 'bottom-center';
 		        merged.snackbarDismissMode = merged.snackbarDismissMode === 'button' ? 'button' : 'swipe';
+		        merged.imagePreviewKeepTransform = merged.imagePreviewKeepTransform !== false;
+		        {
+		            const duration = Number(merged.cursorHandleDuration);
+		            merged.cursorHandleDuration = Number.isFinite(duration) ? Math.max(0, Math.min(10000, Math.round(duration))) : 2000;
+		        }
 		        merged.animationsEnabled = merged.animationsEnabled !== false;
 		        merged.historyStorageEnabled = merged.historyStorageEnabled !== false;
 		        merged.undoRedoEnabled = merged.undoRedoEnabled !== false;
@@ -2985,6 +3094,10 @@
                     merged.tableCellStyles = {};
                 }
 		        {
+		            const pageSize = Number(merged.tablePageSize);
+		            merged.tablePageSize = Number.isFinite(pageSize) ? Math.max(10, Math.min(200, Math.round(pageSize))) : 50;
+		        }
+		        {
 		            const hc = Number(merged.operationHistoryMaxCount);
 		            merged.operationHistoryMaxCount = Number.isFinite(hc) ? Math.max(1, Math.min(200, Math.round(hc))) : 8;
 		        }
@@ -3000,6 +3113,7 @@
 
 		function saveAppSettings(partial) {
 		    appSettings = { ...appSettings, ...(partial || {}) };
+		    PAGE_SIZE = Math.max(10, Math.min(200, Number(appSettings.tablePageSize) || 50));
 		    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appSettings));
 		    applyAppSettings();
 		}
@@ -3032,8 +3146,12 @@
 		    }
 		}
 
+		let inputStatsSaveTimer = null;
 		function saveInputStats() {
-		    localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(inputStats));
+		    clearTimeout(inputStatsSaveTimer);
+		    inputStatsSaveTimer = setTimeout(() => {
+		        localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(inputStats));
+		    }, 180);
 		}
 
 		function recordInputStat(fieldKey, value) {
@@ -3092,15 +3210,50 @@
             }
         }
 
+        function getCellFormat(rowIndex, fieldKey) {
+            const itemStyle = tableData[rowIndex]?.__cellStyles?.[fieldKey];
+            if (itemStyle && typeof itemStyle === 'object') return itemStyle;
+            const legacy = appSettings.tableCellStyles?.[`${rowIndex}:${fieldKey}`];
+            return legacy && typeof legacy === 'object' ? legacy : {};
+        }
+
+        function setCellFormat(rowIndex, fieldKey, style) {
+            if (!tableData[rowIndex] || !fieldKey) return;
+            const styles = { ...(tableData[rowIndex].__cellStyles || {}) };
+            if (style && Object.keys(style).length) styles[fieldKey] = style;
+            else delete styles[fieldKey];
+            if (Object.keys(styles).length) tableData[rowIndex].__cellStyles = styles;
+            else delete tableData[rowIndex].__cellStyles;
+        }
+
+        function migrateLegacyCellStyles() {
+            const legacy = appSettings.tableCellStyles;
+            if (!legacy || typeof legacy !== 'object' || !Object.keys(legacy).length) return;
+            Object.entries(legacy).forEach(([key, style]) => {
+                const match = key.match(/^(\d+):(.+)$/);
+                if (!match) return;
+                const rowIndex = Number(match[1]);
+                const field = match[2];
+                if (!tableData[rowIndex]) return;
+                setCellFormat(rowIndex, field, style);
+            });
+            appSettings.tableCellStyles = {};
+            localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appSettings));
+        }
+
         function applyCellCustomStyle(cellEl, rowIndex, fieldKey) {
             if (!cellEl || rowIndex === undefined || !fieldKey) return;
-            const key = `${rowIndex}:${fieldKey}`;
-            const style = appSettings.tableCellStyles?.[key];
+            const style = getCellFormat(rowIndex, fieldKey);
             if (!style || typeof style !== 'object') return;
             if (style.fontSize) cellEl.style.fontSize = `${Math.max(10, Math.min(48, Number(style.fontSize) || 0))}px`;
+            if (style.fontName) cellEl.style.fontFamily = style.fontName;
             if (style.color) cellEl.style.color = style.color;
             if (style.backgroundColor) cellEl.style.backgroundColor = style.backgroundColor;
-            if (style.fontWeight) cellEl.style.fontWeight = style.fontWeight;
+            if (style.bold || style.fontWeight === 'bold') cellEl.style.fontWeight = 'bold';
+            if (style.italic) cellEl.style.fontStyle = 'italic';
+            if (style.underline) cellEl.style.textDecoration = 'underline';
+            if (style.horizontal && style.horizontal !== 'general') cellEl.style.textAlign = style.horizontal;
+            if (style.wrapText) cellEl.style.whiteSpace = 'normal';
         }
 
 		function applyAppSettings() {
@@ -3407,8 +3560,12 @@
                 const s = Number(appSettings.tableScaleDefault) || 0.5;
                 const w = Number(appSettings.tableCellWidth) || 80;
                 const h = Number(appSettings.tableCellHeight) || 48;
-                tableViewItem.setAttribute('description', `缩放 ${s.toFixed(2)}，宽 ${w}px，高 ${h}px`);
+                tableViewItem.setAttribute('description', `缩放 ${s.toFixed(2)}，宽 ${w}px，高 ${h}px，每页 ${PAGE_SIZE} 条`);
             }
+		    const imageKeepSwitch = document.getElementById('settingsImageKeepTransformSwitch');
+		    if (imageKeepSwitch) imageKeepSwitch.checked = appSettings.imagePreviewKeepTransform !== false;
+		    const cursorHandleItem = document.getElementById('settingsCursorHandleItem');
+		    if (cursorHandleItem) cursorHandleItem.setAttribute('description', `${Number(appSettings.cursorHandleDuration) || 0} 毫秒`);
 		    const snackbarItem = document.getElementById('settingsSnackbarItem');
 		    if (snackbarItem) {
 		        const placement = appSettings.snackbarPlacement || 'bottom-center';
@@ -3510,10 +3667,12 @@
             const tableCellWInput = document.getElementById('tableCellWidthInput');
             const tableCellHInput = document.getElementById('tableCellHeightInput');
             const tableCellFsInput = document.getElementById('tableCellFontSizeInput');
+            const tablePageSizeInput = document.getElementById('tablePageSizeInput');
             if (tableScaleInput) tableScaleInput.value = String(Number(appSettings.tableScaleDefault) || 0.5);
             if (tableCellWInput) tableCellWInput.value = String(Number(appSettings.tableCellWidth) || 80);
             if (tableCellHInput) tableCellHInput.value = String(Number(appSettings.tableCellHeight) || 48);
             if (tableCellFsInput) tableCellFsInput.value = String(Number(appSettings.tableCellFontSize) || 16);
+            if (tablePageSizeInput) tablePageSizeInput.value = String(Number(appSettings.tablePageSize) || 50);
 
 		}
 
@@ -3851,34 +4010,43 @@ const ZoomManager = {
 		    let startX = 0;
 		    let startY = 0;
 		    let active = false;
-		    snackbar.addEventListener('pointerdown', (e) => {
+		    const pointOf = (event, changed = false) => {
+		        const touch = changed ? event.changedTouches?.[0] : event.touches?.[0];
+		        return touch || event;
+		    };
+		    const start = (e) => {
 		        if (appSettings.snackbarDismissMode !== 'swipe') return;
 		        if (!snackbar.open) return;
-		        startX = e.clientX;
-		        startY = e.clientY;
+		        const point = pointOf(e);
+		        startX = point.clientX;
+		        startY = point.clientY;
 		        active = true;
-		    }, { passive: true });
-		    snackbar.addEventListener('pointermove', (e) => {
+		        snackbar.setPointerCapture?.(e.pointerId);
+		    };
+		    const move = (e) => {
 		        if (appSettings.snackbarDismissMode !== 'swipe') return;
 		        if (!active) return;
-		        const dx = e.clientX - startX;
-		        const dy = e.clientY - startY;
+		        const point = pointOf(e);
+		        const dx = point.clientX - startX;
+		        const dy = point.clientY - startY;
 		        if (Math.abs(dy) > 40) {
 		            active = false;
 		            snackbar.style.transform = '';
 		            return;
 		        }
 		        if (dx > 0) {
+		            if (e.cancelable) e.preventDefault();
 		            snackbar.style.transition = 'transform 0.08s ease-out';
 		            snackbar.style.transform = `translateX(${Math.min(dx, 220)}px)`;
 		        }
-		    }, { passive: true });
+		    };
 		    const end = (e) => {
 		        if (appSettings.snackbarDismissMode !== 'swipe') return;
 		        if (!active) return;
 		        active = false;
-		        const dx = e.clientX - startX;
-		        const dy = e.clientY - startY;
+		        const point = pointOf(e, true);
+		        const dx = point.clientX - startX;
+		        const dy = point.clientY - startY;
 		        if (dx > 80 && Math.abs(dy) < 40) {
 		            snackbar.style.transition = 'transform 0.16s ease-out';
 		            snackbar.style.transform = 'translateX(120%)';
@@ -3891,8 +4059,13 @@ const ZoomManager = {
 		            snackbar.style.transform = '';
 		        }
 		    };
+		    snackbar.addEventListener('pointerdown', start, { passive: true });
+		    snackbar.addEventListener('pointermove', move, { passive: false });
 		    snackbar.addEventListener('pointerup', end, { passive: true });
 		    snackbar.addEventListener('pointercancel', end, { passive: true });
+		    snackbar.addEventListener('touchstart', start, { passive: true });
+		    snackbar.addEventListener('touchmove', move, { passive: false });
+		    snackbar.addEventListener('touchend', end, { passive: true });
 		}
 
 		function isSystemDarkMode() {
@@ -4163,10 +4336,15 @@ function updateVirtualCursor() {
         const size = 16;
         handle.style.left = (cursorLeft - size / 2 + 1) + 'px';
         handle.style.top = (cursorTop + cursorHeight + 6) + 'px';
-        const last = window.__rsdbLastCursorInteractAt || 0;
-        const inactive = Date.now() - last > 3000;
-        handle.style.display = inactive ? 'none' : 'block';
+        const visibleUntil = Number(window.__rsdbCursorHandleVisibleUntil) || 0;
+        handle.style.display = Date.now() < visibleUntil ? 'block' : 'none';
     }
+}
+
+function showCursorHandleTemporarily() {
+    const duration = Math.max(0, Math.min(10000, Number(appSettings.cursorHandleDuration) || 0));
+    window.__rsdbCursorHandleVisibleUntil = Date.now() + duration;
+    updateVirtualCursor();
 }
 
 function resetCursorToEnd(input) {
@@ -4294,6 +4472,7 @@ function initEventListeners() {
                 } catch (e2) {}
                 window.__rsdbKeyboardSwipeConsumedAt = Date.now();
                 window.__rsdbLastCursorInteractAt = Date.now();
+                showCursorHandleTemporarily();
                 updateVirtualCursor();
             },
             { passive: false },
@@ -4308,6 +4487,7 @@ function initEventListeners() {
                 moveCursorToClientX(currentInput, e.clientX);
                 window.__rsdbKeyboardSwipeConsumedAt = Date.now();
                 window.__rsdbLastCursorInteractAt = Date.now();
+                showCursorHandleTemporarily();
                 updateVirtualCursor();
             },
             { passive: false },
@@ -4484,7 +4664,6 @@ function initEventListeners() {
         }
 
         let pointerId = null;
-        let fabMoveMode = false;
         let dragging = false;
         let sx = 0, sy = 0;
         let baseRight = 0, baseBottom = 0;
@@ -4502,16 +4681,18 @@ function initEventListeners() {
                 right: mainFab.style.right || DEFAULT_RIGHT,
                 bottom: mainFab.style.bottom || DEFAULT_BOTTOM
             }));
-            fabMoveMode = false;
-            dragging = false;
             showSnackbar('已保存FAB位置', 'success');
         };
 
         const finishDrag = (e) => {
             if (pointerId !== e.pointerId) return;
             clearPress();
-            if (dragging && fabMoveMode) showSnackbar('FAB位置已移动，再次长按FAB保存位置', 'info');
+            if (dragging) {
+                saveFabPosition();
+                suppressFabTap(420);
+            }
             dragging = false;
+            mainFab.classList.remove('dragging');
             pointerId = null;
         };
 
@@ -4527,34 +4708,19 @@ function initEventListeners() {
             dragging = false;
             clearPress();
             pressTimer = setTimeout(() => {
-                if (fabMoveMode) {
-                    saveFabPosition();
-                    return;
-                }
-                fabMoveMode = true;
                 dragging = true;
+                mainFab.classList.add('dragging');
                 mainFab.setPointerCapture?.(pointerId);
-                showSnackbar('已进入FAB拖动模式，拖动后再次长按保存位置', 'info');
                 if (navigator.vibrate) navigator.vibrate(12);
             }, LONG_PRESS_MS);
-        }, { passive: true });
-        mainFab.addEventListener('pointermove', (e) => {
+        }, { passive: false });
+        const moveFab = (e) => {
             if (pointerId !== e.pointerId) return;
-            if (!fabMoveMode && !dragging) {
+            if (!dragging) {
                 const dx = Math.abs(e.clientX - sx);
                 const dy = Math.abs(e.clientY - sy);
                 if (dx > 12 || dy > 12) clearPress();
                 return;
-            }
-            if (fabMoveMode && !dragging) {
-                const dx = Math.abs(e.clientX - sx);
-                const dy = Math.abs(e.clientY - sy);
-                if (dx > 4 || dy > 4) {
-                    clearPress();
-                    dragging = true;
-                } else {
-                    return;
-                }
             }
             if (e.cancelable) e.preventDefault();
             const deltaX = sx - e.clientX;
@@ -4563,9 +4729,10 @@ function initEventListeners() {
             const newBottom = Math.max(10, Math.min(baseBottom + deltaY, window.innerHeight - 48));
             mainFab.style.right = `${Math.round(newRight)}px`;
             mainFab.style.bottom = `${Math.round(newBottom)}px`;
-        }, { passive: false });
-        mainFab.addEventListener('pointerup', finishDrag);
-        mainFab.addEventListener('pointercancel', finishDrag);
+        };
+        document.addEventListener('pointermove', moveFab, { passive: false });
+        document.addEventListener('pointerup', finishDrag);
+        document.addEventListener('pointercancel', finishDrag);
     }
 
     // Delete All Data Menu Item
@@ -4675,6 +4842,7 @@ function initEventListeners() {
                     currentInput = input;
                     input.focus();
                     moveCursorToClick(input, e);
+                    showCursorHandleTemporarily();
                     updateKeyboardForInput(input);
                     showVirtualKeyboard();
                 } else {
@@ -4693,15 +4861,13 @@ function initEventListeners() {
 
     if (selectGalleryBtn) {
         selectGalleryBtn.addEventListener('click', () => {
-            fileInput.removeAttribute('capture');
-            fileInput.click();
+            chooseCardImage({ capture: false, targetIndex: currentEditIndex });
         });
     }
 
     if (takePhotoBtn) {
         takePhotoBtn.addEventListener('click', () => {
-            fileInput.setAttribute('capture', 'environment');  
-            fileInput.click();
+            chooseCardImage({ capture: true, targetIndex: currentEditIndex });
         });
     }
 
@@ -4716,8 +4882,9 @@ function initEventListeners() {
             e.stopPropagation();
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
-                handleImageSelect({ target: { files: [file] } });
-                showSnackbar('图片拖入成功', 'success');
+                handleImageSelect({ target: { files: [file] } }).then(base64 => {
+                    if (base64) commitSelectedImage(base64, currentEditIndex, 'drop');
+                });
             } else {
                 showSnackbar('请拖入图片文件', 'warning');
             }
@@ -4742,7 +4909,19 @@ function initEventListeners() {
         });
     }
 
-    fileInput.addEventListener('change', handleImageSelect);
+    fileInput.addEventListener('change', async (event) => {
+        const context = window.__rsdbPendingImageSelection || { targetIndex: currentEditIndex, mode: 'select' };
+        window.__rsdbPendingImageSelection = null;
+        try {
+            const base64 = await handleImageSelect(event);
+            if (!base64) return;
+            if (typeof context.onSelected === 'function') await context.onSelected(base64);
+            else await commitSelectedImage(base64, context.targetIndex, context.mode);
+        } finally {
+            fileInput.removeAttribute('capture');
+            fileInput.value = '';
+        }
+    });
 
     const cancelDeleteBtn = document.getElementById('cancelDeleteImageBtn');
     if (cancelDeleteBtn) {
@@ -4756,7 +4935,12 @@ function initEventListeners() {
     if (confirmDeleteImageBtn) {
         confirmDeleteImageBtn.onclick = () => {
             const index = window.tempDeleteImageIndex;
-            if (index !== undefined && tableData[index]) {
+            if (index === -1) {
+                delete window.tempNewCardImage;
+                const previewImg = document.getElementById('previewImg');
+                if (previewImg) previewImg.removeAttribute('src');
+                showSnackbar('图片已删除', 'success');
+            } else if (index !== undefined && tableData[index]) {
                 beginOperation('delete_image', '删除图片', { index });
                 tableData[index].cardImage = '';
                 saveDataToIndexedDB();
@@ -4898,6 +5082,7 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         currentInput = e.target;
         const realFieldId = dom.quickEditField.value;
         moveCursorToClick(currentInput, e);
+        showCursorHandleTemporarily();
         updateKeyboardForInput(currentInput, realFieldId);
         showVirtualKeyboard();
     });
@@ -4992,11 +5177,10 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         });
     }
 
-    dom.searchInput.addEventListener('input', (e) => {
-        const newQuery = e.target.value.trim();
-        if (newQuery !== dom.searchInput.value.trim()) return;
-        startSearch();
-        updateTable();
+    let searchDebounceTimer = null;
+    dom.searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(startSearch, 160);
     });
 
     dom.replaceQueryInput.addEventListener('input', () => {
@@ -5028,31 +5212,47 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     document.getElementById('closeSettingsDialogBtn')?.addEventListener('click', () => {
         if (settingsDialog) settingsDialog.open = false;
     });
+    document.getElementById('settingsSearchInput')?.addEventListener('input', (event) => {
+        const query = (event.target.value || '').trim().toLowerCase();
+        settingsDialog?.querySelectorAll('mdui-list-item').forEach(item => {
+            const text = `${item.getAttribute('headline') || ''} ${item.getAttribute('description') || ''} ${item.textContent || ''}`.toLowerCase();
+            item.style.display = !query || text.includes(query) ? '' : 'none';
+        });
+        settingsDialog?.querySelectorAll('mdui-list-subheader, mdui-divider').forEach(el => {
+            el.style.display = query ? 'none' : '';
+        });
+    });
     document.getElementById('settingsExportAllXmlItem')?.addEventListener('click', () => {
-        const buildXml = () => {
-            const payload = {
-                version: 1,
-                exportedAt: new Date().toISOString(),
-                theme: localStorage.getItem('theme') || 'auto',
-                primaryColor: localStorage.getItem(PRIMARY_KEY) || '',
-                appSettings: appSettings || {},
-                keyboardConfig: KeyboardConfigManager?.config || {},
-                inputStats: inputStats || {},
-                shortcutClickStats: shortcutClickStats || {},
-            };
-            const json = (v) => `<![CDATA[${JSON.stringify(v ?? {}, null, 2)}]]>`;
-            const escape = (s) => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<?xml version="1.0" encoding="UTF-8"?>\n` +
-                `<rsdbConfig version="${payload.version}" exportedAt="${escape(payload.exportedAt)}">\n` +
-                `  <theme>${escape(payload.theme)}</theme>\n` +
-                `  <primaryColor>${escape(payload.primaryColor)}</primaryColor>\n` +
-                `  <appSettings>${json(payload.appSettings)}</appSettings>\n` +
-                `  <keyboardConfig>${json(payload.keyboardConfig)}</keyboardConfig>\n` +
-                `  <inputStats>${json(payload.inputStats)}</inputStats>\n` +
-                `  <shortcutClickStats>${json(payload.shortcutClickStats)}</shortcutClickStats>\n` +
-                `</rsdbConfig>\n`;
-        };
-        const xml = buildXml();
+        const inputStatsCheck = document.getElementById('configExportInputStats');
+        const shortcutStatsCheck = document.getElementById('configExportShortcutStats');
+        if (inputStatsCheck) inputStatsCheck.checked = false;
+        if (shortcutStatsCheck) shortcutStatsCheck.checked = false;
+        const dlg = document.getElementById('configExportDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('configExportCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('configExportDialog');
+        if (dlg) dlg.open = false;
+    });
+    document.getElementById('configExportOkBtn')?.addEventListener('click', () => {
+        const include = (id) => !!document.getElementById(id)?.checked;
+        const json = (v) => `<![CDATA[${JSON.stringify(v ?? {}, null, 2)}]]>`;
+        const escape = (s) => (s ?? '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const sections = [];
+        if (include('configExportTheme')) {
+            sections.push(`  <theme>${escape(localStorage.getItem('theme') || 'auto')}</theme>`);
+            sections.push(`  <primaryColor>${escape(localStorage.getItem(PRIMARY_KEY) || '')}</primaryColor>`);
+        }
+        if (include('configExportAppSettings')) sections.push(`  <appSettings>${json(appSettings || {})}</appSettings>`);
+        if (include('configExportKeyboard')) sections.push(`  <keyboardConfig>${json(KeyboardConfigManager?.config || {})}</keyboardConfig>`);
+        if (include('configExportInputStats')) sections.push(`  <inputStats>${json(inputStats || {})}</inputStats>`);
+        if (include('configExportShortcutStats')) sections.push(`  <shortcutClickStats>${json(shortcutClickStats || {})}</shortcutClickStats>`);
+        if (!sections.length) {
+            showSnackbar('请至少选择一项配置', 'warning');
+            return;
+        }
+        const exportedAt = new Date().toISOString();
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<rsdbConfig version="2" exportedAt="${escape(exportedAt)}">\n${sections.join('\n')}\n</rsdbConfig>\n`;
         const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -5062,6 +5262,8 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1200);
+        const dlg = document.getElementById('configExportDialog');
+        if (dlg) dlg.open = false;
         showSnackbar('已导出 XML 配置', 'success');
     });
     document.getElementById('settingsImportAllXmlItem')?.addEventListener('click', () => {
@@ -5085,8 +5287,9 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         
         const readJson = (tag) => {
             const node = root.querySelector(tag);
+            if (!node) return null;
             const raw = node?.textContent || '';
-            return raw ? JSON.parse(raw) : {};
+            return raw ? JSON.parse(raw) : null;
         };
         
         const importedAppSettings = readJson('appSettings');
@@ -5096,10 +5299,10 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
 
         if (theme) localStorage.setItem('theme', theme);
         if (primary) localStorage.setItem(PRIMARY_KEY, primary);
-        localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(importedAppSettings || {}));
-        localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(importedKeyboardConfig || {}));
-        localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(importedInputStats || {}));
-        localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(importedShortcutClickStats || {}));
+        if (importedAppSettings !== null) localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(importedAppSettings));
+        if (importedKeyboardConfig !== null) localStorage.setItem(KeyboardConfigManager.STORAGE_KEY, JSON.stringify(importedKeyboardConfig));
+        if (importedInputStats !== null) localStorage.setItem(INPUT_STATS_KEY, JSON.stringify(importedInputStats));
+        if (importedShortcutClickStats !== null) localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(importedShortcutClickStats));
 
         showSnackbar('已导入配置，正在刷新...', 'success');
         setTimeout(() => location.reload(), 260);
@@ -5204,6 +5407,22 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         updateSettingsUI();
         const dlg = document.getElementById('tableViewDialog');
         if (dlg) dlg.open = true;
+    });
+    document.getElementById('settingsCursorHandleItem')?.addEventListener('click', () => {
+        const input = document.getElementById('cursorHandleDurationInput');
+        if (input) input.value = String(Number(appSettings.cursorHandleDuration) || 0);
+        const dlg = document.getElementById('cursorHandleSettingsDialog');
+        if (dlg) dlg.open = true;
+    });
+    document.getElementById('cursorHandleDurationCancelBtn')?.addEventListener('click', () => {
+        const dlg = document.getElementById('cursorHandleSettingsDialog');
+        if (dlg) dlg.open = false;
+    });
+    bindImmediateActionButton(document.getElementById('cursorHandleDurationOkBtn'), () => {
+        const duration = Math.max(0, Math.min(10000, Number(document.getElementById('cursorHandleDurationInput')?.value) || 0));
+        saveAppSettings({ cursorHandleDuration: duration });
+        const dlg = document.getElementById('cursorHandleSettingsDialog');
+        if (dlg) dlg.open = false;
     });
     document.getElementById('settingsUndoRedoMaxStepsItem')?.addEventListener('click', () => {
         if (appSettings.undoRedoEnabled === false) return;
@@ -5549,6 +5768,9 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     const animSwitch = document.getElementById('settingsAnimationsSwitch');
     animSwitch?.addEventListener('change', () => saveAppSettings({ animationsEnabled: !!animSwitch.checked }));
     bindSwitchListItemToggle(animSwitch);
+    const imageKeepTransformSwitch = document.getElementById('settingsImageKeepTransformSwitch');
+    imageKeepTransformSwitch?.addEventListener('change', () => saveAppSettings({ imagePreviewKeepTransform: !!imageKeepTransformSwitch.checked }));
+    bindSwitchListItemToggle(imageKeepTransformSwitch);
     const historyStorageSwitch = document.getElementById('settingsHistoryStorageSwitch');
     historyStorageSwitch?.addEventListener('change', () => {
         const enabled = !!historyStorageSwitch.checked;
@@ -5717,11 +5939,13 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         const width = Math.max(48, Math.min(320, Number(document.getElementById('tableCellWidthInput')?.value) || 80));
         const height = Math.max(30, Math.min(160, Number(document.getElementById('tableCellHeightInput')?.value) || 48));
         const fontSize = Math.max(10, Math.min(40, Number(document.getElementById('tableCellFontSizeInput')?.value) || 16));
+        const pageSize = Math.max(10, Math.min(200, Number(document.getElementById('tablePageSizeInput')?.value) || 50));
         saveAppSettings({
             tableScaleDefault: scale,
             tableCellWidth: width,
             tableCellHeight: height,
-            tableCellFontSize: fontSize
+            tableCellFontSize: fontSize,
+            tablePageSize: pageSize
         });
         if (ZoomManager) {
             ZoomManager.currentScale = scale;
@@ -5731,40 +5955,41 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         const dlg = document.getElementById('tableViewDialog');
         if (dlg) dlg.open = false;
     });
-    document.getElementById('cellStyleCancelBtn')?.addEventListener('click', () => {
-        const dlg = document.getElementById('cellStyleDialog');
-        if (dlg) dlg.open = false;
-    });
     document.getElementById('cellStyleResetBtn')?.addEventListener('click', () => {
-        const key = window.__rsdbEditingCellKey;
-        if (!key) return;
-        const next = { ...(appSettings.tableCellStyles || {}) };
-        delete next[key];
-        saveAppSettings({ tableCellStyles: next });
-        const dlg = document.getElementById('cellStyleDialog');
-        if (dlg) dlg.open = false;
+        const target = window.__rsdbEditingCell;
+        if (!target) return;
+        setCellFormat(target.index, target.field, null);
+        openCellStyleDialog(target.index, target.field);
+        saveDataToIndexedDB();
         updateTable();
+        showSnackbar('已重置当前单元格格式', 'success');
     });
-    bindImmediateActionButton(document.getElementById('cellStyleOkBtn'), () => {
-        const key = window.__rsdbEditingCellKey;
-        if (!key) return;
+    window.saveCurrentCellStyle = function() {
+        const target = window.__rsdbEditingCell;
+        if (!target) return;
+        const fontName = (document.getElementById('cellStyleFontNameInput')?.value || '').trim();
         const fontSize = Number(document.getElementById('cellStyleFontSizeInput')?.value);
         const color = (document.getElementById('cellStyleTextColorInput')?.value || '').trim();
         const bgColor = (document.getElementById('cellStyleBgColorInput')?.value || '').trim();
-        const fontWeight = (document.getElementById('cellStyleFontWeightInput')?.value || '').trim();
+        const horizontal = document.getElementById('cellStyleAlignInput')?.value || 'general';
+        const numFmt = (document.getElementById('cellStyleNumberFormatInput')?.value || '').trim();
         const validColor = (v) => /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(v);
         const styleObj = {};
-        if (Number.isFinite(fontSize)) styleObj.fontSize = Math.max(10, Math.min(48, Math.round(fontSize)));
+        if (fontName) styleObj.fontName = fontName;
+        if (Number.isFinite(fontSize) && fontSize > 0) styleObj.fontSize = Math.max(8, Math.min(72, Math.round(fontSize)));
         if (validColor(color)) styleObj.color = color;
         if (validColor(bgColor)) styleObj.backgroundColor = bgColor;
-        if (fontWeight) styleObj.fontWeight = fontWeight;
-        const next = { ...(appSettings.tableCellStyles || {}) };
-        next[key] = styleObj;
-        saveAppSettings({ tableCellStyles: next });
-        const dlg = document.getElementById('cellStyleDialog');
-        if (dlg) dlg.open = false;
-        updateTable();
-    });
+        if (horizontal !== 'general') styleObj.horizontal = horizontal;
+        if (numFmt) styleObj.numFmt = numFmt;
+        styleObj.bold = !!document.getElementById('cellStyleBoldInput')?.checked;
+        styleObj.italic = !!document.getElementById('cellStyleItalicInput')?.checked;
+        styleObj.underline = !!document.getElementById('cellStyleUnderlineInput')?.checked;
+        styleObj.wrapText = !!document.getElementById('cellStyleWrapInput')?.checked;
+        Object.keys(styleObj).forEach(key => {
+            if (styleObj[key] === false || styleObj[key] === '') delete styleObj[key];
+        });
+        setCellFormat(target.index, target.field, styleObj);
+    };
     document.getElementById('closeImageCompressSettingsBtn')?.addEventListener('click', () => {
         const dlg = document.getElementById('imageCompressSettingsDialog');
         if (dlg) dlg.open = false;
@@ -5838,21 +6063,25 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     moveRowPageInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyMoveRowPage(); });
     document.getElementById('moveRowOkBtn')?.addEventListener('click', () => {
         if (!moveRowDialogState) return;
-        const src = moveRowDialogState.sourceIndex;
-        const dir = moveRowDialogState.direction;
-        let target = moveRowDialogState.selectedIndex;
-        if (target == null || target < 0 || target === src) {
+        const sourceIndexes = Array.from(moveRowDialogState.sourceIndexes || []).sort((a, b) => a - b);
+        const target = moveRowDialogState.selectedIndex;
+        if (!sourceIndexes.length || target == null || target < 0 || sourceIndexes.includes(target)) {
             showSnackbar('请选择有效的目标行', 'warning');
             return;
         }
-        const moved = tableData.splice(src, 1)[0];
-        if (src < target) target -= 1;
-        const insertIndex = dir === -1 ? target : target + 1;
-        tableData.splice(insertIndex, 0, moved);
+        beginOperation('move_rows', `移动 ${sourceIndexes.length} 个项目`, { sourceIndexes, target });
+        const selectedSet = new Set(sourceIndexes);
+        const moved = sourceIndexes.map(index => tableData[index]);
+        const remaining = tableData.filter((_, index) => !selectedSet.has(index));
+        const targetInRemaining = remaining.indexOf(tableData[target]);
+        const placement = document.getElementById('moveRowPlacementGroup')?.value === 'after' ? 'after' : 'before';
+        const insertIndex = targetInRemaining + (placement === 'after' ? 1 : 0);
+        tableData = [...remaining.slice(0, insertIndex), ...moved, ...remaining.slice(insertIndex)];
         saveDataToIndexedDB();
         currentPage = Math.floor(insertIndex / PAGE_SIZE) + 1;
         updateTable();
-        showSnackbar(`已移动至第 ${insertIndex + 1} 行`, 'success');
+        commitOperation();
+        showSnackbar(`已移动 ${moved.length} 个项目`, 'success');
         closeMoveRowDlg();
     });
 
@@ -6080,65 +6309,13 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
 
     dom.searchClearBtn.addEventListener('click', () => {
         dom.searchInput.value = '';
-        searchTerm = '';
-        updateTable();
+        startSearch();
     });
 
     dom.calculatorBtn.addEventListener('click', openCalculatorModal);
     dom.calculateAndAddBtn.addEventListener('click', calculateAndAddData);
 
-dom.tableBody.addEventListener('dblclick', (e) => {
-    if (isMultiSelectMode) return;
-
-    const row = e.target.closest('tr');
-    if (!row) return;
-
-    const index = parseInt(row.getAttribute('data-index'));
-    const cell = e.target.closest('td');
-    const targetFieldId = cell ? cell.getAttribute('data-field') : null;
-
-    openEditModal(index, targetFieldId);
-});
-
-let cellStylePressTimer = null;
-let cellStylePressTarget = null;
-let suppressCellClickUntil = 0;
-dom.tableBody.addEventListener('pointerdown', (e) => {
-    if (isMultiSelectMode) return;
-    const cell = e.target.closest('td[data-field]');
-    if (!cell) return;
-    const row = e.target.closest('tr');
-    const field = cell.getAttribute('data-field');
-    if (!row || !field) return;
-    if (field === 'cardImage' || field === 'seq') return;
-    const index = Number(row.getAttribute('data-index'));
-    if (!Number.isFinite(index)) return;
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = { index, field };
-    cellStylePressTimer = setTimeout(() => {
-        suppressCellClickUntil = Date.now() + 700;
-        openCellStyleDialog(index, field);
-    }, 500);
-}, { passive: true });
-dom.tableBody.addEventListener('pointermove', () => {
-    clearTimeout(cellStylePressTimer);
-}, { passive: true });
-dom.tableBody.addEventListener('pointerup', () => {
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = null;
-}, { passive: true });
-dom.tableBody.addEventListener('pointercancel', () => {
-    clearTimeout(cellStylePressTimer);
-    cellStylePressTarget = null;
-}, { passive: true });
-
  dom.tableBody.addEventListener('click', (e) => {
-    if (Date.now() < suppressCellClickUntil) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-    }
-
     if (isMultiSelectMode) return;
 
     e.stopPropagation();
@@ -6383,7 +6560,7 @@ function toggleSearchReplaceVisibility() {
 
 function getFilteredData() {
     if (!isSearchActive || !dom.searchInput.value.trim()) {
-        return [...tableData];  
+        return tableData;
     }
 
     if (isFilterMatchRows) {
@@ -6391,13 +6568,13 @@ function getFilteredData() {
         const matchedRows = new Set(searchMatches.map(m => m.rowIndex));
         return tableData.filter((_, index) => matchedRows.has(index));
     } else {
-
-        return [...tableData];
+        return tableData;
     }
 }
 
 function updateTable() {
     const displayData = getFilteredData();
+    const rowIndexMap = new Map(tableData.map((item, index) => [item, index]));
 
     totalPages = Math.max(1, Math.ceil(displayData.length / PAGE_SIZE));
     currentPage = Math.min(currentPage, totalPages);
@@ -6459,7 +6636,7 @@ function updateTable() {
     }
 
     pageData.forEach((item, displayIdx) => {
-        const originalIndex = item.__index || tableData.findIndex(row => row === item);
+        const originalIndex = Number.isInteger(item.__index) ? item.__index : rowIndexMap.get(item);
         const globalSeq = originalIndex + 1;
 
         const row = document.createElement('tr');
@@ -6486,11 +6663,8 @@ function updateTable() {
             <td class="seq-col">
     ${globalSeq}
     <div class="move-buttons">
-        <button class="move-btn up-btn" data-index="${originalIndex}" ${originalIndex === 0 ? 'disabled' : ''} title="上移">
-            <i class="material-icons" style="font-size:14px;">arrow_upward</i>
-        </button>
-        <button class="move-btn down-btn" data-index="${originalIndex}" ${originalIndex >= tableData.length - 1 ? 'disabled' : ''} title="下移">
-            <i class="material-icons" style="font-size:14px;">arrow_downward</i>
+        <button class="move-btn move-dialog-btn" data-index="${originalIndex}" ${tableData.length <= 1 ? 'disabled' : ''} title="移动项目">
+            <i class="material-icons" style="font-size:16px;">swap_vert</i>
         </button>
     </div>
 </td>
@@ -6724,6 +6898,7 @@ function updateCurrentMatchUI() {
 // 高亮当前匹配单元格+平滑滚动 - 保留原逻辑 无改动
 function highlightCurrentMatchCell() {
     const match = searchMatches[currentMatchIndex];
+    if (!match || !Number.isInteger(match.rowIndex)) return;
     const row = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
     if (!row) return;
 
@@ -7182,80 +7357,13 @@ document.querySelectorAll('.delete-row-btn').forEach(btn => {
             };
         }
 
-// ========== 上移按钮 【手机+电脑通用】纯按压长按检测 (无鼠标事件，保留不变) ==========
-const upBtn = row.querySelector('.up-btn');
-if (upBtn) {
-    let pressTimer = null;
-    let isLongPress = false;
-    let isPressed = false;
-    const moveIdx = parseInt(upBtn.getAttribute('data-index'));
-    const handleStart = (e) => {
-        e.stopPropagation();
+const moveBtn = row.querySelector('.move-dialog-btn');
+if (moveBtn) {
+    moveBtn.onclick = (e) => {
         e.preventDefault();
-        isPressed = true;
-        isLongPress = false;
-        pressTimer = setTimeout(() => {
-            if (isPressed) {
-                isLongPress = true;
-                moveRowToAssignPosition(moveIdx, -1);
-            }
-        }, 500);
-    };
-    const handleEnd = (e) => {
-        if (!isPressed) return;
         e.stopPropagation();
-        e.preventDefault();
-        isPressed = false;
-        clearTimeout(pressTimer);
-        if (!isLongPress) {
-            moveRow(moveIdx, -1);
-        }
-        isLongPress = false;
+        openMoveRowDialog(parseInt(moveBtn.dataset.index));
     };
-    upBtn.addEventListener('touchstart', handleStart);
-    upBtn.addEventListener('mousedown', handleStart);
-    upBtn.addEventListener('touchend', handleEnd);
-    upBtn.addEventListener('mouseup', handleEnd);
-    upBtn.addEventListener('touchcancel', handleEnd);
-    upBtn.addEventListener('mouseleave', handleEnd);
-}
-
-// ========== 下移按钮 【手机+电脑通用】纯按压长按检测 (无鼠标事件，保留不变) ==========
-const downBtn = row.querySelector('.down-btn');
-if (downBtn) {
-    let pressTimer = null;
-    let isLongPress = false;
-    let isPressed = false;
-    const moveIdx = parseInt(downBtn.getAttribute('data-index'));
-    const handleStart = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        isPressed = true;
-        isLongPress = false;
-        pressTimer = setTimeout(() => {
-            if (isPressed) {
-                isLongPress = true;
-                moveRowToAssignPosition(moveIdx, 1);
-            }
-        }, 500);
-    };
-    const handleEnd = (e) => {
-        if (!isPressed) return;
-        e.stopPropagation();
-        e.preventDefault();
-        isPressed = false;
-        clearTimeout(pressTimer);
-        if (!isLongPress) {
-            moveRow(moveIdx, 1);
-        }
-        isLongPress = false;
-    };
-    downBtn.addEventListener('touchstart', handleStart);
-    downBtn.addEventListener('mousedown', handleStart);
-    downBtn.addEventListener('touchend', handleEnd);
-    downBtn.addEventListener('mouseup', handleEnd);
-    downBtn.addEventListener('touchcancel', handleEnd);
-    downBtn.addEventListener('mouseleave', handleEnd);
 }
     });
 
@@ -7432,7 +7540,9 @@ function renderMoveRowDialog() {
   const title = document.getElementById('moveRowDialogTitle');
   if (!list || !search || !pageInfo || !pageInput) return;
 
-  if (title) title.textContent = moveRowDialogState.direction === -1 ? '移动到指定行（上方）' : '移动到指定行（下方）';
+  if (title) title.textContent = '移动项目';
+  const summary = document.getElementById('moveRowSourceSummary');
+  if (summary) summary.textContent = `已选择 ${moveRowDialogState.sourceIndexes.size} 个要移动的项目；点击行选择目标`;
   const q = (moveRowDialogState.query || '').trim().toLowerCase();
   const filtered = q
     ? moveRowDialogState.items.filter(it => it.search.includes(q))
@@ -7454,7 +7564,27 @@ function renderMoveRowDialog() {
     item.setAttribute('description', `${it.productId || '无产品号'} · ${it.cardId || '无卡片号'} · ${it.steelType || '无钢种'}`);
     item.dataset.targetIndex = String(it.index);
     if (moveRowDialogState.selectedIndex === it.index) item.setAttribute('selected', '');
+    const checkbox = document.createElement('mdui-checkbox');
+    checkbox.setAttribute('slot', 'icon');
+    checkbox.checked = moveRowDialogState.sourceIndexes.has(it.index);
+    checkbox.title = '选择为要移动的项目';
+    checkbox.addEventListener('click', (event) => event.stopPropagation());
+    checkbox.addEventListener('change', (event) => {
+      event.stopPropagation();
+      if (checkbox.checked) {
+        moveRowDialogState.sourceIndexes.add(it.index);
+        if (moveRowDialogState.selectedIndex === it.index) moveRowDialogState.selectedIndex = -1;
+      } else {
+        moveRowDialogState.sourceIndexes.delete(it.index);
+      }
+      renderMoveRowDialog();
+    });
+    item.appendChild(checkbox);
     item.addEventListener('click', () => {
+      if (moveRowDialogState.sourceIndexes.has(it.index)) {
+        showSnackbar('目标项目不能同时作为移动项目', 'warning');
+        return;
+      }
       moveRowDialogState.selectedIndex = it.index;
       renderMoveRowDialog();
     });
@@ -7469,12 +7599,11 @@ function renderMoveRowDialog() {
   if (nextBtn) nextBtn.disabled = page >= totalPages;
 }
 
-function openMoveRowDialog(sourceIndex, direction) {
+function openMoveRowDialog(sourceIndex) {
   const dlg = document.getElementById('moveRowDialog');
   if (!dlg) return;
   const items = tableData
     .map((item, idx) => ({ item, idx }))
-    .filter(x => x.idx !== sourceIndex)
     .map(x => {
       const productId = x.item?.productId || '';
       const cardId = x.item?.cardId || '';
@@ -7484,8 +7613,7 @@ function openMoveRowDialog(sourceIndex, direction) {
     });
 
   moveRowDialogState = {
-    sourceIndex,
-    direction,
+    sourceIndexes: new Set([sourceIndex]),
     items,
     query: '',
     page: 1,
@@ -7503,7 +7631,7 @@ function openMoveRowDialog(sourceIndex, direction) {
 
 function moveRowToAssignPosition(sourceIndex, direction) {
   if (tableData.length <= 1) return;
-  openMoveRowDialog(sourceIndex, direction);
+  openMoveRowDialog(sourceIndex);
 }
 
 		// 兼容你的分页/搜索场景：如果有置顶/置底需求，可追加这两个函数（可选）
@@ -7652,6 +7780,7 @@ function findDuplicates(newItem) {
 		    dom.quickEditInput.value = item[fieldId] || '';
 		    dom.quickEditIndex.value = index;
 		    dom.quickEditField.value = fieldId;
+		    openCellStyleDialog(index, fieldId);
 
 		    dom.quickEditInput.setAttribute('readonly', 'true');
 		    dom.quickEditInput.classList.add('readonly-input');
@@ -7682,6 +7811,7 @@ function findDuplicates(newItem) {
 
 		        beginOperation('edit_field', '快速修改：' + (fieldLabels[fieldId] || fieldId));
 		        tableData[index][fieldId] = newValue;
+		        window.saveCurrentCellStyle?.();
 		        saveDataToIndexedDB();
 		        updateTable();
 		        commitOperation();
@@ -7697,28 +7827,36 @@ function findDuplicates(newItem) {
         function openCellStyleDialog(index, fieldId) {
             if (!Number.isFinite(index) || index < 0) return;
             if (!fieldId) return;
-            const key = `${index}:${fieldId}`;
-            window.__rsdbEditingCellKey = key;
+            window.__rsdbEditingCell = { index, field: fieldId };
             const targetText = document.getElementById('cellStyleTargetText');
-            if (targetText) targetText.textContent = `第 ${index + 1} 行 · ${fieldLabels[fieldId] || fieldId}`;
-            const current = appSettings.tableCellStyles?.[key] || {};
+            if (targetText) targetText.textContent = `第 ${index + 1} 行 · ${fieldLabels[fieldId] || fieldId} · 单元格格式`;
+            const current = getCellFormat(index, fieldId);
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.value = val == null ? '' : String(val);
             };
+            setVal('cellStyleFontNameInput', current.fontName || '');
             setVal('cellStyleFontSizeInput', current.fontSize || '');
             setVal('cellStyleTextColorInput', current.color || '');
             setVal('cellStyleBgColorInput', current.backgroundColor || '');
-            setVal('cellStyleFontWeightInput', current.fontWeight || '');
-            const dlg = document.getElementById('cellStyleDialog');
-            if (dlg) dlg.open = true;
+            setVal('cellStyleAlignInput', current.horizontal || 'general');
+            setVal('cellStyleNumberFormatInput', current.numFmt || '');
+            const setChecked = (id, checked) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!checked;
+            };
+            setChecked('cellStyleBoldInput', current.bold || current.fontWeight === 'bold');
+            setChecked('cellStyleItalicInput', current.italic);
+            setChecked('cellStyleUnderlineInput', current.underline);
+            setChecked('cellStyleWrapInput', current.wrapText);
         }
 
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
 
 function startSearch() {
     const query = dom.searchInput.value.trim().toLowerCase();
+    searchTerm = query;
 
     searchMatches = [];
     currentMatchIndex = -1;
@@ -7735,8 +7873,9 @@ function startSearch() {
 
     // 构建匹配项
     tableData.forEach((item, index) => {
-        searchableFields.forEach(field => {
-            const value = (item[field] || '').toString().toLowerCase();
+        const normalizedValues = getNormalizedSearchValues(item);
+        searchableFields.forEach((field, fieldIndex) => {
+            const value = normalizedValues[fieldIndex];
             if (value.includes(query)) {
                 searchMatches.push({ rowIndex: index, field });
             }
@@ -8165,10 +8304,14 @@ function startSearch() {
 		    }
 		})();
 
+		let shortcutStatsSaveTimer = null;
 		function saveShortcutClickStats() {
-		    try {
-		        localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(shortcutClickStats || {}));
-		    } catch (e) {}
+		    clearTimeout(shortcutStatsSaveTimer);
+		    shortcutStatsSaveTimer = setTimeout(() => {
+		        try {
+		            localStorage.setItem(SHORTCUT_CLICK_STATS_KEY, JSON.stringify(shortcutClickStats || {}));
+		        } catch (e) {}
+		    }, 180);
 		}
 
         const HISTORY_KEY = 'rsdb_operation_history_v1';
@@ -8205,18 +8348,15 @@ function startSearch() {
             }
             const showLimit = Math.max(1, Math.min(200, Number(appSettings.operationHistoryMaxCount) || 8));
             const stepsLimit = Math.max(1, Math.min(200, Number(appSettings.undoRedoMaxSteps) || 10));
-            const limit = Math.min(showLimit, stepsLimit);
+            const performanceLimit = tableData.length > 1000 ? 2 : (tableData.length > 300 ? 4 : 200);
+            const limit = Math.min(showLimit, stepsLimit, performanceLimit);
             if (operationHistory.length > limit) {
                 const overflow = operationHistory.length - limit;
                 operationHistory = operationHistory.slice(overflow);
                 historyCursor = Math.max(0, historyCursor - overflow);
             }
-            try {
-                localStorage.setItem(HISTORY_KEY, JSON.stringify(operationHistory || []));
-                localStorage.setItem(HISTORY_CURSOR_KEY, String(historyCursor));
-            } catch (e) {
-                console.error('Failed to save operation history to localStorage:', e);
-            }
+            localStorage.removeItem(HISTORY_KEY);
+            localStorage.setItem(HISTORY_CURSOR_KEY, String(historyCursor));
             try {
                 saveDataToIndexedDB();
             } catch (dbErr) {
@@ -8224,7 +8364,16 @@ function startSearch() {
             }
         }
         function deepCopyData(arr) {
-            try { return JSON.parse(JSON.stringify(arr || [])); } catch (e) { return []; }
+            try {
+                return (arr || []).map(item => ({
+                    ...item,
+                    ...(item?.__cellStyles ? {
+                        __cellStyles: typeof structuredClone === 'function'
+                            ? structuredClone(item.__cellStyles)
+                            : JSON.parse(JSON.stringify(item.__cellStyles))
+                    } : {})
+                }));
+            } catch (e) { return []; }
         }
         function deepCopyKeyboard(cfg) {
             try { return JSON.parse(JSON.stringify(cfg || {})); } catch (e) { return {}; }
@@ -9649,12 +9798,21 @@ ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsign
             if (row < 0 || col < 0 || !rows[row] || rows[row][col] === undefined) return null;
             return getKeyObj(rows[row][col]);
         };
+        const getVisualKeyLabel = (keyObj) => {
+            if (keyObj?.label) return keyObj.label;
+            const key = String(keyObj?.key || '');
+            const special = {
+                backspace: '⌫', space: '␠', shift: '⇧', esc: '✓', done: '✓',
+                clear: '清空', symbol: '符', system: '⌨', ABC: 'ABC'
+            };
+            return special[key] || key || '(空)';
+        };
         const getVisualSelectedText = () => {
             const { row, col } = visualSelected;
             if (row < 0) return '未选择';
             if (col < 0) return `已选中：第 ${row + 1} 行`;
             const keyObj = getVisualSelectedKeyObj();
-            const keyText = keyObj ? (keyObj.label || keyObj.key || '(空)') : '(空)';
+            const keyText = keyObj ? getVisualKeyLabel(keyObj) : '(空)';
             const swipeText = keyObj && (keyObj.swipe || getVisualSwipeSymbol(keyObj));
             return `已选中：第 ${row + 1} 行 / 第 ${col + 1} 键：${keyText}${swipeText ? `（上滑：${swipeText}）` : ''}`;
         };
@@ -9787,7 +9945,7 @@ ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsign
                     if (keyObj.style && typeof keyObj.style === 'object') Object.assign(keyEl.style, keyObj.style);
                     if (!keepDefaultSize && size.width) keyEl.style.width = `${size.width}%`;
                     if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
-                    const displayLabel = keyObj.label || keyObj.key || '(空)';
+                    const displayLabel = getVisualKeyLabel(keyObj);
                     const swipeSymbol = getVisualSwipeSymbol(keyObj);
                     if (swipeSymbol) {
                         const swipeLabel = keyObj.swipeLabel || swipeSymbol;
@@ -10680,20 +10838,35 @@ function generateVirtualKeyboard() {
           
 		  keyElement.textContent = displayLabel;
 		  
-          // Use pointerdown for immediate input, but allow swipe cancellation logic if needed (though plain keys don't swipe)
-          // For plain keys, input immediately on touchstart/pointerdown
-          keyElement.addEventListener('pointerdown', (e) => {
-             e.preventDefault(); // Prevent focus loss or other defaults
-             // Prevent double firing if click is also bound? 
-             // We will not bind click if we bind pointerdown.
-             
-             insertText(key);
-             if (keyboardState.shiftState === 'on') {
-                keyboardState.shiftState = 'off';
-                saveKeyboardState();
-                generateVirtualKeyboard();
-             }
-          });
+		  let plainPointerId = null;
+		  let plainStartX = 0;
+		  let plainStartY = 0;
+		  keyElement.addEventListener('pointerdown', (e) => {
+		      e.preventDefault();
+		      plainPointerId = e.pointerId;
+		      plainStartX = e.clientX;
+		      plainStartY = e.clientY;
+		      keyElement.setPointerCapture?.(e.pointerId);
+		      keyElement.classList.add('active');
+		  });
+		  keyElement.addEventListener('pointerup', (e) => {
+		      if (plainPointerId !== e.pointerId) return;
+		      keyElement.classList.remove('active');
+		      const moved = Math.hypot(e.clientX - plainStartX, e.clientY - plainStartY);
+		      const consumed = Date.now() - (window.__rsdbKeyboardSwipeConsumedAt || 0) < 260;
+		      plainPointerId = null;
+		      if (moved > 24 || consumed) return;
+		      insertText(key);
+		      if (keyboardState.shiftState === 'on') {
+		          keyboardState.shiftState = 'off';
+		          saveKeyboardState();
+		          generateVirtualKeyboard();
+		      }
+		  });
+		  keyElement.addEventListener('pointercancel', () => {
+		      plainPointerId = null;
+		      keyElement.classList.remove('active');
+		  });
           
           // Disable default click to prevent double input
           keyElement.addEventListener('click', (e) => {
@@ -10765,6 +10938,10 @@ function generateVirtualKeyboard() {
 
 		function updateKeyboardForInput(input, overrideId = null) {
 		  if (!input) return;
+		  document.querySelectorAll('.rsdb-active-input').forEach(el => {
+		      if (el !== input) el.classList.remove('rsdb-active-input');
+		  });
+		  input.classList.add('rsdb-active-input');
 
 		  // Handle Quick Edit Input redirection
 		  let currentId = overrideId || input.id;
@@ -10933,23 +11110,37 @@ function generateVirtualKeyboard() {
 // ==========================================
 // === Data Persistence (IndexedDB) ===
 // ==========================================
-async function saveDataToIndexedDB() {
+let dataPersistTimer = null;
+let dataPersistWaiters = [];
+
+function waitForTransaction(tx) {
+    return new Promise((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+        tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+    });
+}
+
+function saveDataToIndexedDB() {
+    clearTimeout(dataPersistTimer);
+    const promise = new Promise((resolve, reject) => dataPersistWaiters.push({ resolve, reject }));
+    dataPersistTimer = setTimeout(flushDataToIndexedDB, 100);
+    return promise;
+}
+
+async function flushDataToIndexedDB() {
+    dataPersistTimer = null;
+    const waiters = dataPersistWaiters.splice(0);
 		    try {
 		        const db = await openDB();
-		        
-		        // 保存表格数据
+		        const rowsSnapshot = typeof structuredClone === 'function'
+		            ? structuredClone(tableData)
+		            : JSON.parse(JSON.stringify(tableData));
 		        const tx = db.transaction(STORE_NAME, 'readwrite');
 		        const store = tx.objectStore(STORE_NAME);
-
-		        // 清空旧数据
-		        await store.clear();
-
-		        // 批量添加新数据
-		        tableData.forEach(item => {
-		            store.add({ ...item }); // 复制对象避免引用问题
-		        });
-
-		        await tx.done;
+		        store.clear();
+		        store.put({ id: '__snapshot__', __snapshot: true, rows: rowsSnapshot, savedAt: Date.now() });
+		        await waitForTransaction(tx);
 		        console.log('IndexedDB 保存成功，共', tableData.length, '条数据');
 		        
 		        // 保存操作历史数据
@@ -10958,7 +11149,7 @@ async function saveDataToIndexedDB() {
 		            const historyStore = historyTx.objectStore(HISTORY_STORE_NAME);
 		            
 		            // 清空旧的操作历史数据
-		            await historyStore.clear();
+		            historyStore.clear();
 		            
 		            // 添加新的操作历史数据（只保存一条记录，包含完整的操作历史和游标）
 		            const historyData = {
@@ -10967,16 +11158,18 @@ async function saveDataToIndexedDB() {
 		                timestamp: Date.now()
 		            };
 		            
-		            await historyStore.add(historyData);
-		            await historyTx.done;
+		            historyStore.add(historyData);
+		            await waitForTransaction(historyTx);
 		            console.log('IndexedDB 保存操作历史成功，共', operationHistory.length, '条记录');
 		        } catch (historyErr) {
 		            console.error('IndexedDB 保存操作历史失败:', historyErr);
 		        }
+		        waiters.forEach(waiter => waiter.resolve());
 		        
 		    } catch (err) {
 		        console.error('IndexedDB 保存失败:', err);
 		        showSnackbar('数据保存失败（IndexedDB错误）', 'error');
+		        waiters.forEach(waiter => waiter.reject(err));
 		    }
 		}
 
@@ -10996,7 +11189,8 @@ async function saveDataToIndexedDB() {
 		        });
 
 		        if (data && data.length > 0) {
-		            tableData = data;
+		            const snapshot = data.find(entry => entry?.__snapshot && Array.isArray(entry.rows));
+		            tableData = snapshot ? snapshot.rows : data;
 		            console.log('IndexedDB 加载成功，共', tableData.length, '条数据');
 		        } else {
 		            tableData = [];
@@ -11042,6 +11236,7 @@ async function saveDataToIndexedDB() {
 		    }
 
 		    // === 关键修复：重置分页 + 刷新布局，确保表格铺满全屏 ===
+		    migrateLegacyCellStyles();
 		    currentPage = 1; // 重置到第一页
 		    updateTable();   // 刷新表格内容
 		    //updatePagination(); // 如果您有分页控件，刷新页码显示（如果没有可忽略）
@@ -11518,12 +11713,12 @@ function finalizeImport(newData, duplicateEntries, totalImported) {
     let actuallyOverridden = 0;
     let actuallySkipped = 0;
 
+    const indexByProductId = new Map(
+        tableData.map((item, index) => [item?.productId?.trim?.() || '', index]).filter(([key]) => key)
+    );
     duplicateEntries.forEach(entry => {
         const action = entry.action;
-        const index = tableData.findIndex(item => 
-            item.productId && entry.productId && 
-            item.productId.trim() === entry.productId.trim()
-        );
+        const index = entry.productId ? (indexByProductId.get(entry.productId.trim()) ?? -1) : -1;
 
         if (action === 'override' && index !== -1) {
             // 完整替换，包括 cardImage 图片
@@ -11724,6 +11919,58 @@ function getObjectDifferences(oldObj, newObj) {
 
 		    listContainer.parentNode.appendChild(paginationDiv);
 		}
+function normalizeHexColor(color) {
+    const rgb = color?.rgb || color?.argb;
+    if (!rgb) return '';
+    const hex = String(rgb).replace(/^#/, '').slice(-6);
+    return /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex}` : '';
+}
+
+function sheetCellToFormat(cell) {
+    const style = cell?.s || {};
+    const font = style.font || {};
+    const fill = style.fill || {};
+    const alignment = style.alignment || {};
+    const format = {};
+    if (font.name) format.fontName = font.name;
+    if (font.sz || font.size) format.fontSize = Number(font.sz || font.size);
+    const fontColor = normalizeHexColor(font.color);
+    if (fontColor) format.color = fontColor;
+    const fillColor = normalizeHexColor(fill.fgColor || fill.patternColor || fill.bgColor);
+    if (fillColor) format.backgroundColor = fillColor;
+    if (font.bold) format.bold = true;
+    if (font.italic) format.italic = true;
+    if (font.underline) format.underline = true;
+    if (alignment.horizontal) format.horizontal = alignment.horizontal;
+    if (alignment.wrapText) format.wrapText = true;
+    if (cell?.z || style.numFmt) format.numFmt = cell.z || style.numFmt;
+    return Object.keys(format).length ? format : null;
+}
+
+function applyExcelCellFormat(cell, format) {
+    if (!cell || !format) return;
+    const toArgb = (hex) => `FF${String(hex || '').replace('#', '').toUpperCase()}`;
+    cell.font = {
+        ...(cell.font || {}),
+        ...(format.fontName ? { name: format.fontName } : {}),
+        ...(format.fontSize ? { size: Number(format.fontSize) } : {}),
+        ...(format.color ? { color: { argb: toArgb(format.color) } } : {}),
+        bold: !!format.bold,
+        italic: !!format.italic,
+        underline: !!format.underline
+    };
+    if (format.backgroundColor) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: toArgb(format.backgroundColor) } };
+    }
+    cell.alignment = {
+        ...(cell.alignment || {}),
+        ...(format.horizontal ? { horizontal: format.horizontal } : {}),
+        wrapText: !!format.wrapText,
+        vertical: 'middle'
+    };
+    if (format.numFmt) cell.numFmt = format.numFmt;
+}
+
 function handleFileImport(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -11766,7 +12013,7 @@ function handleFileImport(e) {
                 }
 
                 excelEntry.async('arraybuffer').then(buffer => {
-                    const wb = XLSX.read(buffer, { type: 'array' });
+                    const wb = XLSX.read(buffer, { type: 'array', cellStyles: true });
                     processWorkbookImport(wb, imageEntries, []);
                 }).catch(err => {
                     console.error('【导入 ZIP】Excel 读取失败：', err);
@@ -11798,7 +12045,7 @@ function handleFileImport(e) {
                     }
                 }
 
-                const wb = XLSX.read(data, { type: 'array' });
+                const wb = XLSX.read(data, { type: 'array', cellStyles: true });
                 processWorkbookImport(wb, {}, embeddedImages);
             } catch (err) {
                 console.error('【导入】Excel + 嵌入图片解析失败：', err);
@@ -11900,6 +12147,7 @@ function handleFileImport(e) {
 
 		        const formattedData = dataRows.map((row, rowIndex) => {
 		            const item = {};
+		            const importedCellStyles = {};
 
 		            for (const field in colMapping) {
 		                const colIdx = colMapping[field];
@@ -11910,8 +12158,12 @@ function handleFileImport(e) {
 		                        if (!isNaN(num)) value = Math.round(num).toString();
 		                    }
 		                    item[field] = value;
+		                    const sourceCell = worksheet[XLSX.utils.encode_cell({ r: headerRowIndex + 1 + rowIndex, c: colIdx })];
+		                    const importedFormat = sheetCellToFormat(sourceCell);
+		                    if (importedFormat) importedCellStyles[field] = importedFormat;
 		                }
 		            }
+		            if (Object.keys(importedCellStyles).length) item.__cellStyles = importedCellStyles;
 
 		            if (theoreticalWeightCol !== -1 && row[theoreticalWeightCol] !== '') {
 		                const num = parseFloat(String(row[theoreticalWeightCol]).trim());
@@ -11938,12 +12190,16 @@ function handleFileImport(e) {
 		        const totalImported = formattedData.length;
 		        const newData = [];
 		        const duplicateEntries = [];
+		        const existingByProductId = new Map(
+		            tableData
+		                .filter(item => item?.productId)
+		                .map(item => [item.productId.trim(), item])
+		        );
 
 		        formattedData.forEach(newItem => {
-		            const existingItem = tableData.find(ex => 
-		                ex.productId && newItem.productId && 
-		                ex.productId.trim() === newItem.productId.trim()
-		            );
+		            const existingItem = newItem.productId
+		                ? existingByProductId.get(newItem.productId.trim())
+		                : null;
 
 		            if (!existingItem) {
 		                newData.push(newItem);
@@ -12060,6 +12316,10 @@ function handleFileImport(e) {
 		            });
 
 		            row.height = 22;
+		            const formatFields = ['steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
+		            formatFields.forEach((field, fieldIndex) => {
+		                applyExcelCellFormat(row.getCell(fieldIndex + 2), item.__cellStyles?.[field]);
+		            });
 
 		            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
 		                const base64Data = item.cardImage.split(',')[1];
@@ -12201,7 +12461,7 @@ function handleFileImport(e) {
 		                }
 		            }
 
-		            worksheet.addRow({
+		            const row = worksheet.addRow({
 		                seq: index + 1,
 		                steelType: item.steelType || '',
 		                productId: item.productId || '',
@@ -12216,6 +12476,10 @@ function handleFileImport(e) {
 		                hardness: item.hardness || '',
 		                remarks: item.remarks || '',
 		                cardImageFile: imageFileName ? `images/${imageFileName}` : ''
+		            });
+		            const formatFields = ['steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
+		            formatFields.forEach((field, fieldIndex) => {
+		                applyExcelCellFormat(row.getCell(fieldIndex + 2), item.__cellStyles?.[field]);
 		            });
 		        }
 
@@ -12276,37 +12540,7 @@ function handleFileImport(e) {
 		}
 		// 表格无图片格子点击 → 直接唤起拍照并替换
 function startDirectTakePhoto(dataIndex) {
-    const fileInput = document.getElementById('cardImageInput');
-
-    fileInput.setAttribute('capture', 'environment'); // 强制后置摄像头
-    fileInput.click();
-
-    const handlePhotoTaken = async (e) => {
-        if (e.target.files?.[0]) {
-            try {
-                const compressedBase64 = await handleImageSelect(e);
-
-                if (compressedBase64 && tableData[dataIndex]) {
-                    beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'direct_take' });
-                    tableData[dataIndex].cardImage = compressedBase64;
-                    saveDataToIndexedDB();
-                    updateTable();  // 关键：立即刷新表格显示新图片
-                    commitOperation();
-                    showSnackbar('上传成功，已填入表格', 'success');
-                }
-            } catch (err) {
-                showSnackbar('图片处理失败', 'error');
-                console.error(err);
-            }
-        }
-
-        // 清理
-        fileInput.removeAttribute('capture');
-        fileInput.value = '';
-        fileInput.removeEventListener('change', handlePhotoTaken);
-    };
-
-    fileInput.addEventListener('change', handlePhotoTaken, { once: true });
+    chooseCardImage({ capture: true, targetIndex: dataIndex, mode: 'direct_take' });
 }
 
 		function calculateAndAddData() {
@@ -12716,14 +12950,32 @@ function startDirectTakePhoto(dataIndex) {
     });
 }
 
+function chooseCardImage({ capture = false, targetIndex = -1, mode = 'select', onSelected = null } = {}) {
+    const input = document.getElementById('cardImageInput');
+    if (!input) return;
+    input.value = '';
+    if (capture) input.setAttribute('capture', 'environment');
+    else input.removeAttribute('capture');
+    window.__rsdbPendingImageSelection = { targetIndex, mode, onSelected };
+    input.click();
+}
+
+async function commitSelectedImage(base64, targetIndex = -1, mode = 'select') {
+    if (!base64) return;
+    if (Number.isInteger(targetIndex) && targetIndex >= 0 && tableData[targetIndex]) {
+        beginOperation('update_image', '更新图片', { index: targetIndex, mode });
+        tableData[targetIndex].cardImage = base64;
+        await saveDataToIndexedDB();
+        updateTable();
+        commitOperation();
+    } else {
+        window.tempNewCardImage = base64;
+    }
+    showSnackbar('图片处理完成', 'success');
+}
+
 // ==================== 图片上传处理函数（完整版，无 OCR） ====================
 async function handleImageSelect(e) {
-    // 新增模式下：每次选择新图都先清理旧临时变量
-    if (currentEditIndex === -1) {
-        delete window.tempNewCardImage;
-        console.log('[上传] 新增模式 - 已清理旧 tempNewCardImage');
-    }
-
     let file;
     if (e.type === 'drop') {
         e.preventDefault();
@@ -12897,25 +13149,6 @@ async function handleImageSelect(e) {
         noImageArea.style.display = 'none';
     }
 
-    // ★★★ 关键：上传成功后立即存入临时变量（保存时优先用这个） ★★★
-    window.tempNewCardImage = base64;
-    console.log('[上传] 图片已强制存入 window.tempNewCardImage，长度：' + base64.length);
-
-    // 编辑模式下：同时写入 tableData，并记录可撤销操作
-    if (currentEditIndex !== -1 && tableData[currentEditIndex]) {
-        beginOperation('update_image', '更新图片', { index: currentEditIndex, mode: 'edit' });
-        tableData[currentEditIndex].cardImage = base64;
-        console.log('[上传] 编辑模式 - 已直接写入 tableData，并记录历史');
-        await saveDataToIndexedDB();
-        updateTable();
-        commitOperation();
-    } else {
-        // 非编辑模式：仅刷新预览和临时变量，由后续保存逻辑统一记录操作
-        await saveDataToIndexedDB();
-        updateTable();
-    }
-
-    showSnackbar('图片处理完成', 'success');
     return base64;
 }
 
@@ -13186,56 +13419,13 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     // 1. 拍照替换
     overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
         overlay.remove();
-        fileInput.setAttribute('capture', 'environment');
-        fileInput.click();
-
-        const onceHandler = async (e) => {
-            if (e.target.files?.[0]) {
-                const base64 = await handleImageSelect(e);
-                if (base64) {
-                    // 更新当前预览图片
-                    img.src = base64;
-                    // 如果有 dataIndex，更新 tableData
-                    if (dataIndex !== -1 && tableData[dataIndex]) {
-                        beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'viewer_take' });
-                        tableData[dataIndex].cardImage = base64;
-                        saveDataToIndexedDB();
-                        updateTable();
-                        commitOperation();
-                    }
-                    showSnackbar('图片已通过拍照替换', 'success');
-                }
-            }
-            fileInput.removeAttribute('capture');
-            fileInput.value = '';
-        };
-        fileInput.addEventListener('change', onceHandler, { once: true });
+        chooseCardImage({ capture: true, targetIndex: dataIndex, mode: 'viewer_take' });
     };
 
     // 2. 从相册选择
     overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
         overlay.remove();
-        fileInput.removeAttribute('capture');
-        fileInput.click();
-
-        const onceHandler = async (e) => {
-            if (e.target.files?.[0]) {
-                const base64 = await handleImageSelect(e);
-                if (base64) {
-                    img.src = base64;
-                    if (dataIndex !== -1 && tableData[dataIndex]) {
-                        beginOperation('update_image', '更新图片', { index: dataIndex, mode: 'viewer_gallery' });
-                        tableData[dataIndex].cardImage = base64;
-                        saveDataToIndexedDB();
-                        updateTable();
-                        commitOperation();
-                    }
-                    showSnackbar('图片已替换', 'success');
-                }
-            }
-            fileInput.value = '';
-        };
-        fileInput.addEventListener('change', onceHandler, { once: true });
+        chooseCardImage({ capture: false, targetIndex: dataIndex, mode: 'viewer_gallery' });
     };
 
     // 3. 删除图片
@@ -13299,8 +13489,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     const takePhotoBtn = document.getElementById('takePhotoInEditBtn');
     if (takePhotoBtn) {
         takePhotoBtn.onclick = () => {
-            fileInput.setAttribute('capture', 'environment');
-            fileInput.click();
+            chooseCardImage({ capture: true, targetIndex: currentEditIndex, mode: 'edit_take' });
         };
     }
 
@@ -13308,8 +13497,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     const galleryBtn = document.getElementById('selectFromGalleryInEditBtn');
     if (galleryBtn) {
         galleryBtn.onclick = () => {
-            fileInput.removeAttribute('capture');
-            fileInput.click();
+            chooseCardImage({ capture: false, targetIndex: currentEditIndex, mode: 'edit_gallery' });
         };
     }
 
@@ -13330,7 +13518,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 
     const currentItem = tableData[index];
     let productId = currentItem?.productId || '无产品号'; // ✅ 修改为 let 支持后续更新
-    const hasImage = currentItem?.cardImage && currentItem.cardImage.startsWith('data:image/');
+    let hasImage = !!(currentItem?.cardImage && currentItem.cardImage.startsWith('data:image/'));
 
     const overlay = document.createElement('div');
     overlay.className = 'image-preview-overlay';
@@ -13590,7 +13778,8 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     const switchImage = (direction) => {
         index = Math.max(0, Math.min(tableData.length - 1, index + direction));
         const newItem = tableData[index];
-        const newHasImage = newItem?.cardImage && newItem.cardImage.startsWith('data:image/');
+        const newHasImage = !!(newItem?.cardImage && newItem.cardImage.startsWith('data:image/'));
+        const keepTransform = appSettings.imagePreviewKeepTransform !== false;
 
         // 更新顶部
         productId = newItem?.productId || '无产品号';
@@ -13618,7 +13807,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
                 imgHeight = this.offsetHeight;
                 containerWidth = imgContainer.clientWidth;
                 containerHeight = imgContainer.clientHeight;
-                currentScale = 1; translateX = 0; translateY = 0; rotateDeg = 0;
+                if (!keepTransform) {
+                    currentScale = 1;
+                    translateX = 0;
+                    translateY = 0;
+                    rotateDeg = 0;
+                }
                 updateTransform();
             };
 
@@ -13628,6 +13822,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             if (rotateLeftBtn) rotateLeftBtn.disabled = false;
             if (rotateRightBtn) rotateRightBtn.disabled = false;
             if (resetZoomBtn) resetZoomBtn.disabled = false;
+            if (saveRotateBtn) saveRotateBtn.disabled = false;
         } else {
             const placeholder = document.createElement('div');
             placeholder.style.cssText = `
@@ -13648,7 +13843,9 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             if (rotateLeftBtn) rotateLeftBtn.disabled = true;
             if (rotateRightBtn) rotateRightBtn.disabled = true;
             if (resetZoomBtn) resetZoomBtn.disabled = true;
+            if (saveRotateBtn) saveRotateBtn.disabled = true;
         }
+        hasImage = newHasImage;
     };
 
     // ────────────────────────────── 双指缩放 + 单指拖动（仅有图片时有效） ──────────────────────────────
@@ -13704,47 +13901,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 
     overlay.querySelector('#takePhotoInPreviewBtn').onclick = () => {
         overlay.remove();
-        fileInput.setAttribute('capture', 'environment');
-        fileInput.click();
-
-        const onceHandler = async (e) => {
-            if (e.target.files?.[0]) {
-                const base64 = await handleImageSelect(e);
-                if (base64) {
-                    beginOperation('update_image', '更新图片', { index, mode: 'preview_take' });
-                    tableData[index].cardImage = base64;
-                    saveDataToIndexedDB();
-                    updateTable();
-                    commitOperation();
-                    showSnackbar('图片已替换', 'success');
-                }
-            }
-            fileInput.removeAttribute('capture');
-            fileInput.value = '';
-        };
-        fileInput.addEventListener('change', onceHandler, { once: true });
+        chooseCardImage({ capture: true, targetIndex: index, mode: 'preview_take' });
     };
 
     overlay.querySelector('#selectGalleryInPreviewBtn').onclick = () => {
         overlay.remove();
-        fileInput.removeAttribute('capture');
-        fileInput.click();
-
-        const onceHandler = async (e) => {
-            if (e.target.files?.[0]) {
-                const base64 = await handleImageSelect(e);
-                if (base64) {
-                    beginOperation('update_image', '更新图片', { index, mode: 'preview_gallery' });
-                    tableData[index].cardImage = base64;
-                    saveDataToIndexedDB();
-                    updateTable();
-                    commitOperation();
-                    showSnackbar('图片已替换', 'success');
-                }
-            }
-            fileInput.value = '';
-        };
-        fileInput.addEventListener('change', onceHandler, { once: true });
+        chooseCardImage({ capture: false, targetIndex: index, mode: 'preview_gallery' });
     };
 
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
@@ -13767,7 +13929,7 @@ function initShortcutToolbarDrag() {
 
     const STORAGE_KEY = 'shortcutToolbarWrap_pos_v3'; // 版本3，避免旧数据冲突
     const DEFAULT_RIGHT = '6px';
-    const DEFAULT_TOP = '-48px';
+    const DEFAULT_TOP = `${Math.max(6, window.innerHeight - (Number(appSettings.virtualKeyboardHeight) || 420) - 50)}px`;
 
     window.resetShortcutToolbarWrapPosition = () => {
         const w = document.getElementById('shortcutToolbarWrap');
@@ -13795,6 +13957,13 @@ function initShortcutToolbarDrag() {
         wrap.style.top = DEFAULT_TOP;
         wrap.style.bottom = 'auto';
     }
+    requestAnimationFrame(() => {
+        const rect = wrap.getBoundingClientRect();
+        const right = Math.max(6, Math.min(parseFloat(wrap.style.right) || 6, window.innerWidth - Math.max(48, rect.width) - 6));
+        const top = Math.max(6, Math.min(parseFloat(wrap.style.top) || 6, window.innerHeight - Math.max(40, rect.height) - 6));
+        wrap.style.right = `${Math.round(right)}px`;
+        wrap.style.top = `${Math.round(top)}px`;
+    });
 
     let pointerId = null;
     let isDragging = false;
@@ -13876,13 +14045,11 @@ function initShortcutToolbarDrag() {
         let newRight = initialRight - dx;
         let newTop = initialTop + dy;
 
-        // 限制不飞出屏幕（顶部允许向上拖动）
+        // 工具栏可以在整个可视屏幕内移动。
         const rect = wrap.getBoundingClientRect();
-        const parent = wrap.offsetParent || document.getElementById('virtualKeyboard');
-        const parentHeight = parent && parent.getBoundingClientRect ? parent.getBoundingClientRect().height : window.innerHeight;
         newRight = Math.max(6, Math.min(newRight, window.innerWidth - rect.width - 6));
-        const minTop = -rect.height + 12;
-        const maxTop = Math.max(minTop, parentHeight - rect.height - 12);
+        const minTop = 6;
+        const maxTop = Math.max(minTop, window.innerHeight - rect.height - 6);
         newTop = Math.max(minTop, Math.min(newTop, maxTop));
 
         wrap.style.right = `${Math.round(newRight)}px`;
