@@ -540,6 +540,11 @@
 		    opacity: 1;
 		}
 
+        mdui-dialog:not([fullscreen])::part(panel) {
+            border-radius: 28px !important;
+            overflow: hidden;
+        }
+
 		html.no-animations *, html.no-animations *::before, html.no-animations *::after {
 		    transition: none !important;
 		    animation: none !important;
@@ -657,7 +662,7 @@
 /* 快捷短语悬浮工具栏（可长按拖动） */
 #shortcutToolbarWrap {
     position: fixed;
-    top: -48px;
+    top: 6px;
     right: 6px;
     z-index: 12;
     pointer-events: none;
@@ -680,6 +685,28 @@
     padding-top: 16px;
     border-top: 1px solid var(--border-color);
     animation: quickEditFormatIn 180ms ease-out both;
+}
+
+.quick-edit-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#quickEditDialog[open] .quick-edit-editor-content {
+    animation: quickEditContentIn 220ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+@keyframes quickEditContentIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.cell-font-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
 }
 
 .quick-edit-format-grid {
@@ -751,18 +778,34 @@
     /* 内容为空时完全隐藏 */
     visibility: hidden;
     height: 0;
+    opacity: 0;
+    transform: translateY(8px);
     padding: 0;
     margin: 0;
     border-bottom: none;
+    transition: max-height 180ms ease, min-height 180ms ease, opacity 160ms ease, transform 180ms ease, padding 180ms ease;
 }
 
 /* 有内容时恢复正常 */
-#shortcutContainer:not(:empty) {
+#shortcutContainer.has-shortcuts {
     visibility: visible;
     height: auto;
     min-height: 44px;
     padding: 4px 0;
     border-bottom: 1px solid var(--border-color);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.shortcut-key,
+.status-key {
+    animation: shortcutKeyIn 180ms cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: calc(var(--shortcut-order, 0) * 18ms);
+}
+
+@keyframes shortcutKeyIn {
+    from { opacity: 0; transform: translateY(8px) scale(.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* 编辑模式强制显示（即使为空也显示，便于新增/拖拽） */
@@ -1119,6 +1162,16 @@
 		    background-color: #ffc107; 
 		    font-weight: bold;
 		    color: #212121;
+		}
+		.search-row-highlight > td {
+		    background-color: rgba(255, 193, 7, 0.16);
+		    transition: background-color 180ms ease;
+		}
+		.dark-mode .search-row-highlight > td {
+		    background-color: rgba(255, 213, 79, 0.14);
+		}
+		.search-row-highlight > td.search-match-highlight {
+		    background-color: #ffc107;
 		}
 		.dark-mode .search-match-highlight {
 		    background-color: #ffd54f; 
@@ -1482,6 +1535,33 @@
 		    font-family: 'Google Sans Text', system-ui, sans-serif !important;
 		    font-weight: 500 !important;
 		}
+
+        .guide-visual-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .guide-visual-grid > div {
+            padding: 16px 4px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .guide-visual-grid li {
+            position: relative;
+            padding-left: 22px;
+        }
+
+        .guide-visual-grid li::before {
+            content: 'check_circle';
+            font-family: 'Material Icons';
+            position: absolute;
+            left: 0;
+            top: 1px;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
 		
 		/* === 终极修复：保护 Material Icons 不被覆盖 === */
 		/* 1. 最高优先级兜底 */
@@ -1756,11 +1836,11 @@
 					<div id="cardImagePreview" style="text-align:center;margin-bottom:20px;display:none;">
 						<img id="previewImg" style="max-height:300px;max-width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);cursor:pointer;" onclick="showFullImage(this.src, document.getElementById('productId')?.value || '', (typeof currentEditIndex === 'number' ? currentEditIndex : -1))">
 						<div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-							<mdui-button variant="tonal" id="takePhotoInEditBtn">
+							<mdui-button type="button" variant="tonal" id="takePhotoInEditBtn">
 								<mdui-icon name="photo_camera"></mdui-icon> 拍照 </mdui-button>
-							<mdui-button variant="tonal" id="selectFromGalleryInEditBtn">
+							<mdui-button type="button" variant="tonal" id="selectFromGalleryInEditBtn">
 								<mdui-icon name="photo_library"></mdui-icon> 从相册选择 </mdui-button>
-							<mdui-button variant="outlined" color="error" id="deleteImageInEditBtn">
+							<mdui-button type="button" variant="outlined" color="error" id="deleteImageInEditBtn">
 								<mdui-icon name="delete"></mdui-icon> 删除图片 </mdui-button>
 						</div>
 					</div>
@@ -1773,9 +1853,9 @@
 							<div style="font-size:0.9rem;color:#757575;margin-top:8px;">支持拍照、相册选择、文件拖入</div>
 						</div>
 						<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
-							<mdui-button variant="tonal" id="takePhotoBtn">
+							<mdui-button type="button" variant="tonal" id="takePhotoBtn">
 								<mdui-icon name="photo_camera"></mdui-icon> 拍照 </mdui-button>
-							<mdui-button variant="tonal" id="selectFromGalleryBtn">
+							<mdui-button type="button" variant="tonal" id="selectFromGalleryBtn">
 								<mdui-icon name="photo_library"></mdui-icon> 从相册选择 </mdui-button>
 						</div>
 					</div>
@@ -1790,13 +1870,16 @@
 	<!-- 快速编辑弹窗 (Top Aligned) -->
 	<mdui-dialog id="quickEditDialog" fullscreen close-on-esc close-on-overlay-click class="quick-edit-dialog-top">
 		
-		<mdui-top-app-bar slot="header" style="padding: 16px; padding-top: calc(16px + env(safe-area-inset-top));">
+        <mdui-top-app-bar slot="header" style="padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top));">
             <mdui-top-app-bar-title id="quickEditLabel" style="color:var(--primary-color);"></mdui-top-app-bar-title>
-            <mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon>
+            <div class="quick-edit-header-actions">
+                <mdui-tooltip content="取消修改"><mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon></mdui-tooltip>
+                <mdui-tooltip content="保存修改"><mdui-button-icon icon="save" id="saveQuickEditBtn"></mdui-button-icon></mdui-tooltip>
+            </div>
         </mdui-top-app-bar>
 	
 		
-		<div style="padding: 8px; margin-top: 24px; padding-top: calc(8px + env(safe-area-inset-top));">
+		<div class="quick-edit-editor-content" style="padding: 8px; margin-top: 24px; padding-top: calc(8px + env(safe-area-inset-top));">
 			
 			<div style="position:relative; display:flex; align-items:center;">
 				<input type="text" id="quickEditInput" class="readonly-input" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1;">
@@ -1807,7 +1890,20 @@
 			<div id="quickEditStylePanel" class="quick-edit-format-panel">
 				<div id="cellStyleTargetText" style="font-weight:600;margin-bottom:10px;">单元格格式</div>
 				<div class="quick-edit-format-grid">
-					<mdui-text-field id="cellStyleFontNameInput" label="字体" variant="outlined"></mdui-text-field>
+					<div class="cell-font-controls">
+                        <mdui-select id="cellStyleFontNameInput" label="字体" variant="outlined" value="">
+                            <mdui-menu-item value="">默认字体</mdui-menu-item>
+                            <mdui-menu-item value="Google Sans Text">Google Sans</mdui-menu-item>
+                            <mdui-menu-item value="Microsoft YaHei">微软雅黑</mdui-menu-item>
+                            <mdui-menu-item value="SimSun">宋体</mdui-menu-item>
+                            <mdui-menu-item value="SimHei">黑体</mdui-menu-item>
+                            <mdui-menu-item value="KaiTi">楷体</mdui-menu-item>
+                            <mdui-menu-item value="FangSong">仿宋</mdui-menu-item>
+                            <mdui-menu-item value="Consolas">Consolas</mdui-menu-item>
+                        </mdui-select>
+                        <mdui-tooltip content="导入本地字体"><mdui-button-icon icon="font_download" id="cellStyleImportFontBtn"></mdui-button-icon></mdui-tooltip>
+                        <input type="file" id="cellStyleFontFileInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none">
+                    </div>
 					<mdui-text-field id="cellStyleFontSizeInput" label="字号（px）" type="number" min="8" max="72" variant="outlined"></mdui-text-field>
 					<mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
 					<mdui-text-field id="cellStyleBgColorInput" label="填充颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
@@ -1830,7 +1926,6 @@
 		</div>
 		<div slot="action">
 			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
-			<mdui-button variant="filled" id="saveQuickEditBtn">保存</mdui-button>
 		</div>
 	</mdui-dialog>
 	<!-- 虚拟键盘 -->
@@ -2000,7 +2095,7 @@
 
     <!-- 制作者信息（极简） -->
     <div style="text-align: center; font-size: 0.85rem; color: var(--mdui-color-on-surface-variant, #757575); margin: 0 0 16px 0;">
-      制作：GPT5.5 Codex | 功能全覆盖·双端适配
+      制作方式：vibe coding | 模型：GPT5.6Sol | 功能全覆盖·双端适配
     </div>
 
     <mdui-divider style="margin: 12px 0;"></mdui-divider>
@@ -2013,7 +2108,7 @@
     </div>
 
     <!-- 操作指南（极致紧凑，补齐所有功能+修正错误描述，间距不变） -->
-    <div style="display: grid; gap: 20px;">
+    <div class="guide-visual-grid">
       <!-- 基础操作 -->
       <div>
         <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
@@ -2021,7 +2116,7 @@
         </div>
         <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
           <li style="margin-bottom: 4px;">• 添加/编辑：右下 + 按钮，或点击表格行快速编辑</li>
-          <li style="margin-bottom: 4px;">• 单元格直编：点击表格单元格，直接修改数据</li>
+          <li style="margin-bottom: 4px;">单元格直编：点击表格单元格，修改内容与格式，右上角保存或取消</li>
           <li>• 批量删除：右上 ⋮ → 开启多选模式 → 勾选删除 → 底部批量删除</li>
         </ul>
       </div>
@@ -2033,7 +2128,7 @@
         </div>
         <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
           <li style="margin-bottom: 4px;">• 导入导出：抽屉菜单 → 一键导入/导出 Excel 表格</li>
-          <li style="margin-bottom: 4px;">• 全局搜索：顶部搜索框，支持所有字段模糊匹配</li>
+          <li style="margin-bottom: 4px;">全局搜索：顶部搜索框，匹配项与对应整行会同步高亮</li>
           <li style="margin-bottom: 4px;">• 搜索替换：点击顶部 🔍↔️ → 打开替换面板，支持单条/全部替换</li>
           <li style="margin-bottom: 4px;">• 重量计算：抽屉菜单 → 计算重量 → 自动填充单支/总重数据</li>
           <li>• 数据排序：抽屉菜单 → 数据排序 → 自定义规则一键应用</li>
@@ -2060,7 +2155,7 @@
           手势与显示适配
         </div>
         <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
-          <li style="margin-bottom: 4px;">• 表格缩放：电脑滚轮/手机双指捏合/张开，自由缩放表格宽度</li>
+          <li style="margin-bottom: 4px;">表格缩放：手机双指捏合/张开，自由缩放且表头保持冻结</li>
           <li>• 适配显示：自动兼容电脑/手机屏幕，表格自适应排版无遮挡</li>
         </ul>
       </div>
@@ -2081,7 +2176,7 @@
           <li style="margin-bottom: 4px;">• 删除键：按住 ← 连续删除；按住 ← 向上滑动后松开 = 清空当前字段</li>
           <li style="margin-bottom: 4px;">• 智能建议：当某字段值或前缀累计出现达到阈值，显示“+ 值/前缀”；点击输入到编辑框，长按添加为快捷短语</li>
           <li style="margin-bottom: 4px;">• 模糊匹配：输入如“25D0”，会智能建议此前频繁使用的“25D0”前缀</li>
-          <li>• 开关控制：设置 → 智能建议 → 可全局或按字段开启/关闭</li>
+          <li>开关控制：设置 → 智能建议可控制建议与 inputStats 记录，也可按字段调整</li>
           <li>• 字符滑动：部分字符键支持“轻触输入字母/数字，向上滑动松开输入符号”</li>
         </ul>
       </div>
@@ -2447,6 +2542,9 @@
                 <mdui-list-subheader>智能建议</mdui-list-subheader>
                 <mdui-list-item headline="启用建议加入快捷短语" description="添加数据后统计常用输入">
                     <mdui-switch slot="end-icon" id="settingsSuggestSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item headline="记录输入统计" description="关闭后不再写入 inputStats，已有记录保留">
+                    <mdui-switch slot="end-icon" id="settingsInputStatsSwitch"></mdui-switch>
                 </mdui-list-item>
                 <mdui-list-item id="settingsSuggestByFieldItem" icon="tune" headline="智能建议（按字段）" description=""></mdui-list-item>
                 <mdui-list-item id="settingsSuggestThresholdItem" icon="tune" headline="建议阈值" description=""></mdui-list-item>
@@ -2915,8 +3013,19 @@
 
 		const PRIMARY_KEY = "xtd_theme_primary";
 		const themeFlash = document.getElementById("themeFlash");
-		const RSDB_VERSION = '2026.07.30';
+		const RSDB_VERSION = '2026.08.12';
 		const RSDB_CHANGELOG = [
+		    {
+		        version: '2026.08.12',
+		        notes: [
+		            '图片：统一拍照、相册、删除与预览索引状态，支持连续替换',
+		            '单元格：右上角保存/取消，字体选择与本地字体导入，预览和导出保持一致',
+		            '表格：搜索结果整行高亮，缩放时保持表头冻结',
+		            '虚拟键盘：工具栏默认置顶，特殊键符号统一，快捷短语增加过渡动画',
+		            '设置：新增 inputStats 记录开关，操作指南升级为可视化级别',
+		            '制作方式更新为 vibe coding，模型更新为 GPT5.6Sol'
+		        ]
+		    },
 		    {
 		        version: '2026.07.30',
 		        notes: [
@@ -2995,7 +3104,9 @@
             tableCellHeight: 48,
             tableCellFontSize: 16,
             tablePageSize: 50,
-            tableCellStyles: {}
+		    tableCellStyles: {},
+		    inputStatsRecordingEnabled: true,
+		    importedFonts: []
 		};
 		let appSettings = loadAppSettings();
 		let inputStats = loadInputStats();
@@ -3093,6 +3204,8 @@
                 if (!merged.tableCellStyles || typeof merged.tableCellStyles !== 'object') {
                     merged.tableCellStyles = {};
                 }
+                merged.inputStatsRecordingEnabled = merged.inputStatsRecordingEnabled !== false;
+                if (!Array.isArray(merged.importedFonts)) merged.importedFonts = [];
 		        {
 		            const pageSize = Number(merged.tablePageSize);
 		            merged.tablePageSize = Number.isFinite(pageSize) ? Math.max(10, Math.min(200, Math.round(pageSize))) : 50;
@@ -3155,6 +3268,7 @@
 		}
 
 		function recordInputStat(fieldKey, value) {
+		    if (appSettings.inputStatsRecordingEnabled === false) return;
 		    const v = (value || '').trim();
 		    if (!v) return;
 		    if (!inputStats[fieldKey]) inputStats[fieldKey] = {};
@@ -3162,6 +3276,7 @@
 		}
 
 		function recordInputStatsOnAdd(formData) {
+		    if (appSettings.inputStatsRecordingEnabled === false) return;
 		    recordInputStat('furnaceId', formData.furnaceId);
 		    recordInputStat('productId', formData.productId);
 		    recordInputStat('cardId', formData.cardId);
@@ -3246,7 +3361,7 @@
             const style = getCellFormat(rowIndex, fieldKey);
             if (!style || typeof style !== 'object') return;
             if (style.fontSize) cellEl.style.fontSize = `${Math.max(10, Math.min(48, Number(style.fontSize) || 0))}px`;
-            if (style.fontName) cellEl.style.fontFamily = style.fontName;
+            if (style.fontName) cellEl.style.setProperty('font-family', style.fontName, 'important');
             if (style.color) cellEl.style.color = style.color;
             if (style.backgroundColor) cellEl.style.backgroundColor = style.backgroundColor;
             if (style.bold || style.fontWeight === 'bold') cellEl.style.fontWeight = 'bold';
@@ -3256,10 +3371,25 @@
             if (style.wrapText) cellEl.style.whiteSpace = 'normal';
         }
 
+        function ensureImportedFontOptions() {
+            const select = document.getElementById('cellStyleFontNameInput');
+            if (!select) return;
+            const names = Array.isArray(appSettings.importedFonts) ? appSettings.importedFonts : [];
+            names.forEach((name) => {
+                if (!name || Array.from(select.querySelectorAll('mdui-menu-item')).some(item => (item.value || item.getAttribute('value')) === name)) return;
+                const option = document.createElement('mdui-menu-item');
+                option.value = name;
+                option.setAttribute('value', name);
+                option.textContent = `${name}（已导入）`;
+                select.appendChild(option);
+            });
+        }
+
 		function applyAppSettings() {
 		    applyDialogPositionToAll();
 		    document.documentElement.classList.toggle('no-animations', appSettings.animationsEnabled === false);
             applyTableViewSettings();
+            ensureImportedFontOptions();
 		    const vk = document.getElementById('virtualKeyboard');
 		    if (vk) {
 		        vk.classList.toggle('shortcut-wrap-enabled', !!appSettings.shortcutWrap);
@@ -3501,6 +3631,8 @@
 		    if (thresholdItem) thresholdItem.setAttribute('description', `${Number(appSettings.suggestThreshold) || 5} 次`);
 		    const suggestSwitch = document.getElementById('settingsSuggestSwitch');
 		    if (suggestSwitch) suggestSwitch.checked = !!appSettings.suggestEnabled;
+		    const inputStatsSwitch = document.getElementById('settingsInputStatsSwitch');
+		    if (inputStatsSwitch) inputStatsSwitch.checked = appSettings.inputStatsRecordingEnabled !== false;
 		    const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
 		    if (wrapSwitch) wrapSwitch.checked = !!appSettings.shortcutWrap;
 		    const autoSwitch = document.getElementById('settingsShortcutAutoCompleteSwitch');
@@ -3847,10 +3979,15 @@ const ZoomManager = {
     measureNaturalSize() {
         if (!this.container) return;
         const oldTransform = this.container.style.transform;
+        const oldZoom = this.container.style.zoom;
         this.container.style.transform = 'none';
+        this.container.style.zoom = '1';
+        this.container.style.width = 'max-content';
+        this.container.style.height = 'auto';
         this.naturalWidth = this.container.scrollWidth;
         this.naturalHeight = this.container.scrollHeight;
-        this.container.style.transform = oldTransform || `scale(${this.currentScale})`;
+        this.container.style.transform = oldTransform || 'none';
+        this.container.style.zoom = oldZoom || String(this.currentScale);
     },
 
     applyScale(scale) {
@@ -3858,16 +3995,11 @@ const ZoomManager = {
 
     this.currentScale = Math.max(this.minScale, Math.min(this.maxScale, scale));
 
-    // ===== 原有缩放逻辑 =====
-    this.container.style.width =
-        `${this.naturalWidth * this.currentScale}px`;
-
-    this.container.style.height =
-        `${this.naturalHeight * this.currentScale}px`;
-
-    this.container.style.transform =
-        `scale(${this.currentScale})`;
-
+    // 使用 CSS zoom 让 sticky 表头仍参与滚动布局；transform 会使表头冻结失效。
+    this.container.style.width = `${this.naturalWidth}px`;
+    this.container.style.height = 'auto';
+    this.container.style.transform = 'none';
+    this.container.style.zoom = String(this.currentScale);
     this.container.style.transformOrigin = 'top left';
 
     // =================================================
@@ -4923,6 +5055,24 @@ function initEventListeners() {
         }
     });
 
+    const openImageDeleteConfirmation = (index) => {
+        window.tempDeleteImageIndex = Number.isInteger(index) ? index : -1;
+        const dialog = document.getElementById('deleteImageConfirmDialog');
+        if (dialog) dialog.open = true;
+    };
+    document.getElementById('takePhotoInEditBtn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        chooseCardImage({ capture: true, targetIndex: currentEditIndex, mode: 'edit_take' });
+    });
+    document.getElementById('selectFromGalleryInEditBtn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        chooseCardImage({ capture: false, targetIndex: currentEditIndex, mode: 'edit_gallery' });
+    });
+    document.getElementById('deleteImageInEditBtn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        openImageDeleteConfirmation(currentEditIndex);
+    });
+
     const cancelDeleteBtn = document.getElementById('cancelDeleteImageBtn');
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', () => {
@@ -4939,6 +5089,10 @@ function initEventListeners() {
                 delete window.tempNewCardImage;
                 const previewImg = document.getElementById('previewImg');
                 if (previewImg) previewImg.removeAttribute('src');
+                const previewContainer = document.getElementById('cardImagePreview');
+                const noImageArea = document.getElementById('noImageUploadArea');
+                if (previewContainer) previewContainer.style.display = 'none';
+                if (noImageArea) noImageArea.style.display = 'block';
                 showSnackbar('图片已删除', 'success');
             } else if (index !== undefined && tableData[index]) {
                 beginOperation('delete_image', '删除图片', { index });
@@ -5042,6 +5196,8 @@ function initEventListeners() {
         if (virtualCursor) virtualCursor.style.display = 'none';
         keyboardState.isQuickEdit = false;
         saveKeyboardState();
+        window.__rsdbEditingCell = null;
+        window.__rsdbOriginalCellEdit = null;
     });
 
     bindImmediateActionButton(dom.saveQuickEditBtn, saveQuickEdit);
@@ -5628,6 +5784,12 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     const suggestSwitch = document.getElementById('settingsSuggestSwitch');
     suggestSwitch?.addEventListener('change', () => saveAppSettings({ suggestEnabled: !!suggestSwitch.checked }));
     bindSwitchListItemToggle(suggestSwitch);
+    const inputStatsSwitch = document.getElementById('settingsInputStatsSwitch');
+    inputStatsSwitch?.addEventListener('change', () => {
+        saveAppSettings({ inputStatsRecordingEnabled: inputStatsSwitch.checked !== false });
+        showSnackbar(inputStatsSwitch.checked ? '已开启输入统计记录' : '已停止记录 inputStats', 'info');
+    });
+    bindSwitchListItemToggle(inputStatsSwitch);
     const wrapSwitch = document.getElementById('settingsShortcutWrapSwitch');
     wrapSwitch?.addEventListener('change', () => saveAppSettings({ shortcutWrap: !!wrapSwitch.checked }));
     bindSwitchListItemToggle(wrapSwitch);
@@ -5956,13 +6118,63 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (dlg) dlg.open = false;
     });
     document.getElementById('cellStyleResetBtn')?.addEventListener('click', () => {
-        const target = window.__rsdbEditingCell;
-        if (!target) return;
-        setCellFormat(target.index, target.field, null);
-        openCellStyleDialog(target.index, target.field);
-        saveDataToIndexedDB();
-        updateTable();
-        showSnackbar('已重置当前单元格格式', 'success');
+        const ids = ['cellStyleFontNameInput', 'cellStyleFontSizeInput', 'cellStyleTextColorInput', 'cellStyleBgColorInput', 'cellStyleNumberFormatInput'];
+        ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const align = document.getElementById('cellStyleAlignInput');
+        if (align) align.value = 'general';
+        ['cellStyleBoldInput', 'cellStyleItalicInput', 'cellStyleUnderlineInput', 'cellStyleWrapInput'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.checked = false;
+        });
+        previewCurrentCellStyle();
+        showSnackbar('格式已重置，保存后生效', 'info');
+    });
+    document.getElementById('cellStyleImportFontBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('cellStyleFontFileInput');
+        if (input) { input.value = ''; input.click(); }
+    });
+    document.getElementById('cellStyleFontFileInput')?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const fontName = `RSDB_${file.name.replace(/\.[^.]+$/, '').replace(/[^\w\u4e00-\u9fff-]+/g, '_')}_${Date.now().toString(36)}`;
+        try {
+            const data = await file.arrayBuffer();
+            const face = new FontFace(fontName, data);
+            await face.load();
+            document.fonts.add(face);
+            await saveImportedFont(fontName, data);
+            const importedFonts = Array.from(new Set([...(appSettings.importedFonts || []), fontName]));
+            saveAppSettings({ importedFonts });
+            ensureImportedFontOptions();
+            const select = document.getElementById('cellStyleFontNameInput');
+            if (select) select.value = fontName;
+            previewCurrentCellStyle();
+            showSnackbar(`已导入字体：${file.name}`, 'success');
+        } catch (error) {
+            console.error(error);
+            showSnackbar('字体导入失败，请选择 TTF、OTF、WOFF 或 WOFF2 文件', 'error');
+        }
+    });
+    const previewCurrentCellStyle = () => {
+        const input = document.getElementById('quickEditInput');
+        if (!input) return;
+        const fontName = document.getElementById('cellStyleFontNameInput')?.value || '';
+        const fontSize = Number(document.getElementById('cellStyleFontSizeInput')?.value);
+        const color = document.getElementById('cellStyleTextColorInput')?.value || '';
+        const bg = document.getElementById('cellStyleBgColorInput')?.value || '';
+        if (fontName) input.style.setProperty('font-family', fontName, 'important');
+        else input.style.removeProperty('font-family');
+        input.style.fontSize = Number.isFinite(fontSize) && fontSize > 0 ? `${fontSize}px` : '1.2rem';
+        input.style.color = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color) ? color : 'var(--text-color)';
+        input.style.backgroundColor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(bg) ? bg : 'var(--surface-color)';
+        input.style.fontWeight = document.getElementById('cellStyleBoldInput')?.checked ? 'bold' : '';
+        input.style.fontStyle = document.getElementById('cellStyleItalicInput')?.checked ? 'italic' : '';
+        input.style.textDecoration = document.getElementById('cellStyleUnderlineInput')?.checked ? 'underline' : '';
+        const horizontal = document.getElementById('cellStyleAlignInput')?.value;
+        input.style.textAlign = horizontal && horizontal !== 'general' ? horizontal : '';
+    };
+    document.querySelectorAll('#quickEditStylePanel mdui-text-field, #quickEditStylePanel mdui-select, #quickEditStylePanel mdui-checkbox').forEach(el => {
+        el.addEventListener('input', previewCurrentCellStyle);
+        el.addEventListener('change', previewCurrentCellStyle);
     });
     window.saveCurrentCellStyle = function() {
         const target = window.__rsdbEditingCell;
@@ -6757,18 +6969,22 @@ function updateSummary() {
 		    document.querySelectorAll('.search-match-highlight, .current-match-highlight').forEach(el => {
 		        el.classList.remove('search-match-highlight', 'current-match-highlight');
 		    });
+		    document.querySelectorAll('.search-row-highlight').forEach(el => el.classList.remove('search-row-highlight'));
 
 		    // 高亮当前页所有包含搜索词的单元格（无论替换面板是否打开）
 		    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
 		        const rowIndex = parseInt(row.getAttribute('data-index'));
+		        let rowMatched = false;
 		        searchableFields.forEach(field => {
 		            const cell = row.querySelector(`td[data-field="${field}"]`);
 		            if (!cell) return;
 		            const cellValue = (tableData[rowIndex][field] || '').toString().toLowerCase();
 		            if (cellValue.includes(query)) {
 		                cell.classList.add('search-match-highlight');
+		                rowMatched = true;
 		            }
 		        });
+		        row.classList.toggle('search-row-highlight', rowMatched);
 		    });
 
 		    // 更新搜索结果计数（仅在替换面板打开时显示详细计数）
@@ -6809,6 +7025,7 @@ function updateSummary() {
 		    const match = searchMatches[currentMatchIndex];
 		    const targetRow = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
 		    if (!targetRow) return;
+		    targetRow.classList.add('search-row-highlight');
 
 		    // 高亮该行所有匹配字段
 		    searchableFields.forEach(field => {
@@ -6871,6 +7088,7 @@ function updateCurrentMatchUI() {
         el.classList.remove('search-match-highlight'));
     document.querySelectorAll('.current-match-highlight').forEach(el => 
         el.classList.remove('current-match-highlight'));
+    document.querySelectorAll('.search-row-highlight').forEach(el => el.classList.remove('search-row-highlight'));
 
     if (searchMatches.length === 0) return;
 
@@ -6901,6 +7119,7 @@ function highlightCurrentMatchCell() {
     if (!match || !Number.isInteger(match.rowIndex)) return;
     const row = document.querySelector(`tbody tr[data-index="${match.rowIndex}"]`);
     if (!row) return;
+    row.classList.add('search-row-highlight');
 
     // 高亮该行所有包含搜索词的单元格
     searchableFields.forEach(field => {
@@ -7781,6 +8000,10 @@ function findDuplicates(newItem) {
 		    dom.quickEditIndex.value = index;
 		    dom.quickEditField.value = fieldId;
 		    openCellStyleDialog(index, fieldId);
+		    window.__rsdbOriginalCellEdit = {
+		        value: item[fieldId] || '',
+		        style: JSON.parse(JSON.stringify(getCellFormat(index, fieldId) || {}))
+		    };
 
 		    dom.quickEditInput.setAttribute('readonly', 'true');
 		    dom.quickEditInput.classList.add('readonly-input');
@@ -7797,6 +8020,7 @@ function findDuplicates(newItem) {
 		    showVirtualKeyboard();
 
 		    currentInput.focus();
+		    requestAnimationFrame(() => previewCurrentCellStyle());
 		}
 		function saveQuickEdit() {
 		    const index = parseInt(dom.quickEditIndex.value);
@@ -7818,6 +8042,8 @@ function findDuplicates(newItem) {
 		        closeCustomModal(dom.quickEditDialog);
 		        setVirtualKeyboardVisible(false);
 		        showSnackbar('快速修改已保存', 'success');
+		        window.__rsdbEditingCell = null;
+		        window.__rsdbOriginalCellEdit = null;
 
 		keyboardState.isQuickEdit = false;
 		saveKeyboardState();
@@ -7850,6 +8076,7 @@ function findDuplicates(newItem) {
             setChecked('cellStyleItalicInput', current.italic);
             setChecked('cellStyleUnderlineInput', current.underline);
             setChecked('cellStyleWrapInput', current.wrapText);
+            requestAnimationFrame(() => previewCurrentCellStyle());
         }
 
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
@@ -9802,7 +10029,7 @@ ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsign
             if (keyObj?.label) return keyObj.label;
             const key = String(keyObj?.key || '');
             const special = {
-                backspace: '⌫', space: '␠', shift: '⇧', esc: '✓', done: '✓',
+                backspace: '←', space: '', shift: '⇧', esc: '✔', done: '▼',
                 clear: '清空', symbol: '符', system: '⌨', ABC: 'ABC'
             };
             return special[key] || key || '(空)';
@@ -9947,7 +10174,13 @@ ${String(code).replace(/\b(?:int|float|double|string|char|bool|long|short|unsign
                     if (!keepDefaultSize && size.height) keyEl.style.height = `${size.height}%`;
                     const displayLabel = getVisualKeyLabel(keyObj);
                     const swipeSymbol = getVisualSwipeSymbol(keyObj);
-                    if (swipeSymbol) {
+                    const keyValue = String(keyObj.key || '');
+                    if (['shift', 'backspace', 'space', 'esc', 'done', 'system'].includes(keyValue)) {
+                        keyEl.classList.add('special');
+                        if (keyValue === 'shift') keyEl.innerHTML = '<mdui-icon name="keyboard_arrow_up"></mdui-icon>';
+                        else if (keyValue === 'system') keyEl.innerHTML = '<mdui-icon name="keyboard"></mdui-icon>';
+                        else keyEl.textContent = displayLabel;
+                    } else if (swipeSymbol) {
                         const swipeLabel = keyObj.swipeLabel || swipeSymbol;
                         const swipeStyle = keyObj.swipeColor ? ` style="color:${escapeHtml(keyObj.swipeColor)}"` : '';
                         keyEl.innerHTML = `
@@ -10360,7 +10593,7 @@ function processKeyboardTemplates(templates, options = {}) {
     }));
 }
 
-function generateVirtualKeyboard() {
+		function generateVirtualKeyboard() {
 // ────────────── 新增：统一处理快捷短语区域显隐 ──────────────
     const vk = document.getElementById('virtualKeyboard');
     const shortcutWrap = document.getElementById('shortcutToolbarWrap');
@@ -10372,6 +10605,7 @@ function generateVirtualKeyboard() {
     }
 		  if (dom.shortcutKeysContainer) dom.shortcutKeysContainer.innerHTML = '';
 		  dom.keyboardRows.innerHTML = '';
+		  shortcutContainer?.classList.remove('has-shortcuts');
 		  currentShortcutFieldKey = null;
 		  const toolbar = document.getElementById('shortcutToolbar');
 		  if (toolbar) toolbar.style.display = 'none';
@@ -10457,6 +10691,11 @@ function generateVirtualKeyboard() {
 		      if (key !== undefined) rowElement.appendChild(createKeyElement(key));
 		    });
 		    dom.keyboardRows.appendChild(rowElement);
+		  });
+		  const shortcutCount = dom.shortcutKeysContainer?.querySelectorAll('.shortcut-key, .status-key').length || 0;
+		  shortcutContainer?.classList.toggle('has-shortcuts', shortcutCount > 0 || shortcutEditMode);
+		  dom.shortcutKeysContainer?.querySelectorAll('.shortcut-key, .status-key').forEach((key, index) => {
+		      key.style.setProperty('--shortcut-order', String(Math.min(index, 12)));
 		  });
 		}
 
@@ -11069,9 +11308,10 @@ function generateVirtualKeyboard() {
 
 		// === IndexedDB 初始化和操作 ===
 		const DB_NAME = 'RoundBarDB';
-		const DB_VERSION = 2; // 升级版本号以触发数据库升级
+		const DB_VERSION = 3;
 		const STORE_NAME = 'data';
 		const HISTORY_STORE_NAME = 'operationHistory';
+		const FONT_STORE_NAME = 'importedFonts';
 		let db = null;
 
 		function openDB() {
@@ -11100,6 +11340,9 @@ function generateVirtualKeyboard() {
 		            }
 		            if (!db.objectStoreNames.contains(HISTORY_STORE_NAME)) {
 		                db.createObjectStore(HISTORY_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+		            }
+		            if (!db.objectStoreNames.contains(FONT_STORE_NAME)) {
+		                db.createObjectStore(FONT_STORE_NAME, { keyPath: 'name' });
 		            }
 		        };
 		    });
@@ -11172,6 +11415,35 @@ async function flushDataToIndexedDB() {
 		        waiters.forEach(waiter => waiter.reject(err));
 		    }
 		}
+
+        async function saveImportedFont(name, data) {
+            const database = await openDB();
+            const tx = database.transaction(FONT_STORE_NAME, 'readwrite');
+            tx.objectStore(FONT_STORE_NAME).put({ name, data });
+            await waitForTransaction(tx);
+        }
+
+        async function restoreImportedFonts() {
+            try {
+                const database = await openDB();
+                const tx = database.transaction(FONT_STORE_NAME, 'readonly');
+                const request = tx.objectStore(FONT_STORE_NAME).getAll();
+                const records = await new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => reject(request.error);
+                });
+                for (const record of records) {
+                    if (!record?.name || !record?.data) continue;
+                    const face = new FontFace(record.name, record.data);
+                    await face.load();
+                    document.fonts.add(face);
+                }
+                ensureImportedFontOptions();
+                updateTable();
+            } catch (error) {
+                console.warn('恢复导入字体失败', error);
+            }
+        }
 
 		// === 加载所有数据（修复加载后表格不铺满问题）===
 		async function loadDataFromIndexedDB() {
@@ -11268,10 +11540,21 @@ async function flushDataToIndexedDB() {
 
 		function setVirtualKeyboardVisible(visible) {
 		    const vk = dom.virtualKeyboard;
+		    const toolbarWrap = document.getElementById('shortcutToolbarWrap');
 		    if (!vk) return;
 		    if (visible) {
 		        generateVirtualKeyboard();
 		        vk.style.display = 'block';
+		        if (toolbarWrap && !toolbarWrap.dataset.userPositioned) {
+		            toolbarWrap.style.display = 'block';
+		            toolbarWrap.style.top = `${Math.round(Math.max(6, window.innerHeight - vk.offsetHeight + 6))}px`;
+		            toolbarWrap.style.right = '6px';
+		            requestAnimationFrame(() => {
+		                setTimeout(() => {
+		                    if (vk.classList.contains('vk-visible')) toolbarWrap.style.top = `${Math.round(Math.max(6, vk.getBoundingClientRect().top + 6))}px`;
+		                }, 180);
+		            });
+		        }
 		        startVirtualCursorFollow();
 		        if (appSettings.animationsEnabled === false) {
 		            vk.classList.add('vk-visible');
@@ -11286,6 +11569,7 @@ async function flushDataToIndexedDB() {
 		    const virtualCursor = document.getElementById('virtualCursor');
 		    if (virtualCursor) virtualCursor.style.display = 'none';
 		    shortcutSuggestDismissedByField = {};
+		    if (toolbarWrap) toolbarWrap.style.display = 'none';
 		    vk.classList.remove('vk-visible');
 		    if (appSettings.animationsEnabled === false) {
 		        vk.style.display = 'none';
@@ -13153,6 +13437,9 @@ async function handleImageSelect(e) {
 }
 
 function showFullImage(src, productId = '', dataIndex = -1) {
+    if ((!Number.isInteger(dataIndex) || dataIndex < 0) && Number.isInteger(currentEditIndex)) {
+        dataIndex = currentEditIndex;
+    }
     const overlay = document.createElement('div');
     overlay.className = 'image-preview-overlay';
     overlay.style.cssText = `
@@ -13431,12 +13718,8 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     // 3. 删除图片
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
         overlay.remove();
-        if (dataIndex !== -1) {
-            window.tempDeleteImageIndex = dataIndex;
-            document.getElementById('deleteImageConfirmDialog').open = true;
-        } else {
-            showSnackbar('无法删除（无记录索引）', 'error');
-        }
+        window.tempDeleteImageIndex = Number.isInteger(dataIndex) && dataIndex >= 0 ? dataIndex : -1;
+        document.getElementById('deleteImageConfirmDialog').open = true;
     };
 
     // 点击空白处关闭
@@ -13483,32 +13766,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 		    }, 400);
 		}
 		function bindEditModalImageButtons() {
-    const fileInput = document.getElementById('cardImageInput');
-
-    // 拍照
-    const takePhotoBtn = document.getElementById('takePhotoInEditBtn');
-    if (takePhotoBtn) {
-        takePhotoBtn.onclick = () => {
-            chooseCardImage({ capture: true, targetIndex: currentEditIndex, mode: 'edit_take' });
-        };
-    }
-
-    // 从相册选择
-    const galleryBtn = document.getElementById('selectFromGalleryInEditBtn');
-    if (galleryBtn) {
-        galleryBtn.onclick = () => {
-            chooseCardImage({ capture: false, targetIndex: currentEditIndex, mode: 'edit_gallery' });
-        };
-    }
-
-    // 删除 → 打开确认框
-    const deleteBtn = document.getElementById('deleteImageInEditBtn');
-    if (deleteBtn) {
-        deleteBtn.onclick = () => {
-            window.tempDeleteImageIndex = currentEditIndex;
-            document.getElementById('deleteImageConfirmDialog').open = true;
-        };
-    }
+    // 按钮在初始化阶段统一绑定；这里保留兼容入口，避免重复绑定导致文件选择器打开两次。
 }
 	function showImagePreviewByIndex(index) {
     // 边界检查：如果 index 无效，从 0 开始
@@ -13926,10 +14184,11 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 function initShortcutToolbarDrag() {
     const wrap = document.getElementById('shortcutToolbarWrap');
     if (!wrap) return;
+    if (wrap.parentElement?.id === 'virtualKeyboard') document.body.appendChild(wrap);
 
-    const STORAGE_KEY = 'shortcutToolbarWrap_pos_v3'; // 版本3，避免旧数据冲突
+    const STORAGE_KEY = 'shortcutToolbarWrap_pos_v4';
     const DEFAULT_RIGHT = '6px';
-    const DEFAULT_TOP = `${Math.max(6, window.innerHeight - (Number(appSettings.virtualKeyboardHeight) || 420) - 50)}px`;
+    const DEFAULT_TOP = `${Math.max(6, window.innerHeight - (Number(appSettings.virtualKeyboardHeight) || 420) - (Number(appSettings.virtualKeyboardBottomOffset) || 0) + 6)}px`;
 
     window.resetShortcutToolbarWrapPosition = () => {
         const w = document.getElementById('shortcutToolbarWrap');
@@ -13937,6 +14196,7 @@ function initShortcutToolbarDrag() {
         w.style.right = DEFAULT_RIGHT;
         w.style.top = DEFAULT_TOP;
         w.style.bottom = 'auto';
+        delete w.dataset.userPositioned;
         localStorage.removeItem(STORAGE_KEY);
     };
 
@@ -13948,6 +14208,7 @@ function initShortcutToolbarDrag() {
             wrap.style.right = right || DEFAULT_RIGHT;
             wrap.style.top = top || DEFAULT_TOP;
             wrap.style.bottom = 'auto';
+            wrap.dataset.userPositioned = '1';
         } catch (e) {
             wrap.style.right = DEFAULT_RIGHT;
             wrap.style.top = DEFAULT_TOP;
@@ -13956,6 +14217,7 @@ function initShortcutToolbarDrag() {
         wrap.style.right = DEFAULT_RIGHT;
         wrap.style.top = DEFAULT_TOP;
         wrap.style.bottom = 'auto';
+        delete wrap.dataset.userPositioned;
     }
     requestAnimationFrame(() => {
         const rect = wrap.getBoundingClientRect();
@@ -14073,6 +14335,7 @@ function initShortcutToolbarDrag() {
                 top: wrap.style.top
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+            wrap.dataset.userPositioned = '1';
             if (!toolbarSavedToastShown) {
                 toolbarSavedToastShown = true;
                 showSnackbar('工具栏位置已保存', 'success');
@@ -14173,6 +14436,7 @@ function initShortcutToolbarDrag() {
 		  ZoomManager.init();
           KeyboardConfigManager.init();
           applyAppSettings();
+          restoreImportedFonts();
           initShortcutToolbarDrag();
           // 刷新后立即渲染操作历史列表，确保本地数据立即可见
           renderOperationHistoryList('');
