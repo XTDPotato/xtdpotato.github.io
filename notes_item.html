@@ -43,7 +43,18 @@
         position: sticky !important;
         top: 0;
         z-index: 10;
+        gap: 8px;
         background: var(--mdui-color-surface, #fff);
+      }
+
+      .notes-appbar-spacer {
+        flex: 1 1 auto;
+        min-width: 8px;
+      }
+
+      .notes-search {
+        width: min(360px, 42vw);
+        min-width: 180px;
       }
 
       .notes-content {
@@ -66,13 +77,89 @@
         flex-direction: column;
       }
 
+      #notesApp[data-view="list"] .notes-main {
+        display: flex;
+      }
+
+      #notesApp[data-view="detail"] .notes-list {
+        display: block;
+      }
+
+      #notesApp[data-view="detail"] > mdui-top-app-bar {
+        display: none !important;
+      }
+
+      #notesApp[data-selection-mode="true"] #listMoreDropdown { display: inline-flex; }
+      #notesApp[data-selection-mode="true"] .notes-search { pointer-events: none; opacity: 0.65; }
+      #noteList mdui-list-item { transition: transform 220ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease; }
+      #noteList mdui-checkbox { animation: note-checkbox-in 220ms cubic-bezier(.2,.8,.2,1) both; }
+      #notesApp[data-selection-exiting="true"] #noteList mdui-checkbox {
+        animation: note-checkbox-out 160ms ease both;
+      }
+      @keyframes note-checkbox-in {
+        from { opacity: 0; transform: translateX(-12px) scale(.75); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+      @keyframes note-checkbox-out {
+        from { opacity: 1; transform: translateX(0) scale(1); }
+        to { opacity: 0; transform: translateX(-10px) scale(.8); }
+      }
+
+      #notesMoreDropdown { display: none; order: 999; margin-left: auto; }
+      #notesApp[data-view="detail"] #notesMoreDropdown { display: inline-flex; }
+
       .notes-toolbar {
         display: flex;
-        gap: 8px;
-        align-items: center;
-        padding: 10px;
+        flex-direction: column;
+        width: 100%;
+        padding: 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        box-sizing: border-box;
       }
+
+      .notes-toolbar-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+        padding: 8px 10px;
+        box-sizing: border-box;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .notes-toolbar-row::-webkit-scrollbar { display: none; }
+      .notes-toolbar-primary { border-bottom: 1px solid var(--mdui-color-outline-variant); }
+      .notes-toolbar-primary #modeGroup { flex: 1 1 auto; min-width: 150px; }
+      .notes-mode-buttons,
+      .notes-zoom-buttons { display: inline-flex; align-items: center; gap: 4px; }
+      .notes-zoom-value { min-width: 48px; text-align: center; font-size: 13px; color: var(--mdui-color-on-surface-variant); }
+      .notes-toolbar-secondary { min-height: 56px; }
+      .notes-toolbar-secondary #notesMoreDropdown { margin-left: auto; }
+
+      .document-details-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        overflow: hidden;
+      }
+      .document-details-shell { display: flex; flex-direction: column; width: 100%; height: 100dvh; }
+      .document-details-body { flex: 1; min-height: 0; overflow: auto; padding: 20px; box-sizing: border-box; }
+      .document-details-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px 24px;
+        width: min(720px, 100%);
+        margin: 0 auto;
+        padding: 4px 0;
+      }
+      .document-details-grid .detail-label { color: var(--mdui-color-on-surface-variant); }
+      .document-details-grid .detail-value { text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
       .notes-title {
         flex: 1;
@@ -87,18 +174,168 @@
       .notes-preview {
         flex: 1;
         min-height: 0;
-        overflow: auto;
         padding: 10px;
       }
 
-      #noteEditor {
+      .notes-editor { overflow: hidden; }
+      .notes-preview { overflow: auto; }
+
+      .editor-findbar {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .editor-findbar mdui-text-field { flex: 1; min-width: 120px; }
+
+      .editor-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: calc(48px * var(--editor-zoom, 1)) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        height: 100%;
+        min-height: 0;
+        border: 1px solid var(--mdui-color-outline);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--mdui-color-surface);
+      }
+
+      .editor-scroll {
         width: 100%;
         height: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow-x: auto;
+        overflow-y: scroll;
+        scrollbar-gutter: stable;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: auto;
+        scrollbar-color: rgb(var(--mdui-color-primary)) rgb(var(--mdui-color-surface-container));
+      }
+
+      .editor-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+      .editor-scroll::-webkit-scrollbar-track { background: rgb(var(--mdui-color-surface-container)); }
+      .editor-scroll::-webkit-scrollbar-thumb {
+        background: rgb(var(--mdui-color-primary));
+        border: 3px solid rgb(var(--mdui-color-surface-container));
+        border-radius: 8px;
+      }
+
+      .line-numbers {
+        position: relative;
+        z-index: 2;
+        padding: 16px 8px;
+        height: max-content;
+        min-height: 100%;
+        overflow: visible;
+        text-align: right;
+        white-space: pre;
+        font: 16px/1.5 monospace;
+        color: var(--mdui-color-on-surface-variant);
+        background: color-mix(in srgb, rgb(var(--mdui-color-secondary)) 40%, transparent);
+        border-right: 1px solid var(--mdui-color-outline-variant);
+        user-select: none;
+        box-sizing: border-box;
+      }
+
+      #noteEditor {
+        display: block;
+        width: max-content;
+        min-width: 100%;
+        height: max-content;
+        min-height: 100%;
+        resize: none;
+        border: 0;
+        outline: none;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow: hidden;
+        color: var(--mdui-color-on-surface);
+        background: var(--mdui-color-surface);
+        font: 16px/1.5 monospace;
+        white-space: pre;
+        overflow-wrap: normal;
+        word-break: normal;
+      }
+
+      #noteEditor::placeholder { color: var(--mdui-color-on-surface-variant); }
+
+      @media (max-width: 600px) {
+        .editor-findbar { flex-wrap: wrap; }
+        .editor-findbar mdui-text-field { flex-basis: calc(50% - 4px); }
+      }
+
+      .preview-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .preview-dialog-shell {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: var(--mdui-color-surface);
+      }
+
+      .preview-dialog-body {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        touch-action: none;
+        padding: 16px max(16px, env(safe-area-inset-left)) max(24px, env(safe-area-inset-bottom));
+        box-sizing: border-box;
+      }
+
+      #previewContainer {
+        display: none !important;
+      }
+/* 原生 HTML 直接参与 Markdown 正文布局。 */
+
+      .preview-dialog .preview-dialog-shell {
+        min-height: 100dvh;
+      }
+
+      .preview-zoom-content {
+        width: min(900px, 100%);
+        min-height: 100%;
+        margin: 0 auto;
+        padding: 24px;
+        box-sizing: border-box;
+        transform-origin: top center;
+      }
+
+      .preview-zoom-value {
+        min-width: 52px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
       }
 
       .markdown-body {
-        font-size: 15px;
-        line-height: 1.7;
+        font-size: var(--md-font-size, 15px);
+        line-height: var(--md-line-height, 1.7);
+        background: var(--md-body-background, transparent);
+      }
+
+      .markdown-body blockquote {
+        margin: 12px 0;
+        padding: 8px 12px;
+        color: var(--mdui-color-on-surface, #1d1b20) !important;
+        background: var(--md-blockquote-background, rgba(0, 0, 0, 0.5));
+        border-left: 4px solid var(--mdui-color-primary, #6750a4);
+        border-radius: 0 6px 6px 0;
+      }
+
+      .markdown-body blockquote * {
+        color: inherit !important;
       }
 
       .markdown-body pre {
@@ -124,6 +361,34 @@
       }
 
       @media (max-width: 720px) {
+        mdui-top-app-bar {
+          padding-inline: 8px;
+        }
+
+        .notes-appbar-spacer {
+          display: none;
+        }
+
+        .notes-search {
+          flex: 1 1 auto;
+          width: auto;
+          min-width: 0;
+        }
+
+        #notesApp[data-view="detail"] > mdui-top-app-bar {
+          display: none !important;
+        }
+
+        /* 新建入口由主站 FAB 提供，iframe 顶部不再显示加号。 */
+
+        #notesApp[data-view="list"] .notes-main {
+          display: none;
+        }
+
+        #notesApp[data-view="detail"] .notes-main {
+          display: flex;
+        }
+
         .notes-list {
           width: 100%;
           max-width: none;
@@ -145,9 +410,13 @@
         #notesApp[data-view="detail"] #backBtn {
           display: inline-flex;
         }
+
+        #notesApp[data-view="detail"] .notes-title {
+          display: none;
+        }
       }
 
-      @media (max-width: 900px) {
+      @media (min-width: 721px) and (max-width: 900px) {
         .notes-list {
           width: 220px;
         }
@@ -158,18 +427,23 @@
   <body>
     <div class="notes-app" id="notesApp" data-view="list">
       <mdui-top-app-bar>
-        <mdui-button-icon style="display: none;" id="newNoteBtn" icon="add"></mdui-button-icon>
-        <mdui-button-icon style="display: none;"id="renameNoteBtn" icon="edit"></mdui-button-icon>
-        <mdui-button-icon style="display: none;"id="deleteNoteBtn" icon="delete"></mdui-button-icon>
-
-        <div style="flex: 1"></div>
-
         <mdui-text-field
           id="searchInput"
+          class="notes-search"
+          icon="search"
+          clearable
           variant="outlined"
           placeholder="搜索笔记"
-          
+          aria-label="搜索笔记"
         ></mdui-text-field>
+        <div style="flex: 1"></div>
+        <mdui-dropdown id="listMoreDropdown" placement="bottom-end">
+          <mdui-button-icon id="listMoreBtn" slot="trigger" icon="more_vert" aria-label="更多列表操作"></mdui-button-icon>
+          <mdui-menu>
+            <mdui-menu-item id="importTxtMenuItem" icon="upload_file">导入 TXT</mdui-menu-item>
+            <mdui-menu-item id="multiSelectMenuItem" icon="checklist">多选</mdui-menu-item>
+          </mdui-menu>
+        </mdui-dropdown>
       </mdui-top-app-bar>
 
       <div class="notes-content">
@@ -179,29 +453,95 @@
 
         <div class="notes-main">
           <div class="notes-toolbar">
-            <mdui-button-icon id="backBtn" icon="arrow_back"></mdui-button-icon>
-            <div id="activeTitle" class="notes-title"></div>
-            <mdui-segmented-button-group id="modeGroup" selects="single" value="preview">
-              <mdui-segmented-button value="edit" id="modeEditBtn">编辑</mdui-segmented-button>
-              <mdui-segmented-button value="preview" id="modePreviewBtn"
-                >预览</mdui-segmented-button
-              >
-            </mdui-segmented-button-group>
-            <mdui-button-icon id="undoBtn" icon="undo"></mdui-button-icon>
-            <mdui-button-icon id="redoBtn" icon="redo"></mdui-button-icon>
-            <mdui-button-icon id="copyBtn" icon="content_copy"></mdui-button-icon>
-            <mdui-button-icon id="insertBtn" icon="add_link"></mdui-button-icon>
+            <div class="notes-toolbar-row notes-toolbar-primary">
+              <mdui-button-icon id="backBtn" icon="arrow_back"></mdui-button-icon>
+              <div id="activeTitle" class="notes-title"></div>
+              <div class="notes-mode-buttons" aria-label="编辑或预览">
+                <mdui-button-icon id="modeEditBtn" icon="edit_note" variant="standard" aria-label="锁定编辑模式"></mdui-button-icon>
+                <mdui-button-icon id="previewOnceBtn" icon="visibility" variant="standard" aria-label="单次预览"></mdui-button-icon>
+                <mdui-button-icon id="modePreviewBtn" icon="preview" variant="standard" aria-label="锁定预览模式"></mdui-button-icon>
+              </div>
+              <div class="notes-zoom-buttons" aria-label="缩放">
+                <mdui-button-icon id="zoomOutBtn" icon="remove" aria-label="缩小"></mdui-button-icon>
+                <span id="zoomValue" class="notes-zoom-value">100%</span>
+                <mdui-button-icon id="zoomInBtn" icon="add" aria-label="放大"></mdui-button-icon>
+                <mdui-button-icon id="zoomResetBtn" icon="restart_alt" aria-label="重置缩放"></mdui-button-icon>
+              </div>
+              <mdui-button-icon id="undoBtn" icon="undo" aria-label="撤销"></mdui-button-icon>
+              <mdui-button-icon id="redoBtn" icon="redo" aria-label="重做"></mdui-button-icon>
+            </div>
+            <div class="notes-toolbar-row notes-toolbar-secondary">
+            <mdui-dropdown id="notesMoreDropdown" placement="bottom-end">
+              <mdui-button-icon id="notesMoreBtn" slot="trigger" icon="more_vert" aria-label="更多笔记操作"></mdui-button-icon>
+              <mdui-menu>
+                <mdui-menu-item id="renameMenuItem" icon="edit">重命名</mdui-menu-item>
+                <mdui-menu-item id="deleteMenuItem" icon="delete">删除</mdui-menu-item>
+                <mdui-menu-item id="saveMenuItem" icon="save">保存</mdui-menu-item>
+                <mdui-menu-item id="exportMenuItem" icon="download">导出 TXT</mdui-menu-item>
+                <mdui-menu-item id="findMenuItem" icon="find_in_page">搜索和替换</mdui-menu-item>
+                <mdui-menu-item id="copyMenuItem" icon="content_copy">复制全文</mdui-menu-item>
+                <mdui-menu-item id="documentDetailsMenuItem" icon="info">文档详情</mdui-menu-item>
+                <mdui-menu-item id="markdownSettingsMenuItem" icon="tune">Markdown 显示设置</mdui-menu-item>
+              </mdui-menu>
+            </mdui-dropdown>
+            <mdui-button-icon id="formatBoldBtn" icon="format_bold" aria-label="粗体"></mdui-button-icon>
+            <mdui-button-icon id="formatItalicBtn" icon="format_italic" aria-label="斜体"></mdui-button-icon>
+            <mdui-button-icon id="formatUnderlineBtn" icon="format_underlined" aria-label="下划线"></mdui-button-icon>
+            <mdui-button-icon id="formatStrikeBtn" icon="strikethrough_s" aria-label="删除线"></mdui-button-icon>
+            <mdui-button-icon id="formatPainterBtn" icon="format_paint" aria-label="格式刷"></mdui-button-icon>
+            <mdui-dropdown placement="bottom-end">
+              <mdui-button-icon slot="trigger" icon="format_list_bulleted" aria-label="段落格式"></mdui-button-icon>
+              <mdui-menu>
+                <mdui-menu-item id="formatHeadingItem" icon="title">标题</mdui-menu-item>
+                <mdui-menu-item id="formatQuoteItem" icon="format_quote">引用</mdui-menu-item>
+                <mdui-menu-item id="formatBulletItem" icon="format_list_bulleted">无序列表</mdui-menu-item>
+                <mdui-menu-item id="formatNumberItem" icon="format_list_numbered">有序列表</mdui-menu-item>
+              </mdui-menu>
+            </mdui-dropdown>
+            <mdui-dropdown placement="bottom-end">
+              <mdui-button-icon slot="trigger" icon="font_download" aria-label="自定义字体"></mdui-button-icon>
+              <mdui-menu>
+                <mdui-menu-item id="fontSansItem">无衬线字体</mdui-menu-item>
+                <mdui-menu-item id="fontSerifItem">衬线字体</mdui-menu-item>
+                <mdui-menu-item id="fontMonoItem">等宽字体</mdui-menu-item>
+                <mdui-menu-item id="fontCursiveItem">手写字体</mdui-menu-item>
+              </mdui-menu>
+            </mdui-dropdown>
+            <mdui-dropdown placement="bottom-end">
+              <mdui-button-icon slot="trigger" icon="format_size" aria-label="字体格式"></mdui-button-icon>
+              <mdui-menu>
+                <mdui-menu-item id="fontDefaultItem" icon="text_fields">默认字体</mdui-menu-item>
+                <mdui-menu-item id="fontLargeItem" icon="format_size">大号文字</mdui-menu-item>
+                <mdui-menu-item id="fontSmallItem" icon="text_decrease">小号文字</mdui-menu-item>
+                <mdui-menu-item id="alignLeftItem" icon="format_align_left">左对齐</mdui-menu-item>
+                <mdui-menu-item id="alignCenterItem" icon="format_align_center">居中</mdui-menu-item>
+                <mdui-menu-item id="alignRightItem" icon="format_align_right">右对齐</mdui-menu-item>
+              </mdui-menu>
+            </mdui-dropdown>
+            </div>
+          </div>
+
+          <div class="editor-findbar" id="editorFindbar">
+            <mdui-text-field id="editorFindInput" icon="search" clearable variant="outlined" placeholder="搜索文本"></mdui-text-field>
+            <mdui-text-field id="editorReplaceInput" icon="find_replace" clearable variant="outlined" placeholder="替换为"></mdui-text-field>
+            <mdui-button-icon id="editorFindPrev" icon="keyboard_arrow_up" aria-label="上一个匹配"></mdui-button-icon>
+            <mdui-button-icon id="editorFindNext" icon="keyboard_arrow_down" aria-label="下一个匹配"></mdui-button-icon>
+            <mdui-button id="editorReplaceOne" variant="tonal">替换</mdui-button>
+            <mdui-button id="editorReplaceAll" variant="text">全部替换</mdui-button>
           </div>
 
           <div class="notes-editor" id="editorContainer">
-            <mdui-text-field
-              id="noteEditor"
-              rows="18"
-              max-rows="9999"
-              autosize
-              variant="outlined"
-              label="Markdown 内容"
-            ></mdui-text-field>
+            <div class="editor-shell">
+              <div id="lineNumbers" class="line-numbers" aria-hidden="true">1</div>
+              <div id="editorScroll" class="editor-scroll">
+                <textarea
+                  id="noteEditor"
+                  aria-label="Markdown 内容"
+                  spellcheck="false"
+                  wrap="off"
+                ></textarea>
+              </div>
+            </div>
           </div>
 
           <div class="notes-preview" id="previewContainer" style="display: none">
@@ -218,9 +558,64 @@
       <mdui-button slot="action" variant="tonal" id="titleOkBtn">确定</mdui-button>
     </mdui-dialog>
 
+    <mdui-dialog id="previewDialog" class="preview-dialog" fullscreen close-on-esc>
+      <section class="preview-dialog-shell">
+        <mdui-top-app-bar>
+          <mdui-button-icon id="previewCloseBtn" icon="close" aria-label="关闭预览"></mdui-button-icon>
+          <mdui-top-app-bar-title id="previewDialogTitle">预览</mdui-top-app-bar-title>
+          <div style="flex: 1"></div>
+          <mdui-button-icon id="previewZoomOut" icon="zoom_out" aria-label="缩小"></mdui-button-icon>
+          <span id="previewZoomValue" class="preview-zoom-value">100%</span>
+          <mdui-button-icon id="previewZoomReset" icon="fit_screen" aria-label="重置缩放"></mdui-button-icon>
+          <mdui-button-icon id="previewZoomIn" icon="zoom_in" aria-label="放大"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div id="previewDialogBody" class="preview-dialog-body">
+          <div id="previewZoomContent" class="preview-zoom-content markdown-body"></div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="noteItemActionDialog" close-on-overlay-click>
+      <span slot="headline" id="noteItemActionTitle">笔记操作</span>
+      <div style="padding: 8px 0">请选择要执行的操作。</div>
+      <mdui-button slot="action" variant="text" id="noteItemActionCancel">取消</mdui-button>
+      <mdui-button slot="action" variant="text" id="noteItemActionRename">重命名</mdui-button>
+      <mdui-button slot="action" variant="text" color="error" id="noteItemActionDelete">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentDetailsDialog" class="document-details-dialog" fullscreen close-on-esc>
+      <section class="document-details-shell">
+        <mdui-top-app-bar>
+          <mdui-button-icon id="documentDetailsClose" icon="close" aria-label="关闭文档详情"></mdui-button-icon>
+          <mdui-top-app-bar-title>文档详情</mdui-top-app-bar-title>
+        </mdui-top-app-bar>
+        <div class="document-details-body">
+          <div id="documentDetailsContent" class="document-details-grid"></div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="markdownSettingsDialog" class="document-details-dialog" fullscreen close-on-esc>
+      <section class="document-details-shell">
+        <mdui-top-app-bar>
+          <mdui-button-icon id="markdownSettingsClose" icon="close" aria-label="关闭"></mdui-button-icon>
+          <mdui-top-app-bar-title>Markdown 显示设置</mdui-top-app-bar-title>
+          <div style="flex:1"></div>
+          <mdui-button-icon id="markdownSettingsSave" icon="check" aria-label="保存设置"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div class="document-details-body" style="display:grid;align-content:start;gap:14px">
+          <mdui-switch id="markdownFollowTheme" checked>跟随主题</mdui-switch>
+          <div style="color:var(--mdui-color-on-surface-variant);font-size:13px;line-height:1.5">开启后正文背景会保持透明并跟随当前页面主题；关闭后可使用自定义 CSS 背景色。引用背景默认是 50% 黑色。</div>
+          <mdui-slider id="markdownFontSize" min="12" max="32" step="1" value="15" label="字体大小" description="调整编辑区和 Markdown 预览文字大小"></mdui-slider>
+          <mdui-text-field id="markdownBodyBackground" label="正文背景色（CSS颜色）" helper="例如 transparent、#ffffff 或 rgba(0,0,0,.08)" variant="outlined" value="transparent"></mdui-text-field>
+          <mdui-text-field id="markdownQuoteBackground" label="引用背景色（CSS颜色）" helper="例如 rgba(0,0,0,.5)" variant="outlined" value="rgba(0, 0, 0, 0.5)"></mdui-text-field>
+        </div>
+      </section>
+    </mdui-dialog>
+
     <mdui-dialog id="deleteConfirmDialog" close-on-overlay-click>
       <span slot="headline">删除笔记</span>
-      <div style="padding: 12px 0">确定要删除当前笔记吗？</div>
+      <div id="deleteConfirmText" style="padding: 12px 0">确定要删除当前笔记吗？</div>
       <mdui-button slot="action" variant="text" id="deleteCancelBtn">取消</mdui-button>
       <mdui-button slot="action" variant="filled" color="error" id="deleteOkBtn">删除</mdui-button>
     </mdui-dialog>

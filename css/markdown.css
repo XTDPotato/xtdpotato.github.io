@@ -1,6 +1,7 @@
 .markdown-body {
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: var(--md-font-size, 15px);
+  line-height: var(--md-line-height, 1.7);
+  background: var(--md-body-background, transparent);
 }
 
 .markdown-body h1,
@@ -10,6 +11,19 @@
 .markdown-body h5,
 .markdown-body h6 {
   line-height: 1.25;
+}
+
+.markdown-body blockquote {
+  margin: 12px 0;
+  padding: 8px 12px;
+  color: var(--mdui-color-on-surface, #1d1b20) !important;
+  background: var(--md-blockquote-background, rgba(0, 0, 0, 0.5));
+  border-left: 4px solid var(--mdui-color-primary, #6750a4);
+  border-radius: 0 6px 6px 0;
+}
+
+.markdown-body blockquote * {
+  color: inherit !important;
 }
 
 .markdown-body pre {

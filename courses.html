@@ -14,11 +14,53 @@
 
     <style>
       html, body { height: 100%; margin: 0; background: var(--mdui-color-surface); color: var(--mdui-color-on-surface); }
-      .page { height: 100%; display: flex; flex-direction: column; }
+      .page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+      .course-appbar-wrap { position: relative; flex: 0 0 auto; min-width: 0; overflow: hidden; }
+      .course-appbar {
+        position: relative;
+        z-index: 10;
+        gap: 8px;
+        background: var(--mdui-color-surface);
+      }
+      .course-scroll-target { flex: 1 1 auto; min-height: 0; overflow: auto; }
+      .course-appbar-spacer { flex: 1 1 auto; min-width: 8px; }
+      .search-input { width: min(420px, 48vw); min-width: 0; box-sizing: border-box; }
+      #favoritesBtnDesktop {
+        flex: 0 0 48px;
+        width: 48px;
+        min-width: 48px;
+        padding-inline: 0;
+      }
       .content { padding: 12px; box-sizing: border-box; max-width: 1000px; margin: 0 auto; width: 100%; padding-bottom: 48px; }
-      
-      .top-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-      .search-input { flex-grow: 1; }
+
+      @media (max-width: 720px) {
+        .course-appbar-wrap {
+          min-height: 72px;
+          overflow: visible;
+        }
+        .course-appbar {
+          --mdui-top-app-bar-height: 72px;
+          width: 100%;
+          min-height: 72px;
+          padding: 8px 12px;
+          box-sizing: border-box;
+          overflow: visible;
+        }
+        .course-appbar mdui-top-app-bar-title,
+        .course-appbar-spacer,
+        #favoritesBtnDesktop {
+          display: none !important;
+        }
+        .search-input {
+          display: block;
+          flex: 1 1 100%;
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          box-sizing: border-box;
+        }
+        .content { padding: 8px; }
+      }
       
       .grid { 
         display: grid; 
@@ -51,22 +93,71 @@
       .markdown-body h3 { font-size: 1.3rem; margin-top: 1.5rem; color: var(--mdui-color-primary); }
       .markdown-body code { background: var(--mdui-color-secondary-container); color: var(--mdui-color-on-secondary-container); padding: 2px 6px; border-radius: 4px; font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
       .markdown-body pre { background: #1e1e1e; color: #d4d4d4; padding: 18px; border-radius: 10px; overflow-x: auto; margin: 20px 0; }
-      .markdown-body blockquote { border-left: 5px solid var(--mdui-color-primary); background: var(--mdui-color-surface-container-high); margin: 20px 0; padding: 12px 20px; border-radius: 0 8px 8px 0; }
+      .markdown-body blockquote { border-left: 5px solid var(--mdui-color-primary); background: var(--mdui-color-surface-container-high); color: var(--mdui-color-on-surface); margin: 20px 0; padding: 12px 20px; border-radius: 0 8px 8px 0; }
+      .markdown-body blockquote * { color: inherit !important; }
       .markdown-body img { max-width: 100%; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: block; }
       
       .btn-link { margin-top: 16px; display: inline-block; }
-      .favorites-sheet::part(panel) { border-radius: 20px 20px 0 0; }
+      .favorites-sheet::part(panel) {
+        position: fixed;
+        left: 50%;
+        right: auto;
+        bottom: 0;
+        top: auto;
+        width: min(560px, 100vw);
+        max-width: 100vw;
+        max-height: min(72vh, 640px);
+        margin: 0;
+        transform: translateX(-50%);
+        border-radius: 20px 20px 0 0;
+        overflow: auto;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 600px) {
+        .favorites-sheet::part(panel) {
+          left: 0;
+          right: 0;
+          width: 100vw;
+          transform: none;
+          border-radius: 16px 16px 0 0;
+        }
+      }
     </style>
   </head>
 
   <body>
     <div class="page">
-      <div class="content">
-        <div class="top-controls">
-          <mdui-text-field id="searchInput" class="search-input" icon="search" clearable placeholder="搜索教程..." variant="outlined"></mdui-text-field>
-          <mdui-button id="favoritesBtnDesktop" variant="tonal" icon="bookmarks">收藏夹</mdui-button>
+      <div class="course-appbar-wrap">
+        <mdui-top-app-bar
+          class="course-appbar"
+          scroll-behavior="elevate"
+          scroll-target=".course-scroll-target"
+        >
+          <mdui-top-app-bar-title>教程</mdui-top-app-bar-title>
+          <div class="course-appbar-spacer" aria-hidden="true"></div>
+          <mdui-text-field
+            id="searchInput"
+            class="search-input"
+            icon="search"
+            clearable
+            placeholder="搜索教程..."
+            variant="outlined"
+            aria-label="搜索教程"
+          ></mdui-text-field>
+          <mdui-button-icon
+            id="favoritesBtnDesktop"
+            icon="bookmarks"
+            aria-label="打开收藏夹"
+            title="打开收藏夹"
+          ></mdui-button-icon>
+        </mdui-top-app-bar>
+      </div>
+      <div class="course-scroll-target">
+        <div class="content">
+          <div class="grid" id="courseGrid"></div>
         </div>
-        <div class="grid" id="courseGrid"></div>
       </div>
     </div>
 
@@ -94,25 +185,51 @@
 <script src="js/markdown_read.js"></script>
 
     <script>
-const courses = [
-  {
-    id: "stream-master",
-    title: "[正在施工]Moonlight + Sunshine 低延迟串流全攻略",
-    desc: "从服务端(被控端)环境搭建到客户端(控制端)密钥配对的详细流程。",
-    icon: "cast",
-    cover: "icons/ms_cl.png",
-    // 这里只放路径，不放具体内容
-    mdPath: "tutorials/stream-master.md" 
-  },
-  {
-    id: "ms-start",
-    title: "基岩版开发：快速入门指南",
-    desc: "学习附加包 (Add-on) 的开发，访问微软官方创作者中心。",
-    icon: "rocket_launch",
-    cover: "icons/mcbedrock_dev.png",
-    mdPath: "tutorials/ms-start.md"
+let courses = [];
+
+function parseFrontMatter(markdown, fileName) {
+  const match = markdown.match(/^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/);
+  const meta = {};
+  const body = match ? match[2] : markdown;
+  if (match) {
+    match[1].split(/\r?\n/).forEach((line) => {
+      const separator = line.indexOf(":");
+      if (separator < 0) return;
+      const key = line.slice(0, separator).trim();
+      const value = line.slice(separator + 1).trim().replace(/^['\"]|['\"]$/g, "");
+      meta[key] = value;
+    });
   }
-];
+  const heading = body.match(/^#\s+(.+)$/m);
+  const plain = body.replace(/[`*_>#\-]/g, " ").replace(/\s+/g, " ").trim();
+  const id = fileName.replace(/\.md$/i, "");
+  return {
+    id,
+    title: meta.title || heading?.[1]?.trim() || id,
+    desc: meta.summary || meta.description || plain.slice(0, 120),
+    icon: meta.icon || "menu_book",
+    cover: meta.cover || "icons/bedrock_dev.svg",
+    mdPath: `tutorials/${fileName}`,
+    markdown: body,
+  };
+}
+
+async function loadCourses() {
+  try {
+    const response = await fetch("tutorials/index.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("无法读取教程目录");
+    const files = await response.json();
+    courses = (await Promise.all(files.map(async (fileName) => {
+      const response = await fetch(`tutorials/${encodeURIComponent(fileName)}`, { cache: "no-store" });
+      if (!response.ok) return null;
+      return parseFrontMatter(await response.text(), fileName);
+    }))).filter(Boolean);
+    renderGrid(document.getElementById("searchInput")?.value || "");
+  } catch (error) {
+    const grid = document.getElementById("courseGrid");
+    if (grid) grid.innerHTML = '<div class="empty-state">教程目录读取失败</div>';
+  }
+}
 
 
       const dom = {
@@ -131,9 +248,8 @@ const courses = [
       let activeId = null;
       let favorites = JSON.parse(localStorage.getItem("mc_dev_favs") || "[]");
 
-      function showToast(text) {
-        dom.snackbar.textContent = text;
-        dom.snackbar.open = true;
+      function showToast(text, color) {
+        window.parent?.postMessage({ type: "app:toast", text, color }, "*");
       }
 
       function highlightText(text, query) {
@@ -172,8 +288,10 @@ async function openCourse(id) {
   notifyTopbar();
 
   // 核心：异步加载并渲染
-  const html = await loadAndRenderMarkdown(course.mdPath);
-  dom.doc.innerHTML = html;
+const html = course.markdown
+     ? (window.MarkdownReader?.render?.(course.markdown) || window.XTDMarkdown?.renderMarkdown?.(course.markdown) || course.markdown)
+     : await loadAndRenderMarkdown(course.mdPath);
+   dom.doc.innerHTML = html;
 }
 
       function renderFavorites() {
@@ -208,7 +326,17 @@ async function openCourse(id) {
 
       window.addEventListener("message", (event) => {
         const data = event?.data;
-        if (data?.id === "act:close_detail") dom.dialog.open = false;
+        if (data?.id === "courses:open" && data.courseId) {
+          openCourse(data.courseId);
+        }
+        if (data?.id === "courses:sync-topbar") {
+          notifyTopbar();
+          return;
+        }
+        if (data?.id === "act:close_detail") {
+          dom.dialog.open = false;
+          return;
+        }
         if (data?.id === "act:toggle_fav" && activeId) {
           const index = favorites.indexOf(activeId);
           if (index > -1) favorites.splice(index, 1);
@@ -218,14 +346,36 @@ async function openCourse(id) {
           notifyTopbar();
           renderFavorites();
         }
-        if (data?.id === "act:open_favs") { renderFavorites(); dom.favoritesSheet.open = true; }
+        if (data?.id === "courses:remove-favorites" && Array.isArray(data.courseIds)) {
+          const removed = new Set(data.courseIds.map(String));
+          favorites = favorites.filter((id) => !removed.has(String(id)));
+          localStorage.setItem("mc_dev_favs", JSON.stringify(favorites));
+          renderFavorites();
+          notifyTopbar();
+          window.parent?.postMessage({
+            type: "courses:favorites-updated",
+            favorites: favorites.map((id) => courses.find((course) => course.id === id)).filter(Boolean).map((course) => ({ id: course.id, title: course.title, desc: course.desc || "", icon: course.icon }))
+          }, "*");
+          return;
+        }
+        if (data?.id === "act:open_favs") {
+          window.parent?.postMessage({
+            type: "courses:open-favorites",
+            favorites: favorites.map((id) => courses.find((course) => course.id === id)).filter(Boolean).map((course) => ({ id: course.id, title: course.title, icon: course.icon }))
+          }, "*");
+        }
       });
 
-      dom.favoritesBtnDesktop.onclick = () => { renderFavorites(); dom.favoritesSheet.open = true; };
+      dom.favoritesBtnDesktop.onclick = () => {
+        window.parent?.postMessage({
+          type: "courses:open-favorites",
+          favorites: favorites.map((id) => courses.find((course) => course.id === id)).filter(Boolean).map((course) => ({ id: course.id, title: course.title, icon: course.icon }))
+        }, "*");
+      };
       dom.favoritesCloseBtn.onclick = () => dom.favoritesSheet.open = false;
       dom.dialog.addEventListener("close", () => { activeId = null; notifyTopbar(); });
 
-      renderGrid();
+      loadCourses();
       notifyTopbar();
     </script>
   </body>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+<title>RSDB 数据管理</title>
+<desc>蓝绿色数据表格和圆柱形数据库组成的矢量封面</desc>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#083b4a"/><stop offset="1" stop-color="#1a8d8a"/></linearGradient></defs>
+<rect width="1200" height="630" rx="36" fill="url(#bg)"/>
+<ellipse cx="600" cy="170" rx="210" ry="66" fill="#b8fff0"/>
+<path d="M390 170v260c0 38 94 70 210 70s210-32 210-70V170" fill="#5ad2c1"/>
+<ellipse cx="600" cy="430" rx="210" ry="70" fill="#43b7ad"/>
+<path d="M390 250c0 38 94 70 210 70s210-32 210-70M390 340c0 38 94 70 210 70s210-32 210-70" fill="none" stroke="#d6fff6" stroke-width="10" opacity=".75"/>
+<g fill="#f7fffd"><rect x="150" y="190" width="120" height="22" rx="11"/><rect x="150" y="245" width="170" height="22" rx="11"/><rect x="870" y="355" width="180" height="22" rx="11"/><rect x="930" y="410" width="120" height="22" rx="11"/></g>
+</svg>

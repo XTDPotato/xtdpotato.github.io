@@ -8,8 +8,11 @@
     />
     <meta name="renderer" content="webkit" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="XTDPotato 的个人中转站，汇集话说、导航、笔记和教程。" />
+    <meta name="theme-color" content="#6750a4" />
 
     <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css" />
+    <link rel="stylesheet" href="css/markdown.css" />
     <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -84,6 +87,11 @@
         display: none;
       }
 
+      .mobile-topbar-spacer {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
       .mobile-topbar-actions {
         display: inline-flex;
         align-items: center;
@@ -95,6 +103,81 @@
         display: none;
         width: var(--mobile-fab-size);
         height: var(--mobile-fab-size);
+        touch-action: none;
+        user-select: none;
+      }
+
+      .mobile-fab.settings-preview {
+        z-index: 2000 !important;
+      }
+      .notes-fab-open::part(icon) {
+        transform: rotate(45deg);
+        transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+      }
+      .notes-fab-open { transition: none; }
+
+      .notes-insert-menu {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: none;
+        pointer-events: none;
+      }
+
+      .notes-insert-menu[open] { display: block; pointer-events: none; }
+      .notes-insert-menu-backdrop { position: absolute; inset: 0; background: transparent; pointer-events: none; }
+      .notes-insert-menu-list { pointer-events: auto; }
+      .notes-insert-menu-list {
+        position: fixed;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 4px;
+        width: min(220px, calc(100vw - 24px));
+        transform-origin: bottom right;
+        max-height: calc(100dvh - 24px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+      }
+      .notes-insert-menu-list::-webkit-scrollbar { display: none; }
+      .notes-insert-menu-item {
+        position: relative;
+        display: grid;
+        width: 200px;
+        height: auto;
+        min-height: 56px;
+        box-sizing: border-box;
+        grid-template-columns: 40px minmax(0, 1fr);
+        align-items: center;
+        min-height: 56px;
+        text-align: left;
+        padding: 10px 12px;
+        border: 1px solid rgb(var(--mdui-color-outline-variant));
+        border-radius: 6px;
+        color: rgb(var(--mdui-color-on-surface));
+        background: rgb(var(--mdui-color-surface));
+        box-shadow: var(--mdui-elevation-level1);
+        font: 15px/1.4 system-ui, sans-serif;
+        text-align: left;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(18px) scale(0.96);
+        transition: opacity 160ms ease, transform 220ms cubic-bezier(.2,.8,.2,1), background-color 120ms ease;
+        transition-delay: calc(var(--menu-order, 0) * 35ms);
+      }
+      .notes-insert-menu[open]:not([closing]) .notes-insert-menu-item {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      .notes-insert-menu[closing] .notes-insert-menu-item {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+        transition-delay: calc((4 - var(--menu-order, 0)) * 25ms);
+      }
+      .notes-insert-menu-item mdui-icon { color: rgb(var(--mdui-color-primary)); font-size: 21px; }
+      .notes-insert-menu-item:active { background: rgb(var(--mdui-color-secondary-container)); }
+      @media (prefers-reduced-motion: reduce) {
+        .notes-insert-menu-item { transition: none; }
       }
 
       .main-tabs {
@@ -182,6 +265,746 @@
         border-radius: 10px;
       }
 
+      .drawer-brand {
+        padding: 20px 18px 12px;
+      }
+
+      .drawer-brand-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .drawer-brand-subtitle {
+        margin: 4px 0 0;
+        opacity: 0.7;
+        font-size: 13px;
+      }
+
+      #about_sheet::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      #about_sheet .sheet-shell {
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+      }
+
+      .app-sheet::part(panel) {
+        position: fixed;
+        left: 50%;
+        right: auto;
+        bottom: 0;
+        top: auto;
+        width: min(760px, 100vw);
+        max-width: 100vw;
+        max-height: min(86dvh, 760px);
+        margin: 0;
+        padding: 0 0 env(safe-area-inset-bottom);
+        transform: translateX(-50%);
+        border-radius: 28px 28px 0 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      .sheet-shell {
+        display: flex;
+        flex-direction: column;
+        max-height: min(86dvh, 760px);
+      }
+
+      .sheet-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .sheet-title {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .sheet-body {
+        min-height: 0;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      .post-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .post-card {
+        display: grid;
+        grid-template-columns: 148px minmax(0, 1fr);
+        overflow: hidden;
+      }
+
+      .post-cover {
+        width: 100%;
+        height: 100%;
+        min-height: 124px;
+        object-fit: cover;
+        background: var(--mdui-color-surface-container-high);
+      }
+
+      .post-copy {
+        padding: 14px;
+        min-width: 0;
+      }
+
+      .post-title {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+
+      .post-summary {
+        margin: 8px 0 0;
+        opacity: 0.76;
+        line-height: 1.55;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+      }
+
+      .post-meta {
+        margin-top: 10px;
+        font-size: 12px;
+        opacity: 0.62;
+      }
+
+      .posts-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .posts-dialog .posts-shell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        max-height: none;
+        overflow: hidden;
+      }
+
+      .posts-dialog .posts-appbar-wrap {
+        position: relative;
+        z-index: 2;
+        flex: 0 0 64px;
+        min-height: 64px;
+        overflow: hidden;
+        background: var(--mdui-color-surface);
+      }
+
+      .posts-dialog .posts-appbar-wrap mdui-top-app-bar {
+        display: flex;
+        width: 100%;
+        min-height: 64px;
+        align-items: center;
+      }
+      #posts_appbar_icon { flex: 0 0 24px; width: 24px; height: 24px; }
+      #posts_appbar_icon[hidden] { display: none; }
+
+      .posts-dialog .posts-scroll-target {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        box-sizing: border-box;
+      }
+
+      .post-detail {
+        line-height: 1.7;
+        width: 100%;
+        min-height: 0;
+        overflow: visible;
+        box-sizing: border-box;
+      }
+
+      #posts_sheet .sheet-close,
+      #posts_sheet #posts_back {
+        display: inline-flex;
+        visibility: visible;
+      }
+
+      .post-detail > h1:first-child {
+        display: none;
+      }
+
+      .releases-dialog::part(panel) {
+        position: fixed;
+        left: 50%;
+        right: auto;
+        bottom: 0;
+        top: auto;
+        width: min(760px, 100vw);
+        max-width: 100vw;
+        max-height: min(86dvh, 760px);
+        margin: 0;
+        padding: 0 0 env(safe-area-inset-bottom);
+        transform: translateX(-50%);
+        border-radius: 28px 28px 0 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      .releases-shell {
+        display: flex;
+        flex-direction: column;
+        max-height: min(86dvh, 760px);
+      }
+
+      .releases-body {
+        min-height: 0;
+        overflow: auto;
+        padding: 8px 8px 14px;
+      }
+
+      @media (max-width: 720px) {
+        .releases-dialog::part(panel) {
+          left: 0;
+          right: 0;
+          width: 100vw;
+          transform: none;
+          border-radius: 28px 28px 0 0;
+        }
+      }
+
+      .post-detail img {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+
+      .notes-preview-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .notes-preview-shell {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .notes-preview-shell > mdui-top-app-bar {
+        position: absolute;
+        z-index: 2;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) auto;
+        align-items: center;
+        height: calc(64px + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top) 8px 0;
+        box-sizing: border-box;
+      }
+
+      .notes-preview-title-wrap {
+        min-width: 0;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .notes-preview-title-wrap mdui-top-app-bar-title {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+
+      .notes-preview-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 2px;
+      }
+
+      .notes-preview-more-menu {
+        min-width: 190px;
+      }
+
+      #notes_preview_zoom_value {
+        min-width: 48px;
+        font-size: 13px;
+        line-height: 28px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .notes-preview-scroll {
+        position: absolute;
+        inset: calc(64px + env(safe-area-inset-top)) 0 0;
+        min-width: 0;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        touch-action: pan-x pan-y;
+        padding: 20px;
+      }
+
+      .notes-preview-canvas {
+        width: 100%;
+        min-width: 100%;
+        min-height: 100%;
+      }
+
+      .notes-preview-content {
+        width: 100%;
+        max-width: none;
+        transform-origin: top left;
+        line-height: 1.7;
+        box-sizing: border-box;
+      }
+
+      .notes-preview-content > *,
+      .notes-preview-content iframe,
+      .notes-preview-content img {
+        max-width: 100%;
+      }
+
+      #notes_preview_content {
+        font-size: var(--md-font-size, 15px);
+        background: var(--md-body-background, transparent);
+      }
+      #notes_preview_content blockquote {
+        background: var(--md-blockquote-background, rgba(0, 0, 0, 0.5));
+      }
+      #notes_preview_content blockquote,
+      #notes_preview_content blockquote * {
+        color: var(--mdui-color-on-surface, #1d1b20) !important;
+      }
+
+      .profile-head {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding-bottom: 16px;
+      }
+
+      .profile-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: rgb(var(--mdui-color-on-primary-container));
+        background: rgb(var(--mdui-color-primary-container));
+      }
+
+      .courses-favorites-dialog::part(panel) {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0 0 env(safe-area-inset-bottom);
+        border-radius: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      .courses-favorites-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--mdui-color-outline-variant);
+      }
+
+      .courses-favorites-header strong { flex: 0 0 auto; font-size: 1.1rem; }
+      #courses_favorites_search { flex: 1 1 auto; min-width: 120px; }
+      #courses_favorites_list { padding: 10px 12px; height: calc(100dvh - 82px - env(safe-area-inset-bottom)); overflow: auto; box-sizing: border-box; }
+      #courses_favorites_list mdui-list-item,
+      #noteList mdui-list-item {
+        transition: transform 220ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease, opacity 180ms ease;
+      }
+      #courses_favorites_list mdui-checkbox,
+      #noteList mdui-checkbox {
+        animation: selection-control-in 220ms cubic-bezier(.2,.8,.2,1) both;
+      }
+      #courses_favorites_list mdui-list-item[active],
+      #noteList mdui-list-item[active] {
+        background: var(--mdui-color-secondary-container);
+        color: var(--mdui-color-on-secondary-container);
+      }
+      @keyframes selection-control-in {
+        from { opacity: 0; transform: translateX(12px) scale(.75); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+
+      .post-list.view-exit { animation: post-list-exit 160ms ease both; }
+      .post-list.view-enter { animation: post-list-enter 220ms cubic-bezier(.2,.8,.2,1) both; }
+      .post-detail.view-enter { animation: post-detail-enter 240ms cubic-bezier(.2,.8,.2,1) both; }
+      .post-detail.view-exit { animation: post-detail-exit 170ms ease both; }
+      .posts-shell.dialog-exit { animation: posts-dialog-exit 180ms ease both; }
+      @keyframes post-list-exit { to { opacity: 0; transform: translateX(-18px); } }
+      @keyframes post-list-enter { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+      @keyframes post-detail-enter { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+      @keyframes post-detail-exit { to { opacity: 0; transform: translateX(20px); } }
+      @keyframes posts-dialog-exit { to { opacity: 0; transform: scale(.985); } }
+      @media (prefers-reduced-motion: reduce) {
+        #courses_favorites_list mdui-checkbox, #noteList mdui-checkbox,
+        .post-list, .post-detail, .posts-shell { animation: none !important; transition: none !important; }
+      }
+      @media (max-width: 600px) {
+        .courses-favorites-header { gap: 6px; padding-inline: 10px; }
+        .courses-favorites-header > mdui-icon,
+        .courses-favorites-header > strong { display: none; }
+      }
+
+      .image-preview-dialog {
+        z-index: 10000 !important;
+      }
+      .image-preview-dialog::part(panel) {
+        z-index: 10000;
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        overflow: hidden;
+      }
+      .image-preview-shell { display: flex; flex-direction: column; width: 100%; height: 100dvh; background: #101114; color: var(--mdui-color-on-surface); overflow: hidden; }
+      .image-preview-shell > mdui-top-app-bar {
+        flex: 0 0 auto;
+        min-width: 0;
+        color: #fff;
+        background: var(--mdui-color-primary);
+      }
+      .image-preview-shell mdui-top-app-bar-title { min-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }
+      .image-preview-shell > mdui-top-app-bar mdui-button-icon,
+      .image-preview-shell > mdui-top-app-bar #image_preview_zoom_value { color: #fff; }
+      .image-preview-actions { display: flex; align-items: center; flex: 0 0 auto; overflow-x: auto; scrollbar-width: none; }
+      .image-preview-actions::-webkit-scrollbar { display: none; }
+      #image_preview_zoom_value { min-width: 48px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .image-preview-body {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+        background: #101114;
+      }
+      .image-preview-body.dragging { cursor: grabbing; }
+      #image_preview_image {
+        position: absolute;
+        transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+        left: 50%;
+        top: 50%;
+        display: block;
+        max-width: none;
+        max-height: none;
+        transform-origin: center center;
+        will-change: transform;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .tool-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      .tool-dialog-overlay-shell {
+        position: relative;
+        display: flex;
+        width: 100%;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--mdui-color-surface);
+      }
+
+      .tool-dialog-overlay-shell > .tool-dialog-frame {
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border: 0;
+        display: block;
+        background: var(--mdui-color-surface);
+      }
+
+      .tool-dialog-close {
+        position: absolute;
+        z-index: 20;
+        top: max(8px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        color: rgb(var(--mdui-color-on-surface));
+        background: color-mix(in srgb, rgb(var(--mdui-color-surface)) 88%, transparent);
+        border-radius: 50%;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(10px);
+      }
+
+      .settings-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .settings-dialog-shell {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: var(--mdui-color-surface);
+      }
+
+      .settings-dialog-header {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 64px;
+        padding: env(safe-area-inset-top) 16px 0;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .settings-dialog-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 20px max(20px, calc((100vw - 840px) / 2));
+        padding-bottom: calc(32px + env(safe-area-inset-bottom));
+      }
+
+      .settings-search {
+        width: 100%;
+        margin-bottom: 14px;
+      }
+
+      .theme-palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+        gap: 12px;
+      }
+
+      .theme-swatch {
+        appearance: none;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--swatch-color);
+        cursor: pointer;
+        justify-self: center;
+        box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent);
+      }
+
+      .theme-swatch.selected {
+        box-shadow: 0 0 0 3px rgb(var(--mdui-color-primary));
+      }
+
+      .custom-color-swatch {
+        background: var(--swatch-color) !important;
+        border: 2px solid var(--mdui-color-outline) !important;
+      }
+
+      .custom-color-trigger {
+        position: relative;
+        display: grid;
+        place-items: center;
+        color: var(--mdui-color-on-surface);
+        background: var(--mdui-color-surface-container-high);
+        border: 1px dashed var(--mdui-color-outline);
+      }
+
+      .custom-color-trigger .custom-color-palette-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+        color: var(--mdui-color-primary);
+      }
+
+      .custom-color-trigger .custom-color-add-icon {
+        position: absolute;
+        right: 3px;
+        bottom: 3px;
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--mdui-color-primary);
+        color: var(--mdui-color-on-primary);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .color-picker-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+      }
+
+      .color-picker-grid {
+        display: grid;
+        gap: 16px;
+        padding-top: 8px;
+      }
+
+      .material-color-field {
+        position: relative;
+        height: 220px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(var(--picker-hue, 260) 100% 50%));
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      .material-color-thumb {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 5px #000a;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+
+      .material-hue-slider {
+        appearance: none;
+        width: 100%;
+        height: 18px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+      }
+
+      .material-hue-slider::-webkit-slider-thumb {
+        appearance: none;
+        width: 28px;
+        height: 28px;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        background: hsl(var(--picker-hue, 260) 100% 50%);
+        box-shadow: 0 1px 5px #0008;
+      }
+
+      .color-picker-footer {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+
+      .color-preview-chip {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--picker-color, #7e57c2);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent);
+      }
+
+      :root {
+        --xtd-control-color: #7e57c2;
+        --xtd-highlight-color: #ffca28;
+      }
+
+      .theme-swatch:focus-visible,
+      mdui-slider:focus-visible {
+        outline: 3px solid var(--xtd-highlight-color);
+        outline-offset: 2px;
+      }
+
+      .about-features {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      }
+
+      .setting-section {
+        margin-bottom: 20px;
+      }
+
+      .setting-section-title {
+        margin: 0 0 8px;
+        color: rgb(var(--mdui-color-primary));
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .setting-row {
+        padding: 12px 0;
+      }
+
+      .setting-row-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 8px;
+      }
+
+      .setting-actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 8px;
+      }
+
+      .empty-state {
+        padding: 36px 16px;
+        text-align: center;
+        opacity: 0.72;
+      }
+
       @media (max-width: 900px), (pointer: coarse) {
         .app-shell {
           position: fixed;
@@ -246,6 +1069,19 @@
           bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + var(--mobile-fab-inset));
           z-index: 25;
         }
+
+        .app-sheet::part(panel) {
+          left: 0;
+          right: 0;
+          bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + var(--mobile-fab-inset) + var(--mobile-fab-size) + 12px);
+          width: 100vw;
+          transform: none;
+          border-radius: 20px 20px 0 0;
+        }
+
+        .post-card {
+          grid-template-columns: 112px minmax(0, 1fr);
+        }
       }
     </style>
   </head>
@@ -256,61 +1092,35 @@
       close-on-overlay-click
       class="main-drawer"
     >
+      <div class="drawer-brand">
+        <p class="drawer-brand-title">XTDPotato</p>
+        <p class="drawer-brand-subtitle">个人中转站</p>
+      </div>
       <mdui-list>
-        <mdui-list-subheader>抽屉</mdui-list-subheader>
+        <mdui-list-subheader>导航</mdui-list-subheader>
 
-        <mdui-collapse>
-          <mdui-collapse-item id="themeCollapseMain">
-            <mdui-list-item
-              slot="header"
-              icon="dark_mode"
-              headline="主题模式 (当前: 自动)"
-            ></mdui-list-item>
-            <mdui-list id="themeCollapseContentMain">
-              <mdui-list-item
-                class="theme-option"
-                data-theme="auto"
-                icon="brightness_auto"
-                headline="自动 (跟随系统)"
-              ></mdui-list-item>
-              <mdui-list-item
-                class="theme-option"
-                data-theme="light"
-                icon="light_mode"
-                headline="日间模式"
-              ></mdui-list-item>
-              <mdui-list-item
-                class="theme-option"
-                data-theme="dark"
-                icon="dark_mode"
-                headline="夜间模式"
-              ></mdui-list-item>
-            </mdui-list>
-          </mdui-collapse-item>
-        </mdui-collapse>
+        <mdui-list-item rounded class="drawer_btn1" id="drawer_btn1" headline="主页" icon="home--outlined"></mdui-list-item>
+        <mdui-list-item rounded class="drawer_btn2" id="drawer_btn2" headline="帖子" description="Markdown 动态内容" icon="article--outlined"></mdui-list-item>
+        <mdui-list-item rounded class="drawer_btn3" id="drawer_btn3" headline="关于" description="站点与功能说明" icon="info--outlined"></mdui-list-item>
 
-
-        <mdui-list-item active rounded class="drawer_btn1" id="drawer_btn1">
-          <mdui-icon slot="icon" name="home--outlined"></mdui-icon>主页
-        </mdui-list-item>
-
-        <mdui-list-item rounded class="drawer_btn2" id="drawer_btn2">
-          <mdui-icon slot="icon" name="bubble_chart--outline"></mdui-icon>帖子
-        </mdui-list-item>
-
-        <mdui-list-item rounded class="drawer_btn3" id="drawer_btn3">
-          <mdui-icon slot="icon" name="account_circle--outline"></mdui-icon>我的
-        </mdui-list-item>
+        <mdui-divider></mdui-divider>
+        <mdui-list-subheader>系统</mdui-list-subheader>
+        <mdui-list-item rounded id="drawer_settings" headline="设置" description="外观与交互" icon="settings--outlined"></mdui-list-item>
       </mdui-list>
     </mdui-navigation-drawer>
 
     <mdui-top-app-bar class="mobile-topbar">
-      <mdui-button-icon id="mobile_menu_btn" icon="menu"></mdui-button-icon>
+      <mdui-button-icon
+        id="mobile_menu_btn"
+        icon="menu"
+        aria-label="打开导航菜单"
+      ></mdui-button-icon>
       <mdui-top-app-bar-title id="mobile_title">XTDPotato</mdui-top-app-bar-title>
-      <div style="flex-grow: 1"></div>
+      <div class="mobile-topbar-spacer" aria-hidden="true"></div>
       <div class="mobile-topbar-actions" id="mobile_topbar_actions">
-        <mdui-button-icon id="mobile_action_1" style="display: none"></mdui-button-icon>
-        <mdui-button-icon id="mobile_action_2" style="display: none"></mdui-button-icon>
+        <mdui-button-icon id="mobile_action_1" aria-label="当前页面操作" style="display: none"></mdui-button-icon>
+        <mdui-button-icon id="mobile_action_2" aria-label="当前页面操作" style="display: none"></mdui-button-icon>
+        <mdui-button-icon id="course_topbar_favorite" icon="bookmark_border" aria-label="收藏教程" title="收藏教程" style="display: none"></mdui-button-icon>
         <mdui-dropdown placement="bottom-end">
           <mdui-button-icon id="mobile_more_btn" slot="trigger" icon="more_vert" style="display: none"></mdui-button-icon>
           <mdui-menu id="mobile_more_menu"></mdui-menu>
@@ -318,10 +1128,22 @@
       </div>
     </mdui-top-app-bar>
 
-    <div class="app-shell">
+    <main class="app-shell" aria-label="XTDPotato 主应用">
       <mdui-navigation-rail value="saying" divider contained class="desktop-nav">
-        <mdui-button-icon id="fab_menu" icon="menu" slot="top"></mdui-button-icon>
-        <mdui-fab lowered id="main_fab" class="fab-animated" icon="add--outlined" slot="top"></mdui-fab>
+        <mdui-button-icon
+          id="fab_menu"
+          icon="menu"
+          aria-label="打开导航菜单"
+          slot="top"
+        ></mdui-button-icon>
+        <mdui-fab
+          lowered
+          id="main_fab"
+          class="fab-animated"
+          icon="add--outlined"
+          aria-label="执行当前页面操作"
+          slot="top"
+        ></mdui-fab>
 
         <mdui-navigation-rail-item
           id="rail_item_saying"
@@ -372,9 +1194,9 @@
           <iframe id="courses_frame" src="courses.html" class="content-frame"></iframe>
         </mdui-tab-panel>
       </mdui-tabs>
-    </div>
+    </main>
 
-    <div class="mobile-nav">
+    <nav class="mobile-nav" aria-label="移动端主导航">
       <mdui-navigation-bar id="mobile_navbar" value="saying">
         <mdui-navigation-bar-item icon="message--outlined" value="saying">话说</mdui-navigation-bar-item>
         <mdui-navigation-bar-item icon="archive--outlined" value="resources">导航</mdui-navigation-bar-item>
@@ -383,12 +1205,272 @@
           >教程</mdui-navigation-bar-item
         >
       </mdui-navigation-bar>
+    </nav>
+
+    <mdui-fab
+      id="main_fab_mobile"
+      class="mobile-fab fab-animated"
+      icon="add--outlined"
+      aria-label="执行当前页面操作"
+    ></mdui-fab>
+
+    <div id="notes_insert_menu" class="notes-insert-menu" aria-hidden="true">
+      <div class="notes-insert-menu-backdrop" data-close-notes-insert></div>
+      <div id="notes_insert_menu_list" class="notes-insert-menu-list" role="menu" aria-label="插入内容">
+        <mdui-card clickable class="notes-insert-menu-item" style="--menu-order:0" data-notes-insert="image"><mdui-icon name="image"></mdui-icon><span>展示图片</span></mdui-card>
+        <mdui-card clickable class="notes-insert-menu-item" style="--menu-order:1" data-notes-insert="link"><mdui-icon name="link"></mdui-icon><span>超链接</span></mdui-card>
+        <mdui-card clickable class="notes-insert-menu-item" style="--menu-order:2" data-notes-insert="web"><mdui-icon name="language"></mdui-icon><span>展示网页</span></mdui-card>
+        <mdui-card clickable class="notes-insert-menu-item" style="--menu-order:3" data-notes-insert="video"><mdui-icon name="movie"></mdui-icon><span>展示视频</span></mdui-card>
+        <mdui-card clickable class="notes-insert-menu-item" style="--menu-order:4" data-notes-insert="file"><mdui-icon name="description"></mdui-icon><span>展示文件内容</span></mdui-card>
+      </div>
     </div>
 
-    <mdui-fab id="main_fab_mobile" class="mobile-fab fab-animated" icon="add--outlined"></mdui-fab>
+    <mdui-dialog id="notes_preview_dialog" class="notes-preview-dialog" fullscreen close-on-esc>
+      <section class="notes-preview-shell">
+        <mdui-top-app-bar>
+          <mdui-button-icon id="notes_preview_close" icon="close" aria-label="关闭笔记预览"></mdui-button-icon>
+          <div class="notes-preview-title-wrap">
+            <mdui-top-app-bar-title id="notes_preview_title">笔记预览</mdui-top-app-bar-title>
+          </div>
+          <div class="notes-preview-actions">
+            <mdui-button-icon id="notes_preview_zoom_out" icon="zoom_out" aria-label="缩小"></mdui-button-icon>
+            <mdui-chip id="notes_preview_zoom_value" variant="outlined">100%</mdui-chip>
+            <mdui-button-icon id="notes_preview_zoom_in" icon="zoom_in" aria-label="放大"></mdui-button-icon>
+            <mdui-dropdown placement="bottom-end">
+              <mdui-button-icon slot="trigger" icon="more_vert" aria-label="更多笔记操作"></mdui-button-icon>
+              <mdui-menu class="notes-preview-more-menu" id="notes_preview_more_menu">
+                <mdui-menu-item id="notes_preview_reset_item" icon="fit_screen">恢复缩放</mdui-menu-item>
+                <mdui-menu-item id="notes_preview_edit_item" icon="edit">编辑</mdui-menu-item>
+                <mdui-menu-item id="notes_preview_export_item" icon="download">导出 TXT</mdui-menu-item>
+                <mdui-menu-item id="notes_preview_delete_item" icon="delete" style="color: var(--mdui-color-error)">删除</mdui-menu-item>
+              </mdui-menu>
+            </mdui-dropdown>
+          </div>
+        </mdui-top-app-bar>
+        <div id="notes_preview_scroll" class="notes-preview-scroll">
+          <div id="notes_preview_canvas" class="notes-preview-canvas">
+            <article id="notes_preview_content" class="notes-preview-content markdown-body"></article>
+          </div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="releases_dialog" class="releases-dialog" close-on-overlay-click close-on-esc>
+      <section class="releases-shell">
+        <header class="sheet-header">
+          <mdui-icon name="public"></mdui-icon>
+          <h2 class="sheet-title">串流仓库（Releases）</h2>
+          <mdui-button-icon id="releases_close" icon="close" aria-label="关闭串流仓库"></mdui-button-icon>
+        </header>
+        <div class="releases-body">
+          <div style="opacity: 0.86; padding: 6px 8px 8px">改版在上面，原版在下面。优先从 Releases 处下载。</div>
+          <mdui-list>
+            <mdui-list-subheader>客户端（改版）</mdui-list-subheader>
+            <mdui-list-item rounded icon="android" href="https://github.com/Axixi2233/moonlight-android/releases" target="_blank" headline="月光·阿西西 Android（改版）" description="Axixi2233 / moonlight-android"></mdui-list-item>
+            <mdui-list-item rounded icon="computer" href="https://github.com/Axixi2233/moonlight-qt/releases/tag/250306" target="_blank" headline="月光·阿西西 PC（改版）" description="Axixi2233 / moonlight-qt"></mdui-list-item>
+            <mdui-list-item rounded icon="dns" href="https://github.com/ClassicOldSong/Apollo/releases" target="_blank" headline="Sunshine Apollo（改版）" description="ClassicOldSong / Apollo"></mdui-list-item>
+            <mdui-list-subheader>客户端（原版）</mdui-list-subheader>
+            <mdui-list-item rounded icon="android" href="https://github.com/moonlight-stream/moonlight-android/releases" target="_blank" headline="Moonlight Android（原版）" description="moonlight-stream / moonlight-android"></mdui-list-item>
+            <mdui-list-item rounded icon="computer" href="https://github.com/moonlight-stream/moonlight-qt/releases" target="_blank" headline="Moonlight PC（原版）" description="moonlight-stream / moonlight-qt"></mdui-list-item>
+            <mdui-list-subheader>服务端（原版）</mdui-list-subheader>
+            <mdui-list-item rounded icon="dns" href="https://github.com/LizardByte/Sunshine/releases" target="_blank" headline="Sunshine（原版）" description="LizardByte / Sunshine"></mdui-list-item>
+          </mdui-list>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="posts_sheet" class="posts-dialog" fullscreen close-on-overlay-click close-on-esc>
+      <section class="posts-shell">
+        <div class="posts-appbar-wrap">
+          <mdui-top-app-bar
+            scroll-behavior="elevate"
+            scroll-target=".posts-scroll-target"
+          >
+            <mdui-button-icon id="posts_back" icon="arrow_back" aria-label="返回帖子列表" style="display: none"></mdui-button-icon>
+            <mdui-icon id="posts_appbar_icon" name="article--outlined" aria-hidden="true" style="flex:0 0 24px"></mdui-icon>
+            <mdui-top-app-bar-title id="posts_sheet_title">帖子</mdui-top-app-bar-title>
+            <div style="flex-grow: 1"></div>
+            <mdui-button-icon class="sheet-close" data-sheet="posts_sheet" data-animated-close icon="close" aria-label="关闭帖子"></mdui-button-icon>
+          </mdui-top-app-bar>
+        </div>
+        <div class="posts-scroll-target">
+          <div class="sheet-body">
+            <mdui-text-field id="posts_search" icon="search" clearable variant="outlined" placeholder="搜索帖子" aria-label="搜索帖子" style="width: 100%; margin-bottom: 14px"></mdui-text-field>
+            <div id="posts_list" class="post-list"><div class="empty-state">正在读取帖子...</div></div>
+            <article id="post_detail" class="post-detail" style="display: none"></article>
+          </div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="about_sheet" fullscreen close-on-esc>
+      <section class="sheet-shell">
+        <header class="sheet-header">
+          <mdui-icon name="info--outlined"></mdui-icon>
+          <h2 class="sheet-title">关于</h2>
+          <mdui-button-icon class="sheet-close" data-sheet="about_sheet" icon="close" aria-label="关闭关于"></mdui-button-icon>
+        </header>
+        <div class="sheet-body">
+          <div class="profile-head">
+            <div class="profile-avatar"><mdui-icon name="person" style="font-size: 40px"></mdui-icon></div>
+            <div><div style="font-size: 20px; font-weight: 700">XTDPotato</div><div style="opacity: 0.7; margin-top: 4px">开发、教程与项目记录</div></div>
+          </div>
+          <mdui-list>
+            <mdui-list-item rounded href="https://space.bilibili.com/200264982" target="_blank" headline="Bilibili" description="视频、动态与项目演示" icon="smart_display--outlined"></mdui-list-item>
+            <mdui-list-item rounded href="https://ifdian.net/a/xtdpotato" target="_blank" headline="爱发电" description="支持创作与持续维护" icon="favorite--outlined"></mdui-list-item>
+          </mdui-list>
+          <div class="about-features">
+            <h3 style="margin: 0 0 8px">主页功能</h3>
+            <mdui-list>
+              <mdui-list-item headline="话说" description="站点介绍、作者入口与近期信息" icon="message--outlined"></mdui-list-item>
+              <mdui-list-item headline="导航" description="集中整理常用资源、项目和下载入口" icon="archive--outlined"></mdui-list-item>
+              <mdui-list-item headline="笔记" description="创建、搜索、编辑、预览和导出 Markdown 笔记" icon="notes--outlined"></mdui-list-item>
+              <mdui-list-item headline="教程" description="搜索教程、阅读 Markdown 文档并管理收藏" icon="tips_and_updates--outlined"></mdui-list-item>
+              <mdui-list-item headline="帖子" description="从 posts 目录读取 Markdown，动态生成封面、标题和摘要列表" icon="article--outlined"></mdui-list-item>
+              <mdui-list-item headline="浮动按钮" description="按当前页面执行刷新、新建等快捷操作；手机端支持长按拖动和设置位置" icon="add_circle--outlined"></mdui-list-item>
+              <mdui-list-item headline="主题与设置" description="在全屏设置页搜索选项、切换明暗模式、主题色和 FAB 位置" icon="settings--outlined"></mdui-list-item>
+            </mdui-list>
+          </div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="settings_sheet" class="settings-dialog" fullscreen close-on-esc>
+      <section class="settings-dialog-shell">
+        <header class="settings-dialog-header">
+          <mdui-icon name="settings--outlined"></mdui-icon>
+          <h2 class="sheet-title">设置</h2>
+          <mdui-button-icon class="sheet-close" data-sheet="settings_sheet" icon="close" aria-label="关闭设置"></mdui-button-icon>
+        </header>
+        <div class="settings-dialog-body">
+          <mdui-text-field id="settings_search" class="settings-search" icon="search" clearable variant="outlined" placeholder="搜索设置" aria-label="搜索设置"></mdui-text-field>
+          <div id="settings_content">
+            <section class="setting-section" data-setting-keywords="主题 外观 自动 日间 夜间">
+              <h3 class="setting-section-title">外观</h3>
+              <div class="setting-row">
+                <div class="setting-row-head"><span>主题模式</span><span id="settings_theme_value">自动</span></div>
+                <mdui-segmented-button-group id="settings_theme_group" selects="single" value="auto" style="width: 100%">
+                  <mdui-segmented-button value="auto" icon="brightness_auto">自动</mdui-segmented-button>
+                  <mdui-segmented-button value="light" icon="light_mode">日间</mdui-segmented-button>
+                  <mdui-segmented-button value="dark" icon="dark_mode">夜间</mdui-segmented-button>
+                </mdui-segmented-button-group>
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-head"><span>主题色</span><span>应用到整个站点</span></div>
+                <div id="settings_theme_palette" class="theme-palette" aria-label="选择主题色"></div>
+              </div>
+            </section>
+            <section class="setting-section" data-setting-keywords="fab 浮动按钮 位置 水平 垂直 重置 调整">
+              <h3 class="setting-section-title">浮动按钮</h3>
+              <div class="setting-row">
+                <div class="setting-row-head"><span>水平位置</span><span id="fab_right_value">32 px</span></div>
+                <mdui-slider id="fab_right_slider" min="10" max="240" step="1" value="32" labeled></mdui-slider>
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-head"><span>底部距离</span><span id="fab_bottom_value">104 px</span></div>
+                <mdui-slider id="fab_bottom_slider" min="88" max="320" step="1" value="104" labeled></mdui-slider>
+              </div>
+              <div class="setting-actions">
+                <mdui-button id="fab_reset_btn" variant="text" icon="restart_alt">重置位置</mdui-button>
+                <mdui-button id="fab_save_btn" variant="filled" icon="save">保存位置</mdui-button>
+              </div>
+            </section>
+            <div id="settings_empty" class="empty-state" style="display: none">没有匹配的设置</div>
+          </div>
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="custom_color_dialog" class="color-picker-dialog" fullscreen close-on-esc close-on-overlay-click>
+      <span slot="headline">自定义主题颜色</span>
+      <div class="color-picker-grid">
+        <mdui-segmented-button-group id="custom_color_role" selects="single" value="primary" style="width: 100%">
+          <mdui-segmented-button value="primary">主色</mdui-segmented-button>
+          <mdui-segmented-button value="control">控件色</mdui-segmented-button>
+          <mdui-segmented-button value="highlight">高亮色</mdui-segmented-button>
+        </mdui-segmented-button-group>
+        <div id="material_color_field" class="material-color-field">
+          <span id="material_color_thumb" class="material-color-thumb"></span>
+        </div>
+        <input id="material_hue_slider" class="material-hue-slider" type="range" min="0" max="360" step="1" value="260" aria-label="色相" />
+        <div class="color-picker-footer">
+          <div id="material_color_preview" class="color-preview-chip"></div>
+          <mdui-text-field id="custom_color_hex" label="HEX 颜色" helper="格式：#RRGGBB，例如 #ffffff" variant="outlined" value="#7e57c2"></mdui-text-field>
+        </div>
+      </div>
+      <mdui-button id="custom_color_cancel" slot="action" variant="text">取消</mdui-button>
+      <mdui-button id="custom_color_reset" slot="action" variant="outlined">恢复默认</mdui-button>
+      <mdui-button id="custom_color_save" slot="action" variant="filled">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="notes_delete_dialog" close-on-esc close-on-overlay-click>
+      <span slot="headline">删除笔记</span>
+      <div style="padding: 12px 0">确定要删除当前笔记吗？删除后不可恢复。</div>
+      <mdui-button id="notes_delete_cancel" slot="action" variant="text">取消</mdui-button>
+      <mdui-button id="notes_delete_confirm" slot="action" variant="filled" color="error">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="custom_color_action_dialog" close-on-esc close-on-overlay-click>
+      <span slot="headline">自定义颜色</span>
+      <div style="padding: 12px 0">请选择要执行的操作。</div>
+      <mdui-button id="custom_color_action_edit" slot="action" variant="text">修改</mdui-button>
+      <mdui-button id="custom_color_action_delete" slot="action" variant="text" color="error">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="delete_custom_color_dialog" close-on-esc close-on-overlay-click>
+      <span slot="headline">删除自定义颜色？</span>
+      <div>确定要删除当前保存的自定义颜色吗？删除后将恢复默认主题色。</div>
+      <mdui-button id="delete_custom_color_cancel" slot="action" variant="text">取消</mdui-button>
+      <mdui-button id="delete_custom_color_confirm" slot="action" variant="filled" color="error">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="image_preview_dialog" class="image-preview-dialog" fullscreen close-on-esc>
+      <section class="image-preview-shell">
+        <mdui-top-app-bar>
+          <mdui-button-icon id="image_preview_close" icon="close" aria-label="关闭图片预览"></mdui-button-icon>
+          <mdui-top-app-bar-title id="image_preview_title">图片预览</mdui-top-app-bar-title>
+          <div class="image-preview-actions">
+            <mdui-button-icon id="image_preview_zoom_out" icon="zoom_out" aria-label="缩小"></mdui-button-icon>
+            <span id="image_preview_zoom_value">100%</span>
+            <mdui-button-icon id="image_preview_zoom_in" icon="zoom_in" aria-label="放大"></mdui-button-icon>
+            <mdui-button-icon id="image_preview_rotate_left" icon="rotate_left" aria-label="向左旋转"></mdui-button-icon>
+            <mdui-button-icon id="image_preview_rotate_right" icon="rotate_right" aria-label="向右旋转"></mdui-button-icon>
+            <mdui-button-icon id="image_preview_reset" icon="fit_screen" aria-label="复位并适应窗口"></mdui-button-icon>
+          </div>
+        </mdui-top-app-bar>
+        <div id="image_preview_body" class="image-preview-body">
+          <img id="image_preview_image" alt="图片预览" />
+        </div>
+      </section>
+    </mdui-dialog>
+
+    <mdui-dialog id="image_compress_dialog" class="tool-dialog image-compress-dialog" fullscreen close-on-esc>
+      <div class="tool-dialog-overlay-shell">
+        <iframe id="image_compress_frame" class="tool-dialog-frame" src="img-compress/index.html" title="图片压缩工具"></iframe>
+      </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="courses_favorites_sheet" class="courses-favorites-dialog" fullscreen close-on-esc>
+      <div class="courses-favorites-header">
+        <mdui-icon name="bookmarks"></mdui-icon>
+        <strong>我的收藏</strong>
+        <mdui-text-field id="courses_favorites_search" icon="search" clearable variant="outlined" placeholder="搜索收藏" aria-label="搜索收藏"></mdui-text-field>
+        <mdui-button-icon id="courses_favorites_delete" icon="delete" aria-label="删除选中收藏" style="display: none"></mdui-button-icon>
+        <mdui-button-icon id="courses_favorites_close" icon="close" aria-label="关闭收藏夹"></mdui-button-icon>
+      </div>
+      <mdui-list id="courses_favorites_list"></mdui-list>
+    </mdui-dialog>
+
+    <mdui-dialog id="courses_favorites_delete_dialog" close-on-esc close-on-overlay-click>
+      <span slot="headline">删除收藏</span>
+      <div id="courses_favorites_delete_text" style="padding: 12px 0">确定要删除选中的收藏吗？</div>
+      <mdui-button id="courses_favorites_delete_cancel" slot="action" variant="text">取消</mdui-button>
+      <mdui-button id="courses_favorites_delete_confirm" slot="action" variant="filled" color="error">删除</mdui-button>
+    </mdui-dialog>
 
     <mdui-snackbar class="snackbar_no_action" closeable>提示</mdui-snackbar>
 
+    <script src="js/markdown.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <script>
       const PRIMARY_KEY = "xtd_theme_primary";
@@ -404,18 +1486,62 @@
           document.getElementById("resources_item_frame"),
           document.getElementById("notes_item_frame"),
           document.getElementById("courses_frame"),
+          document.getElementById("rsdb_frame"),
         ];
         for (const frame of frames) {
           frame?.contentWindow?.postMessage({ type: "theme:primary", color }, "*");
         }
       }
 
+      function getStoredThemeColors() {
+        return {
+          primary: localStorage.getItem("xtd_theme_primary") || "#7e57c2",
+          control: localStorage.getItem("xtd_theme_control") || "#7e57c2",
+          highlight: localStorage.getItem("xtd_theme_highlight") || "#ffca28",
+        };
+      }
+
+      function broadcastThemeColors(colors) {
+        const frames = [
+          document.getElementById("saying_frame"),
+          document.getElementById("resources_item_frame"),
+          document.getElementById("notes_item_frame"),
+          document.getElementById("courses_frame"),
+          document.getElementById("rsdb_frame"),
+        ];
+        for (const frame of frames) {
+          frame?.contentWindow?.postMessage({ type: "theme:colors", colors }, "*");
+        }
+      }
+
+      function applyThemeColors(colors) {
+        if (!colors) return;
+        if (window.mdui?.setColorScheme) window.mdui.setColorScheme(colors.primary);
+        document.documentElement.style.setProperty("--xtd-control-color", colors.control);
+        document.documentElement.style.setProperty("--xtd-highlight-color", colors.highlight);
+        broadcastThemeColors(colors);
+      }
+
       const saved = localStorage.getItem(PRIMARY_KEY);
       if (saved) applyColorScheme(saved);
+      const storedThemeColors = getStoredThemeColors();
+      document.documentElement.style.setProperty("--xtd-control-color", storedThemeColors.control);
+      document.documentElement.style.setProperty("--xtd-highlight-color", storedThemeColors.highlight);
+      window.addEventListener("load", () => broadcastThemeColors(storedThemeColors));
 
       window.addEventListener("message", (event) => {
         const data = event?.data;
-        if (!data || data.type !== "theme:primary") return;
+        if (!data) return;
+        if (data.type === "theme:colors" && data.colors) {
+          const colors = data.colors;
+          if (!/^#[0-9a-fA-F]{6}$/.test(colors.primary || "")) return;
+          localStorage.setItem("xtd_theme_primary", colors.primary);
+          if (/^#[0-9a-fA-F]{6}$/.test(colors.control || "")) localStorage.setItem("xtd_theme_control", colors.control);
+          if (/^#[0-9a-fA-F]{6}$/.test(colors.highlight || "")) localStorage.setItem("xtd_theme_highlight", colors.highlight);
+          applyThemeColors(getStoredThemeColors());
+          return;
+        }
+        if (data.type !== "theme:primary") return;
         const color = data.color;
         if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
         localStorage.setItem(PRIMARY_KEY, color);

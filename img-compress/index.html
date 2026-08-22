@@ -46,6 +46,9 @@
         top: 0;
         z-index: 20;
         background: var(--mdui-color-surface, #fff);
+        color: var(--mdui-color-on-surface, #1d1b20);
+        box-shadow: 0 1px 0 color-mix(in srgb, currentColor 14%, transparent);
+        opacity: 1;
       }
 
       .content {
@@ -97,9 +100,16 @@
       .settings-card {
         margin-top: 12px;
       }
+      .mobile-settings-entry { margin-top: 10px; }
+      .mobile-settings-entry mdui-button { width: 100%; }
+      @media (min-width: 601px) {
+        .mobile-settings-entry { display: none; }
+      }
+
+      [hidden] { display: none !important; }
 
       .batch-bar {
-        margin: 16px -8px -8px;
+        margin: 16px 0 0;
         background: var(--mdui-color-surface);
         border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
       }
@@ -135,12 +145,24 @@
         align-items: center;
       }
 
-      .pager {
+      .pager,
+      .pager-bar {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         align-items: center;
       }
+      .pager-bar {
+        justify-content: center;
+        margin: 12px 0 4px;
+        padding: 6px 8px;
+        min-height: 48px;
+        box-sizing: border-box;
+        border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+        border-radius: 8px;
+        background: var(--mdui-color-surface-container-low, var(--mdui-color-surface));
+      }
+      .pager-bar #jumpPageInput { width: 84px; min-width: 72px; }
 
       .settings-grid {
         display: grid;
@@ -166,6 +188,54 @@
         border-radius: 12px;
         object-fit: cover;
         background: color-mix(in srgb, currentColor 10%, transparent);
+        cursor: zoom-in;
+      }
+
+      .image-preview-dialog::part(panel) {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .image-preview-shell {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: #101114;
+        color: #fff;
+      }
+
+      .image-preview-body {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        touch-action: none;
+        cursor: grab;
+      }
+
+      .image-preview-body.dragging { cursor: grabbing; }
+
+#imagePreviewImage {
+        transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+         max-width: 92vw;
+        max-height: calc(100dvh - 120px);
+        object-fit: contain;
+        transform-origin: center center;
+        user-select: none;
+        -webkit-user-drag: none;
+        will-change: transform;
+      }
+
+      .image-preview-zoom-value {
+        min-width: 56px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
       }
 
       .meta {
@@ -189,10 +259,13 @@
       }
 
       .actions {
-        display: flex;
-        gap: 8px;
+        display: grid;
+        grid-template-columns: repeat(2, 40px);
+        gap: 4px;
         align-items: center;
+        justify-content: end;
       }
+      .actions mdui-button-icon { width: 40px; height: 40px; }
 
       .drawer::part(panel) {
         width: min(360px, 92vw);
@@ -200,18 +273,20 @@
 
       .settings-sheet::part(panel) {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        top: auto;
-        width: min(var(--page-max-width), 100vw);
-        margin: 0 auto;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
+        inset: 0;
+        width: 100vw;
+        max-width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+        overflow: hidden;
+        box-sizing: border-box;
       }
 
       .settings-sheet-body {
-        max-height: 78vh;
+        height: calc(100dvh - 76px);
+        max-height: none;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
         padding: 8px 12px 12px;
@@ -254,13 +329,21 @@
 
       /* ── 竖屏 & 小屏幕优化 ── */
       @media (max-width: 600px) {
+        .topbar { background: var(--mdui-color-surface, #fff) !important; }
         .container > #settingsCardSlot {
           display: none;
         }
 
         .settings-sheet::part(panel) {
+          inset: 0;
           width: 100vw;
           max-width: 100vw;
+          height: 100dvh;
+          max-height: 100dvh;
+          margin: 0;
+          border-radius: 0;
+          padding-bottom: env(safe-area-inset-bottom);
+          box-sizing: border-box;
         }
 
         .settings-grid.two-col {
@@ -268,29 +351,40 @@
         }
 
         .img-item {
-          grid-template-columns: 48px 64px 1fr auto;
-          gap: 10px;
-          padding: 8px 10px;
+          grid-template-columns: 64px minmax(0, 1fr);
+          grid-template-areas: "thumb meta" "actions actions";
+          gap: 8px 10px;
+          padding: 10px;
+          overflow: visible;
         }
+        .img-item > mdui-checkbox { display: none; }
+        .page.selection-mode .img-item {
+          grid-template-columns: 40px 64px minmax(0, 1fr);
+          grid-template-areas: "select thumb meta" "actions actions actions";
+        }
+        .page.selection-mode .img-item > mdui-checkbox { display: inline-flex; grid-area: select; }
+        .img-item .thumb { grid-area: thumb; }
+        .img-item .meta { grid-area: meta; }
+        .img-item .actions { grid-area: actions; display: flex; justify-content: flex-end; flex-wrap: wrap; }
 
         .thumb {
           width: 64px;
-          height: 64px;
+          .settings-sheet-body { height: calc(100dvh - 76px); }
         }
 
-        .btn-row,
-        .batch-row,
-        .batch-actions,
-        .pager {
-          flex-direction: column;
-          align-items: stretch;
+        .btn-row {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 8px;
         }
-
-        .btn-row mdui-button,
-        .batch-actions mdui-button {
-          width: 100%;
-        }
+        .btn-row #pickBtn { grid-column: 1 / -1; }
+        .btn-row mdui-button { width: 100%; min-width: 0; }
+        .batch-row { align-items: center; gap: 8px; }
+        .batch-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
+        .batch-actions mdui-button { width: 100%; min-width: 0; }
+        .pager-bar { flex-wrap: nowrap; justify-content: space-between; gap: 2px; }
+        .pager-bar #pageInfo { flex: 1 1 auto; text-align: center; white-space: nowrap; }
+        .pager-bar #jumpPageInput { flex: 0 0 72px; width: 72px; }
 
         .dropzone {
           padding: 16px;
@@ -302,12 +396,11 @@
         }
 
         .batch-bar {
-          position: sticky;
-          bottom: 0;
-          z-index: 10;
-          margin: 16px -8px 0;
-          padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-          box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+          position: relative;
+          z-index: 1;
+          margin: 12px 0 0;
+          padding: 0;
+          box-shadow: none;
         }
       }
 
@@ -329,10 +422,10 @@
   <body>
     <div class="page">
       <mdui-top-app-bar class="topbar">
-        <mdui-button-icon icon="menu" id="openDrawerBtn"></mdui-button-icon>
         <mdui-top-app-bar-title>在线压缩图片</mdui-top-app-bar-title>
         <div style="flex: 1"></div>
-        <mdui-button-icon icon="settings" id="openSettingsBtn"></mdui-button-icon>
+        <mdui-button-icon icon="checklist" id="toggleSelectionBtn" aria-label="进入多选"></mdui-button-icon>
+        <mdui-button-icon icon="close" id="closeToolBtn" aria-label="关闭图片压缩工具"></mdui-button-icon>
       </mdui-top-app-bar>
 
       <div class="content">
@@ -351,6 +444,9 @@
               <mdui-button variant="tonal" id="downloadZipBtn" icon="folder_zip" disabled>下载 ZIP</mdui-button>
               <mdui-button variant="text" id="clearBtn" icon="delete" disabled>清空</mdui-button>
             </div>
+          </div>
+          <div class="mobile-settings-entry">
+            <mdui-button id="openSettingsBtn" variant="outlined" icon="settings" aria-label="压缩设置">压缩设置</mdui-button>
           </div>
 
           <div id="settingsCardSlot">
@@ -418,7 +514,7 @@
             </div>
           </div>
 
-          <div class="batch-bar">
+          <div class="batch-bar" id="batchBar" hidden>
             <mdui-card variant="outlined">
               <div class="batch-bar-inner">
                 <div class="batch-row">
@@ -430,17 +526,19 @@
                     <mdui-button variant="tonal" id="compressSelectedBtn" icon="compress" disabled>压缩选中</mdui-button>
                     <mdui-button variant="tonal" id="downloadSelectedZipBtn" icon="folder_zip" disabled>下载选中 ZIP</mdui-button>
                     <mdui-button variant="text" id="removeSelectedBtn" icon="delete" disabled>删除选中</mdui-button>
-                  </div>
-                  <div class="pager">
-                    <mdui-button-icon id="prevPageBtn" icon="chevron_left"></mdui-button-icon>
-                    <div id="pageInfo" style="opacity: 0.86; font-size: 12px;"></div>
-                    <mdui-button-icon id="nextPageBtn" icon="chevron_right"></mdui-button-icon>
-                    <mdui-text-field id="jumpPageInput" label="跳转页" variant="outlined" type="number" style="width: 110px;"></mdui-text-field>
-                    <mdui-button id="jumpPageBtn" variant="tonal">跳转</mdui-button>
+<!-- 分页控件位于批量栏外，始终可用。 -->
                   </div>
                 </div>
               </div>
             </mdui-card>
+          </div>
+
+          <div class="pager-bar">
+            <mdui-button-icon id="prevPageBtn" icon="chevron_left" aria-label="上一页"></mdui-button-icon>
+            <div id="pageInfo" style="opacity: 0.86; font-size: 12px;"></div>
+            <mdui-button-icon id="nextPageBtn" icon="chevron_right" aria-label="下一页"></mdui-button-icon>
+            <mdui-text-field id="jumpPageInput" label="页码" variant="outlined" type="number"></mdui-text-field>
+            <mdui-button-icon id="jumpPageBtn" icon="arrow_forward" aria-label="跳转"></mdui-button-icon>
           </div>
 
           <div class="img-list" id="imgList"></div>
@@ -453,27 +551,7 @@
 
     <mdui-snackbar id="snackbar" placement="bottom-center" closeable></mdui-snackbar>
 
-    <mdui-navigation-drawer id="drawer" class="drawer" close-on-overlay-click>
-      <mdui-list>
-        <mdui-list-subheader>主题与动效</mdui-list-subheader>
-
-        <mdui-collapse id="themeCollapse">
-          <mdui-collapse-item>
-            <mdui-list-item slot="header" icon="dark_mode" headline="主题模式 (当前: 自动)"></mdui-list-item>
-            <mdui-list id="themeCollapseContent">
-              <mdui-list-item class="theme-option" data-theme="auto" icon="brightness_auto" headline="自动 (跟随系统)"></mdui-list-item>
-              <mdui-list-item class="theme-option" data-theme="light" icon="light_mode" headline="日间模式"></mdui-list-item>
-              <mdui-list-item class="theme-option" data-theme="dark" icon="dark_mode" headline="夜间模式"></mdui-list-item>
-            </mdui-list>
-          </mdui-collapse-item>
-        </mdui-collapse>
-
-        <mdui-list-item id="primaryColorItem" icon="palette" headline="主题主色" description=""></mdui-list-item>
-        <mdui-list-item headline="动画效果" description="关闭后减少动效">
-          <mdui-switch slot="end-icon" id="animationsSwitch"></mdui-switch>
-        </mdui-list-item>
-      </mdui-list>
-    </mdui-navigation-drawer>
+    <div id="imagePreviewLayout" hidden aria-hidden="true"></div>
 
     <mdui-dialog id="settingsSheet" class="settings-sheet" close-on-esc close-on-overlay-click headline="压缩设置">
       <div class="settings-sheet-body" id="settingsSheetBody"></div>
@@ -591,6 +669,10 @@
         drawer: document.getElementById("drawer"),
         openDrawerBtn: document.getElementById("openDrawerBtn"),
         openSettingsBtn: document.getElementById("openSettingsBtn"),
+        toggleSelectionBtn: document.getElementById("toggleSelectionBtn"),
+        batchBar: document.getElementById("batchBar"),
+        page: document.querySelector(".page"),
+        closeToolBtn: document.getElementById("closeToolBtn"),
         settingsSheet: document.getElementById("settingsSheet"),
         settingsSheetBody: document.getElementById("settingsSheetBody"),
         settingsSheetCloseBtn: document.getElementById("settingsSheetCloseBtn"),
@@ -661,6 +743,113 @@
         itemSettingsSaveBtn: document.getElementById("itemSettingsSaveBtn"),
       };
 
+      const imagePreviewDialog = document.getElementById("imagePreviewDialog");
+      const imagePreviewImage = document.getElementById("imagePreviewImage");
+      const imagePreviewBody = document.getElementById("imagePreviewBody");
+      const imagePreviewTitle = document.getElementById("imagePreviewTitle");
+      const imagePreviewClose = document.getElementById("imagePreviewClose");
+      const imagePreviewZoomOut = document.getElementById("imagePreviewZoomOut");
+      const imagePreviewZoomIn = document.getElementById("imagePreviewZoomIn");
+      const imagePreviewReset = document.getElementById("imagePreviewReset");
+      const imagePreviewZoomValue = document.getElementById("imagePreviewZoomValue");
+      let imagePreviewScale = 1;
+      let imagePreviewX = 0;
+      let imagePreviewY = 0;
+      let previewPointerId = null;
+      let previewStartX = 0;
+      let previewStartY = 0;
+      let previewBaseX = 0;
+      let previewBaseY = 0;
+      let previewPinchDistance = null;
+
+      function applyImagePreviewTransform() {
+        if (!imagePreviewImage) return;
+        imagePreviewImage.style.transform = `translate(${imagePreviewX}px, ${imagePreviewY}px) scale(${imagePreviewScale})`;
+        if (imagePreviewZoomValue) imagePreviewZoomValue.textContent = `${Math.round(imagePreviewScale * 100)}%`;
+      }
+
+      function setImagePreviewScale(scale) {
+        imagePreviewScale = Math.min(8, Math.max(0.25, scale));
+        if (imagePreviewScale <= 1) { imagePreviewX = 0; imagePreviewY = 0; }
+        applyImagePreviewTransform();
+      }
+
+      function resetImagePreview() {
+        imagePreviewScale = 1;
+        imagePreviewX = 0;
+        imagePreviewY = 0;
+        applyImagePreviewTransform();
+      }
+
+      async function openImagePreview(item) {
+        if (!item) return;
+        let sourceUrl = item.previewUrl || "";
+        if (item.resultBlob) {
+          sourceUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = reject;
+            reader.readAsDataURL(item.resultBlob);
+          });
+        }
+        if (!sourceUrl) return;
+        window.parent?.postMessage({
+          type: "image-compress:preview",
+          title: item.file?.name || "图片预览",
+          src: sourceUrl,
+        }, "*");
+      }
+
+      imagePreviewClose?.addEventListener("click", () => {
+        if (imagePreviewDialog) imagePreviewDialog.open = false;
+      });
+      imagePreviewDialog?.addEventListener("close", () => {
+        const temporaryUrl = imagePreviewImage?.dataset?.temporaryUrl;
+        if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
+        if (imagePreviewImage) {
+          imagePreviewImage.removeAttribute("src");
+          imagePreviewImage.dataset.temporaryUrl = "";
+        }
+        resetImagePreview();
+      });
+      imagePreviewZoomOut?.addEventListener("click", () => setImagePreviewScale(imagePreviewScale - 0.25));
+      imagePreviewZoomIn?.addEventListener("click", () => setImagePreviewScale(imagePreviewScale + 0.25));
+      imagePreviewReset?.addEventListener("click", resetImagePreview);
+      imagePreviewBody?.addEventListener("dblclick", () => setImagePreviewScale(imagePreviewScale > 1 ? 1 : 2));
+      imagePreviewBody?.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "touch" || imagePreviewScale <= 1) return;
+        previewPointerId = event.pointerId;
+        previewStartX = event.clientX;
+        previewStartY = event.clientY;
+        previewBaseX = imagePreviewX;
+        previewBaseY = imagePreviewY;
+        imagePreviewBody.setPointerCapture?.(event.pointerId);
+        imagePreviewBody.classList.add("dragging");
+      });
+      imagePreviewBody?.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== previewPointerId) return;
+        imagePreviewX = previewBaseX + event.clientX - previewStartX;
+        imagePreviewY = previewBaseY + event.clientY - previewStartY;
+        applyImagePreviewTransform();
+      });
+      ["pointerup", "pointercancel"].forEach((type) => imagePreviewBody?.addEventListener(type, (event) => {
+        if (event.pointerId !== previewPointerId) return;
+        previewPointerId = null;
+        imagePreviewBody.classList.remove("dragging");
+      }));
+      imagePreviewBody?.addEventListener("touchstart", (event) => {
+        if (event.touches.length !== 2) return;
+        previewPinchDistance = Math.hypot(event.touches[0].clientX - event.touches[1].clientX, event.touches[0].clientY - event.touches[1].clientY);
+      }, { passive: true });
+      imagePreviewBody?.addEventListener("touchmove", (event) => {
+        if (event.touches.length !== 2 || !previewPinchDistance) return;
+        const distance = Math.hypot(event.touches[0].clientX - event.touches[1].clientX, event.touches[0].clientY - event.touches[1].clientY);
+        setImagePreviewScale(imagePreviewScale * distance / previewPinchDistance);
+        previewPinchDistance = distance;
+        event.preventDefault();
+      }, { passive: false });
+      imagePreviewBody?.addEventListener("touchend", () => { previewPinchDistance = null; });
+
       const defaultSettings = {
         format: "auto",
         quality: 0.82,
@@ -712,11 +901,7 @@
       }
 
       function showToast(text, color) {
-        if (!dom.snackbar) return;
-        dom.snackbar.textContent = text;
-        if (color) dom.snackbar.color = color;
-        else dom.snackbar.removeAttribute("color");
-        dom.snackbar.open = true;
+        window.parent?.postMessage({ type: "app:toast", text, color }, "*");
       }
 
       function applyColorScheme(color) {
@@ -1038,6 +1223,7 @@
       const items = [];
       const selectedIds = new Set();
       let folderImported = false;
+      let selectionMode = false;
       let currentPage = 1;
       let activeItemIdForSettings = null;
 
@@ -1112,6 +1298,19 @@
         if (dom.pageInfo) dom.pageInfo.textContent = `第 ${currentPage} / ${getTotalPages()} 页（ ${PAGE_SIZE}/页）`;
       }
 
+      function setSelectionMode(active) {
+        selectionMode = Boolean(active);
+        if (!selectionMode) selectedIds.clear();
+        if (dom.page) dom.page.classList.toggle("selection-mode", selectionMode);
+        if (dom.batchBar) dom.batchBar.hidden = !selectionMode;
+        if (dom.toggleSelectionBtn) {
+          dom.toggleSelectionBtn.icon = selectionMode ? "close" : "checklist";
+          dom.toggleSelectionBtn.setAttribute("aria-label", selectionMode ? "退出多选" : "进入多选");
+          dom.toggleSelectionBtn.title = selectionMode ? "退出多选" : "进入多选";
+        }
+        renderList();
+      }
+
       function renderList() {
         if (!dom.imgList) return;
         clampCurrentPage();
@@ -1123,6 +1322,10 @@
 
           const cb = document.createElement("mdui-checkbox");
           cb.checked = selectedIds.has(it.id);
+          cb.style.display = selectionMode ? "inline-flex" : "none";
+          cb.style.pointerEvents = selectionMode ? "auto" : "none";
+          cb.style.minWidth = "40px";
+          cb.style.minHeight = "40px";
           const onSelChange = () => {
             if (cb.checked) selectedIds.add(it.id);
             else selectedIds.delete(it.id);
@@ -1135,6 +1338,10 @@
           thumb.className = "thumb";
           thumb.src = it.previewUrl;
           thumb.alt = it.file.name;
+          thumb.addEventListener("click", (event) => {
+            event.stopPropagation();
+            openImagePreview(it);
+          });
 
           const meta = document.createElement("div");
           meta.className = "meta";
@@ -1158,14 +1365,16 @@
           actions.className = "actions";
           const btnSettings = document.createElement("mdui-button-icon");
           btnSettings.setAttribute("icon", "tune");
-          const btnCompress = document.createElement("mdui-button");
+          const btnCompress = document.createElement("mdui-button-icon");
           btnCompress.setAttribute("variant", "tonal");
           btnCompress.setAttribute("icon", "compress");
-          btnCompress.textContent = "压缩";
-          const btnDownload = document.createElement("mdui-button");
+          btnCompress.setAttribute("aria-label", "压缩图片");
+          btnCompress.title = "压缩图片";
+          const btnDownload = document.createElement("mdui-button-icon");
           btnDownload.setAttribute("variant", "filled");
           btnDownload.setAttribute("icon", "download");
-          btnDownload.textContent = "下载";
+          btnDownload.setAttribute("aria-label", "下载图片");
+          btnDownload.title = "下载图片";
           btnDownload.disabled = !it.resultBlob;
           const btnRemove = document.createElement("mdui-button-icon");
           btnRemove.setAttribute("icon", "close");
@@ -1452,8 +1661,11 @@
         window.addEventListener("resize", scheduleSync);
         window.addEventListener("orientationchange", scheduleSync);
 
-        dom.openDrawerBtn?.addEventListener("click", () => {
-          if (dom.drawer) dom.drawer.open = true;
+        dom.toggleSelectionBtn?.addEventListener("click", () => {
+          setSelectionMode(!selectionMode);
+        });
+        dom.closeToolBtn?.addEventListener("click", () => {
+          window.parent?.postMessage({ type: "image-compress:close" }, "*");
         });
         dom.openSettingsBtn?.addEventListener("click", () => {
           const isMobile = window.matchMedia("(max-width: 600px)").matches;

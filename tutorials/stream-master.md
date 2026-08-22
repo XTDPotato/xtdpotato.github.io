@@ -1,4 +1,13 @@
-# Moonlight + Sunshine 串流完全指南
+---
+title: 月光串流指南
+summary: Moonlight + Sunshine串流教程
+icon: ms_cl
+cover: icons/ms_cl.png
+---
+
+
+
+# Moonlight + Sunshine 串流指南
 
 
 ## 什么是**串流**？

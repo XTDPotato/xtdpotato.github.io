@@ -56,79 +56,8 @@
         flex-wrap: wrap;
       }
 
-      .theme-card-title {
-        margin: 0;
-        font-weight: 700;
-      }
-
-      .palette-grid {
-        display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 10px;
-        padding-top: 10px;
-      }
-
-      @media (max-width: 520px) {
-        .palette-grid {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-      }
-
-      .swatch {
-        appearance: none;
-        border: 0;
-        padding: 0;
-        width: 44px;
-        height: 44px;
-        border-radius: 999px;
-        background: var(--swatch-color);
-        position: relative;
-        cursor: pointer;
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, currentColor 18%, transparent),
-          0 6px 14px rgba(0, 0, 0, 0.18);
-        transition: transform 140ms ease, box-shadow 180ms ease;
-      }
-
-      .swatch:active {
-        transform: scale(0.96);
-      }
-
-      .swatch.selected {
-        transform: scale(1.06);
-        box-shadow:
-          0 0 0 3px color-mix(in srgb, rgb(var(--mdui-color-primary, 25 118 210)) 55%, transparent),
-          0 10px 18px rgba(0, 0, 0, 0.22);
-      }
-
-      .swatch-check {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: #fff;
-        opacity: 0;
-        transform: scale(0.8);
-        transition: opacity 140ms ease, transform 180ms ease;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
-      }
-
-      .swatch.selected .swatch-check {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      #themeFlash {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        opacity: 0;
-        background: var(--theme-flash-color, transparent);
-        transition: opacity 260ms ease;
-      }
-
-      body.theme-flash #themeFlash {
-        opacity: 0.18;
+      .page mdui-card {
+        border-radius: 8px;
       }
     </style>
   </head>
@@ -181,87 +110,17 @@
         </div>
       </mdui-card>
 
-      <div style="height: 12px"></div>
-
-      <mdui-card variant="outlined" style="width: 100%">
-        <div class="mdui-prose" style="padding: 14px">
-          <p class="theme-card-title">主题色</p>
-          <div class="palette-grid" id="themePalette"></div>
-        </div>
-      </mdui-card>
-    </div>
-    <div id="themeFlash"></div>
+      </div>
 
     <script>
       const PRIMARY_KEY = "xtd_theme_primary";
-      const palette = [
-        { name: "Red", color: "#ef5350" },
-        { name: "Pink", color: "#ec407a" },
-        { name: "Purple", color: "#ab47bc" },
-        { name: "Deep Purple", color: "#7e57c2" },
-        { name: "Indigo", color: "#5c6bc0" },
-        { name: "Blue", color: "#42a5f5" },
-        { name: "Cyan", color: "#26c6da" },
-        { name: "Teal", color: "#26a69a" },
-        { name: "Green", color: "#66bb6a" },
-        { name: "Lime", color: "#d4e157" },
-        { name: "Amber", color: "#ffca28" },
-        { name: "Orange", color: "#ffa726" },
-      ];
-
-      const themePalette = document.getElementById("themePalette");
-      const themeFlash = document.getElementById("themeFlash");
-
       function applyColorScheme(color) {
         if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
         if (window.mdui?.setColorScheme) window.mdui.setColorScheme(color);
       }
 
-      function flash(color) {
-        if (!themeFlash) return;
-        themeFlash.style.setProperty("--theme-flash-color", color);
-        document.body.classList.add("theme-flash");
-        setTimeout(() => document.body.classList.remove("theme-flash"), 280);
-      }
-
-      function setSelected(color) {
-        if (!themePalette) return;
-        [...themePalette.querySelectorAll(".swatch")].forEach((btn) => {
-          if (btn.dataset.color === color) btn.classList.add("selected");
-          else btn.classList.remove("selected");
-        });
-      }
-
-      function selectColor(color) {
-        localStorage.setItem(PRIMARY_KEY, color);
-        applyColorScheme(color);
-        flash(color);
-        setSelected(color);
-        try {
-          window.parent?.postMessage({ type: "theme:primary", color }, "*");
-        } catch (e) {}
-      }
-
-      function renderPalette() {
-        if (!themePalette) return;
-        themePalette.innerHTML = "";
-        for (const item of palette) {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "swatch";
-          btn.dataset.color = item.color;
-          btn.title = item.name;
-          btn.style.setProperty("--swatch-color", item.color);
-          btn.innerHTML = '<span class="swatch-check"><mdui-icon name="check"></mdui-icon></span>';
-          btn.addEventListener("click", () => selectColor(item.color));
-          themePalette.appendChild(btn);
-        }
-      }
-
-      renderPalette();
       const saved = localStorage.getItem(PRIMARY_KEY) || "#7e57c2";
       applyColorScheme(saved);
-      setSelected(saved);
 
       const subheader = document.getElementById("pageSubheader");
       try {
@@ -279,7 +138,6 @@
         if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
         localStorage.setItem(PRIMARY_KEY, color);
         applyColorScheme(color);
-        setSelected(color);
       });
 
       window.addEventListener("storage", (event) => {
@@ -287,7 +145,6 @@
         const color = event.newValue;
         if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
         applyColorScheme(color);
-        setSelected(color);
       });
     </script>
   </body>

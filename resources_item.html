@@ -93,14 +93,29 @@
       }
 
       .mors-sheet::part(panel) {
-        padding: 0;
-        width: min(720px, 100%);
-        margin-left: auto;
-        margin-right: auto;
-        margin-top: auto;
+        position: fixed;
+        left: 50%;
+        right: auto;
+        bottom: 0;
+        top: auto;
+        padding: 0 0 env(safe-area-inset-bottom);
+        width: min(720px, 100vw);
+        max-width: 100vw;
+        margin: 0;
+        transform: translateX(-50%);
         border-radius: 16px 16px 0 0;
         max-height: min(85vh, 720px);
         overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 720px) {
+        .mors-sheet::part(panel) {
+          left: 0;
+          right: 0;
+          width: 100vw;
+          transform: none;
+        }
       }
 
       .mors-sheet-header {
@@ -253,12 +268,25 @@
         morsSheetCloseBtn: document.getElementById("morsSheetCloseBtn"),
       };
 
+      function openImageCompressor() {
+        window.parent?.postMessage({ type: "app:open-tool", tool: "image-compress" }, "*");
+      }
+
       const resources = [
+        {
+          id: "image-compress",
+          title: "图片压缩",
+          desc: "本地处理图片，支持批量压缩、格式转换和 ZIP 导出。",
+          cover: "icons/img_compress.svg",
+          links: [
+            { title: "打开图片压缩工具", icon: "open_in_full", action: "open-image-compress" },
+          ],
+        },
         {
           id: "mors",
           title: "Moonlight + Sunshine 串流",
           desc: "客户端 Moonlight + 服务端 Sunshine，低延迟串流，以及皎月连等",
-          cover: "icons/sunshine_moonlight.png",
+          cover: "icons/moonlight_cover.svg",
           links: [
             { title: "123 盘（包含改版等）", icon: "cloud_download", href: "https://www.123pan.com/s/RzbrVv-0qdKd.html" },
             { title: "Github Releases（原版/改版）", icon: "public", action: "open-mors" },
@@ -268,7 +296,7 @@
           id: "minecraft",
           title: "Minecraft",
           desc: "官方渠道下载与其他启动器的常用入口。",
-          cover: "icons/mcbedrock.png",
+          cover: "icons/minecraft.svg",
           links: [
             { title: "官网", icon: "public", href: "https://www.minecraft.net" },
             {
@@ -280,6 +308,11 @@
               title: "XBOX / 微软商店购买",
               icon: "shop",
               href: "https://www.xbox.com/zh-CN/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj?ocid=storeforweb",
+            },
+            {
+              title: "Axolotl Launcher",
+              icon: "cloud_download",
+              href: "https://axlmc.org/",
             },
             {
               title: "PCL2社区版下载",
@@ -309,7 +342,7 @@
           id: "addon",
           title: "MC 基岩版 Addon",
           desc: "个人整理的一些 Addon 资源。",
-          cover: "icons/mcaddon.png",
+          cover: "icons/addon.svg",
           links: [
             {
               title: "猫鼠夏日游轮 20240101（123 盘）",
@@ -320,10 +353,8 @@
         },
       ];
 
-      function showToast(text) {
-        if (!dom.snackbar) return;
-        dom.snackbar.textContent = text;
-        dom.snackbar.open = true;
+      function showToast(text, color) {
+        window.parent?.postMessage({ type: "app:toast", text, color }, "*");
       }
 
       function render() {
@@ -370,8 +401,12 @@
                 window.open(link.href, "_blank", "noopener,noreferrer");
                 return;
               }
-              if (link.action === "open-mors" && dom.morsSheet) {
-                dom.morsSheet.open = true;
+              if (link.action === "open-mors") {
+                window.parent?.postMessage({ type: "resources:open-releases" }, "*");
+                return;
+              }
+              if (link.action === "open-image-compress") {
+                openImageCompressor();
                 return;
               }
               showToast("暂未配置该入口");
