@@ -1443,14 +1443,6 @@
 		    flex-shrink: 0; 
 		}
 		
-		/* 顶部菜单开关样式适配 */
-#filterMatchRowsMenuItem {
-    /* display: none; Removed to make it always visible in the menu */
-    align-items: center;
-    /* justify-content: space-between; Removed as we use standard menu item layout now */
-    /* padding: 0 16px; Standard padding is fine */
-}
-		
 		#mainFab {
 		    position: fixed;
 		    right: 16px;
@@ -1613,7 +1605,7 @@
 		
 		
 	</style>
-	<link rel="stylesheet" href="rsdb.css">
+	<link rel="stylesheet" href="rsdb.css?v=20260823-2">
 	<script src="rsdb.js"></script>
 <body>
     <div id="themeFlash"></div>
@@ -1635,6 +1627,9 @@
 			<mdui-divider></mdui-divider>
 			<mdui-list-item id="importItem" icon="file_upload" rounded headline="导入 Excel"></mdui-list-item>
 			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出"></mdui-list-item>
+			<mdui-list-item id="manualSaveItem" icon="save" rounded headline="手动保存"></mdui-list-item>
+			<mdui-list-item id="saveAsItem" icon="save_as" rounded headline="另存为"></mdui-list-item>
+			<mdui-list-item id="openDocumentItem" icon="folder_open" rounded headline="打开"></mdui-list-item>
 			<mdui-list-item id="calculatorBtn" icon="calculate" rounded headline="计算重量"></mdui-list-item>
 		
 			<mdui-list-item id="sortItem" icon="sort" rounded headline="数据排序"></mdui-list-item>
@@ -1646,33 +1641,23 @@
 	<div class="top-fixed-area">
 		<div class="action-bar">
 			<mdui-button-icon icon="menu" id="openDrawerBtn"></mdui-button-icon>
-			<div class="search-bar">
-				<span class="material-icons" style="color:#757575;">search</span>
-				<input type="text" id="searchInput" placeholder="搜索所有字段...">
-				<span class="material-icons search-clear-btn" id="searchClearBtn">clear</span>
+			<div class="excel-action-buttons" aria-label="常用操作">
+				<mdui-tooltip content="撤销"><mdui-button-icon icon="undo" id="topUndoBtn"></mdui-button-icon></mdui-tooltip>
+				<mdui-tooltip content="重做"><mdui-button-icon icon="redo" id="topRedoBtn"></mdui-button-icon></mdui-tooltip>
+				<mdui-tooltip content="手动保存"><mdui-button-icon icon="save" id="topSaveBtn"></mdui-button-icon></mdui-tooltip>
+				<span class="appbar-action-divider" aria-hidden="true"></span>
+				<mdui-tooltip content="缩小表格"><mdui-button-icon icon="zoom_out" id="topTableZoomOutBtn"></mdui-button-icon></mdui-tooltip>
+				<mdui-tooltip content="放大表格"><mdui-button-icon icon="zoom_in" id="topTableZoomInBtn"></mdui-button-icon></mdui-tooltip>
+				<mdui-tooltip content="恢复默认缩放"><mdui-button-icon icon="restart_alt" id="topTableZoomResetBtn"></mdui-button-icon></mdui-tooltip>
 			</div>
 			<div class="top-action-buttons">
-			<mdui-tooltip content="替换">
-				<mdui-button-icon icon="find_replace" id="toggleSearchReplaceBtn"></mdui-button-icon>
-			</mdui-tooltip>
 				<mdui-dropdown placement="bottom-end">
 			<mdui-button-icon slot="trigger" icon="more_vert" id="topMenuBtn"></mdui-button-icon>
 			<mdui-menu>
-						<mdui-menu-item id="multiSelectMenuItem">
-						<div style="display: flex; align-items: center; width: 100%;">
-							<mdui-checkbox id="multiSelectCheckbox" style="pointer-events: none; margin-right: 12px;"></mdui-checkbox>
-							<span id="multiSelectMenuText">进入多选模式</span>
-						</div>
-					</mdui-menu-item>
-					<!-- 新增：只显示匹配行开关（移至顶部菜单） -->
-					<mdui-menu-item id="filterMatchRowsMenuItem">
-						<div style="display: flex; align-items: center; width: 100%;">
-							<mdui-checkbox id="filterMatchRowsCheckbox" style="pointer-events: none; margin-right: 12px;"></mdui-checkbox>
-							<span>只显示匹配行</span>
-						</div>
-					</mdui-menu-item>
-                    <mdui-menu-item id="undoMenuItem" icon="undo">撤销</mdui-menu-item>
-                    <mdui-menu-item id="redoMenuItem" icon="redo">重做</mdui-menu-item>
+						<mdui-menu-item id="searchMenuItem" icon="search">搜索</mdui-menu-item>
+						<mdui-menu-item id="multiSelectMenuItem" icon="check_box_outline_blank">进入多选模式</mdui-menu-item>
+					<mdui-menu-item id="cellMultiSelectMenuItem" icon="grid_view">多选格子</mdui-menu-item>
+					<mdui-menu-item id="invertSelectionMenuItem" icon="flip_to_back" style="display:none;">反选</mdui-menu-item>
                     <mdui-menu-item id="operationHistoryMenuItem" icon="list_alt">操作详细列表</mdui-menu-item>
                     <mdui-menu-item id="deleteAllDataMenuItem" icon="delete_forever">删除所有表格数据</mdui-menu-item>
 					</mdui-menu>
@@ -1681,8 +1666,14 @@
 		</div>
 		<div class="search-replace-container" id="searchReplaceContainer" style="display: none;">
 			<div class="search-replace-main">
+				<div class="search-query-row">
+					<div class="search-bar">
+						<mdui-text-field id="searchInput" label="搜索所有字段" placeholder="输入关键词" variant="outlined" clearable></mdui-text-field>
+					</div>
+					<mdui-button-icon icon="close" id="closeSearchPanelBtn" aria-label="关闭搜索"></mdui-button-icon>
+				</div>
 				<div class="search-replace-top-row">
-					<input type="text" id="replaceQuery" placeholder="替换为">
+					<mdui-text-field id="replaceQuery" label="替换为" placeholder="输入替换内容" variant="outlined"></mdui-text-field>
 					<div class="search-replace-nav-buttons">
 					<mdui-tooltip content="上一个">
 						<mdui-button-icon icon="arrow_upward" id="prevMatchBtn"></mdui-button-icon>
@@ -1698,13 +1689,16 @@
 				</div>
 				<div class="search-replace-bottom-row">
 					<span id="searchResultCount">找到 0 个匹配项</span>
-					<!-- 已删除：原位置的 filterMatchRowsSwitch 开关 -->
+					<mdui-checkbox id="filterMatchRowsCheckbox">只显示匹配行</mdui-checkbox>
 				</div>
 			</div>
 		</div>
 		<div class="batch-action-container">
 			<mdui-button variant="outlined" color="error" id="deleteSelectedBtn" style="display: none; width: 100%;">
 				<mdui-icon name="delete"></mdui-icon> 批量删除 (<span id="selectedCount">0</span>) </mdui-button>
+			<mdui-button variant="filled" id="editSelectedCellsBtn" style="display:none; width:100%; margin-top:8px;">
+				<mdui-icon name="tune"></mdui-icon> 统一设置选中格子
+			</mdui-button>
 		</div>
 	</div>
 	<div class="data-table-container-div">
@@ -1712,22 +1706,22 @@
 			<table id="dataTable">
 				<thead>
 					<tr>
-						<th class="seq-col">序号</th>
+						<th class="seq-col" data-field="seq">序号</th>
 						<th class="checkbox-col" style="display: none;">
 							<mdui-checkbox id="selectAllCheckbox">全选</mdui-checkbox>
 						</th>
-						<th>钢种</th>
-						<th>产品号</th>
-						<th>卡片号</th>
-						<th>炉号</th>
-						<th>实际直径</th>
-						<th>直径</th>
-						<th>长度</th>
-						<th>重量</th>
-						<th>状态</th>
-						<th>位置</th>
-						<th>硬度</th>
-						<th class="remark-col">备注</th>
+						<th data-field="steelType">钢种</th>
+						<th data-field="productId">产品号</th>
+						<th data-field="cardId">卡片号</th>
+						<th data-field="furnaceId">炉号</th>
+						<th data-field="actualDiameter">实际直径</th>
+						<th data-field="diameter">直径</th>
+						<th data-field="length">长度</th>
+						<th data-field="weight">重量</th>
+						<th data-field="status">状态</th>
+						<th data-field="position">位置</th>
+						<th data-field="hardness">硬度</th>
+						<th class="remark-col" data-field="remarks">备注</th>
 						<th class="image-col">卡片图片</th>
 						<th class="action-col">操作</th>
 					</tr>
@@ -1867,23 +1861,28 @@
 			</div>
 		</div>
 	</div>
-	<!-- 快速编辑弹窗 (Top Aligned) -->
-	<mdui-dialog id="quickEditDialog" fullscreen close-on-esc close-on-overlay-click class="quick-edit-dialog-top">
+	<!-- 快速编辑底部抽屉 -->
+	<mdui-dialog id="quickEditDialog" close-on-esc close-on-overlay-click class="quick-edit-bottomsheet">
 		
         <mdui-top-app-bar slot="header" style="padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top));">
             <mdui-top-app-bar-title id="quickEditLabel" style="color:var(--primary-color);"></mdui-top-app-bar-title>
             <div class="quick-edit-header-actions">
+                <mdui-tooltip content="撤销当前编辑"><mdui-button-icon icon="undo" id="quickEditUndoBtn" disabled></mdui-button-icon></mdui-tooltip>
+                <mdui-tooltip content="重做当前编辑"><mdui-button-icon icon="redo" id="quickEditRedoBtn" disabled></mdui-button-icon></mdui-tooltip>
                 <mdui-tooltip content="取消修改"><mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon></mdui-tooltip>
                 <mdui-tooltip content="保存修改"><mdui-button-icon icon="save" id="saveQuickEditBtn"></mdui-button-icon></mdui-tooltip>
             </div>
         </mdui-top-app-bar>
 	
 		
-		<div class="quick-edit-editor-content" style="padding: 8px; margin-top: 24px; padding-top: calc(8px + env(safe-area-inset-top));">
+		<div class="quick-edit-editor-content" style="padding: 16px;">
 			
-			<div style="position:relative; display:flex; align-items:center;">
-				<input type="text" id="quickEditInput" class="readonly-input" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:4px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1;">
-				<mdui-button-icon icon="edit" class="edit-input-btn" data-target="quickEditInput"></mdui-button-icon>
+			<div class="quick-edit-input-row">
+				<div id="quickEditInputPreview" class="quick-edit-input-preview" aria-label="当前颜色预览"></div>
+				<textarea id="quickEditInput" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:12px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1; min-height:56px; height:56px; resize:none;"></textarea>
+				<mdui-tooltip id="quickEditKeyboardToggleTooltip" content="切换到系统键盘">
+					<mdui-button-icon id="quickEditKeyboardToggleBtn" icon="edit" aria-label="切换到系统键盘"></mdui-button-icon>
+				</mdui-tooltip>
 			</div>
 			<input type="hidden" id="quickEditIndex">
 			<input type="hidden" id="quickEditField">
@@ -1891,28 +1890,28 @@
 				<div id="cellStyleTargetText" style="font-weight:600;margin-bottom:10px;">单元格格式</div>
 				<div class="quick-edit-format-grid">
 					<div class="cell-font-controls">
-                        <mdui-select id="cellStyleFontNameInput" label="字体" variant="outlined" value="">
-                            <mdui-menu-item value="">默认字体</mdui-menu-item>
-                            <mdui-menu-item value="Google Sans Text">Google Sans</mdui-menu-item>
-                            <mdui-menu-item value="Microsoft YaHei">微软雅黑</mdui-menu-item>
-                            <mdui-menu-item value="SimSun">宋体</mdui-menu-item>
-                            <mdui-menu-item value="SimHei">黑体</mdui-menu-item>
-                            <mdui-menu-item value="KaiTi">楷体</mdui-menu-item>
-                            <mdui-menu-item value="FangSong">仿宋</mdui-menu-item>
-                            <mdui-menu-item value="Consolas">Consolas</mdui-menu-item>
-                        </mdui-select>
+                        <label class="cell-font-picker-trigger-wrap" for="cellStyleFontNameInput">
+                            <span class="cell-font-picker-label">字体</span>
+                            <input id="cellStyleFontNameInput" class="cell-font-picker-trigger" type="text" placeholder="默认字体" readonly autocomplete="off">
+                        </label>
                         <mdui-tooltip content="导入本地字体"><mdui-button-icon icon="font_download" id="cellStyleImportFontBtn"></mdui-button-icon></mdui-tooltip>
                         <input type="file" id="cellStyleFontFileInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none">
                     </div>
 					<mdui-text-field id="cellStyleFontSizeInput" label="字号（px）" type="number" min="8" max="72" variant="outlined"></mdui-text-field>
-					<mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
-					<mdui-text-field id="cellStyleBgColorInput" label="填充颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
-					<mdui-select id="cellStyleAlignInput" label="水平对齐" variant="outlined" value="general">
-						<mdui-menu-item value="general">常规</mdui-menu-item>
-						<mdui-menu-item value="left">左对齐</mdui-menu-item>
-						<mdui-menu-item value="center">居中</mdui-menu-item>
-						<mdui-menu-item value="right">右对齐</mdui-menu-item>
-					</mdui-select>
+					<div class="color-field-with-palette">
+						<mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+						<button type="button" class="color-preview-button" id="cellStyleTextColorPreview" aria-label="选择字体颜色"></button>
+					</div>
+					<div class="color-field-with-palette">
+						<mdui-text-field id="cellStyleBgColorInput" label="填充颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+						<button type="button" class="color-preview-button" id="cellStyleBgColorPreview" aria-label="选择填充颜色"></button>
+					</div>
+					<input type="hidden" id="cellStyleAlignInput" value="general">
+					<button type="button" id="cellStyleAlignTrigger" class="cell-align-picker-trigger" aria-haspopup="dialog">
+						<span class="cell-align-picker-label">水平对齐</span>
+						<span class="cell-align-picker-value"><mdui-icon id="cellStyleAlignTriggerIcon" name="format_align_left"></mdui-icon><span id="cellStyleAlignTriggerText">常规</span></span>
+						<mdui-icon name="arrow_drop_down"></mdui-icon>
+					</button>
 					<mdui-text-field id="cellStyleNumberFormatInput" label="数字格式（如 0.00）" variant="outlined"></mdui-text-field>
 				</div>
 				<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;">
@@ -1927,6 +1926,32 @@
 		<div slot="action">
 			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
 		</div>
+	</mdui-dialog>
+	<mdui-dialog id="cellFontPickerDialog" headline="选择字体" close-on-esc close-on-overlay-click>
+		<div id="cellFontPickerPanel" class="cell-font-picker-panel">
+			<input id="cellFontSearchInput" class="cell-font-search-input" type="search" placeholder="搜索字体" autocomplete="off">
+			<div id="cellFontList" class="cell-font-list" role="listbox" aria-label="字体列表"></div>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellFontPicker">关闭</mdui-button>
+	</mdui-dialog>
+	<mdui-dialog id="cellAlignPickerDialog" headline="选择对齐方式" close-on-esc close-on-overlay-click>
+		<div id="cellAlignOptionList" class="cell-align-option-list" role="listbox" aria-label="对齐方式">
+			<button type="button" class="cell-align-option" data-align-value="general" role="option"><mdui-icon name="format_align_left"></mdui-icon><span>常规</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="left" role="option"><mdui-icon name="format_align_left"></mdui-icon><span>左对齐</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="center" role="option"><mdui-icon name="format_align_center"></mdui-icon><span>居中</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="right" role="option"><mdui-icon name="format_align_right"></mdui-icon><span>右对齐</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellAlignPicker">关闭</mdui-button>
+	</mdui-dialog>
+	<mdui-dialog id="cellColorPaletteDialog" fullscreen headline="选择颜色" close-on-esc close-on-overlay-click>
+		<div id="cellColorPalette" class="cell-color-palette">
+			<div class="cell-color-section-title">最近使用</div>
+			<div id="recentCellColors" class="cell-color-grid"></div>
+			<div class="cell-color-section-title">默认颜色</div>
+			<div id="defaultCellColors" class="cell-color-grid"></div>
+			<div class="cell-color-custom-row"><input type="color" id="customCellColorInput" value="#00796b"><mdui-button variant="text" id="applyCustomCellColorBtn">使用自定义颜色</mdui-button></div>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellColorPalette">关闭</mdui-button>
 	</mdui-dialog>
 	<!-- 虚拟键盘 -->
 	<div id="virtualKeyboard">
@@ -1976,10 +2001,13 @@
 					<input type="text" id="calcDiameter2" class="numeric-input readonly-input">
 					<label for="calcLength">长度 (mm)</label>
 					<input type="text" id="calcLength" class="numeric-input readonly-input">
-					<label for="calcDensity">密度 (Kg/mm³, 默认 0.00617)</label>
-					<input type="text" id="calcDensity" readonly>
 					<label for="calcResult">计算结果 (Kg)</label>
 					<input type="text" id="calcResult" readonly style="font-weight: bold; font-size: 1.2em;">
+					<label for="calcDensity">密度 (Kg/mm³)</label>
+					<input type="number" id="calcDensity" inputmode="decimal" step="any" autocomplete="off">
+					<label for="calcFormula">计算公式</label>
+					<textarea id="calcFormula" rows="3" spellcheck="false"></textarea>
+					<div id="calcFormulaStatus" class="calculator-formula-status" hidden></div>
 				</form>
 			</div>
 			<div class="modal-footer-custom">
@@ -2196,7 +2224,7 @@
 
 	<!-- 删除图片确认对话框 -->
 	<mdui-dialog id="deleteImageConfirmDialog" headline="确认删除" close-on-overlay-click close-on-esc>
-		<div style="padding:16px 0;font-size:1rem;">确定要删除这张卡片图片吗？删除后不可恢复。</div>
+		<div id="deleteImageConfirmMessage" style="padding:16px 0;font-size:1rem;">确定要删除这张卡片图片吗？删除后不可恢复。</div>
 		<mdui-button slot="action" variant="text" id="cancelDeleteImageBtn">取消</mdui-button>
 		<mdui-button slot="action" variant="filled" color="error" id="confirmDeleteImageBtn">删除</mdui-button>
 	</mdui-dialog>
@@ -2205,6 +2233,13 @@
 		<div style="padding:16px 0;font-size:1rem;">确定要取消操作吗？取消后当前输入的内容可能会丢失。</div>
 		<mdui-button slot="action" variant="filled" id="cancelCancelBtn">返回继续编辑</mdui-button>
 		<mdui-button slot="action" variant="outlined" color="error" id="confirmCancelBtn">确认取消</mdui-button>
+	</mdui-dialog>
+	<!-- 从快速编辑切换到完整编辑时的保存确认 -->
+	<mdui-dialog id="quickEditFullEditConfirmDialog" headline="是否保存" close-on-overlay-click close-on-esc>
+		<div style="padding:16px 0;font-size:1rem;">是否保存当前快速编辑的内容和格式后，再打开完整编辑？</div>
+		<mdui-button slot="action" variant="text" id="quickEditFullEditCancelBtn">继续快速编辑</mdui-button>
+		<mdui-button slot="action" variant="outlined" id="quickEditFullEditDiscardBtn">不保存</mdui-button>
+		<mdui-button slot="action" variant="filled" id="quickEditFullEditSaveBtn">保存并继续</mdui-button>
 	</mdui-dialog>
 	
 	
@@ -2867,6 +2902,46 @@
         <mdui-button slot="action" variant="filled" id="exportChoiceOkBtn">导出</mdui-button>
     </mdui-dialog>
 
+    <mdui-dialog id="documentNameDialog" close-on-esc close-on-overlay-click headline="保存表格">
+        <div style="display:grid;gap:12px;min-width:min(420px, 80vw);">
+            <mdui-text-field id="documentNameInput" label="文件名称" placeholder="请输入文件名称" variant="outlined" clearable></mdui-text-field>
+        </div>
+        <mdui-button slot="action" variant="text" id="documentNameCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentNameConfirmBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="openDocumentDialog" fullscreen close-on-esc>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>打开表格</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="openDocumentCancelBtn"></mdui-button-icon></mdui-tooltip>
+        </mdui-top-app-bar>
+        <div class="open-document-layout">
+            <div class="open-document-search">
+                <div class="open-document-search-row">
+                    <mdui-text-field id="documentSearchInput" label="搜索表格" placeholder="输入文件名称" variant="outlined" clearable></mdui-text-field>
+                    <mdui-tooltip id="documentMultiSelectTooltip" content="多选">
+                        <mdui-button-icon icon="checklist" id="documentMultiSelectBtn" aria-label="多选" aria-pressed="false"></mdui-button-icon>
+                    </mdui-tooltip>
+                    <mdui-tooltip id="documentBulkDeleteTooltip" content="删除选中" hidden>
+                        <mdui-button-icon icon="delete" id="documentBulkDeleteBtn" aria-label="删除选中" disabled></mdui-button-icon>
+                    </mdui-tooltip>
+                </div>
+                <div id="documentSearchCount" class="open-document-count"></div>
+            </div>
+            <div class="open-document-list-scroll">
+                <div id="documentList" class="open-document-list"></div>
+                <div id="documentListEmpty" class="open-document-empty" style="display:none;">暂无已保存的表格</div>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentDeleteConfirmDialog" headline="确认删除" close-on-esc close-on-overlay-click>
+        <div id="documentDeleteConfirmMessage" style="line-height:1.6;"></div>
+        <mdui-button slot="action" variant="text" id="documentDeleteCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" color="error" id="documentDeleteConfirmBtn">删除</mdui-button>
+    </mdui-dialog>
+
     <mdui-dialog id="configExportDialog" close-on-esc close-on-overlay-click headline="选择导出的配置">
         <div style="display:grid;gap:10px;padding:4px 0;">
             <mdui-checkbox id="configExportTheme" checked>主题与主色</mdui-checkbox>
@@ -3109,6 +3184,21 @@
 		    importedFonts: []
 		};
 		let appSettings = loadAppSettings();
+		let currentDocumentName = localStorage.getItem('rsdb_current_document_name') || '';
+		let pendingDocumentNameMode = 'save';
+		let pendingDocumentRenameSource = '';
+		let pendingDocumentDeleteNames = [];
+		let documentMultiSelectMode = false;
+		const selectedDocumentNames = new Set();
+		let quickEditHistory = {
+		    past: [],
+		    future: [],
+		    last: null,
+		    pendingBeforeInput: null,
+		    composing: false,
+		    compositionStart: null
+		};
+		let quickEditHistoryApplying = false;
 		let inputStats = loadInputStats();
 		let shortcutEditMode = false;
 		let currentShortcutFieldKey = null;
@@ -3120,6 +3210,15 @@
 		let currentEditIndex = -1;       
 		let isMultiSelectMode = false;   
 		let selectedRows = new Set();    
+		let isCellMultiSelectMode = false;
+		let selectedCells = new Set();
+		let cellSelectionAnchor = null;
+		let cellSelectionPointer = null;
+		let suppressNextCellClick = false;
+		let cellSelectionLongPressTimer = null;
+		let cellSelectionAutoScrollTimer = null;
+		let activeCellColorTarget = null;
+		const RECENT_CELL_COLORS_KEY = 'rsdb_recent_cell_colors';
 		let moveRowDialogState = null;
 		let selectedTheme = localStorage.getItem('theme') || 'auto';  
 		let searchTerm = '';             
@@ -3332,6 +3431,56 @@
             return legacy && typeof legacy === 'object' ? legacy : {};
         }
 
+        function normalizeStyleColor(value, fallback = '') {
+            const raw = String(value || '').trim();
+            if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toUpperCase();
+            if (/^#[0-9a-f]{3}$/i.test(raw)) return raw.replace(/[0-9a-f]/gi, ch => ch + ch).toUpperCase();
+            const match = raw.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?/i);
+            if (match) {
+                if (match[4] !== undefined && Number(match[4]) === 0) return fallback;
+                return `#${[match[1], match[2], match[3]].map(n => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+            }
+            return fallback;
+        }
+
+        function getDefaultCellStyle() {
+            const rootStyle = getComputedStyle(document.body || document.documentElement);
+            const tableFontSize = Math.max(10, Math.min(40, Number(appSettings.tableCellFontSize) || 16));
+            const defaultTextColor = normalizeStyleColor(rootStyle.getPropertyValue('--text-color'), '#212121');
+            const defaultSurfaceColor = normalizeStyleColor(rootStyle.getPropertyValue('--surface-color'), '#FFFFFF');
+            return {
+                fontName: 'Google Sans Text',
+                fontSize: tableFontSize,
+                color: defaultTextColor,
+                backgroundColor: defaultSurfaceColor,
+                horizontal: 'general',
+                numFmt: 'General',
+                bold: false,
+                italic: false,
+                underline: false,
+                wrapText: false
+            };
+        }
+
+        function getEffectiveCellStyle(rowIndex, fieldKey) {
+            const defaults = getDefaultCellStyle();
+            const current = getCellFormat(rowIndex, fieldKey) || {};
+            return {
+                ...defaults,
+                ...current,
+                fontName: current.fontName || defaults.fontName,
+                fontSize: Number(current.fontSize) > 0 ? Number(current.fontSize) : defaults.fontSize,
+                color: normalizeStyleColor(current.color, defaults.color),
+                backgroundColor: normalizeStyleColor(current.backgroundColor, defaults.backgroundColor),
+                horizontal: current.horizontal || defaults.horizontal,
+                numFmt: current.numFmt || defaults.numFmt,
+                bold: !!(current.bold || current.fontWeight === 'bold'),
+                italic: !!current.italic,
+                underline: !!current.underline,
+                wrapText: !!current.wrapText
+            };
+        }
+
         function setCellFormat(rowIndex, fieldKey, style) {
             if (!tableData[rowIndex] || !fieldKey) return;
             const styles = { ...(tableData[rowIndex].__cellStyles || {}) };
@@ -3339,6 +3488,231 @@
             else delete styles[fieldKey];
             if (Object.keys(styles).length) tableData[rowIndex].__cellStyles = styles;
             else delete tableData[rowIndex].__cellStyles;
+        }
+
+        function cellKey(rowIndex, fieldKey) { return `${rowIndex}:${fieldKey}`; }
+        function parseCellKey(key) {
+            const [row, ...fieldParts] = String(key).split(':');
+            return { row: Number(row), field: fieldParts.join(':') };
+        }
+        function getCellSelectionKeys() {
+            return Array.from(selectedCells).map(parseCellKey).filter(({ row, field }) => Number.isInteger(row) && field);
+        }
+        function refreshCellSelectionUI() {
+            document.querySelectorAll('#dataTable td.cell-selected').forEach(cell => cell.classList.remove('cell-selected'));
+            if (!isCellMultiSelectMode) return;
+            document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+                const rowIndex = Number(row.dataset.index);
+                row.querySelectorAll('td[data-field]').forEach(cell => {
+                    if (selectedCells.has(cellKey(rowIndex, cell.dataset.field))) cell.classList.add('cell-selected');
+                });
+                if (selectedCells.has(cellKey(rowIndex, 'seq'))) row.querySelector('td.seq-col')?.classList.add('cell-selected');
+            });
+        }
+        function setCellSelectionRange(start, end, additive = false) {
+            if (!start || !end) return;
+            if (!additive) selectedCells.clear();
+            const r1 = Math.min(start.row, end.row), r2 = Math.max(start.row, end.row);
+            const visibleFields = searchableFields;
+            const c1 = Math.max(0, visibleFields.indexOf(start.field)), c2 = Math.max(0, visibleFields.indexOf(end.field));
+            for (let r = r1; r <= r2; r++) {
+                for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) selectedCells.add(cellKey(r, visibleFields[c]));
+            }
+            refreshCellSelectionUI();
+            updateCellSelectionActions();
+        }
+        function toggleCellSelection(row, field, additive = true) {
+            const key = cellKey(row, field);
+            if (!additive) selectedCells.clear();
+            if (selectedCells.has(key) && additive) selectedCells.delete(key); else selectedCells.add(key);
+            cellSelectionAnchor = { row, field };
+            refreshCellSelectionUI();
+            updateCellSelectionActions();
+        }
+        function selectCellColumn(field) {
+            if (field === 'seq') return;
+            selectedCells.clear();
+            tableData.forEach((_, row) => selectedCells.add(cellKey(row, field)));
+            refreshCellSelectionUI(); updateCellSelectionActions();
+        }
+        function selectCellRow(row) {
+            selectedCells.clear();
+            searchableFields.forEach(field => selectedCells.add(cellKey(row, field)));
+            selectedCells.add(cellKey(row, 'seq'));
+            refreshCellSelectionUI(); updateCellSelectionActions();
+        }
+        function updateCellSelectionActions() {
+            const count = selectedCells.size;
+            if (dom.editSelectedCellsBtn) dom.editSelectedCellsBtn.style.display = isCellMultiSelectMode && count ? 'block' : 'none';
+            if (dom.invertSelectionMenuItem) dom.invertSelectionMenuItem.style.display = (isCellMultiSelectMode && count) || (isMultiSelectMode && selectedRows.size) ? '' : 'none';
+            if (dom.selectedCount && isCellMultiSelectMode) dom.selectedCount.textContent = count;
+        }
+        function toggleCellMultiSelectMode() {
+            isCellMultiSelectMode = !isCellMultiSelectMode;
+            selectedCells.clear();
+            cellSelectionAnchor = null;
+            document.getElementById('dataTable')?.classList.toggle('cell-selection-mode', isCellMultiSelectMode);
+            if (dom.cellMultiSelectMenuItem) dom.cellMultiSelectMenuItem.textContent = isCellMultiSelectMode ? '退出多选格子' : '多选格子';
+            updateCellSelectionActions();
+            updateTable();
+        }
+        function invertSelectedCells() {
+            if (isMultiSelectMode && !isCellMultiSelectMode) {
+                const next = new Set();
+                tableData.forEach((_, row) => { if (!selectedRows.has(row)) next.add(row); });
+                selectedRows = next;
+                updateTable();
+                return;
+            }
+            if (!isCellMultiSelectMode) return;
+            const next = new Set();
+            tableData.forEach((_, row) => searchableFields.forEach(field => {
+                const key = cellKey(row, field); if (!selectedCells.has(key)) next.add(key);
+            }));
+            selectedCells = next;
+            refreshCellSelectionUI(); updateCellSelectionActions();
+        }
+        function stopCellAutoScroll() {
+            if (cellSelectionAutoScrollTimer) cancelAnimationFrame(cellSelectionAutoScrollTimer);
+            cellSelectionAutoScrollTimer = null;
+        }
+        function continueCellSelectionAtPoint(e) {
+            if (!isCellMultiSelectMode || !cellSelectionAnchor) return;
+            const container = document.querySelector('.data-table-container-div');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            const edge = 42;
+            let dx = 0, dy = 0;
+            if (e.clientX > rect.right - edge) dx = 18;
+            if (e.clientX < rect.left + edge) dx = -18;
+            if (e.clientY > rect.bottom - edge) dy = 18;
+            if (e.clientY < rect.top + edge) dy = -18;
+            if (!dx && !dy) return;
+            container.scrollLeft += dx; container.scrollTop += dy;
+            cellSelectionAutoScrollTimer = requestAnimationFrame(() => continueCellSelectionAtPoint(e));
+        }
+
+        let cellColorPaletteClosingUntil = 0;
+        function closeCellColorPaletteDialog() {
+            const dialog = dom.cellColorPaletteDialog;
+            if (!dialog) return;
+            cellColorPaletteClosingUntil = Date.now() + 420;
+            const closeNow = () => {
+                dialog.open = false;
+                dialog.removeAttribute('open');
+            };
+            closeNow();
+            requestAnimationFrame(closeNow);
+            setTimeout(closeNow, 80);
+        }
+
+        function applyColorToActiveTarget(color) {
+            if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
+            closeCellColorPaletteDialog();
+            try {
+                const inputId = activeCellColorTarget === 'backgroundColor' ? 'cellStyleBgColorInput' : 'cellStyleTextColorInput';
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.value = color;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                const preview = activeCellColorTarget === 'backgroundColor' ? dom.cellStyleBgColorPreview : dom.cellStyleTextColorPreview;
+                if (preview) preview.style.backgroundColor = color;
+                const recent = JSON.parse(localStorage.getItem(RECENT_CELL_COLORS_KEY) || '[]').filter(c => c !== color);
+                recent.unshift(color); localStorage.setItem(RECENT_CELL_COLORS_KEY, JSON.stringify(recent.slice(0, 8)));
+                window.previewCurrentCellStyle?.();
+            } finally {
+                closeCellColorPaletteDialog();
+            }
+        }
+
+        const MATERIAL_COLOR_GROUPS = [
+            ['Red', ['#FFEBEE','#FFCDD2','#EF9A9A','#E57373','#EF5350','#F44336','#E53935','#D32F2F','#C62828','#B71C1C']],
+            ['Pink', ['#FCE4EC','#F8BBD0','#F48FB1','#F06292','#EC407A','#E91E63','#D81B60','#C2185B','#AD1457','#880E4F']],
+            ['Purple', ['#F3E5F5','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#9C27B0','#8E24AA','#7B1FA2','#6A1B9A','#4A148C']],
+            ['Deep Purple', ['#EDE7F6','#D1C4E9','#B39DDB','#9575CD','#7E57C2','#673AB7','#5E35B1','#512DA8','#4527A0','#311B92']],
+            ['Indigo', ['#E8EAF6','#C5CAE9','#9FA8DA','#7986CB','#5C6BC0','#3F51B5','#3949AB','#303F9F','#283593','#1A237E']],
+            ['Blue', ['#E3F2FD','#BBDEFB','#90CAF9','#64B5F6','#42A5F5','#2196F3','#1E88E5','#1976D2','#1565C0','#0D47A1']],
+            ['Light Blue', ['#E1F5FE','#B3E5FC','#81D4FA','#4FC3F7','#29B6F6','#03A9F4','#039BE5','#0288D1','#0277BD','#01579B']],
+            ['Cyan', ['#E0F7FA','#B2EBF2','#80DEEA','#4DD0E1','#26C6DA','#00BCD4','#00ACC1','#0097A7','#00838F','#006064']],
+            ['Teal', ['#E0F2F1','#B2DFDB','#80CBC4','#4DB6AC','#26A69A','#009688','#00897B','#00796B','#00695C','#004D40']],
+            ['Green', ['#E8F5E9','#C8E6C9','#A5D6A7','#81C784','#66BB6A','#4CAF50','#43A047','#388E3C','#2E7D32','#1B5E20']],
+            ['Light Green', ['#F1F8E9','#DCEDC8','#C5E1A5','#AED581','#9CCC65','#8BC34A','#7CB342','#689F38','#558B2F','#33691E']],
+            ['Lime', ['#F9FBE7','#F0F4C3','#E6EE9C','#DCE775','#D4E157','#CDDC39','#C0CA33','#AFB42B','#9E9D24','#827717']],
+            ['Yellow', ['#FFFDE7','#FFF9C4','#FFF59D','#FFF176','#FFEE58','#FFEB3B','#FDD835','#FBC02D','#F9A825','#F57F17']],
+            ['Amber', ['#FFF8E1','#FFECB3','#FFE082','#FFD54F','#FFCA28','#FFC107','#FFB300','#FFA000','#FF8F00','#FF6F00']],
+            ['Orange', ['#FFF3E0','#FFE0B2','#FFCC80','#FFB74D','#FFA726','#FF9800','#FB8C00','#F57C00','#EF6C00','#E65100']],
+            ['Deep Orange', ['#FBE9E7','#FFCCBC','#FFAB91','#FF8A65','#FF7043','#FF5722','#F4511E','#E64A19','#D84315','#BF360C']],
+            ['Brown', ['#EFEBE9','#D7CCC8','#BCAAA4','#A1887F','#8D6E63','#795548','#6D4C41','#5D4037','#4E342E','#3E2723']],
+            ['Grey', ['#FAFAFA','#F5F5F5','#EEEEEE','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#616161','#424242','#212121']],
+            ['Blue Grey', ['#ECEFF1','#CFD8DC','#B0BEC5','#90A4AE','#78909C','#607D8B','#546E7A','#455A64','#37474F','#263238']]
+        ];
+        const MATERIAL_COLOR_SHADES = [50,100,200,300,400,500,600,700,800,900];
+
+        function renderCellColorPalette() {
+            const recent = JSON.parse(localStorage.getItem(RECENT_CELL_COLORS_KEY) || '[]');
+            const draw = (el, colors) => {
+                if (!el) return;
+                el.innerHTML = '';
+                colors.forEach(entry => {
+                    const data = typeof entry === 'string' ? { color: entry } : entry;
+                    const color = data.color;
+                    const label = data.title || color;
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'cell-color-swatch';
+                    b.title = label;
+                    b.setAttribute('aria-label', label);
+                    const sample = document.createElement('span');
+                    sample.className = 'cell-color-swatch-sample';
+                    sample.style.backgroundColor = color;
+                    b.appendChild(sample);
+                    if (data.shade != null) {
+                        const shade = document.createElement('span');
+                        shade.className = 'cell-color-swatch-shade';
+                        shade.textContent = String(data.shade);
+                        b.appendChild(shade);
+                    }
+                    const hex = document.createElement('span');
+                    hex.className = 'cell-color-swatch-hex';
+                    hex.textContent = color;
+                    b.appendChild(hex);
+                    b.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        applyColorToActiveTarget(color);
+                    });
+                    el.appendChild(b);
+                });
+            };
+            draw(dom.recentCellColors, recent.map(color => ({ color, title: `最近使用 · ${color}` })));
+            if (dom.defaultCellColors) {
+                dom.defaultCellColors.innerHTML = '';
+                MATERIAL_COLOR_GROUPS.forEach(([group, colors]) => {
+                    const section = document.createElement('section');
+                    section.className = 'cell-color-group';
+                    const title = document.createElement('div');
+                    title.className = 'cell-color-group-title';
+                    title.textContent = group;
+                    const grid = document.createElement('div');
+                    grid.className = 'cell-color-grid material-color-grid';
+                    draw(grid, colors.map((color, index) => ({
+                        color,
+                        shade: MATERIAL_COLOR_SHADES[index],
+                        title: `${group} ${MATERIAL_COLOR_SHADES[index]} · ${color}`
+                    })));
+                    section.append(title, grid);
+                    dom.defaultCellColors.appendChild(section);
+                });
+            }
+        }
+        function openCellColorPalette(target) {
+            if (Date.now() < cellColorPaletteClosingUntil) return;
+            activeCellColorTarget = target; renderCellColorPalette();
+            if (dom.cellColorPaletteDialog) {
+                dom.cellColorPaletteDialog.headline = target === 'backgroundColor' ? '选择填充颜色' : '选择字体颜色';
+                dom.cellColorPaletteDialog.open = true;
+            }
         }
 
         function migrateLegacyCellStyles() {
@@ -3360,29 +3734,187 @@
             if (!cellEl || rowIndex === undefined || !fieldKey) return;
             const style = getCellFormat(rowIndex, fieldKey);
             if (!style || typeof style !== 'object') return;
-            if (style.fontSize) cellEl.style.fontSize = `${Math.max(10, Math.min(48, Number(style.fontSize) || 0))}px`;
+            if (style.fontSize) cellEl.style.setProperty('font-size', `${Math.max(10, Math.min(48, Number(style.fontSize) || 0))}px`, 'important');
             if (style.fontName) cellEl.style.setProperty('font-family', style.fontName, 'important');
-            if (style.color) cellEl.style.color = style.color;
-            if (style.backgroundColor) cellEl.style.backgroundColor = style.backgroundColor;
-            if (style.bold || style.fontWeight === 'bold') cellEl.style.fontWeight = 'bold';
-            if (style.italic) cellEl.style.fontStyle = 'italic';
-            if (style.underline) cellEl.style.textDecoration = 'underline';
-            if (style.horizontal && style.horizontal !== 'general') cellEl.style.textAlign = style.horizontal;
-            if (style.wrapText) cellEl.style.whiteSpace = 'normal';
+            if (style.color) cellEl.style.setProperty('color', style.color, 'important');
+            if (style.backgroundColor) cellEl.style.setProperty('background-color', style.backgroundColor, 'important');
+            if (style.bold || style.fontWeight === 'bold') cellEl.style.setProperty('font-weight', 'bold', 'important');
+            if (style.italic) cellEl.style.setProperty('font-style', 'italic', 'important');
+            if (style.underline) cellEl.style.setProperty('text-decoration', 'underline', 'important');
+            if (style.horizontal && style.horizontal !== 'general') cellEl.style.setProperty('text-align', style.horizontal, 'important');
+            if (style.wrapText) cellEl.style.setProperty('white-space', 'normal', 'important');
+        }
+
+        function formatCellValueForDisplay(value, rowIndex, fieldKey) {
+            const format = String(getCellFormat(rowIndex, fieldKey)?.numFmt || '').trim();
+            if (!format || /^general$/i.test(format) || format === '@') return value;
+            const raw = String(value ?? '').trim();
+            if (!raw) return value;
+            const number = Number(raw.replace(/,/g, ''));
+            if (!Number.isFinite(number)) return value;
+            const activePattern = format.split(';')[number < 0 ? 1 : 0] || format.split(';')[0] || format;
+            const percent = activePattern.includes('%');
+            const decimalMatch = activePattern.match(/\.([0#]+)/);
+            const decimalPart = decimalMatch?.[1] || '';
+            const minimumFractionDigits = (decimalPart.match(/0/g) || []).length;
+            const maximumFractionDigits = decimalPart.length;
+            const displayNumber = percent ? number * 100 : number;
+            let result = new Intl.NumberFormat('zh-CN', {
+                useGrouping: activePattern.includes(','),
+                minimumFractionDigits,
+                maximumFractionDigits
+            }).format(displayNumber);
+            if (percent) result += '%';
+            if (number < 0 && /\(.*\)/.test(activePattern)) result = `(${result.replace(/^-/, '')})`;
+            return result;
+        }
+
+        const DEFAULT_CELL_FONT_OPTIONS = [
+            { value: '', label: '默认字体' },
+            { value: 'Google Sans Text', label: 'Google Sans' },
+            { value: 'Microsoft YaHei', label: '微软雅黑' },
+            { value: 'SimSun', label: '宋体' },
+            { value: 'SimHei', label: '黑体' },
+            { value: 'KaiTi', label: '楷体' },
+            { value: 'FangSong', label: '仿宋' },
+            { value: 'Consolas', label: 'Consolas' }
+        ];
+
+        function getCellFontOptions() {
+            const imported = Array.isArray(appSettings.importedFonts) ? appSettings.importedFonts : [];
+            const known = new Set(DEFAULT_CELL_FONT_OPTIONS.map(option => option.value));
+            return DEFAULT_CELL_FONT_OPTIONS.concat(imported
+                .filter(name => name && !known.has(name))
+                .map(name => ({ value: name, label: `${name}（已导入）` })));
+        }
+
+        function renderCellFontList(query = '') {
+            const list = document.getElementById('cellFontList');
+            if (!list) return;
+            const currentValue = document.getElementById('cellStyleFontNameInput')?.value || '';
+            const normalizedQuery = String(query).trim().toLowerCase();
+            list.replaceChildren();
+            getCellFontOptions()
+                .filter(option => !normalizedQuery || `${option.label} ${option.value}`.toLowerCase().includes(normalizedQuery))
+                .forEach(option => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'cell-font-option';
+                    item.setAttribute('role', 'option');
+                    item.dataset.fontValue = option.value;
+                    item.setAttribute('aria-selected', String(option.value === currentValue));
+                    item.textContent = option.label;
+                    item.addEventListener('click', () => {
+                        const input = document.getElementById('cellStyleFontNameInput');
+                        if (input) {
+                            input.value = option.value;
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                        if (dom.cellFontPickerDialog) dom.cellFontPickerDialog.open = false;
+                    });
+                    list.appendChild(item);
+                });
+            if (!list.children.length) {
+                const empty = document.createElement('div');
+                empty.className = 'cell-font-list-empty';
+                empty.textContent = '没有匹配的字体';
+                list.appendChild(empty);
+            }
+        }
+
+        function toggleCellFontPicker(forceState) {
+            const dialog = dom.cellFontPickerDialog;
+            if (!dialog) return;
+            const nextState = typeof forceState === 'boolean' ? forceState : !dialog.open;
+            dialog.open = nextState;
+            if (nextState) {
+                const search = document.getElementById('cellFontSearchInput');
+                renderCellFontList(search?.value || '');
+                requestAnimationFrame(() => search?.focus({ preventScroll: true }));
+            }
+        }
+
+        const CELL_ALIGN_OPTIONS = [
+            { value: 'general', label: '常规', icon: 'format_align_left' },
+            { value: 'left', label: '左对齐', icon: 'format_align_left' },
+            { value: 'center', label: '居中', icon: 'format_align_center' },
+            { value: 'right', label: '右对齐', icon: 'format_align_right' }
+        ];
+
+        function updateCellAlignPickerUI() {
+            const input = document.getElementById('cellStyleAlignInput');
+            const currentValue = input?.value || 'general';
+            const current = CELL_ALIGN_OPTIONS.find(option => option.value === currentValue) || CELL_ALIGN_OPTIONS[0];
+            const text = document.getElementById('cellStyleAlignTriggerText');
+            const icon = document.getElementById('cellStyleAlignTriggerIcon');
+            if (text) text.textContent = current.label;
+            if (icon) icon.setAttribute('name', current.icon);
+            document.querySelectorAll('.cell-align-option').forEach(item => {
+                const selected = item.dataset.alignValue === current.value;
+                item.setAttribute('aria-selected', String(selected));
+            });
+        }
+
+        function openCellAlignPicker() {
+            const dialog = document.getElementById('cellAlignPickerDialog');
+            if (!dialog) return;
+            setVirtualKeyboardVisible(false);
+            dialog.open = true;
+            updateCellAlignPickerUI();
+        }
+
+        function selectCellAlignment(value) {
+            const input = document.getElementById('cellStyleAlignInput');
+            if (!input) return;
+            const normalized = CELL_ALIGN_OPTIONS.some(option => option.value === value) ? value : 'general';
+            const previousState = window.getQuickEditState?.() || null;
+            input.value = normalized;
+            updateCellAlignPickerUI();
+            window.previewCurrentCellStyle?.();
+            window.recordQuickEditState?.(previousState);
+            const dialog = document.getElementById('cellAlignPickerDialog');
+            if (dialog) dialog.open = false;
+        }
+
+        function bindCellAlignPickerInteractions() {
+            const trigger = document.getElementById('cellStyleAlignTrigger');
+            if (trigger && !trigger.dataset.alignPickerBound) {
+                trigger.dataset.alignPickerBound = 'true';
+                let ignoreClickUntil = 0;
+                trigger.addEventListener('pointerdown', (event) => {
+                    ignoreClickUntil = Date.now() + 600;
+                    if (event.cancelable) event.preventDefault();
+                    event.stopPropagation();
+                    openCellAlignPicker();
+                }, { passive: false });
+                trigger.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (Date.now() < ignoreClickUntil) return;
+                    openCellAlignPicker();
+                });
+            }
+            document.querySelectorAll('.cell-align-option').forEach(item => {
+                if (item.dataset.alignPickerBound) return;
+                item.dataset.alignPickerBound = 'true';
+                let ignoreClickUntil = 0;
+                item.addEventListener('pointerdown', (event) => {
+                    ignoreClickUntil = Date.now() + 600;
+                    if (event.cancelable) event.preventDefault();
+                    event.stopPropagation();
+                    selectCellAlignment(item.dataset.alignValue || 'general');
+                }, { passive: false });
+                item.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (Date.now() < ignoreClickUntil) return;
+                    selectCellAlignment(item.dataset.alignValue || 'general');
+                });
+            });
         }
 
         function ensureImportedFontOptions() {
-            const select = document.getElementById('cellStyleFontNameInput');
-            if (!select) return;
-            const names = Array.isArray(appSettings.importedFonts) ? appSettings.importedFonts : [];
-            names.forEach((name) => {
-                if (!name || Array.from(select.querySelectorAll('mdui-menu-item')).some(item => (item.value || item.getAttribute('value')) === name)) return;
-                const option = document.createElement('mdui-menu-item');
-                option.value = name;
-                option.setAttribute('value', name);
-                option.textContent = `${name}（已导入）`;
-                select.appendChild(option);
-            });
+            renderCellFontList(document.getElementById('cellFontSearchInput')?.value || '');
         }
 
 		function applyAppSettings() {
@@ -3816,6 +4348,8 @@
 		    const historyDisabled = appSettings.historyStorageEnabled === false;
 		    if (undoItem) undoDisabled ? undoItem.setAttribute('disabled', '') : undoItem.removeAttribute('disabled');
 		    if (redoItem) undoDisabled ? redoItem.setAttribute('disabled', '') : redoItem.removeAttribute('disabled');
+		    if (dom.topUndoBtn) undoDisabled ? dom.topUndoBtn.setAttribute('disabled', '') : dom.topUndoBtn.removeAttribute('disabled');
+		    if (dom.topRedoBtn) undoDisabled ? dom.topRedoBtn.setAttribute('disabled', '') : dom.topRedoBtn.removeAttribute('disabled');
 		    if (opHistoryItem) historyDisabled ? opHistoryItem.setAttribute('disabled', '') : opHistoryItem.removeAttribute('disabled');
 		}
 		const inputFieldOrder = [
@@ -3867,8 +4401,30 @@
 		  addBtn: document.getElementById('mainFab'), 
 		  importItem: document.getElementById('importItem'),
 		  exportItem: document.getElementById('exportItem'),
+		  manualSaveItem: document.getElementById('manualSaveItem'),
+		  saveAsItem: document.getElementById('saveAsItem'),
+		  openDocumentItem: document.getElementById('openDocumentItem'),
+		  documentNameDialog: document.getElementById('documentNameDialog'),
+		  documentNameInput: document.getElementById('documentNameInput'),
+		  documentNameCancelBtn: document.getElementById('documentNameCancelBtn'),
+		  documentNameConfirmBtn: document.getElementById('documentNameConfirmBtn'),
+		  openDocumentDialog: document.getElementById('openDocumentDialog'),
+		  documentSearchInput: document.getElementById('documentSearchInput'),
+		  documentSearchCount: document.getElementById('documentSearchCount'),
+		  documentList: document.getElementById('documentList'),
+		  documentListEmpty: document.getElementById('documentListEmpty'),
+		  openDocumentCancelBtn: document.getElementById('openDocumentCancelBtn'),
+		  documentMultiSelectBtn: document.getElementById('documentMultiSelectBtn'),
+		  documentMultiSelectTooltip: document.getElementById('documentMultiSelectTooltip'),
+		  documentBulkDeleteBtn: document.getElementById('documentBulkDeleteBtn'),
+		  documentBulkDeleteTooltip: document.getElementById('documentBulkDeleteTooltip'),
+		  documentDeleteConfirmDialog: document.getElementById('documentDeleteConfirmDialog'),
+		  documentDeleteConfirmMessage: document.getElementById('documentDeleteConfirmMessage'),
+		  documentDeleteCancelBtn: document.getElementById('documentDeleteCancelBtn'),
+		  documentDeleteConfirmBtn: document.getElementById('documentDeleteConfirmBtn'),
 		  fileInput: document.getElementById('fileInput'),
 		  deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
+		  editSelectedCellsBtn: document.getElementById('editSelectedCellsBtn'),
 		  selectedCount: document.getElementById('selectedCount'),
 		  selectAllCheckbox: document.getElementById('selectAllCheckbox'),
 		  drawer: document.getElementById('drawer'),
@@ -3884,10 +4440,18 @@
 		  closeQuickEdit: document.getElementById('closeQuickEdit'),
 		  quickEditLabel: document.getElementById('quickEditLabel'),
 		  quickEditInput: document.getElementById('quickEditInput'),
+		  quickEditKeyboardToggleBtn: document.getElementById('quickEditKeyboardToggleBtn'),
+		  quickEditKeyboardToggleTooltip: document.getElementById('quickEditKeyboardToggleTooltip'),
 		  quickEditIndex: document.getElementById('quickEditIndex'),
 		  quickEditField: document.getElementById('quickEditField'),
+		  quickEditUndoBtn: document.getElementById('quickEditUndoBtn'),
+		  quickEditRedoBtn: document.getElementById('quickEditRedoBtn'),
 		  saveQuickEditBtn: document.getElementById('saveQuickEditBtn'),
 		  openFullEditBtn: document.getElementById('openFullEditBtn'),
+		  quickEditFullEditConfirmDialog: document.getElementById('quickEditFullEditConfirmDialog'),
+		  quickEditFullEditSaveBtn: document.getElementById('quickEditFullEditSaveBtn'),
+		  quickEditFullEditDiscardBtn: document.getElementById('quickEditFullEditDiscardBtn'),
+		  quickEditFullEditCancelBtn: document.getElementById('quickEditFullEditCancelBtn'),
 		  confirmModal: document.getElementById('confirmModalCustom'), 
 		  closeConfirmModal: document.getElementById('closeConfirmModal'),
 		  confirmMessage: document.getElementById('confirmMessage'),
@@ -3910,6 +4474,8 @@
 		  calcLength: document.getElementById('calcLength'),
 		  calcDensity: document.getElementById('calcDensity'),
 		  calcResult: document.getElementById('calcResult'),
+		  calcFormula: document.getElementById('calcFormula'),
+		  calcFormulaStatus: document.getElementById('calcFormulaStatus'),
 		  calculateAndAddBtn: document.getElementById('calculateAndAddBtn'),
 		  cancelCalcBtn: document.getElementById('cancelCalcBtn'),
 		  clearCalcBtn: document.getElementById('clearCalcBtn'),
@@ -3917,7 +4483,14 @@
 		  closeDuplicateModal: document.getElementById('closeDuplicateModal'),
 		  generalSnackbar: document.getElementById('general-snackbar'),
 		  filterMatchRowsCheckbox: document.getElementById('filterMatchRowsCheckbox'),
-		  filterMatchRowsMenuItem: document.getElementById('filterMatchRowsMenuItem'),
+		  searchMenuItem: document.getElementById('searchMenuItem'),
+		  closeSearchPanelBtn: document.getElementById('closeSearchPanelBtn'),
+		  topUndoBtn: document.getElementById('topUndoBtn'),
+		  topRedoBtn: document.getElementById('topRedoBtn'),
+		  topSaveBtn: document.getElementById('topSaveBtn'),
+		  topTableZoomOutBtn: document.getElementById('topTableZoomOutBtn'),
+		  topTableZoomInBtn: document.getElementById('topTableZoomInBtn'),
+		  topTableZoomResetBtn: document.getElementById('topTableZoomResetBtn'),
 
 		  cardImageInput: document.getElementById('cardImageInput'),
 		uploadImageBtn: document.getElementById('uploadImageBtn'),
@@ -3928,9 +4501,25 @@
 
 		  multiSelectMenuText: document.getElementById('multiSelectMenuText'), 
 		  multiSelectMenuItem: document.getElementById('multiSelectMenuItem'), 
-          multiSelectCheckbox: document.getElementById('multiSelectCheckbox'), 
+		  multiSelectCheckbox: document.getElementById('multiSelectCheckbox'), 
+		  cellMultiSelectMenuItem: document.getElementById('cellMultiSelectMenuItem'),
+		  invertSelectionMenuItem: document.getElementById('invertSelectionMenuItem'),
+		  cellColorPalette: document.getElementById('cellColorPalette'),
+		  cellColorPaletteDialog: document.getElementById('cellColorPaletteDialog'),
+		  closeCellColorPalette: document.getElementById('closeCellColorPalette'),
+		  closeCellFontPicker: document.getElementById('closeCellFontPicker'),
+		  recentCellColors: document.getElementById('recentCellColors'),
+		  defaultCellColors: document.getElementById('defaultCellColors'),
+		  customCellColorInput: document.getElementById('customCellColorInput'),
+		  applyCustomCellColorBtn: document.getElementById('applyCustomCellColorBtn'),
+		  cellStyleTextColorPreview: document.getElementById('cellStyleTextColorPreview'),
+		  cellStyleBgColorPreview: document.getElementById('cellStyleBgColorPreview'),
+		  quickEditInputPreview: document.getElementById('quickEditInputPreview'),
+		  cellFontPickerDialog: document.getElementById('cellFontPickerDialog'),
+		  cellStyleAlignTrigger: document.getElementById('cellStyleAlignTrigger'),
+		  cellAlignPickerDialog: document.getElementById('cellAlignPickerDialog'),
+		  closeCellAlignPicker: document.getElementById('closeCellAlignPicker'),
 
-		  toggleSearchReplaceBtn: document.getElementById('toggleSearchReplaceBtn'),
 		  searchReplaceContainer: document.getElementById('searchReplaceContainer'),
 		  replaceQueryInput: document.getElementById('replaceQuery'),       
 		  searchResultCount: document.getElementById('searchResultCount'), 
@@ -4016,7 +4605,25 @@ const ZoomManager = {
     // 防止被 box-sizing 或 margin 抵消
     document.documentElement.style.boxSizing = 'border-box';
     document.body.style.boxSizing = 'border-box';
+
+    this.updateToolbarButtons();
 },
+
+    updateToolbarButtons() {
+        const out = document.getElementById('topTableZoomOutBtn');
+        const input = document.getElementById('topTableZoomInBtn');
+        if (out) out.disabled = this.currentScale <= this.minScale + 0.001;
+        if (input) input.disabled = this.currentScale >= this.maxScale - 0.001;
+    },
+
+    zoomBy(delta) {
+        this.applyScale(this.currentScale + delta);
+    },
+
+    resetScale() {
+        const defaultScale = Math.max(this.minScale, Math.min(this.maxScale, Number(appSettings.tableScaleDefault) || 0.5));
+        this.applyScale(defaultScale);
+    },
 
     onTableUpdate() {
         setTimeout(() => {
@@ -4277,6 +4884,10 @@ const ZoomManager = {
 
 		function openCustomModal(modalElement) {
 		    if (!modalElement) return;
+            if (modalElement.tagName === 'MDUI-DIALOG') {
+                modalElement.open = true;
+                return;
+            }
             modalElement.style.display = 'block';
             // 先移除再下一帧添加，保证动画稳定触发
             modalElement.classList.remove('modal-open');
@@ -4295,6 +4906,10 @@ const ZoomManager = {
 
 		function closeCustomModal(modalElement) {
 		    if (!modalElement) return;
+            if (modalElement.tagName === 'MDUI-DIALOG') {
+                modalElement.open = false;
+                return;
+            }
             suppressFabTap(560);
             const noAnim = appSettings?.animationsEnabled === false || document.documentElement.classList.contains('no-animations');
             modalElement.classList.remove('modal-open');
@@ -4431,28 +5046,42 @@ function updateVirtualCursor() {
     const rect = currentInput.getBoundingClientRect();
     const style = window.getComputedStyle(currentInput);
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
     const paddingTop = parseFloat(style.paddingTop) || 0;
     const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const borderRight = parseFloat(style.borderRightWidth) || 0;
     const borderTop = parseFloat(style.borderTopWidth) || 0;
     
     const selStart =
         typeof currentInput.selectionStart === 'number' ? currentInput.selectionStart : (currentInput.value || '').length;
     const textBeforeCursor = (currentInput.value || '').substring(0, selStart);
-    
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    const textWidth = context.measureText(textBeforeCursor).width;
+    const lineHeight = Number.isFinite(parseFloat(style.lineHeight)) && parseFloat(style.lineHeight) > 0
+        ? parseFloat(style.lineHeight)
+        : (parseFloat(style.fontSize) || 16) * 1.5;
+    const lines = textBeforeCursor.split('\n');
+    const currentLine = lines[lines.length - 1] || '';
+    const textWidth = context.measureText(currentLine).width;
+    const lineIndex = Math.max(0, lines.length - 1);
+    const scrollLeft = Number(currentInput.scrollLeft) || 0;
+    const scrollTop = Number(currentInput.scrollTop) || 0;
+    const cursorHeight = Math.min(lineHeight, (parseFloat(style.fontSize) || 16) * 1.45);
 
-    const cursorHeight = (parseFloat(style.fontSize) || 16) * 1.45;
-    
     virtualCursor.style.height = cursorHeight + 'px';
-    let cursorLeft = rect.left + paddingLeft + borderLeft + textWidth;
+    const contentWidth = Math.max(0, rect.width - paddingLeft - paddingRight - borderLeft - borderRight);
+    const align = style.textAlign === 'center' || style.textAlign === 'right' ? style.textAlign : 'left';
+    let lineStart = rect.left + borderLeft + paddingLeft;
+    if (align === 'center') lineStart += Math.max(0, (contentWidth - textWidth) / 2);
+    if (align === 'right') lineStart += Math.max(0, contentWidth - textWidth);
+    let cursorLeft = lineStart + textWidth - scrollLeft;
     let cursorTop =
         rect.top +
         borderTop +
         paddingTop +
-        (parseFloat(style.height) - paddingTop - parseFloat(style.paddingBottom) - cursorHeight) / 2;
+        lineIndex * lineHeight - scrollTop;
     if (!Number.isFinite(cursorLeft)) cursorLeft = rect.left;
     virtualCursor.style.left = cursorLeft + 'px';
     virtualCursor.style.top = cursorTop + 'px';
@@ -4498,6 +5127,40 @@ function moveCursorToClick(input, event) {
     const style = window.getComputedStyle(input);
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    if (input.tagName === 'TEXTAREA') {
+        const paddingTop = parseFloat(style.paddingTop) || 0;
+        const borderTop = parseFloat(style.borderTopWidth) || 0;
+        const lineHeight = Number.isFinite(parseFloat(style.lineHeight)) && parseFloat(style.lineHeight) > 0
+            ? parseFloat(style.lineHeight)
+            : (parseFloat(style.fontSize) || 16) * 1.5;
+        const value = input.value || '';
+        const y = event.clientY - rect.top - borderTop - paddingTop + (Number(input.scrollTop) || 0);
+        const lineIndex = Math.max(0, Math.floor(y / lineHeight));
+        const lines = value.split('\n');
+        const line = lines[Math.min(lineIndex, lines.length - 1)] || '';
+        const lineStart = lines.slice(0, Math.min(lineIndex, lines.length - 1)).reduce((sum, part) => sum + part.length + 1, 0);
+        const x = event.clientX - rect.left - paddingLeft - borderLeft + (Number(input.scrollLeft) || 0);
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        let offset = 0;
+        for (let i = 0; i < line.length; i++) {
+            const width = context.measureText(line[i]).width;
+            if (offset + width / 2 >= x) break;
+            offset += width;
+        }
+        // Use a character-width walk for an accurate insertion point.
+        let pos = 0;
+        let acc = 0;
+        for (let i = 0; i < line.length; i++) {
+            const width = context.measureText(line[i]).width;
+            if (acc + width / 2 >= x) { pos = i; break; }
+            acc += width;
+            pos = i + 1;
+        }
+        try { input.setSelectionRange(lineStart + pos, lineStart + pos); } catch (e) {}
+        return;
+    }
     moveCursorToClientX(input, event.clientX, rect, style, paddingLeft, borderLeft);
 }
 
@@ -5014,8 +5677,9 @@ function initEventListeners() {
             e.stopPropagation();
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
+                const draftId = getMatchingImageDraft(currentEditIndex)?.id || '';
                 handleImageSelect({ target: { files: [file] } }).then(base64 => {
-                    if (base64) commitSelectedImage(base64, currentEditIndex, 'drop');
+                    if (base64) commitSelectedImage(base64, currentEditIndex, 'drop', draftId);
                 });
             } else {
                 showSnackbar('请拖入图片文件', 'warning');
@@ -5042,24 +5706,23 @@ function initEventListeners() {
     }
 
     fileInput.addEventListener('change', async (event) => {
-        const context = window.__rsdbPendingImageSelection || { targetIndex: currentEditIndex, mode: 'select' };
+        const context = window.__rsdbPendingImageSelection || {
+            targetIndex: currentEditIndex,
+            mode: 'select',
+            draftId: getMatchingImageDraft(currentEditIndex)?.id || ''
+        };
         window.__rsdbPendingImageSelection = null;
         try {
             const base64 = await handleImageSelect(event);
             if (!base64) return;
             if (typeof context.onSelected === 'function') await context.onSelected(base64);
-            else await commitSelectedImage(base64, context.targetIndex, context.mode);
+            else await commitSelectedImage(base64, context.targetIndex, context.mode, context.draftId || '');
         } finally {
             fileInput.removeAttribute('capture');
             fileInput.value = '';
         }
     });
 
-    const openImageDeleteConfirmation = (index) => {
-        window.tempDeleteImageIndex = Number.isInteger(index) ? index : -1;
-        const dialog = document.getElementById('deleteImageConfirmDialog');
-        if (dialog) dialog.open = true;
-    };
     document.getElementById('takePhotoInEditBtn')?.addEventListener('click', (event) => {
         event.preventDefault();
         chooseCardImage({ capture: true, targetIndex: currentEditIndex, mode: 'edit_take' });
@@ -5078,6 +5741,8 @@ function initEventListeners() {
         cancelDeleteBtn.addEventListener('click', () => {
             const dialog = document.getElementById('deleteImageConfirmDialog');
             if (dialog) dialog.open = false;
+            delete window.tempDeleteImageIndex;
+            delete window.__rsdbPendingImageDeleteDraftId;
         });
     }
 
@@ -5085,7 +5750,17 @@ function initEventListeners() {
     if (confirmDeleteImageBtn) {
         confirmDeleteImageBtn.onclick = () => {
             const index = window.tempDeleteImageIndex;
-            if (index === -1) {
+            const draft = window.__rsdbImageDraft;
+            const pendingDraftId = window.__rsdbPendingImageDeleteDraftId || '';
+            const matchesDraft = !!draft
+                && Number(draft.targetIndex) === Number(index)
+                && (!pendingDraftId || draft.id === pendingDraftId);
+            if (matchesDraft) {
+                setImageDraftValue('');
+                showSnackbar('已标记删除，保存后生效', 'info');
+            } else if (pendingDraftId) {
+                showSnackbar('编辑已关闭，未删除图片', 'info');
+            } else if (index === -1) {
                 delete window.tempNewCardImage;
                 const previewImg = document.getElementById('previewImg');
                 if (previewImg) previewImg.removeAttribute('src');
@@ -5113,6 +5788,7 @@ function initEventListeners() {
             const dialog = document.getElementById('deleteImageConfirmDialog');
             if (dialog) dialog.open = false;
             delete window.tempDeleteImageIndex;
+            delete window.__rsdbPendingImageDeleteDraftId;
         };
     }
 
@@ -5128,6 +5804,7 @@ function initEventListeners() {
     dom.closeDataModal.addEventListener('click', () => {
         if (!hasDataChanged()) {
             closeCustomModal(dom.dataSheet);
+            discardImageDraft();
             setVirtualKeyboardVisible(false);
             const virtualCursor = document.getElementById('virtualCursor');
             if (virtualCursor) virtualCursor.style.display = 'none';
@@ -5143,6 +5820,7 @@ function initEventListeners() {
 
     // Helper: Check if data has changed
     const hasDataChanged = () => {
+        if (window.__rsdbImageDraft?.dirty) return true;
         for (const key in formElements) {
             if (formElements.hasOwnProperty(key)) {
                 const input = formElements[key];
@@ -5165,6 +5843,7 @@ function initEventListeners() {
         if (!hasDataChanged()) {
             // No changes, close directly
             closeCustomModal(dom.dataSheet);
+            discardImageDraft();
             setVirtualKeyboardVisible(false);
             const virtualCursor = document.getElementById('virtualCursor');
             if (virtualCursor) virtualCursor.style.display = 'none';
@@ -5177,6 +5856,7 @@ function initEventListeners() {
 
     document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
         closeCustomModal(dom.dataSheet);
+        discardImageDraft();
         setVirtualKeyboardVisible(false);
         const virtualCursor = document.getElementById('virtualCursor');
         if (virtualCursor) virtualCursor.style.display = 'none';
@@ -5202,21 +5882,84 @@ function initEventListeners() {
 
     bindImmediateActionButton(dom.saveQuickEditBtn, saveQuickEdit);
 
-    dom.openFullEditBtn.addEventListener('click', () => {
-        keyboardState.isQuickEdit = false;
-        saveKeyboardState();
-        const index = parseInt(dom.quickEditIndex.value);
-        const targetFieldId = dom.quickEditField.value;
-        closeCustomModal(dom.quickEditDialog);
-        setVirtualKeyboardVisible(false);
-        setTimeout(() => {
-            openEditModal(index, targetFieldId);
-        }, 150);
+    window.updateQuickEditKeyboardToggleUI = function updateQuickEditKeyboardToggleUI() {
+        const isVirtual = !!dom.quickEditInput?.hasAttribute('readonly');
+        if (dom.quickEditKeyboardToggleBtn) {
+            dom.quickEditKeyboardToggleBtn.setAttribute('icon', isVirtual ? 'edit' : 'keyboard');
+            dom.quickEditKeyboardToggleBtn.setAttribute('aria-label', isVirtual ? '切换到系统键盘' : '切换到虚拟键盘');
+        }
+        if (dom.quickEditKeyboardToggleTooltip) {
+            dom.quickEditKeyboardToggleTooltip.setAttribute('content', isVirtual ? '切换到系统键盘' : '切换到虚拟键盘');
+        }
+    }
+
+    window.setQuickEditKeyboardMode = function setQuickEditKeyboardMode(useVirtual) {
+        const input = dom.quickEditInput;
+        if (!input) return;
+        currentInput = input;
+        if (useVirtual) {
+            input.setAttribute('readonly', 'true');
+            input.classList.add('readonly-input');
+            updateKeyboardForInput(input, dom.quickEditField?.value || null);
+            showVirtualKeyboard();
+            input.focus({ preventScroll: true });
+            resetCursorToEnd(input);
+        } else {
+            input.removeAttribute('readonly');
+            input.classList.remove('readonly-input');
+            setVirtualKeyboardVisible(false);
+            const virtualCursor = document.getElementById('virtualCursor');
+            if (virtualCursor) virtualCursor.style.display = 'none';
+            input.focus({ preventScroll: true });
+        }
+        updateQuickEditKeyboardToggleUI();
+    };
+
+    dom.quickEditKeyboardToggleBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setQuickEditKeyboardMode(!dom.quickEditInput?.hasAttribute('readonly'));
     });
 
-dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
-    isFilterMatchRows = !isFilterMatchRows;
-    dom.filterMatchRowsCheckbox.checked = isFilterMatchRows;
+    let pendingQuickEditFullEdit = null;
+    const closeQuickEditForFullEdit = () => {
+        closeCustomModal(dom.quickEditDialog);
+        setVirtualKeyboardVisible(false);
+        keyboardState.isQuickEdit = false;
+        saveKeyboardState();
+        window.__rsdbEditingCell = null;
+        window.__rsdbOriginalCellEdit = null;
+    };
+    const continueToFullEdit = (saveChanges) => {
+        const pending = pendingQuickEditFullEdit;
+        if (!pending) return;
+        if (saveChanges && !saveQuickEdit()) return;
+        pendingQuickEditFullEdit = null;
+        if (!saveChanges) closeQuickEditForFullEdit();
+        if (dom.quickEditFullEditConfirmDialog) dom.quickEditFullEditConfirmDialog.open = false;
+        setTimeout(() => openEditModal(pending.index, pending.targetFieldId), 150);
+    };
+
+    dom.openFullEditBtn.addEventListener('click', () => {
+        pendingQuickEditFullEdit = {
+            index: parseInt(dom.quickEditIndex.value),
+            targetFieldId: dom.quickEditField.value
+        };
+        const dialog = dom.quickEditFullEditConfirmDialog;
+        if (!dialog) return continueToFullEdit(false);
+        document.body.appendChild(dialog);
+        dialog.style.zIndex = '22000';
+        dialog.open = true;
+    });
+    dom.quickEditFullEditSaveBtn?.addEventListener('click', () => continueToFullEdit(true));
+    dom.quickEditFullEditDiscardBtn?.addEventListener('click', () => continueToFullEdit(false));
+    dom.quickEditFullEditCancelBtn?.addEventListener('click', () => {
+        pendingQuickEditFullEdit = null;
+        if (dom.quickEditFullEditConfirmDialog) dom.quickEditFullEditConfirmDialog.open = false;
+    });
+
+dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
+    isFilterMatchRows = !!e.target.checked;
 
     localStorage.setItem('filterMatchRows', isFilterMatchRows);
 
@@ -5287,11 +6030,41 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     dom.applySortBtn.addEventListener('click', applySort);
     dom.addSortRuleBtn.addEventListener('click', () => addSortRule());
 
-    dom.toggleSearchReplaceBtn.addEventListener('click', toggleSearchReplaceVisibility);
+    dom.searchMenuItem?.addEventListener('click', () => {
+        toggleSearchReplaceVisibility(true);
+    });
+    dom.closeSearchPanelBtn?.addEventListener('click', () => {
+        toggleSearchReplaceVisibility(false);
+    });
+    dom.topUndoBtn?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) return showSnackbar('撤销/重做记录已关闭', 'info');
+        if (!undoOperation()) showSnackbar('没有可撤销的操作', 'info');
+    });
+    dom.topRedoBtn?.addEventListener('click', () => {
+        if (appSettings.undoRedoEnabled === false) return showSnackbar('撤销/重做记录已关闭', 'info');
+        if (!redoOperation()) showSnackbar('没有可重做的操作', 'info');
+    });
+    dom.topSaveBtn?.addEventListener('click', performManualSave);
+    dom.topTableZoomOutBtn?.addEventListener('click', () => ZoomManager.zoomBy(-0.1));
+    dom.topTableZoomInBtn?.addEventListener('click', () => ZoomManager.zoomBy(0.1));
+    dom.topTableZoomResetBtn?.addEventListener('click', () => {
+        ZoomManager.resetScale();
+        showSnackbar('已恢复默认缩放', 'info');
+    });
 
     dom.multiSelectMenuItem.addEventListener('click', () => { 
         dom.drawer.open = false; 
+        if (isCellMultiSelectMode) toggleCellMultiSelectMode();
         toggleMultiSelectMode(); 
+    });
+    dom.cellMultiSelectMenuItem?.addEventListener('click', () => {
+        if (isMultiSelectMode) toggleMultiSelectMode();
+        toggleCellMultiSelectMode();
+    });
+    dom.invertSelectionMenuItem?.addEventListener('click', invertSelectedCells);
+    dom.editSelectedCellsBtn?.addEventListener('click', () => {
+        const first = getCellSelectionKeys()[0];
+        if (first) openQuickEdit(first.row, first.field);
     });
 
     const settingsAboutItem = document.getElementById('settingsAboutItem');
@@ -5348,6 +6121,266 @@ dom.filterMatchRowsMenuItem.addEventListener('click', (e) => {
     dom.nextMatchBtn.addEventListener('click', () => navigateMatch(1));
     dom.replaceOneBtn.addEventListener('click', replaceOne);
     dom.replaceAllBtn.addEventListener('click', confirmReplaceAll);
+
+    function openDocumentNameDialog(mode, sourceName = '') {
+        pendingDocumentNameMode = mode === 'rename' ? 'rename' : (mode === 'saveAs' ? 'saveAs' : 'save');
+        pendingDocumentRenameSource = pendingDocumentNameMode === 'rename' ? normalizeDocumentName(sourceName) : '';
+        if (!dom.documentNameDialog || !dom.documentNameInput) return;
+        const isRename = pendingDocumentNameMode === 'rename';
+        dom.documentNameInput.value = isRename
+            ? pendingDocumentRenameSource
+            : (pendingDocumentNameMode === 'saveAs' ? '' : (currentDocumentName || ''));
+        dom.documentNameDialog.setAttribute('headline', isRename
+            ? '重命名表格'
+            : (pendingDocumentNameMode === 'saveAs' ? '另存为' : '手动保存'));
+        dom.documentNameConfirmBtn.textContent = isRename ? '重命名' : '保存';
+        document.body.appendChild(dom.documentNameDialog);
+        dom.documentNameDialog.open = true;
+        setTimeout(() => dom.documentNameInput.focus?.(), 80);
+    }
+
+    async function performManualSave() {
+        dom.drawer.open = false;
+        if (!currentDocumentName) {
+            openDocumentNameDialog('save');
+            return;
+        }
+        try {
+            await saveDocumentRecord(currentDocumentName);
+            await saveDataToIndexedDB();
+            showSnackbar(`已手动保存“${currentDocumentName}”`, 'success');
+        } catch (error) {
+            console.error('手动保存失败', error);
+            showSnackbar('手动保存失败', 'error');
+        }
+    }
+
+    let documentListRecords = [];
+    function updateDocumentSelectionControls() {
+        const availableNames = new Set(documentListRecords.map(record => record.name));
+        selectedDocumentNames.forEach(name => {
+            if (!availableNames.has(name)) selectedDocumentNames.delete(name);
+        });
+        const selectedCount = selectedDocumentNames.size;
+        if (dom.documentMultiSelectBtn) {
+            dom.documentMultiSelectBtn.setAttribute('icon', documentMultiSelectMode ? 'close' : 'checklist');
+            dom.documentMultiSelectBtn.setAttribute('aria-label', documentMultiSelectMode ? '退出多选' : '多选');
+            dom.documentMultiSelectBtn.setAttribute('aria-pressed', documentMultiSelectMode ? 'true' : 'false');
+        }
+        if (dom.documentMultiSelectTooltip) {
+            dom.documentMultiSelectTooltip.setAttribute('content', documentMultiSelectMode ? '退出多选' : '多选');
+        }
+        if (dom.documentBulkDeleteBtn) {
+            dom.documentBulkDeleteBtn.disabled = selectedCount === 0;
+        }
+        if (dom.documentBulkDeleteTooltip) dom.documentBulkDeleteTooltip.hidden = !documentMultiSelectMode;
+        return selectedCount;
+    }
+
+    function setDocumentMultiSelectMode(enabled) {
+        documentMultiSelectMode = Boolean(enabled);
+        if (!documentMultiSelectMode) selectedDocumentNames.clear();
+        updateDocumentSelectionControls();
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    }
+
+    function toggleDocumentSelection(name) {
+        const normalized = normalizeDocumentName(name);
+        if (!normalized) return;
+        if (selectedDocumentNames.has(normalized)) selectedDocumentNames.delete(normalized);
+        else selectedDocumentNames.add(normalized);
+        updateDocumentSelectionControls();
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    }
+
+    function requestDocumentDelete(names) {
+        pendingDocumentDeleteNames = [...new Set((names || []).map(normalizeDocumentName).filter(Boolean))]
+            .filter(name => documentListRecords.some(record => record.name === name));
+        if (!pendingDocumentDeleteNames.length || !dom.documentDeleteConfirmDialog) return;
+        if (dom.documentDeleteConfirmMessage) {
+            dom.documentDeleteConfirmMessage.textContent = pendingDocumentDeleteNames.length === 1
+                ? `确定删除表格“${pendingDocumentDeleteNames[0]}”吗？此操作无法撤销。`
+                : `确定删除选中的 ${pendingDocumentDeleteNames.length} 个表格吗？此操作无法撤销。`;
+        }
+        document.body.appendChild(dom.documentDeleteConfirmDialog);
+        dom.documentDeleteConfirmDialog.open = true;
+    }
+
+    function renderDocumentList(query = '') {
+        if (!dom.documentList || !dom.documentListEmpty) return;
+        dom.documentList.innerHTML = '';
+        const normalizedQuery = String(query || '').trim().toLowerCase();
+        const records = documentListRecords.filter(record => {
+            if (!normalizedQuery) return true;
+            const dateText = new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN');
+            return `${record.name} ${dateText}`.toLowerCase().includes(normalizedQuery);
+        });
+        dom.documentListEmpty.textContent = documentListRecords.length && !records.length
+            ? '没有匹配的表格'
+            : '暂无已保存的表格';
+        dom.documentListEmpty.style.display = records.length ? 'none' : 'block';
+        if (dom.documentSearchCount) {
+            const resultText = normalizedQuery ? `找到 ${records.length} 个表格` : `共 ${records.length} 个表格`;
+            dom.documentSearchCount.textContent = documentMultiSelectMode
+                ? `已选择 ${selectedDocumentNames.size} 个 · ${resultText}`
+                : resultText;
+        }
+        records.forEach(record => {
+            const row = document.createElement('div');
+            row.className = 'open-document-row';
+            const isSelected = selectedDocumentNames.has(record.name);
+            row.classList.toggle('is-selected', isSelected);
+            const item = document.createElement('mdui-list-item');
+            item.setAttribute('headline', record.name);
+            item.setAttribute('description', new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN'));
+            item.setAttribute('icon', isSelected ? 'check_circle' : (record.name === currentDocumentName ? 'check_circle' : 'description'));
+            item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            item.setAttribute('rounded', '');
+            item.addEventListener('click', async () => {
+                if (documentMultiSelectMode) {
+                    toggleDocumentSelection(record.name);
+                    return;
+                }
+                try {
+                    if (await loadDocument(record.name)) {
+                        dom.openDocumentDialog.open = false;
+                        showSnackbar(`已打开“${record.name}”`, 'success');
+                    }
+                } catch (error) {
+                    console.error('打开表格失败', error);
+                    showSnackbar('打开表格失败', 'error');
+                }
+            });
+            const actions = document.createElement('div');
+            actions.className = 'open-document-row-actions';
+            actions.hidden = documentMultiSelectMode;
+            const editTooltip = document.createElement('mdui-tooltip');
+            editTooltip.setAttribute('content', '重命名');
+            const editBtn = document.createElement('mdui-button-icon');
+            editBtn.setAttribute('icon', 'edit');
+            editBtn.setAttribute('aria-label', `重命名${record.name}`);
+            editBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                openDocumentNameDialog('rename', record.name);
+            });
+            editTooltip.appendChild(editBtn);
+            const removeTooltip = document.createElement('mdui-tooltip');
+            removeTooltip.setAttribute('content', '删除');
+            const removeBtn = document.createElement('mdui-button-icon');
+            removeBtn.setAttribute('icon', 'delete');
+            removeBtn.setAttribute('aria-label', `删除${record.name}`);
+            removeBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                requestDocumentDelete([record.name]);
+            });
+            removeTooltip.appendChild(removeBtn);
+            actions.append(editTooltip, removeTooltip);
+            row.append(item, actions);
+            dom.documentList.appendChild(row);
+        });
+        updateDocumentSelectionControls();
+    }
+
+    dom.documentNameCancelBtn?.addEventListener('click', () => {
+        dom.documentNameDialog.open = false;
+        pendingDocumentRenameSource = '';
+        pendingDocumentNameMode = 'save';
+    });
+    dom.documentNameConfirmBtn?.addEventListener('click', async () => {
+        const name = normalizeDocumentName(dom.documentNameInput?.value || '');
+        if (!name) {
+            showSnackbar('请输入文件名称', 'warning');
+            return;
+        }
+        dom.documentNameConfirmBtn.disabled = true;
+        try {
+            if (pendingDocumentNameMode === 'rename') {
+                if (name === pendingDocumentRenameSource) {
+                    dom.documentNameDialog.open = false;
+                    showSnackbar('名称未更改', 'info');
+                    return;
+                }
+                await renameDocument(pendingDocumentRenameSource, name);
+                selectedDocumentNames.delete(pendingDocumentRenameSource);
+                documentListRecords = await listDocuments();
+                renderDocumentList(dom.documentSearchInput?.value || '');
+                dom.documentNameDialog.open = false;
+                showSnackbar(`已重命名为“${name}”`, 'success');
+                pendingDocumentRenameSource = '';
+                pendingDocumentNameMode = 'save';
+                return;
+            }
+            await saveDocumentRecord(name);
+            await saveDataToIndexedDB();
+            dom.documentNameDialog.open = false;
+            showSnackbar(`已保存“${name}”`, 'success');
+        } catch (error) {
+            if (error?.code === 'DOCUMENT_NAME_EXISTS') {
+                showSnackbar(`已存在名为“${name}”的表格`, 'warning');
+            } else if (error?.code === 'DOCUMENT_NOT_FOUND') {
+                showSnackbar('原表格已不存在，请刷新列表', 'warning');
+            } else {
+                console.error(pendingDocumentNameMode === 'rename' ? '重命名表格失败' : '保存表格失败', error);
+                showSnackbar(pendingDocumentNameMode === 'rename' ? '重命名表格失败' : '保存表格失败', 'error');
+            }
+        } finally {
+            dom.documentNameConfirmBtn.disabled = false;
+        }
+    });
+    dom.documentNameInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') dom.documentNameConfirmBtn?.click();
+    });
+    dom.openDocumentCancelBtn?.addEventListener('click', () => {
+        setDocumentMultiSelectMode(false);
+        dom.openDocumentDialog.open = false;
+    });
+    dom.documentSearchInput?.addEventListener('input', (event) => renderDocumentList(event.target.value || ''));
+    dom.documentMultiSelectBtn?.addEventListener('click', () => setDocumentMultiSelectMode(!documentMultiSelectMode));
+    dom.documentBulkDeleteBtn?.addEventListener('click', () => requestDocumentDelete([...selectedDocumentNames]));
+    dom.documentDeleteCancelBtn?.addEventListener('click', () => {
+        pendingDocumentDeleteNames = [];
+        dom.documentDeleteConfirmDialog.open = false;
+    });
+    dom.documentDeleteConfirmBtn?.addEventListener('click', async () => {
+        const names = [...pendingDocumentDeleteNames];
+        if (!names.length) return;
+        dom.documentDeleteConfirmBtn.disabled = true;
+        try {
+            const deletedNames = await deleteDocuments(names);
+            const deletedSet = new Set(deletedNames);
+            documentListRecords = documentListRecords.filter(record => !deletedSet.has(record.name));
+            deletedNames.forEach(name => selectedDocumentNames.delete(name));
+            pendingDocumentDeleteNames = [];
+            dom.documentDeleteConfirmDialog.open = false;
+            renderDocumentList(dom.documentSearchInput?.value || '');
+            showSnackbar(deletedNames.length === 1
+                ? `已删除“${deletedNames[0]}”`
+                : `已删除 ${deletedNames.length} 个表格`, 'success');
+        } catch (error) {
+            console.error('删除表格失败', error);
+            showSnackbar('删除表格失败', 'error');
+        } finally {
+            dom.documentDeleteConfirmBtn.disabled = false;
+        }
+    });
+    dom.manualSaveItem?.addEventListener('click', performManualSave);
+    dom.saveAsItem?.addEventListener('click', () => { dom.drawer.open = false; openDocumentNameDialog('saveAs'); });
+    dom.openDocumentItem?.addEventListener('click', async () => {
+        dom.drawer.open = false;
+        try {
+            documentListRecords = await listDocuments();
+            if (dom.documentSearchInput) dom.documentSearchInput.value = '';
+            documentMultiSelectMode = false;
+            selectedDocumentNames.clear();
+            updateDocumentSelectionControls();
+            renderDocumentList('');
+            dom.openDocumentDialog.open = true;
+            setTimeout(() => dom.documentSearchInput?.focus({ preventScroll: true }), 100);
+        } catch (error) {
+            console.error('读取表格列表失败', error);
+            showSnackbar('读取表格列表失败', 'error');
+        }
+    });
 
     // Removed input click listeners as per user request (only edit button triggers edit mode)
 
@@ -6118,14 +7151,23 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (dlg) dlg.open = false;
     });
     document.getElementById('cellStyleResetBtn')?.addEventListener('click', () => {
-        const ids = ['cellStyleFontNameInput', 'cellStyleFontSizeInput', 'cellStyleTextColorInput', 'cellStyleBgColorInput', 'cellStyleNumberFormatInput'];
-        ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const defaults = getDefaultCellStyle();
+        const values = {
+            cellStyleFontNameInput: '',
+            cellStyleFontSizeInput: defaults.fontSize,
+            cellStyleTextColorInput: defaults.color,
+            cellStyleBgColorInput: defaults.backgroundColor,
+            cellStyleNumberFormatInput: defaults.numFmt
+        };
+        Object.entries(values).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.value = String(value); });
         const align = document.getElementById('cellStyleAlignInput');
-        if (align) align.value = 'general';
+        if (align) align.value = defaults.horizontal;
+        updateCellAlignPickerUI();
         ['cellStyleBoldInput', 'cellStyleItalicInput', 'cellStyleUnderlineInput', 'cellStyleWrapInput'].forEach(id => {
             const el = document.getElementById(id); if (el) el.checked = false;
         });
         previewCurrentCellStyle();
+        recordQuickEditState();
         showSnackbar('格式已重置，保存后生效', 'info');
     });
     document.getElementById('cellStyleImportFontBtn')?.addEventListener('click', () => {
@@ -6148,6 +7190,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
             const select = document.getElementById('cellStyleFontNameInput');
             if (select) select.value = fontName;
             previewCurrentCellStyle();
+            recordQuickEditState();
             showSnackbar(`已导入字体：${file.name}`, 'success');
         } catch (error) {
             console.error(error);
@@ -6157,50 +7200,163 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     const previewCurrentCellStyle = () => {
         const input = document.getElementById('quickEditInput');
         if (!input) return;
-        const fontName = document.getElementById('cellStyleFontNameInput')?.value || '';
+        const fontName = document.getElementById('cellStyleFontNameInput')?.value || 'Google Sans Text';
         const fontSize = Number(document.getElementById('cellStyleFontSizeInput')?.value);
-        const color = document.getElementById('cellStyleTextColorInput')?.value || '';
-        const bg = document.getElementById('cellStyleBgColorInput')?.value || '';
+        const color = document.getElementById('cellStyleTextColorInput')?.value || '#212121';
+        const bg = document.getElementById('cellStyleBgColorInput')?.value || '#FFFFFF';
+        const selectionStart = Number(input.selectionStart);
+        const selectionEnd = Number(input.selectionEnd);
         if (fontName) input.style.setProperty('font-family', fontName, 'important');
         else input.style.removeProperty('font-family');
-        input.style.fontSize = Number.isFinite(fontSize) && fontSize > 0 ? `${fontSize}px` : '1.2rem';
-        input.style.color = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color) ? color : 'var(--text-color)';
-        input.style.backgroundColor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(bg) ? bg : 'var(--surface-color)';
-        input.style.fontWeight = document.getElementById('cellStyleBoldInput')?.checked ? 'bold' : '';
-        input.style.fontStyle = document.getElementById('cellStyleItalicInput')?.checked ? 'italic' : '';
-        input.style.textDecoration = document.getElementById('cellStyleUnderlineInput')?.checked ? 'underline' : '';
+        input.style.setProperty('font-size', Number.isFinite(fontSize) && fontSize > 0 ? `${fontSize}px` : `${Number(appSettings.tableCellFontSize) || 16}px`, 'important');
+        input.style.setProperty('color', normalizeStyleColor(color, '#212121'), 'important');
+        input.style.setProperty('background-color', normalizeStyleColor(bg, '#FFFFFF'), 'important');
+        input.style.setProperty('font-weight', document.getElementById('cellStyleBoldInput')?.checked ? 'bold' : 'normal', 'important');
+        input.style.setProperty('font-style', document.getElementById('cellStyleItalicInput')?.checked ? 'italic' : 'normal', 'important');
+        input.style.setProperty('text-decoration', document.getElementById('cellStyleUnderlineInput')?.checked ? 'underline' : 'none', 'important');
         const horizontal = document.getElementById('cellStyleAlignInput')?.value;
-        input.style.textAlign = horizontal && horizontal !== 'general' ? horizontal : '';
+        input.style.setProperty('text-align', horizontal && horizontal !== 'general' ? horizontal : 'left', 'important');
+        if (Number.isFinite(selectionStart) && Number.isFinite(selectionEnd)) {
+            try { input.setSelectionRange(selectionStart, selectionEnd); } catch (error) {}
+        }
+        if (dom.cellStyleTextColorPreview) dom.cellStyleTextColorPreview.style.backgroundColor = normalizeStyleColor(color, '#212121');
+        if (dom.cellStyleBgColorPreview) dom.cellStyleBgColorPreview.style.backgroundColor = normalizeStyleColor(bg, '#FFFFFF');
+        if (dom.quickEditInputPreview) dom.quickEditInputPreview.style.backgroundColor = normalizeStyleColor(bg, '#FFFFFF');
+        requestAnimationFrame(() => {
+            updateVirtualCursor();
+            requestAnimationFrame(updateVirtualCursor);
+        });
     };
-    document.querySelectorAll('#quickEditStylePanel mdui-text-field, #quickEditStylePanel mdui-select, #quickEditStylePanel mdui-checkbox').forEach(el => {
-        el.addEventListener('input', previewCurrentCellStyle);
-        el.addEventListener('change', previewCurrentCellStyle);
+    window.previewCurrentCellStyle = previewCurrentCellStyle;
+    document.querySelectorAll('#quickEditStylePanel mdui-text-field, #quickEditStylePanel mdui-select, #quickEditStylePanel mdui-checkbox, #quickEditStylePanel .cell-font-picker-trigger').forEach(el => {
+        el.addEventListener('input', () => { previewCurrentCellStyle(); recordQuickEditState(); });
+        el.addEventListener('change', () => { previewCurrentCellStyle(); recordQuickEditState(); });
     });
-    window.saveCurrentCellStyle = function() {
-        const target = window.__rsdbEditingCell;
-        if (!target) return;
+    dom.quickEditInput?.addEventListener('beforeinput', () => {
+        if (quickEditHistoryApplying || quickEditHistory.composing) return;
+        quickEditHistory.pendingBeforeInput = getQuickEditState();
+    });
+    dom.quickEditInput?.addEventListener('input', () => {
+        if (quickEditHistoryApplying || quickEditHistory.composing) return;
+        const before = quickEditHistory.pendingBeforeInput;
+        quickEditHistory.pendingBeforeInput = null;
+        recordQuickEditState(before);
+    });
+    dom.quickEditInput?.addEventListener('compositionstart', () => {
+        if (quickEditHistoryApplying) return;
+        quickEditHistory.composing = true;
+        quickEditHistory.compositionStart = getQuickEditState();
+        quickEditHistory.pendingBeforeInput = null;
+    });
+    dom.quickEditInput?.addEventListener('compositionend', () => finalizeQuickEditComposition());
+    dom.quickEditInput?.addEventListener('blur', () => {
+        if (quickEditHistory.composing) finalizeQuickEditComposition();
+        else quickEditHistory.pendingBeforeInput = null;
+    });
+    dom.quickEditInput?.addEventListener('keydown', (event) => {
+        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+        event.preventDefault();
+        if (event.shiftKey) quickEditRedo();
+        else quickEditUndo();
+    });
+    const cellFontInput = document.getElementById('cellStyleFontNameInput');
+    cellFontInput?.addEventListener('click', () => toggleCellFontPicker());
+    document.getElementById('cellFontSearchInput')?.addEventListener('input', (event) => {
+        renderCellFontList(event.target.value || '');
+    });
+    document.getElementById('cellFontSearchInput')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') toggleCellFontPicker(false);
+    });
+    dom.closeCellFontPicker?.addEventListener('click', () => { if (dom.cellFontPickerDialog) dom.cellFontPickerDialog.open = false; });
+    dom.closeCellAlignPicker?.addEventListener('click', () => {
+        if (dom.cellAlignPickerDialog) dom.cellAlignPickerDialog.open = false;
+    });
+    dom.cellStyleTextColorPreview?.addEventListener('click', () => openCellColorPalette('color'));
+    dom.cellStyleBgColorPreview?.addEventListener('click', () => openCellColorPalette('backgroundColor'));
+    dom.closeCellColorPalette?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeCellColorPaletteDialog();
+    });
+    dom.applyCustomCellColorBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyColorToActiveTarget(dom.customCellColorInput?.value || '#00796b');
+    });
+    dom.customCellColorInput?.addEventListener('change', () => applyColorToActiveTarget(dom.customCellColorInput?.value || '#00796b'));
+    dom.quickEditUndoBtn?.addEventListener('click', quickEditUndo);
+    dom.quickEditRedoBtn?.addEventListener('click', quickEditRedo);
+    function canonicalCellStyle(style) {
+        const defaults = getDefaultCellStyle();
+        const source = style && typeof style === 'object' ? style : {};
+        const result = {};
+        const fontName = String(source.fontName || '').trim();
+        const fontSize = Number(source.fontSize);
+        const color = normalizeStyleColor(source.color, defaults.color);
+        const backgroundColor = normalizeStyleColor(source.backgroundColor, defaults.backgroundColor);
+        const horizontal = source.horizontal || source.align || 'general';
+        const numFmt = String(source.numFmt || source.numberFormat || '').trim();
+        if (fontName && fontName !== defaults.fontName) result.fontName = fontName;
+        if (Number.isFinite(fontSize) && fontSize > 0 && Math.round(fontSize) !== Number(defaults.fontSize)) result.fontSize = Math.round(fontSize);
+        if (color !== normalizeStyleColor(defaults.color)) result.color = color;
+        if (backgroundColor !== normalizeStyleColor(defaults.backgroundColor)) result.backgroundColor = backgroundColor;
+        if (horizontal && horizontal !== defaults.horizontal) result.horizontal = horizontal;
+        if (numFmt && numFmt.toLowerCase() !== String(defaults.numFmt).toLowerCase()) result.numFmt = numFmt;
+        if (source.bold || source.fontWeight === 'bold') result.bold = true;
+        if (source.italic) result.italic = true;
+        if (source.underline) result.underline = true;
+        if (source.wrapText) result.wrapText = true;
+        return result;
+    }
+
+    function getPendingCellStyleObject() {
         const fontName = (document.getElementById('cellStyleFontNameInput')?.value || '').trim();
         const fontSize = Number(document.getElementById('cellStyleFontSizeInput')?.value);
         const color = (document.getElementById('cellStyleTextColorInput')?.value || '').trim();
         const bgColor = (document.getElementById('cellStyleBgColorInput')?.value || '').trim();
         const horizontal = document.getElementById('cellStyleAlignInput')?.value || 'general';
         const numFmt = (document.getElementById('cellStyleNumberFormatInput')?.value || '').trim();
+        const defaults = getDefaultCellStyle();
         const validColor = (v) => /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(v);
-        const styleObj = {};
-        if (fontName) styleObj.fontName = fontName;
-        if (Number.isFinite(fontSize) && fontSize > 0) styleObj.fontSize = Math.max(8, Math.min(72, Math.round(fontSize)));
-        if (validColor(color)) styleObj.color = color;
-        if (validColor(bgColor)) styleObj.backgroundColor = bgColor;
-        if (horizontal !== 'general') styleObj.horizontal = horizontal;
-        if (numFmt) styleObj.numFmt = numFmt;
-        styleObj.bold = !!document.getElementById('cellStyleBoldInput')?.checked;
-        styleObj.italic = !!document.getElementById('cellStyleItalicInput')?.checked;
-        styleObj.underline = !!document.getElementById('cellStyleUnderlineInput')?.checked;
-        styleObj.wrapText = !!document.getElementById('cellStyleWrapInput')?.checked;
-        Object.keys(styleObj).forEach(key => {
-            if (styleObj[key] === false || styleObj[key] === '') delete styleObj[key];
+        return canonicalCellStyle({
+            fontName,
+            fontSize,
+            color: validColor(color) ? color : defaults.color,
+            backgroundColor: validColor(bgColor) ? bgColor : defaults.backgroundColor,
+            horizontal,
+            numFmt,
+            bold: document.getElementById('cellStyleBoldInput')?.checked,
+            italic: document.getElementById('cellStyleItalicInput')?.checked,
+            underline: document.getElementById('cellStyleUnderlineInput')?.checked,
+            wrapText: document.getElementById('cellStyleWrapInput')?.checked
         });
-        setCellFormat(target.index, target.field, styleObj);
+    }
+
+    function areCellStylesEqual(left, right) {
+        return JSON.stringify(canonicalCellStyle(left)) === JSON.stringify(canonicalCellStyle(right));
+    }
+
+    window.canonicalCellStyle = canonicalCellStyle;
+    window.getPendingCellStyleObject = getPendingCellStyleObject;
+    window.areCellStylesEqual = areCellStylesEqual;
+
+    window.saveCurrentCellStyle = function(explicitTargets = null) {
+        const target = window.__rsdbEditingCell;
+        if (!target) return false;
+        const styleObj = getPendingCellStyleObject();
+        const targets = Array.isArray(explicitTargets) && explicitTargets.length
+            ? explicitTargets
+            : (isCellMultiSelectMode && selectedCells.size
+                ? getCellSelectionKeys().filter(item => item.field !== 'seq')
+                : [target]);
+        let applied = 0;
+        targets.forEach(item => {
+            const row = Number.isInteger(item?.row) ? item.row : item?.index;
+            if (!Number.isInteger(row) || !item?.field || !tableData[row]) return;
+            setCellFormat(row, item.field, { ...styleObj });
+            applied++;
+        });
+        return applied > 0;
     };
     document.getElementById('closeImageCompressSettingsBtn')?.addEventListener('click', () => {
         const dlg = document.getElementById('imageCompressSettingsDialog');
@@ -6519,7 +7675,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     dom.deleteSelectedBtn.addEventListener('click', confirmDeleteSelected);
     bindImmediateActionButton(dom.saveBtn, saveData);
 
-    dom.searchClearBtn.addEventListener('click', () => {
+    dom.searchClearBtn?.addEventListener('click', () => {
         dom.searchInput.value = '';
         startSearch();
     });
@@ -6528,6 +7684,19 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     dom.calculateAndAddBtn.addEventListener('click', calculateAndAddData);
 
  dom.tableBody.addEventListener('click', (e) => {
+    if (isCellMultiSelectMode) {
+        if (suppressNextCellClick) { suppressNextCellClick = false; return; }
+        const cell = e.target.closest('td');
+        const row = e.target.closest('tr');
+        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox,.image-col')) return;
+        const rowIndex = Number(row.dataset.index);
+        const field = cell.classList.contains('seq-col') ? 'seq' : cell.dataset.field;
+        if (!Number.isInteger(rowIndex) || !field) return;
+        if (field === 'seq') { selectCellRow(rowIndex); return; }
+        if (e.shiftKey && cellSelectionAnchor) setCellSelectionRange(cellSelectionAnchor, { row: rowIndex, field });
+        else toggleCellSelection(rowIndex, field, true);
+        return;
+    }
     if (isMultiSelectMode) return;
 
     e.stopPropagation();
@@ -6549,17 +7718,64 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     }
 
     if (targetFieldId) {
-        if (targetFieldId === 'remarks') {
-
-            openEditModal(index, targetFieldId);
-        } else {
-
-            openQuickEdit(index, targetFieldId);
-        }
+        openQuickEdit(index, targetFieldId);
         return;   
     }
 
-});
+    });
+
+    // 多选格子：长按后拖动框选，靠近边缘时平滑滚动
+    dom.tableBody.addEventListener('pointerdown', (e) => {
+        if (!isCellMultiSelectMode || e.pointerType === 'mouse') return;
+        const cell = e.target.closest('td'); const row = e.target.closest('tr');
+        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox,.image-col')) return;
+        const field = cell.classList.contains('seq-col') ? 'seq' : cell.dataset.field;
+        const rowIndex = Number(row.dataset.index);
+        if (!field || !Number.isInteger(rowIndex)) return;
+        cellSelectionPointer = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, row: rowIndex, field, dragging: false };
+        clearTimeout(cellSelectionLongPressTimer);
+        cellSelectionLongPressTimer = setTimeout(() => {
+            if (!cellSelectionPointer) return;
+            cellSelectionPointer.dragging = true;
+            cellSelectionAnchor = { row: rowIndex, field };
+            toggleCellSelection(rowIndex, field, false);
+            if (navigator.vibrate) navigator.vibrate(12);
+        }, 320);
+        try { dom.tableBody.setPointerCapture(e.pointerId); } catch {}
+    }, { passive: false });
+    dom.tableBody.addEventListener('pointermove', (e) => {
+        if (!isCellMultiSelectMode || !cellSelectionPointer || cellSelectionPointer.pointerId !== e.pointerId) return;
+        const state = cellSelectionPointer;
+        if (!state.dragging) {
+            if (Math.hypot(e.clientX - state.startX, e.clientY - state.startY) > 8) clearTimeout(cellSelectionLongPressTimer);
+            return;
+        }
+        if (e.cancelable) e.preventDefault();
+        const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('td');
+        const row = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr');
+        if (target && row) {
+            const field = target.classList.contains('seq-col') ? 'seq' : target.dataset.field;
+            const rowIndex = Number(row.dataset.index);
+            if (field && Number.isInteger(rowIndex) && field !== 'seq') setCellSelectionRange(cellSelectionAnchor, { row: rowIndex, field });
+        }
+        stopCellAutoScroll(); continueCellSelectionAtPoint(e);
+    }, { passive: false });
+    const endCellPointer = (e) => {
+        if (!cellSelectionPointer || cellSelectionPointer.pointerId !== e.pointerId) return;
+        suppressNextCellClick = !!cellSelectionPointer.dragging;
+        clearTimeout(cellSelectionLongPressTimer); stopCellAutoScroll();
+        try { dom.tableBody.releasePointerCapture(e.pointerId); } catch {}
+        cellSelectionPointer = null;
+    };
+    dom.tableBody.addEventListener('pointerup', endCellPointer);
+    dom.tableBody.addEventListener('pointercancel', endCellPointer);
+    document.querySelector('#dataTable thead')?.addEventListener('click', (e) => {
+        if (!isCellMultiSelectMode) return;
+        const th = e.target.closest('th[data-field]'); if (!th) return;
+        const field = th.dataset.field;
+        if (field === 'seq') { selectedCells.clear(); tableData.forEach((_, row) => selectedCells.add(cellKey(row, 'seq'))); refreshCellSelectionUI(); updateCellSelectionActions(); return; }
+        selectCellColumn(field);
+    });
 
     dom.bottomPrevBtn.addEventListener('click', () => {
         if (currentPage > 1) {
@@ -6690,8 +7906,7 @@ function bindEditImageButtons() {
     const deleteInEdit = document.getElementById('deleteImageInEditBtn');
     if (deleteInEdit) {
         deleteInEdit.onclick = () => {
-            window.tempDeleteImageIndex = currentEditIndex;
-            document.getElementById('deleteImageConfirmDialog').open = true;
+            openImageDeleteConfirmation(currentEditIndex);
         };
     }
 }
@@ -6706,14 +7921,13 @@ function bindEditImageButtons() {
 		        dom.pageJumpInput.style.display = 'none';
 		        dom.pageInfoText.style.display = 'inline-block';
 		    }
-function toggleSearchReplaceVisibility() {
-    isSearchReplaceVisible = !isSearchReplaceVisible;
+function toggleSearchReplaceVisibility(forceState) {
+    isSearchReplaceVisible = typeof forceState === 'boolean' ? forceState : !isSearchReplaceVisible;
     const container = document.getElementById('searchReplaceContainer');
-    // menuItem visibility is now handled by CSS (always visible)
 
     if (isSearchReplaceVisible) {
         container.style.display = 'block';
-        document.getElementById('toggleSearchReplaceBtn').icon = 'expand_less';
+        dom.searchMenuItem?.setAttribute('icon', 'search_off');
 
         const savedFilter = localStorage.getItem('filterMatchRows') === 'true';
         isFilterMatchRows = savedFilter;
@@ -6726,7 +7940,7 @@ function toggleSearchReplaceVisibility() {
         startSearch();   
     } else {
         container.style.display = 'none';
-        document.getElementById('toggleSearchReplaceBtn').icon = 'find_replace';
+        dom.searchMenuItem?.setAttribute('icon', 'search');
 
         updateTable();   
     }
@@ -6746,11 +7960,13 @@ function toggleSearchReplaceVisibility() {
 
 		function openCalculatorModal() {
 		    dom.drawer.open = false;
+		    loadCalculatorSettings();
 		    openCustomModal(dom.calculatorModal); 
 		    dom.calcDiameter1.value = '';
 		    dom.calcDiameter2.value = '';
 		    dom.calcLength.value = '';
 		    dom.calcResult.value = '';
+		    calculateWeight();
 
 		    currentInput = dom.calcDiameter1;
 		    updateKeyboardForInput(currentInput);
@@ -6804,10 +8020,10 @@ function updateTable() {
     dom.bottomPrevBtn.disabled = currentPage === 1;
     dom.bottomNextBtn.disabled = currentPage === totalPages;
 
-    dom.searchClearBtn.classList.toggle('active', !!searchTerm);
+    dom.searchClearBtn?.classList.toggle('active', !!searchTerm);
     dom.selectedCount.textContent = selectedRows.size;
 
-    const displayStyle = isMultiSelectMode ? 'table-cell' : 'none';
+    const displayStyle = isMultiSelectMode && !isCellMultiSelectMode ? 'table-cell' : 'none';
 
     const checkboxHeader = document.querySelector('#dataTable thead th.checkbox-col');
     if (checkboxHeader) {
@@ -6830,6 +8046,7 @@ function updateTable() {
         emptyState.style.display = 'flex';
         document.querySelector('.bottom-data-summary').style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
+        updateCellSelectionActions();
         return;
     }
 
@@ -6854,7 +8071,7 @@ function updateTable() {
         const row = document.createElement('tr');
         row.setAttribute('data-index', originalIndex);
 
-        if (isMultiSelectMode && selectedRows.has(originalIndex)) {
+        if (isMultiSelectMode && !isCellMultiSelectMode && selectedRows.has(originalIndex)) {
             row.classList.add('selected');
         }
 
@@ -6870,6 +8087,7 @@ function updateTable() {
         }
 
         const cardImageSrc = item.cardImage ? escapeHtml(item.cardImage) : '';
+        const displayCellValue = (fieldKey) => escapeHtml(formatCellValueForDisplay(item[fieldKey], originalIndex, fieldKey));
 
         row.innerHTML = `
             <td class="seq-col">
@@ -6883,18 +8101,18 @@ function updateTable() {
             <td class="checkbox-col" style="display:${displayStyle};">
                 <mdui-checkbox class="row-checkbox" data-index="${originalIndex}" ${selectedRows.has(originalIndex) ? 'checked' : ''}></mdui-checkbox>
             </td>
-            <td data-field="steelType">${escapeHtml(item.steelType)}</td>
-            <td data-field="productId">${escapeHtml(item.productId)}</td>
-            <td data-field="cardId">${escapeHtml(item.cardId)}</td>
-            <td data-field="furnaceId">${escapeHtml(item.furnaceId)}</td>
-            <td data-field="actualDiameter">${escapeHtml(item.actualDiameter)}</td>
-            <td data-field="diameter">${escapeHtml(item.diameter)}</td>
-            <td data-field="length">${escapeHtml(item.length)}</td>
-            <td data-field="weight">${escapeHtml(item.weight)}</td>
-            <td data-field="status">${escapeHtml(item.status)}</td>
-            <td data-field="position">${escapeHtml(item.position)}</td>
-            <td data-field="hardness">${escapeHtml(item.hardness)}</td>
-            <td class="remark-col" data-field="remarks">${escapeHtml(item.remarks)}</td>
+            <td data-field="steelType">${displayCellValue('steelType')}</td>
+            <td data-field="productId">${displayCellValue('productId')}</td>
+            <td data-field="cardId">${displayCellValue('cardId')}</td>
+            <td data-field="furnaceId">${displayCellValue('furnaceId')}</td>
+            <td data-field="actualDiameter">${displayCellValue('actualDiameter')}</td>
+            <td data-field="diameter">${displayCellValue('diameter')}</td>
+            <td data-field="length">${displayCellValue('length')}</td>
+            <td data-field="weight">${displayCellValue('weight')}</td>
+            <td data-field="status">${displayCellValue('status')}</td>
+            <td data-field="position">${displayCellValue('position')}</td>
+            <td data-field="hardness">${displayCellValue('hardness')}</td>
+            <td class="remark-col" data-field="remarks">${displayCellValue('remarks')}</td>
             <td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
                 ${item.cardImage ? 
                   `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="showImagePreviewByIndex(${originalIndex});event.stopPropagation();">
@@ -6917,9 +8135,17 @@ function updateTable() {
             const fieldKey = cell.getAttribute('data-field');
             applyCellCustomStyle(cell, originalIndex, fieldKey);
         });
+        if (isCellMultiSelectMode) {
+            row.querySelectorAll('td[data-field]').forEach(cell => {
+                if (selectedCells.has(cellKey(originalIndex, cell.dataset.field))) cell.classList.add('cell-selected');
+            });
+            if (selectedCells.has(cellKey(originalIndex, 'seq'))) row.querySelector('td.seq-col')?.classList.add('cell-selected');
+        }
     });
 
     applySearchHighlight();
+    document.getElementById('dataTable')?.classList.toggle('cell-selection-mode', isCellMultiSelectMode);
+    updateCellSelectionActions();
     bindRowEvents(); // 渲染完必绑事件
 };
 function updateSummary() {
@@ -7570,9 +8796,7 @@ document.querySelectorAll('.delete-row-btn').forEach(btn => {
         if (deleteBtn) {
             deleteBtn.onclick = (e) => {
                 e.stopPropagation();
-                window.tempDeleteImageIndex = idx;
-
-                document.getElementById('deleteImageConfirmDialog').open = true;
+                openImageDeleteConfirmation(idx);
             };
         }
 
@@ -7890,12 +9114,13 @@ function moveRowToBottom(rowIndex) {
 		  openAddModalWithData({});
 		}
 
-			function openAddModalWithData(preFilledData) {
+    function openAddModalWithData(preFilledData) {
     if (dom.dataForm) dom.dataForm.reset();
     if (dom.modalTitle) dom.modalTitle.textContent = '添加数据';
     if (dom.editIndex) dom.editIndex.value = '-1';
 
     currentEditIndex = -1;
+    beginImageDraft(-1, '');
 
     // ★★★ 新增：彻底清理所有图片相关状态 ★★★
     const previewImg = document.getElementById('previewImg');
@@ -8000,42 +9225,191 @@ function findDuplicates(newItem) {
 		    dom.quickEditIndex.value = index;
 		    dom.quickEditField.value = fieldId;
 		    openCellStyleDialog(index, fieldId);
+		    initQuickEditHistory();
 		    window.__rsdbOriginalCellEdit = {
 		        value: item[fieldId] || '',
 		        style: JSON.parse(JSON.stringify(getCellFormat(index, fieldId) || {}))
 		    };
 
-		    dom.quickEditInput.setAttribute('readonly', 'true');
-		    dom.quickEditInput.classList.add('readonly-input');
+		    dom.quickEditInput.removeAttribute('readonly');
+		    dom.quickEditInput.classList.remove('readonly-input');
+		    dom.quickEditInput.classList.toggle('quick-edit-remarks', fieldId === 'remarks');
+		    dom.quickEditInput.style.minHeight = fieldId === 'remarks' ? '200px' : '56px';
+		    dom.quickEditInput.style.height = fieldId === 'remarks' ? '200px' : '56px';
+		    dom.quickEditInput.style.resize = fieldId === 'remarks' ? 'vertical' : 'none';
 
 		    openCustomModal(dom.quickEditDialog);
 
 		    currentInput = dom.quickEditInput;
 
-		    // 关键：标记当前是快速编辑单字段模式
+		    // 快速编辑默认使用项目虚拟键盘，可通过右侧笔形按钮切换系统键盘。
 		    keyboardState.isQuickEdit = true;
 		    saveKeyboardState();
+		    window.setQuickEditKeyboardMode?.(true);
+		    requestAnimationFrame(() => {
+		        window.previewCurrentCellStyle?.();
+		        window.updateQuickEditKeyboardToggleUI?.();
+	    });
+		}
 
-		    updateKeyboardForInput(currentInput, fieldId); 
-		    showVirtualKeyboard();
+		function getQuickEditState() {
+		    const get = (id, fallback = '') => document.getElementById(id)?.value ?? fallback;
+		    const checked = (id) => !!document.getElementById(id)?.checked;
+		    return {
+		        value: String(dom.quickEditInput?.value || ''),
+		        selectionStart: Number(dom.quickEditInput?.selectionStart) || 0,
+		        selectionEnd: Number(dom.quickEditInput?.selectionEnd) || 0,
+		        fontName: String(get('cellStyleFontNameInput')),
+		        fontSize: String(get('cellStyleFontSizeInput')),
+		        color: String(get('cellStyleTextColorInput')),
+		        backgroundColor: String(get('cellStyleBgColorInput')),
+		        horizontal: String(get('cellStyleAlignInput', 'general')),
+		        numFmt: String(get('cellStyleNumberFormatInput', 'General')),
+		        bold: checked('cellStyleBoldInput'),
+		        italic: checked('cellStyleItalicInput'),
+		        underline: checked('cellStyleUnderlineInput'),
+		        wrapText: checked('cellStyleWrapInput')
+		    };
+		}
 
-		    currentInput.focus();
-		    requestAnimationFrame(() => previewCurrentCellStyle());
+		function quickEditStatesEqual(a, b) {
+		    return JSON.stringify(a || {}) === JSON.stringify(b || {});
+		}
+
+		function updateQuickEditHistoryButtons() {
+		    if (dom.quickEditUndoBtn) dom.quickEditUndoBtn.disabled = !quickEditHistory.past.length;
+		    if (dom.quickEditRedoBtn) dom.quickEditRedoBtn.disabled = !quickEditHistory.future.length;
+		}
+
+		function initQuickEditHistory() {
+		    quickEditHistory = {
+		        past: [],
+		        future: [],
+		        last: getQuickEditState(),
+		        pendingBeforeInput: null,
+		        composing: false,
+		        compositionStart: null
+		    };
+		    updateQuickEditHistoryButtons();
+		}
+
+		function recordQuickEditState(previousState = null) {
+		    if (quickEditHistoryApplying || !window.__rsdbEditingCell) return;
+		    const next = getQuickEditState();
+		    if (quickEditStatesEqual(next, quickEditHistory.last)) return;
+		    const previous = previousState || quickEditHistory.last;
+		    if (!previous || quickEditStatesEqual(next, previous)) return;
+		    quickEditHistory.past.push(previous);
+		    const limit = Math.max(20, Math.min(200, Number(appSettings.undoRedoMaxSteps) || 50));
+		    if (quickEditHistory.past.length > limit) quickEditHistory.past.splice(0, quickEditHistory.past.length - limit);
+		    quickEditHistory.last = next;
+		    quickEditHistory.future = [];
+		    updateQuickEditHistoryButtons();
+		}
+		window.getQuickEditState = getQuickEditState;
+		window.recordQuickEditState = recordQuickEditState;
+
+		function restoreQuickEditState(state) {
+		    if (!state) return;
+		    quickEditHistoryApplying = true;
+		    const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
+		    set('cellStyleFontNameInput', state.fontName);
+		    set('cellStyleFontSizeInput', state.fontSize);
+		    set('cellStyleTextColorInput', state.color);
+		    set('cellStyleBgColorInput', state.backgroundColor);
+		    set('cellStyleAlignInput', state.horizontal || 'general');
+		    set('cellStyleNumberFormatInput', state.numFmt || 'General');
+		    updateCellAlignPickerUI();
+		    ['Bold', 'Italic', 'Underline', 'Wrap'].forEach((name) => {
+		        const el = document.getElementById(`cellStyle${name}Input`);
+		        if (el) el.checked = !!state[name === 'Wrap' ? 'wrapText' : name.toLowerCase()];
+		    });
+		    if (dom.quickEditInput) dom.quickEditInput.value = state.value || '';
+		    window.previewCurrentCellStyle?.();
+		    if (dom.quickEditInput) {
+		        const length = dom.quickEditInput.value.length;
+		        const start = Math.max(0, Math.min(length, Number(state.selectionStart) || 0));
+		        const end = Math.max(start, Math.min(length, Number(state.selectionEnd) || start));
+		        dom.quickEditInput.focus({ preventScroll: true });
+		        try { dom.quickEditInput.setSelectionRange(start, end); } catch (error) {}
+		        setTimeout(updateVirtualCursor, 0);
+		    }
+		    quickEditHistoryApplying = false;
+		    updateQuickEditHistoryButtons();
+		}
+
+		function finalizeQuickEditComposition() {
+		    if (!quickEditHistory.composing) return;
+		    const before = quickEditHistory.compositionStart;
+		    quickEditHistory.composing = false;
+		    quickEditHistory.compositionStart = null;
+		    quickEditHistory.pendingBeforeInput = null;
+		    recordQuickEditState(before);
+		}
+
+		function quickEditUndo() {
+		    finalizeQuickEditComposition();
+		    if (!quickEditHistory.past.length) return;
+		    const target = quickEditHistory.past.pop();
+		    quickEditHistory.future.unshift(quickEditHistory.last);
+		    quickEditHistory.last = target;
+		    restoreQuickEditState(target);
+		}
+
+		function quickEditRedo() {
+		    finalizeQuickEditComposition();
+		    if (!quickEditHistory.future.length) return;
+		    const target = quickEditHistory.future.shift();
+		    quickEditHistory.past.push(quickEditHistory.last);
+		    quickEditHistory.last = target;
+		    restoreQuickEditState(target);
 		}
 		function saveQuickEdit() {
 		    const index = parseInt(dom.quickEditIndex.value);
 		    const fieldId = dom.quickEditField.value;
-		    const newValue = dom.quickEditInput.value.trim();
+		    const newValue = dom.quickEditInput.value;
 
 		    if (index >= 0 && index < tableData.length) {
-		        if (['actualDiameter', 'diameter', 'length', 'weight', 'hardness'].includes(fieldId) && isNaN(parseFloat(newValue)) && newValue.length > 0) {
-		            showSnackbar('请输入有效的数字或留空', 'error');
-		            return;
+		        const targets = isCellMultiSelectMode && selectedCells.size
+		            ? getCellSelectionKeys().filter(target => target.field !== 'seq')
+		            : [{ row: index, field: fieldId }];
+		        const pendingStyle = window.getPendingCellStyleObject?.() || {};
+		        const originalValue = String(window.__rsdbOriginalCellEdit?.value ?? '');
+		        const valueChanged = newValue.trim() !== originalValue.trim();
+		        const styleChanged = targets.some(target => !window.areCellStylesEqual?.(getCellFormat(target.row, target.field), pendingStyle));
+
+		        // 未修改时不做数字校验，也不创建历史记录，避免原样保存被误报为非法数字。
+		        if (!valueChanged && !styleChanged) {
+		            closeCustomModal(dom.quickEditDialog);
+		            setVirtualKeyboardVisible(false);
+		            keyboardState.isQuickEdit = false;
+		            saveKeyboardState();
+		            window.__rsdbEditingCell = null;
+		            window.__rsdbOriginalCellEdit = null;
+		            showSnackbar('没有检测到更改', 'info');
+		            return true;
 		        }
 
-		        beginOperation('edit_field', '快速修改：' + (fieldLabels[fieldId] || fieldId));
-		        tableData[index][fieldId] = newValue;
-		        window.saveCurrentCellStyle?.();
+		        const validationValue = newValue.trim();
+		        if (valueChanged && ['actualDiameter', 'diameter', 'length', 'weight', 'hardness'].includes(fieldId) && isNaN(parseFloat(validationValue)) && validationValue.length > 0) {
+		            showSnackbar('请输入有效的数字或留空', 'error');
+		            return false;
+		        }
+
+		        beginOperation('edit_field', isCellMultiSelectMode && selectedCells.size > 1 ? '批量快速修改：' + selectedCells.size + ' 个单元格' : '快速修改：' + (fieldLabels[fieldId] || fieldId));
+		        const styleApplied = window.saveCurrentCellStyle?.(targets) !== false;
+		        const styleVerified = targets.every(target => window.areCellStylesEqual?.(
+		            getCellFormat(target.row, target.field),
+		            pendingStyle
+		        ));
+		        if (styleChanged && (!styleApplied || !styleVerified)) {
+		            window.__rsdbPendingOp = null;
+		            showSnackbar('格式保存失败，请重试', 'error');
+		            return false;
+		        }
+		        targets.forEach(target => {
+		            if (tableData[target.row]) tableData[target.row][target.field] = newValue.trim();
+		        });
 		        saveDataToIndexedDB();
 		        updateTable();
 		        commitOperation();
@@ -8047,36 +9421,46 @@ function findDuplicates(newItem) {
 
 		keyboardState.isQuickEdit = false;
 		saveKeyboardState();
+		        return true;
 		    }
+		    return false;
 		}
 
         function openCellStyleDialog(index, fieldId) {
             if (!Number.isFinite(index) || index < 0) return;
             if (!fieldId) return;
-            window.__rsdbEditingCell = { index, field: fieldId };
+            window.__rsdbEditingCell = { row: index, index, field: fieldId };
+            if (dom.cellFontPickerDialog) dom.cellFontPickerDialog.open = false;
+            if (dom.cellColorPaletteDialog) dom.cellColorPaletteDialog.open = false;
+            if (dom.cellAlignPickerDialog) dom.cellAlignPickerDialog.open = false;
+            const fontSearch = document.getElementById('cellFontSearchInput');
+            if (fontSearch) fontSearch.value = '';
             const targetText = document.getElementById('cellStyleTargetText');
             if (targetText) targetText.textContent = `第 ${index + 1} 行 · ${fieldLabels[fieldId] || fieldId} · 单元格格式`;
-            const current = getCellFormat(index, fieldId);
+            const rawCurrent = getCellFormat(index, fieldId) || {};
+            const current = getEffectiveCellStyle(index, fieldId);
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.value = val == null ? '' : String(val);
             };
-            setVal('cellStyleFontNameInput', current.fontName || '');
-            setVal('cellStyleFontSizeInput', current.fontSize || '');
-            setVal('cellStyleTextColorInput', current.color || '');
-            setVal('cellStyleBgColorInput', current.backgroundColor || '');
-            setVal('cellStyleAlignInput', current.horizontal || 'general');
-            setVal('cellStyleNumberFormatInput', current.numFmt || '');
+            // 空值在控件中显示为“默认字体”，但预览使用实际默认字体。
+            setVal('cellStyleFontNameInput', rawCurrent.fontName || '');
+            setVal('cellStyleFontSizeInput', current.fontSize);
+            setVal('cellStyleTextColorInput', current.color);
+            setVal('cellStyleBgColorInput', current.backgroundColor);
+            setVal('cellStyleAlignInput', current.horizontal);
+            setVal('cellStyleNumberFormatInput', current.numFmt || 'General');
+            updateCellAlignPickerUI();
             const setChecked = (id, checked) => {
                 const el = document.getElementById(id);
                 if (el) el.checked = !!checked;
             };
-            setChecked('cellStyleBoldInput', current.bold || current.fontWeight === 'bold');
-            setChecked('cellStyleItalicInput', current.italic);
-            setChecked('cellStyleUnderlineInput', current.underline);
-            setChecked('cellStyleWrapInput', current.wrapText);
-            requestAnimationFrame(() => previewCurrentCellStyle());
+            setChecked('cellStyleBoldInput', !!rawCurrent.bold || rawCurrent.fontWeight === 'bold');
+            setChecked('cellStyleItalicInput', !!rawCurrent.italic);
+            setChecked('cellStyleUnderlineInput', !!rawCurrent.underline);
+            setChecked('cellStyleWrapInput', !!rawCurrent.wrapText);
+            requestAnimationFrame(() => window.previewCurrentCellStyle?.());
         }
 
 		// ==================== 搜索与替换优化版（支持自动翻页跳转）===================
@@ -8132,6 +9516,7 @@ function startSearch() {
 		    if (dom.editIndex) dom.editIndex.value = index;
 
 		    const item = tableData[index];
+		    beginImageDraft(index, item?.cardImage || '');
 
 		    // 填充表单字段
 		    for (const key in formElements) {
@@ -11308,10 +12693,11 @@ function processKeyboardTemplates(templates, options = {}) {
 
 		// === IndexedDB 初始化和操作 ===
 		const DB_NAME = 'RoundBarDB';
-		const DB_VERSION = 3;
+		const DB_VERSION = 4;
 		const STORE_NAME = 'data';
 		const HISTORY_STORE_NAME = 'operationHistory';
 		const FONT_STORE_NAME = 'importedFonts';
+		const DOCUMENT_STORE_NAME = 'documents';
 		let db = null;
 
 		function openDB() {
@@ -11343,6 +12729,9 @@ function processKeyboardTemplates(templates, options = {}) {
 		            }
 		            if (!db.objectStoreNames.contains(FONT_STORE_NAME)) {
 		                db.createObjectStore(FONT_STORE_NAME, { keyPath: 'name' });
+		            }
+		            if (!db.objectStoreNames.contains(DOCUMENT_STORE_NAME)) {
+		                db.createObjectStore(DOCUMENT_STORE_NAME, { keyPath: 'name' });
 		            }
 		        };
 		    });
@@ -11414,6 +12803,138 @@ async function flushDataToIndexedDB() {
 		        showSnackbar('数据保存失败（IndexedDB错误）', 'error');
 		        waiters.forEach(waiter => waiter.reject(err));
 		    }
+		}
+
+		function cloneRowsForPersistence(rows) {
+		    return typeof structuredClone === 'function'
+		        ? structuredClone(rows)
+		        : JSON.parse(JSON.stringify(rows || []));
+		}
+
+		function normalizeDocumentName(name) {
+		    return sanitizeFileName(String(name || '').replace(/\.(xlsx|xls|zip)$/i, '').trim()).slice(0, 120);
+		}
+
+		async function listDocuments() {
+		    const database = await openDB();
+		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readonly');
+		    const request = tx.objectStore(DOCUMENT_STORE_NAME).getAll();
+		    const records = await new Promise((resolve, reject) => {
+		        request.onsuccess = () => resolve(request.result || []);
+		        request.onerror = () => reject(request.error);
+		    });
+		    return records.sort((a, b) => Number(b.updatedAt || b.savedAt || 0) - Number(a.updatedAt || a.savedAt || 0));
+		}
+
+		async function saveDocumentRecord(name) {
+		    const normalized = normalizeDocumentName(name);
+		    if (!normalized) return false;
+		    const database = await openDB();
+		    const now = Date.now();
+		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readwrite');
+		    tx.objectStore(DOCUMENT_STORE_NAME).put({
+		        name: normalized,
+		        rows: cloneRowsForPersistence(tableData),
+		        savedAt: now,
+		        updatedAt: now
+		    });
+		    await waitForTransaction(tx);
+		    currentDocumentName = normalized;
+		    localStorage.setItem('rsdb_current_document_name', normalized);
+		    return true;
+		}
+
+		async function loadDocument(name) {
+		    const normalized = normalizeDocumentName(name);
+		    if (!normalized) return false;
+		    const database = await openDB();
+		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readonly');
+		    const request = tx.objectStore(DOCUMENT_STORE_NAME).get(normalized);
+		    const record = await new Promise((resolve, reject) => {
+		        request.onsuccess = () => resolve(request.result || null);
+		        request.onerror = () => reject(request.error);
+		    });
+		    if (!record || !Array.isArray(record.rows)) return false;
+		    tableData = cloneRowsForPersistence(record.rows);
+		    currentDocumentName = normalized;
+		    localStorage.setItem('rsdb_current_document_name', normalized);
+		    operationHistory = [];
+		    historyCursor = 0;
+		    saveOperationHistory();
+		    currentPage = 1;
+		    updateTable();
+		    updateSummary();
+		    await saveDataToIndexedDB();
+		    return true;
+		}
+
+		async function renameDocument(oldName, newName) {
+		    const sourceName = normalizeDocumentName(oldName);
+		    const targetName = normalizeDocumentName(newName);
+		    if (!sourceName || !targetName) return false;
+		    if (sourceName === targetName) return true;
+
+		    const database = await openDB();
+		    const readTx = database.transaction(DOCUMENT_STORE_NAME, 'readonly');
+		    const store = readTx.objectStore(DOCUMENT_STORE_NAME);
+		    const requestValue = request => new Promise((resolve, reject) => {
+		        request.onsuccess = () => resolve(request.result || null);
+		        request.onerror = () => reject(request.error);
+		    });
+		    const sourceRequest = store.get(sourceName);
+		    const targetRequest = store.get(targetName);
+		    const readComplete = waitForTransaction(readTx);
+		    const [sourceRecord, targetRecord] = await Promise.all([
+		        requestValue(sourceRequest),
+		        requestValue(targetRequest),
+		        readComplete
+		    ]);
+
+		    if (!sourceRecord) {
+		        const error = new Error('Document not found');
+		        error.code = 'DOCUMENT_NOT_FOUND';
+		        throw error;
+		    }
+		    if (targetRecord) {
+		        const error = new Error('Document name already exists');
+		        error.code = 'DOCUMENT_NAME_EXISTS';
+		        throw error;
+		    }
+
+		    const writeTx = database.transaction(DOCUMENT_STORE_NAME, 'readwrite');
+		    const writeStore = writeTx.objectStore(DOCUMENT_STORE_NAME);
+		    writeStore.put({
+		        ...sourceRecord,
+		        name: targetName,
+		        updatedAt: Date.now()
+		    });
+		    writeStore.delete(sourceName);
+		    await waitForTransaction(writeTx);
+
+		    if (currentDocumentName === sourceName) {
+		        currentDocumentName = targetName;
+		        localStorage.setItem('rsdb_current_document_name', targetName);
+		    }
+		    return true;
+		}
+
+		async function deleteDocuments(names) {
+		    const normalizedNames = [...new Set((names || []).map(normalizeDocumentName).filter(Boolean))];
+		    if (!normalizedNames.length) return [];
+		    const database = await openDB();
+		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readwrite');
+		    const store = tx.objectStore(DOCUMENT_STORE_NAME);
+		    normalizedNames.forEach(name => store.delete(name));
+		    await waitForTransaction(tx);
+		    if (normalizedNames.includes(currentDocumentName)) {
+		        currentDocumentName = '';
+		        localStorage.removeItem('rsdb_current_document_name');
+		    }
+		    return normalizedNames;
+		}
+
+		async function deleteDocument(name) {
+		    return deleteDocuments([name]);
 		}
 
         async function saveImportedFont(name, data) {
@@ -11545,6 +13066,11 @@ async function flushDataToIndexedDB() {
 		    if (visible) {
 		        generateVirtualKeyboard();
 		        vk.style.display = 'block';
+		        if (keyboardState.isQuickEdit) {
+		            const height = Math.ceil(vk.getBoundingClientRect().height || vk.offsetHeight || 0);
+		            document.documentElement.style.setProperty('--rsdb-visible-vk-height', `${height}px`);
+		            document.body.classList.add('quick-edit-vk-visible');
+		        }
 		        if (toolbarWrap && !toolbarWrap.dataset.userPositioned) {
 		            toolbarWrap.style.display = 'block';
 		            toolbarWrap.style.top = `${Math.round(Math.max(6, window.innerHeight - vk.offsetHeight + 6))}px`;
@@ -11565,6 +13091,8 @@ async function flushDataToIndexedDB() {
 		        setTimeout(updateVirtualCursor, 0);
 		        return;
 		    }
+		    document.body.classList.remove('quick-edit-vk-visible');
+		    document.documentElement.style.removeProperty('--rsdb-visible-vk-height');
 		    stopVirtualCursorFollow();
 		    const virtualCursor = document.getElementById('virtualCursor');
 		    if (virtualCursor) virtualCursor.style.display = 'none';
@@ -11887,18 +13415,6 @@ function showDuplicateConfirmationModal(duplicateEntries, newData = [], totalImp
 async function saveData() {
     const formData = {};
 
-    // ★★★ 清理旧残留（仅新增时，且只清理预览区，不碰临时变量） ★★★
-    if (currentEditIndex === -1) {
-        const previewImgClean = document.getElementById('previewImg');
-        if (previewImgClean) {
-            previewImgClean.src = '';
-            previewImgClean.removeAttribute('src');
-        }
-        console.log('[SAVE] 新增模式 - 已清理预览区图片（src置空）');
-        // 注意：这里不再 delete window.tempNewCardImage
-        // 临时变量留到保存成功后再清理
-    }
-
     // 1. 填充所有文本字段
     for (const key in formElements) {
         if (formElements.hasOwnProperty(key)) {
@@ -11906,32 +13422,14 @@ async function saveData() {
         }
     }
 
-// 2. 【核心修复】处理图片 - 多重来源强制捕获 + 优先级明确
-let finalImage = '';
-
-// 来源1：优先使用临时变量（上传后已强制存入，最可靠，不会受弹窗关闭影响）
-if (window.tempNewCardImage && window.tempNewCardImage.startsWith('data:image/')) {
-    finalImage = window.tempNewCardImage;
-    console.log('[SAVE] 从 window.tempNewCardImage 读取到图片（优先），长度：' + finalImage.length);
-}
-// 来源2：预览区的 img 标签（用户当前看到的图，备用）
-else if (previewImg && previewImg.src && previewImg.src.startsWith('data:image/') && previewImg.src.length > 200) {
-    finalImage = previewImg.src;
-    console.log('[SAVE] 从 previewImg.src 捕获图片（备用），长度：' + finalImage.length);
-}
-// 来源3：编辑时保留旧图（如果没新上传）
-else if (currentEditIndex !== -1 && tableData[currentEditIndex]?.cardImage) {
-    finalImage = tableData[currentEditIndex].cardImage;
-    console.log('[SAVE] 编辑模式 - 保留原有图片');
-}
-
-// 强制赋值
-formData.cardImage = finalImage || '';
-console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图片（长度 ' + finalImage.length + ')' : '空'));
-
-    // 强制赋值（防止后续被覆盖）
+    // 2. 上传、替换和删除都只使用当前编辑草稿，点击保存后才写入表格。
+    const imageDraft = window.__rsdbImageDraft;
+    const finalImage = imageDraft
+        ? String(imageDraft.value || '')
+        : (currentEditIndex !== -1
+            ? String(tableData[currentEditIndex]?.cardImage || '')
+            : String(window.tempNewCardImage || ''));
     formData.cardImage = finalImage || '';
-    console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图片（长度 ' + finalImage.length + ')' : '空'));
 
     // 3. 重量四舍五入取整
     if (formData.weight) {
@@ -11975,11 +13473,7 @@ console.log('[SAVE] 最终 formData.cardImage 状态：' + (finalImage ? '有图
         console.log('[SAVE] 编辑完成 - 索引 ' + currentEditIndex + ' 已更新，图片状态：' + (formData.cardImage ? '有图' : '无图'));
     }
 
-    // ★★★ 保存成功后再清理临时变量（关键！） ★★★
-    if (currentEditIndex === -1 && window.tempNewCardImage) {
-        delete window.tempNewCardImage;
-        console.log('[SAVE] 新增保存完成 - 已清理 tempNewCardImage');
-    }
+    discardImageDraft();
 
     // 7. 持久化 & 刷新
     await saveDataToIndexedDB();
@@ -12233,26 +13727,39 @@ function sheetCellToFormat(cell) {
 
 function applyExcelCellFormat(cell, format) {
     if (!cell || !format) return;
-    const toArgb = (hex) => `FF${String(hex || '').replace('#', '').toUpperCase()}`;
+    const toArgb = (hex) => {
+        const normalized = normalizeStyleColor(hex, '');
+        return normalized ? `FF${normalized.slice(1)}` : '';
+    };
+    const fontSize = Number(format.fontSize);
+    const textColor = toArgb(format.color);
     cell.font = {
         ...(cell.font || {}),
         ...(format.fontName ? { name: format.fontName } : {}),
-        ...(format.fontSize ? { size: Number(format.fontSize) } : {}),
-        ...(format.color ? { color: { argb: toArgb(format.color) } } : {}),
+        ...(Number.isFinite(fontSize) && fontSize > 0 ? { size: fontSize } : {}),
+        ...(textColor ? { color: { argb: textColor } } : {}),
         bold: !!format.bold,
         italic: !!format.italic,
         underline: !!format.underline
     };
-    if (format.backgroundColor) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: toArgb(format.backgroundColor) } };
+    const fillColor = toArgb(format.backgroundColor);
+    if (fillColor) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
     }
     cell.alignment = {
         ...(cell.alignment || {}),
-        ...(format.horizontal ? { horizontal: format.horizontal } : {}),
+        ...(format.horizontal && format.horizontal !== 'general' ? { horizontal: format.horizontal } : {}),
         wrapText: !!format.wrapText,
         vertical: 'middle'
     };
     if (format.numFmt) cell.numFmt = format.numFmt;
+}
+
+function toExcelNumericValue(value) {
+    if (value === null || value === undefined || String(value).trim() === '') return '';
+    const normalized = String(value).trim().replace(/,/g, '');
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : String(value);
 }
 
 function handleFileImport(e) {
@@ -12268,6 +13775,13 @@ function handleFileImport(e) {
     }
 
     const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.zip') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        const importedDocumentName = normalizeDocumentName(file.name);
+        if (importedDocumentName) {
+            currentDocumentName = importedDocumentName;
+            localStorage.setItem('rsdb_current_document_name', importedDocumentName);
+        }
+    }
 
     if (fileName.endsWith('.zip')) {
         showSnackbar('正在解析 ZIP 文件...', 'info');
@@ -12544,6 +14058,7 @@ function handleFileImport(e) {
 		        showSnackbar('暂无数据可导出', 'warning');
 		        return;
 		    }
+		    const exportRowIndexMap = new Map(tableData.map((item, rowIndex) => [item, rowIndex]));
 
 		    const workbook = new ExcelJS.Workbook();
 		    const worksheet = workbook.addWorksheet('圆棒入库数据');
@@ -12588,21 +14103,28 @@ function handleFileImport(e) {
 		                productId: item.productId || '',
 		                cardId: item.cardId || '',
 		                furnaceId: item.furnaceId || '',
-		                actualDiameter: item.actualDiameter || '',
-		                diameter: item.diameter || '',
-		                length: item.length || '',
-		                weight: item.weight ? Math.round(parseFloat(item.weight)) || '' : '',
+		                actualDiameter: toExcelNumericValue(item.actualDiameter),
+		                diameter: toExcelNumericValue(item.diameter),
+		                length: toExcelNumericValue(item.length),
+		                weight: toExcelNumericValue(item.weight),
 		                status: item.status || '',
 		                position: item.position || '',
-		                hardness: item.hardness || '',
+		                hardness: toExcelNumericValue(item.hardness),
 		                remarks: item.remarks || '',
 		                cardImage: ''
 		            });
 
 		            row.height = 22;
 		            const formatFields = ['steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
+		            const sourceRowIndex = exportRowIndexMap.get(item);
 		            formatFields.forEach((field, fieldIndex) => {
-		                applyExcelCellFormat(row.getCell(fieldIndex + 2), item.__cellStyles?.[field]);
+		                const format = Number.isInteger(sourceRowIndex)
+		                    ? getCellFormat(sourceRowIndex, field)
+		                    : item.__cellStyles?.[field];
+		                applyExcelCellFormat(row.getCell(fieldIndex + 2), format);
+		                const fontSize = Number(format?.fontSize);
+		                if (Number.isFinite(fontSize) && fontSize > 0) row.height = Math.max(row.height, Math.ceil(fontSize * 1.5));
+		                if (format?.wrapText) row.height = Math.max(row.height, 36);
 		            });
 
 		            if (item.cardImage && item.cardImage.startsWith('data:image/')) {
@@ -12626,8 +14148,7 @@ function handleFileImport(e) {
 		        await new Promise(requestAnimationFrame);
 		        const buffer = await workbook.xlsx.writeBuffer();
 		        const blob = new Blob([buffer], { type: 'application/octet-stream' });
-		        const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
-		        saveAs(blob, `圆棒入库数据_${dateStr}.xlsx`);
+		        saveAs(blob, `${getExportBaseName()}.xlsx`);
 		        showSnackbar('导出成功！图片已嵌入表格', 'success');
 		    } finally {
 		        closeExportProgress();
@@ -12636,6 +14157,10 @@ function handleFileImport(e) {
 
 		function sanitizeFileName(name) {
 		    return (name || '').toString().replace(/[\\\/:*?"<>|]/g, '_').trim();
+		}
+
+		function getExportBaseName() {
+		    return sanitizeFileName(currentDocumentName || '圆棒入库数据') || '圆棒入库数据';
 		}
 
 		function getExcelColumnWidthsFromTable(headers, headerAlias) {
@@ -12692,8 +14217,9 @@ function handleFileImport(e) {
 		        showSnackbar('暂无数据可导出', 'warning');
 		        return;
 		    }
+		    const exportRowIndexMap = new Map(tableData.map((item, rowIndex) => [item, rowIndex]));
 
-		    const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+		    const exportBaseName = getExportBaseName();
 		    const zip = new JSZip();
 		    const imagesFolder = zip.folder('images');
 
@@ -12751,76 +14277,265 @@ function handleFileImport(e) {
 		                productId: item.productId || '',
 		                cardId: item.cardId || '',
 		                furnaceId: item.furnaceId || '',
-		                actualDiameter: item.actualDiameter || '',
-		                diameter: item.diameter || '',
-		                length: item.length || '',
-		                weight: item.weight ? Math.round(parseFloat(item.weight)) || '' : '',
+		                actualDiameter: toExcelNumericValue(item.actualDiameter),
+		                diameter: toExcelNumericValue(item.diameter),
+		                length: toExcelNumericValue(item.length),
+		                weight: toExcelNumericValue(item.weight),
 		                status: item.status || '',
 		                position: item.position || '',
-		                hardness: item.hardness || '',
+		                hardness: toExcelNumericValue(item.hardness),
 		                remarks: item.remarks || '',
 		                cardImageFile: imageFileName ? `images/${imageFileName}` : ''
 		            });
 		            const formatFields = ['steelType', 'productId', 'cardId', 'furnaceId', 'actualDiameter', 'diameter', 'length', 'weight', 'status', 'position', 'hardness', 'remarks'];
+		            const sourceRowIndex = exportRowIndexMap.get(item);
 		            formatFields.forEach((field, fieldIndex) => {
-		                applyExcelCellFormat(row.getCell(fieldIndex + 2), item.__cellStyles?.[field]);
+		                const format = Number.isInteger(sourceRowIndex)
+		                    ? getCellFormat(sourceRowIndex, field)
+		                    : item.__cellStyles?.[field];
+		                applyExcelCellFormat(row.getCell(fieldIndex + 2), format);
+		                const fontSize = Number(format?.fontSize);
+		                if (Number.isFinite(fontSize) && fontSize > 0) row.height = Math.max(Number(row.height) || 22, Math.ceil(fontSize * 1.5));
+		                if (format?.wrapText) row.height = Math.max(Number(row.height) || 22, 36);
 		            });
 		        }
 
 		        updateExportProgress(exportData.length + 1, total, '正在生成 Excel 文件...');
 		        await new Promise(requestAnimationFrame);
 		        const buffer = await workbook.xlsx.writeBuffer();
-		        zip.file(`圆棒入库数据_${dateStr}.xlsx`, buffer);
+		        zip.file(`${exportBaseName}.xlsx`, buffer);
 
 		        updateExportProgress(exportData.length + 2, total, '正在打包 ZIP...');
 		        await new Promise(requestAnimationFrame);
 		        const blob = await zip.generateAsync({ type: 'blob' });
-		        saveAs(blob, `圆棒入库数据_${dateStr}.zip`);
+		        saveAs(blob, `${exportBaseName}.zip`);
 		        showSnackbar('导出成功！图片已外放到 ZIP', 'success');
 		    } finally {
 		        closeExportProgress();
 		    }
 		}
 
+		const CALCULATOR_DENSITY_STORAGE_KEY = 'rsdb_calculator_density';
+		const CALCULATOR_FORMULA_STORAGE_KEY = 'rsdb_calculator_formula';
+		const DEFAULT_CALCULATOR_DENSITY = 0.00617;
+		const DEFAULT_CALCULATOR_FORMULA = '直径1×直径2×长度×密度÷1000';
+
+		function normalizeCalculatorFormula(formula) {
+		    return String(formula || '')
+		        .replace(/\s+/g, '')
+		        .replace(/直径1/g, 'd1')
+		        .replace(/直径2/g, 'd2')
+		        .replace(/长度/g, 'length')
+		        .replace(/密度/g, 'density')
+		        .replace(/diameter1/gi, 'd1')
+		        .replace(/diameter2/gi, 'd2')
+		        .replace(/[×xX]/g, '*')
+		        .replace(/[÷]/g, '/')
+		        .replace(/\\/g, '/')
+		        .replace(/[（]/g, '(')
+		        .replace(/[）]/g, ')')
+		        .replace(/π/g, 'pi');
+		}
+
+		function parseCalculatorFormula(formula) {
+		    const source = normalizeCalculatorFormula(formula);
+		    if (!source) throw new Error('公式不能为空');
+		    let index = 0;
+		    const allowedVariables = new Set(['d1', 'd2', 'length', 'density', 'pi']);
+
+		    function parseExpression() {
+		        let node = parseTerm();
+		        while (source[index] === '+' || source[index] === '-') {
+		            const operator = source[index++];
+		            node = { type: 'binary', operator, left: node, right: parseTerm() };
+		        }
+		        return node;
+		    }
+
+		    function parseTerm() {
+		        let node = parsePower();
+		        while (source[index] === '*' || source[index] === '/') {
+		            const operator = source[index++];
+		            node = { type: 'binary', operator, left: node, right: parsePower() };
+		        }
+		        return node;
+		    }
+
+		    function parsePower() {
+		        let node = parseUnary();
+		        if (source[index] === '^') {
+		            index++;
+		            node = { type: 'binary', operator: '^', left: node, right: parsePower() };
+		        }
+		        return node;
+		    }
+
+		    function parseUnary() {
+		        if (source[index] === '+' || source[index] === '-') {
+		            const operator = source[index++];
+		            return { type: 'unary', operator, value: parseUnary() };
+		        }
+		        return parsePrimary();
+		    }
+
+		    function parsePrimary() {
+		        if (source[index] === '(') {
+		            index++;
+		            const node = parseExpression();
+		            if (source[index] !== ')') throw new Error('公式括号不完整');
+		            index++;
+		            return node;
+		        }
+
+		        const numberMatch = source.slice(index).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?/i);
+		        if (numberMatch) {
+		            index += numberMatch[0].length;
+		            return { type: 'number', value: Number(numberMatch[0]) };
+		        }
+
+		        const identifierMatch = source.slice(index).match(/^[a-z_][a-z0-9_]*/i);
+		        if (identifierMatch) {
+		            const name = identifierMatch[0].toLowerCase();
+		            index += identifierMatch[0].length;
+		            if (!allowedVariables.has(name)) throw new Error(`不支持的变量“${identifierMatch[0]}”`);
+		            return { type: 'variable', name };
+		        }
+
+		        throw new Error(`公式中存在无法识别的内容${source[index] ? `“${source[index]}”` : ''}`);
+		    }
+
+		    const ast = parseExpression();
+		    if (index !== source.length) throw new Error(`公式中存在无法识别的内容“${source[index]}”`);
+		    return ast;
+		}
+
+		function evaluateCalculatorFormula(node, variables) {
+		    if (node.type === 'number') return node.value;
+		    if (node.type === 'variable') return node.name === 'pi' ? Math.PI : variables[node.name];
+		    if (node.type === 'unary') {
+		        const value = evaluateCalculatorFormula(node.value, variables);
+		        return node.operator === '-' ? -value : value;
+		    }
+		    const left = evaluateCalculatorFormula(node.left, variables);
+		    const right = evaluateCalculatorFormula(node.right, variables);
+		    if (node.operator === '+') return left + right;
+		    if (node.operator === '-') return left - right;
+		    if (node.operator === '*') return left * right;
+		    if (node.operator === '/') {
+		        if (right === 0) throw new Error('公式不能除以 0');
+		        return left / right;
+		    }
+		    if (node.operator === '^') return Math.pow(left, right);
+		    throw new Error('公式运算符无效');
+		}
+
+		function setCalculatorFormulaStatus(message = '') {
+		    if (!dom.calcFormulaStatus) return;
+		    dom.calcFormulaStatus.textContent = message;
+		    dom.calcFormulaStatus.hidden = !message;
+		}
+
+		function loadCalculatorSettings() {
+		    const storedDensity = parseFloat(localStorage.getItem(CALCULATOR_DENSITY_STORAGE_KEY));
+		    const density = Number.isFinite(storedDensity) && storedDensity > 0
+		        ? storedDensity
+		        : DEFAULT_CALCULATOR_DENSITY;
+		    const storedFormula = localStorage.getItem(CALCULATOR_FORMULA_STORAGE_KEY);
+		    if (dom.calcDensity) dom.calcDensity.value = String(density);
+		    if (dom.calcFormula) dom.calcFormula.value = storedFormula?.trim() || DEFAULT_CALCULATOR_FORMULA;
+		}
+
 		function calculateWeight() {
-		  const diameter1 = parseFloat(dom.calcDiameter1.value) || 0;
-		  const diameter2 = parseFloat(dom.calcDiameter2.value) || 0;
-		  const length = parseFloat(dom.calcLength.value) || 0;
-		  const densityFactor = parseFloat(dom.calcDensity.value) || 0.00617; 
+		    const diameter1 = parseFloat(dom.calcDiameter1.value) || 0;
+		    const diameter2 = parseFloat(dom.calcDiameter2.value) || 0;
+		    const length = parseFloat(dom.calcLength.value) || 0;
+		    const density = parseFloat(dom.calcDensity.value);
+		    const formula = dom.calcFormula?.value || DEFAULT_CALCULATOR_FORMULA;
+		    let ast;
 
-		  if (diameter1 <= 0 || diameter2 <= 0 || length <= 0) {
-		    dom.calcResult.value = '';
-		    return;
-		  }
+		    try {
+		        ast = parseCalculatorFormula(formula);
+		    } catch (error) {
+		        dom.calcResult.value = '';
+		        setCalculatorFormulaStatus(error.message || '公式格式不正确');
+		        return false;
+		    }
 
-		  const crudeWeight = densityFactor * diameter1 * diameter2 * length / 1000;
-		  dom.calcResult.value = crudeWeight.toFixed(2);
+		    if (!Number.isFinite(density) || density <= 0) {
+		        dom.calcResult.value = '';
+		        setCalculatorFormulaStatus('密度必须大于 0');
+		        return false;
+		    }
+		    if (diameter1 <= 0 || diameter2 <= 0 || length <= 0) {
+		        dom.calcResult.value = '';
+		        setCalculatorFormulaStatus('');
+		        return false;
+		    }
+
+		    try {
+		        const weight = evaluateCalculatorFormula(ast, {
+		            d1: diameter1,
+		            d2: diameter2,
+		            length,
+		            density
+		        });
+		        if (!Number.isFinite(weight) || weight <= 0) throw new Error('公式结果必须大于 0');
+		        dom.calcResult.value = weight.toFixed(2);
+		        setCalculatorFormulaStatus('');
+		        return true;
+		    } catch (error) {
+		        dom.calcResult.value = '';
+		        setCalculatorFormulaStatus(error.message || '公式计算失败');
+		        return false;
+		    }
 		}
 
 		function initAutoCalculate() {
-		  const calcInputs = [dom.calcDiameter1, dom.calcDiameter2, dom.calcLength];
-		  calcInputs.forEach(input => {
-		    if (input) {
-		      input.addEventListener('input', calculateWeight);
-		      input.addEventListener('change', calculateWeight);
-		    }
-		  });
+		    const calcInputs = [dom.calcDiameter1, dom.calcDiameter2, dom.calcLength];
+		    calcInputs.forEach(input => {
+		        if (!input) return;
+		        input.addEventListener('input', calculateWeight);
+		        input.addEventListener('change', calculateWeight);
+		    });
 
-		  dom.calcDensity.addEventListener('dblclick', (e) => {
-		      e.stopPropagation();
-		      const densityInput = dom.calcDensity;
-		      if (densityInput.hasAttribute('readonly')) {
-		          densityInput.removeAttribute('readonly');
-		          densityInput.classList.remove('readonly-input');
-		          densityInput.focus();
-		      } else {
-		          densityInput.setAttribute('readonly', 'true');
-		          densityInput.classList.add('readonly-input');
-		          densityInput.blur();
-		      }
-		  });
+		    dom.calcDensity?.addEventListener('input', () => {
+		        const density = parseFloat(dom.calcDensity.value);
+		        if (Number.isFinite(density) && density > 0) {
+		            localStorage.setItem(CALCULATOR_DENSITY_STORAGE_KEY, String(density));
+		        }
+		        calculateWeight();
+		    });
+		    dom.calcDensity?.addEventListener('blur', () => {
+		        const density = parseFloat(dom.calcDensity.value);
+		        if (!Number.isFinite(density) || density <= 0) {
+		            const savedDensity = parseFloat(localStorage.getItem(CALCULATOR_DENSITY_STORAGE_KEY));
+		            dom.calcDensity.value = String(Number.isFinite(savedDensity) && savedDensity > 0
+		                ? savedDensity
+		                : DEFAULT_CALCULATOR_DENSITY);
+		            calculateWeight();
+		        }
+		    });
 
-		  calculateWeight();
+		    dom.calcFormula?.addEventListener('input', () => {
+		        localStorage.setItem(CALCULATOR_FORMULA_STORAGE_KEY, dom.calcFormula.value);
+		        calculateWeight();
+		    });
+		    dom.calcFormula?.addEventListener('blur', () => {
+		        if (!dom.calcFormula.value.trim()) {
+		            dom.calcFormula.value = DEFAULT_CALCULATOR_FORMULA;
+		            localStorage.setItem(CALCULATOR_FORMULA_STORAGE_KEY, DEFAULT_CALCULATOR_FORMULA);
+		            calculateWeight();
+		        }
+		    });
+
+		    [dom.calcDensity, dom.calcFormula].forEach(input => {
+		        input?.addEventListener('focus', () => {
+		            currentInput = null;
+		            setVirtualKeyboardVisible(false);
+		        });
+		    });
+
+		    calculateWeight();
 		}
 		// 表格无图片格子点击 → 直接唤起拍照并替换
 function startDirectTakePhoto(dataIndex) {
@@ -12831,10 +14546,18 @@ function startDirectTakePhoto(dataIndex) {
 		    const diameter1 = parseFloat(dom.calcDiameter1.value);
 		    const diameter2 = parseFloat(dom.calcDiameter2.value);
 		    const length = parseFloat(dom.calcLength.value);
-		    const weight = parseFloat(dom.calcResult.value);
 
 		    if (isNaN(diameter1) || isNaN(diameter2) || isNaN(length) || diameter1 <= 0 || diameter2 <= 0 || length <= 0) {
 		      showSnackbar('请输入有效的计算参数', 'error');
+		      return;
+		    }
+		    if (!calculateWeight()) {
+		      showSnackbar('请检查密度和计算公式', 'error');
+		      return;
+		    }
+		    const weight = parseFloat(dom.calcResult.value);
+		    if (!Number.isFinite(weight) || weight <= 0) {
+		      showSnackbar('计算结果无效', 'error');
 		      return;
 		    }
 
@@ -12861,19 +14584,23 @@ function startDirectTakePhoto(dataIndex) {
 		function toggleMultiSelectMode() {
 		  isMultiSelectMode = !isMultiSelectMode;
 		  selectedRows.clear();
+		  if (isMultiSelectMode && isCellMultiSelectMode) {
+		      isCellMultiSelectMode = false;
+		      selectedCells.clear();
+		  }
           
           // Sync Checkbox
-          if (dom.multiSelectCheckbox) {
-              dom.multiSelectCheckbox.checked = isMultiSelectMode;
-          }
+		  if (dom.multiSelectCheckbox) {
+		      dom.multiSelectCheckbox.checked = isMultiSelectMode;
+		  }
 
 		  const menuText = dom.multiSelectMenuText;
 		  if (isMultiSelectMode) {
-		    menuText.textContent = '退出多选模式';
-            // Icon handling removed/not needed if using checkbox, but keeping logic just in case
+		    if (menuText) menuText.textContent = '退出多选模式';
 		  } else {
-		    menuText.textContent = '进入多选模式';
+		    if (menuText) menuText.textContent = '进入多选模式';
 		  }
+		  dom.multiSelectMenuItem?.setAttribute('icon', isMultiSelectMode ? 'check_box' : 'check_box_outline_blank');
 
 		  updateTable();
 		}
@@ -13024,9 +14751,9 @@ function startDirectTakePhoto(dataIndex) {
 
 		            // 如果下方空间不足 200px（菜单大约高度），则向上展开
 		            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-		                select.placement = 'top-start';
+			                select.placement = 'top';
 		            } else {
-		                select.placement = 'bottom-start';
+			                select.placement = 'bottom';
 		            }
 		        });
 		    }, 100); // 延迟确保 DOM 已渲染
@@ -13237,15 +14964,100 @@ function startDirectTakePhoto(dataIndex) {
 function chooseCardImage({ capture = false, targetIndex = -1, mode = 'select', onSelected = null } = {}) {
     const input = document.getElementById('cardImageInput');
     if (!input) return;
+    const draft = getMatchingImageDraft(targetIndex);
     input.value = '';
     if (capture) input.setAttribute('capture', 'environment');
     else input.removeAttribute('capture');
-    window.__rsdbPendingImageSelection = { targetIndex, mode, onSelected };
+    window.__rsdbPendingImageSelection = { targetIndex, mode, onSelected, draftId: draft?.id || '' };
     input.click();
 }
 
-async function commitSelectedImage(base64, targetIndex = -1, mode = 'select') {
+function renderImageDraftPreview() {
+    const draft = window.__rsdbImageDraft;
+    const previewImg = document.getElementById('previewImg');
+    const previewContainer = document.getElementById('cardImagePreview');
+    const noImageArea = document.getElementById('noImageUploadArea');
+    if (!draft || !previewImg || !previewContainer || !noImageArea) return;
+    if (draft.value && draft.value.startsWith('data:image/')) {
+        previewImg.src = draft.value;
+        previewContainer.style.display = 'block';
+        noImageArea.style.display = 'none';
+    } else {
+        previewImg.src = '';
+        previewImg.removeAttribute('src');
+        previewContainer.style.display = 'none';
+        noImageArea.style.display = 'block';
+    }
+}
+
+function beginImageDraft(targetIndex, originalValue = '') {
+    const value = typeof originalValue === 'string' ? originalValue : '';
+    window.__rsdbImageDraft = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        targetIndex: Number.isInteger(targetIndex) ? targetIndex : -1,
+        originalValue: value,
+        value,
+        dirty: false
+    };
+    window.tempNewCardImage = value;
+    renderImageDraftPreview();
+}
+
+function setImageDraftValue(value) {
+    const draft = window.__rsdbImageDraft || {
+        targetIndex: Number.isInteger(currentEditIndex) ? currentEditIndex : -1,
+        originalValue: ''
+    };
+    draft.value = typeof value === 'string' ? value : '';
+    draft.dirty = draft.value !== String(draft.originalValue || '');
+    window.__rsdbImageDraft = draft;
+    window.tempNewCardImage = draft.value;
+    renderImageDraftPreview();
+}
+
+function discardImageDraft() {
+    delete window.__rsdbImageDraft;
+    delete window.tempNewCardImage;
+}
+
+function getMatchingImageDraft(targetIndex) {
+    const draft = window.__rsdbImageDraft;
+    return draft && Number(draft.targetIndex) === Number(targetIndex) ? draft : null;
+}
+
+function openImageDeleteConfirmation(index) {
+    const targetIndex = Number.isInteger(index) ? index : -1;
+    const draft = getMatchingImageDraft(targetIndex);
+    const dialog = document.getElementById('deleteImageConfirmDialog');
+    const message = document.getElementById('deleteImageConfirmMessage');
+    const confirmBtn = document.getElementById('confirmDeleteImageBtn');
+
+    window.tempDeleteImageIndex = targetIndex;
+    if (draft) window.__rsdbPendingImageDeleteDraftId = draft.id;
+    else delete window.__rsdbPendingImageDeleteDraftId;
+
+    if (dialog) dialog.headline = draft ? '删除编辑中的图片？' : '确认删除';
+    if (message) {
+        message.textContent = draft
+            ? '图片只会在当前编辑中标记删除，点击“保存”后才会真正删除。'
+            : '确定要删除这张卡片图片吗？删除后不可恢复。';
+    }
+    if (confirmBtn) confirmBtn.textContent = draft ? '标记删除' : '删除';
+    if (dialog) dialog.open = true;
+}
+
+async function commitSelectedImage(base64, targetIndex = -1, mode = 'select', draftId = '') {
     if (!base64) return;
+    const draft = getMatchingImageDraft(targetIndex);
+    if (draftId && (!draft || draft.id !== draftId)) {
+        showSnackbar('编辑已关闭，未保存所选图片', 'info');
+        return;
+    }
+    if (draft) {
+        setImageDraftValue(base64);
+        showSnackbar('图片已加入编辑，保存后生效', 'info');
+        return;
+    }
     if (Number.isInteger(targetIndex) && targetIndex >= 0 && tableData[targetIndex]) {
         beginOperation('update_image', '更新图片', { index: targetIndex, mode });
         tableData[targetIndex].cardImage = base64;
@@ -13433,7 +15245,82 @@ async function handleImageSelect(e) {
         noImageArea.style.display = 'none';
     }
 
+    const draft = window.__rsdbImageDraft;
+    if (draft && Number(draft.targetIndex) === Number(currentEditIndex)) {
+        setImageDraftValue(base64);
+    }
+
     return base64;
+}
+
+function bindDesktopImagePreviewInteractions({
+    container,
+    isEnabled,
+    getState,
+    setState,
+    updateImmediately,
+    updateWithTransition,
+    minScale = 0.5,
+    maxScale = 4
+}) {
+    if (!container) return;
+    let activePointerId = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let originX = 0;
+    let originY = 0;
+
+    container.addEventListener('dragstart', event => event.preventDefault());
+    container.addEventListener('pointerdown', event => {
+        if (!isEnabled() || event.pointerType === 'touch' || event.button !== 0) return;
+        const state = getState();
+        activePointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        originX = state.translateX;
+        originY = state.translateY;
+        container.setPointerCapture?.(event.pointerId);
+        container.style.cursor = 'grabbing';
+        event.preventDefault();
+    });
+    container.addEventListener('pointermove', event => {
+        if (event.pointerId !== activePointerId) return;
+        setState({
+            translateX: originX + event.clientX - dragStartX,
+            translateY: originY + event.clientY - dragStartY
+        });
+        updateImmediately();
+        event.preventDefault();
+    });
+    const finishDrag = event => {
+        if (activePointerId === null || (event?.pointerId != null && event.pointerId !== activePointerId)) return;
+        try { container.releasePointerCapture?.(activePointerId); } catch (error) {}
+        activePointerId = null;
+        container.style.cursor = isEnabled() ? 'grab' : 'default';
+        updateWithTransition();
+    };
+    container.addEventListener('pointerup', finishDrag);
+    container.addEventListener('pointercancel', finishDrag);
+    container.addEventListener('wheel', event => {
+        if (!isEnabled()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const state = getState();
+        const factor = Math.exp(-event.deltaY * 0.0015);
+        const nextScale = Math.max(minScale, Math.min(maxScale, state.currentScale * factor));
+        if (Math.abs(nextScale - state.currentScale) < 0.0001) return;
+        const rect = container.getBoundingClientRect();
+        const focalX = event.clientX - rect.left - rect.width / 2;
+        const focalY = event.clientY - rect.top - rect.height / 2;
+        const ratio = nextScale / state.currentScale;
+        setState({
+            currentScale: nextScale,
+            translateX: focalX - (focalX - state.translateX) * ratio,
+            translateY: focalY - (focalY - state.translateY) * ratio
+        });
+        updateWithTransition();
+    }, { passive: false });
+    container.style.cursor = isEnabled() ? 'grab' : 'default';
 }
 
 function showFullImage(src, productId = '', dataIndex = -1) {
@@ -13627,7 +15514,10 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             img.src = newBase64;
             const previewImg = document.getElementById('previewImg');
             if (previewImg && previewImg.src) previewImg.src = newBase64;
-            if (dataIndex !== -1 && tableData[dataIndex]) {
+            const draft = window.__rsdbImageDraft;
+            if (draft && Number(draft.targetIndex) === Number(dataIndex)) {
+                setImageDraftValue(newBase64);
+            } else if (dataIndex !== -1 && tableData[dataIndex]) {
                 beginOperation('update_image', '旋转图片', { index: dataIndex, mode: 'viewer_rotate' });
                 tableData[dataIndex].cardImage = newBase64;
                 await saveDataToIndexedDB();
@@ -13647,7 +15537,7 @@ function showFullImage(src, productId = '', dataIndex = -1) {
             translateX = 0;
             translateY = 0;
             updateTransform();
-            showSnackbar('已保存旋转后的图片', 'success');
+            showSnackbar(draft && Number(draft.targetIndex) === Number(dataIndex) ? '旋转已加入编辑，保存后生效' : '已保存旋转后的图片', draft && Number(draft.targetIndex) === Number(dataIndex) ? 'info' : 'success');
         } catch (err) {
             console.error(err);
             showSnackbar('保存失败', 'error');
@@ -13700,6 +15590,19 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         updatePosWithTransition();
     });
 
+    bindDesktopImagePreviewInteractions({
+        container: imgContainer,
+        isEnabled: () => true,
+        getState: () => ({ currentScale, translateX, translateY }),
+        setState: next => {
+            if (next.currentScale != null) currentScale = next.currentScale;
+            if (next.translateX != null) translateX = next.translateX;
+            if (next.translateY != null) translateY = next.translateY;
+        },
+        updateImmediately: updatePosImmediately,
+        updateWithTransition: updatePosWithTransition
+    });
+
     // ────────────────────────────── 新增：下拉菜单三个按钮的业务逻辑 ──────────────────────────────
     const fileInput = document.getElementById('cardImageInput');
 
@@ -13718,13 +15621,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
     // 3. 删除图片
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
         overlay.remove();
-        window.tempDeleteImageIndex = Number.isInteger(dataIndex) && dataIndex >= 0 ? dataIndex : -1;
-        document.getElementById('deleteImageConfirmDialog').open = true;
+        openImageDeleteConfirmation(Number.isInteger(dataIndex) && dataIndex >= 0 ? dataIndex : -1);
     };
 
     // 点击空白处关闭
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay || e.target === imgContainer) {
+        if (e.target === overlay) {
             overlay.remove();
         }
     });
@@ -14154,6 +16056,19 @@ function showFullImage(src, productId = '', dataIndex = -1) {
         if (hasImage) updatePosWithTransition();
     });
 
+    bindDesktopImagePreviewInteractions({
+        container: imgContainer,
+        isEnabled: () => hasImage,
+        getState: () => ({ currentScale, translateX, translateY }),
+        setState: next => {
+            if (next.currentScale != null) currentScale = next.currentScale;
+            if (next.translateX != null) translateX = next.translateX;
+            if (next.translateY != null) translateY = next.translateY;
+        },
+        updateImmediately: updatePosImmediately,
+        updateWithTransition: updatePosWithTransition
+    });
+
     // ────────────────────────────── 拍照/相册/删除业务逻辑 ──────────────────────────────
     const fileInput = document.getElementById('cardImageInput');
 
@@ -14169,13 +16084,12 @@ function showFullImage(src, productId = '', dataIndex = -1) {
 
     overlay.querySelector('#deleteImageInPreviewBtn').onclick = () => {
         overlay.remove();
-        window.tempDeleteImageIndex = index;
-        document.getElementById('deleteImageConfirmDialog').open = true;
+        openImageDeleteConfirmation(index);
     };
 
     // 点击空白处关闭
     overlay.onclick = (e) => { 
-        if (e.target === overlay || e.target === imgContainer) overlay.remove(); 
+        if (e.target === overlay) overlay.remove(); 
     };
 }
 
@@ -14380,6 +16294,7 @@ function initShortcutToolbarDrag() {
 
 		  initTheme();
 		  initEventListeners();
+		  bindCellAlignPickerInteractions();
 		  initShortcutToolbarDrag();
 
 		  window.addEventListener("message", (event) => {
@@ -14430,9 +16345,9 @@ function initShortcutToolbarDrag() {
 
 		  loadDataFromIndexedDB();
 		  updateTable();
+		  loadCalculatorSettings();
 		  initAutoCalculate();
 		  initCalculatorKeyboard(); 
-		  dom.calcDensity.value = 0.00617;
 		  ZoomManager.init();
           KeyboardConfigManager.init();
           applyAppSettings();

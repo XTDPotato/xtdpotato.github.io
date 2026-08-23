@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+<title>Moonlight Sunshine 串流</title>
+<desc>深蓝夜空、月亮、阳光和连接节点组成的矢量封面</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071a35"/><stop offset="1" stop-color="#164d68"/></linearGradient>
+  <radialGradient id="moon"><stop stop-color="#fff7bd"/><stop offset="1" stop-color="#f4c95d"/></radialGradient>
+</defs>
+<rect width="1200" height="630" rx="36" fill="url(#bg)"/>
+<circle cx="270" cy="260" r="116" fill="url(#moon)"/>
+<circle cx="318" cy="220" r="116" fill="#0b2845"/>
+<circle cx="895" cy="200" r="62" fill="#ffcf5c"/>
+<g fill="none" stroke="#83d8ff" stroke-width="10" stroke-linecap="round">
+  <path d="M410 330 C560 210 650 390 790 270"/>
+  <path d="M520 455 C650 370 730 470 895 330"/>
+</g>
+<g fill="#b8eeff"><circle cx="410" cy="330" r="16"/><circle cx="790" cy="270" r="16"/><circle cx="520" cy="455" r="16"/><circle cx="895" cy="330" r="16"/></g>
+<path d="M120 520h960" stroke="#59b7db" stroke-width="8" opacity=".4"/>
+</svg>

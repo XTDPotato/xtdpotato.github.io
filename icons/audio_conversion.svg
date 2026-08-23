@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">音频转换</title><desc id="desc">Material 3 风格音频图标</desc>
+  <rect width="512" height="512" rx="112" fill="#EADDFF"/>
+  <path fill="#21005D" d="M300 100v220c0 58-47 105-105 105S90 378 90 320s47-105 105-105c18 0 36 5 51 13V132l176-40v184c0 58-47 105-105 105s-105-47-105-105 47-105 105-105c18 0 36 5 51 13v-34l-68 15v155c0 58-47 105-105 105z"/>
+</svg>

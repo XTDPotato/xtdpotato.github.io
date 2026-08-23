@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">媒体工具</title><desc id="desc">Material 3 风格的图片和音频工具图标</desc>
+  <rect width="1200" height="520" rx="36" fill="#F3EDF7"/>
+  <rect x="150" y="92" width="360" height="336" rx="76" fill="#EADDFF"/>
+  <path fill="#21005D" d="M236 168h188c18 0 32 14 32 32v120c0 18-14 32-32 32H236c-18 0-32-14-32-32V200c0-18 14-32 32-32zm0 152h188l-58-70-43 52-30-36-57 54zm42-104a24 24 0 1 0 0 48 24 24 0 0 0 0-48z"/>
+  <rect x="690" y="92" width="360" height="336" rx="76" fill="#D0BCFF"/>
+  <path fill="#381E72" d="M892 164v166c0 38-30 68-68 68s-68-30-68-68 30-68 68-68c12 0 24 3 34 9V192l126-28v136c0 38-30 68-68 68s-68-30-68-68 30-68 68-68c12 0 24 3 34 9v-50l-58 13v126c0 38-30 68-68 68z"/>
+</svg>
