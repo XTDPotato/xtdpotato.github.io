@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN" class="mdui-theme-auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta name="description" content="Material 3 音频转换工具，支持音频播放、格式转换、首尾裁剪与预览。">
+  <meta name="theme-color" content="#6750a4">
+  <meta name="application-name" content="音频转换">
+  <meta name="apple-mobile-web-app-title" content="音频转换">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/svg+xml" href="../icons/audio_conversion.svg">
+  <link rel="shortcut icon" href="../icons/audio_conversion.svg">
+  <link rel="apple-touch-icon" href="../icons/audio_conversion.svg">
+  <title>音频转换</title>
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone"
+      rel="stylesheet"
+    />
+    
+  <link rel="stylesheet" href="https://unpkg.com/mdui@2.0.3/mdui.css">
+  <script src="https://unpkg.com/mdui@2.0.3/mdui.global.js"></script>
+  <style>
+    :root { --page-max: 900px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--mdui-color-surface); color: var(--mdui-color-on-surface); }
+    .page { min-height: 100dvh; display: flex; flex-direction: column; }
+    .topbar { position: sticky; top: 0; z-index: 3; background: var(--mdui-color-surface); box-shadow: 0 1px 0 color-mix(in srgb, currentColor 15%, transparent); }
+    .content { width: min(var(--page-max), 100%); margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
+    .dropzone { display: grid; place-items: center; min-height: 150px; padding: 24px; border: 2px dashed var(--mdui-color-outline); border-radius: 12px; text-align: center; transition: background .18s ease, border-color .18s ease; }
+    .dropzone.dragover { border-color: var(--mdui-color-primary); background: var(--mdui-color-primary-container); }
+    .panel { padding: 16px; border: 1px solid var(--mdui-color-outline-variant); border-radius: 10px; background: var(--mdui-color-surface-container-low); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .range { width: 100%; }
+    .file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    audio { width: 100%; }
+    .seek-controls { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+    .seek-controls mdui-button { min-width: 56px; }
+    .seek-seconds { width: 112px; flex: 0 0 112px; }
+    .appbar-leading-icon { width: 48px; height: 48px; flex: 0 0 48px; display: inline-flex; align-items: center; justify-content: center; }
+    .appbar-leading-icon mdui-icon { font-size: 24px; }
+    .status { color: var(--mdui-color-on-surface-variant); font-size: 13px; line-height: 1.5; }
+    @media (max-width: 600px) { .content { padding: 12px; } .grid { grid-template-columns: 1fr; } .topbar mdui-top-app-bar-title { font-size: 16px; } .controls mdui-button { flex: 1 1 100%; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <mdui-top-app-bar class="topbar">
+    <span class="appbar-leading-icon" aria-label="音频转换"><mdui-icon name="audiotrack"></mdui-icon></span>
+    <mdui-top-app-bar-title>音频转换</mdui-top-app-bar-title>
+    <div style="flex:1"></div>
+    <mdui-button-icon id="resetBtn" icon="restart_alt" aria-label="重置"></mdui-button-icon>
+    <mdui-button-icon id="closeBtn" icon="close" aria-label="关闭音频转换"></mdui-button-icon>
+  </mdui-top-app-bar>
+  <main class="content">
+    <section class="dropzone" id="dropzone">
+      <div><mdui-icon name="audio_file" style="font-size:42px"></mdui-icon><h2 style="margin:8px 0">导入音频</h2><div class="status">支持 MP3、M4A、WAV、OGG 等浏览器可解码格式</div><mdui-button id="pickBtn" variant="filled" icon="upload_file" style="margin-top:12px">选择音频</mdui-button><input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac" hidden></div>
+    </section>
+    <section class="panel" id="editorPanel" hidden>
+      <div class="controls"><mdui-icon name="audiotrack"></mdui-icon><div id="fileName" class="file-name"></div></div>
+      <audio id="player" controls preload="metadata" style="margin-top:12px"></audio>
+      <div class="seek-controls" data-player="player">
+        <mdui-button variant="text" data-seek="-10" icon="replay_10">快倒</mdui-button>
+        <mdui-button variant="text" data-seek="-1">−1 秒</mdui-button>
+        <mdui-text-field id="seekSeconds" class="seek-seconds" label="N 秒" type="number" min="0.1" step="0.1" value="5"></mdui-text-field>
+        <mdui-button-icon data-seek-custom="back" icon="replay" aria-label="后退 N 秒"></mdui-button-icon>
+        <mdui-button-icon data-seek-custom="forward" icon="forward" aria-label="前进 N 秒"></mdui-button-icon>
+        <mdui-button variant="text" data-seek="1">+1 秒</mdui-button>
+        <mdui-button variant="text" data-seek="10" icon="forward_10">快进</mdui-button>
+      </div>
+      <mdui-slider id="positionRange" class="range" min="0" max="0" step="0.01" value="0" label="播放位置"></mdui-slider>
+      <div class="grid">
+        <mdui-text-field id="startInput" label="裁剪开头（秒）" type="number" step="0.001" value="0" helper="例如 0.5 表示减掉头部 500 毫秒"></mdui-text-field>
+        <mdui-text-field id="endInput" label="裁剪结尾（秒）" type="number" step="0.001" value="0" helper="例如 60 表示减掉尾部 1 分钟"></mdui-text-field>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <mdui-select id="formatSelect" label="导出格式" value="wav"><mdui-menu-item value="wav">WAV</mdui-menu-item><mdui-menu-item value="mp3">MP3</mdui-menu-item><mdui-menu-item value="ogg">OGG</mdui-menu-item><mdui-menu-item value="m4a">M4A</mdui-menu-item></mdui-select>
+        <mdui-text-field id="nameInput" label="输出文件名" value="converted-audio"></mdui-text-field>
+      </div>
+      <div class="controls" style="margin-top:14px"><mdui-button id="previewBtn" variant="tonal" icon="play_arrow">预览裁剪结果</mdui-button><mdui-button id="exportBtn" variant="filled" icon="download">导出音频</mdui-button></div>
+      <div id="status" class="status" style="margin-top:10px">等待处理</div>
+    </section>
+    <section class="panel" id="previewPanel" hidden>
+      <div class="controls"><mdui-icon name="preview"></mdui-icon><div class="file-name">裁剪结果预览</div></div>
+      <audio id="previewPlayer" controls preload="metadata" style="margin-top:12px"></audio>
+      <div class="seek-controls" data-player="previewPlayer">
+        <mdui-button variant="text" data-seek="-10" icon="replay_10">快倒</mdui-button>
+        <mdui-button variant="text" data-seek="-1">−1 秒</mdui-button>
+        <mdui-button-icon data-seek-custom="back" icon="replay" aria-label="后退 N 秒"></mdui-button-icon>
+        <mdui-button-icon data-seek-custom="forward" icon="forward" aria-label="前进 N 秒"></mdui-button-icon>
+        <mdui-button variant="text" data-seek="1">+1 秒</mdui-button>
+        <mdui-button variant="text" data-seek="10" icon="forward_10">快进</mdui-button>
+      </div>
+      <div id="previewInfo" class="status" style="margin-top:8px"></div>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const dropzone = $("dropzone"), input = $("fileInput"), pick = $("pickBtn"), panel = $("editorPanel");
+  const player = $("player"), position = $("positionRange"), start = $("startInput"), end = $("endInput"), status = $("status");
+  const previewPanel = $("previewPanel"), previewPlayer = $("previewPlayer"), previewInfo = $("previewInfo");
+  let file = null, objectUrl = null, audioBuffer = null, previewUrl = null, sourceDuration = 0;
+  let previewCacheKey = "";
+  let previewRequestId = 0;
+  let ffmpeg = null, ffmpegApi = null, ffmpegLoading = null;
+  const toast = (text) => { status.textContent = text; };
+  async function loadFFmpeg() {
+    if (ffmpeg?.loaded) return ffmpeg;
+    if (ffmpegLoading) return ffmpegLoading;
+    ffmpegLoading = (async () => {
+      toast("正在加载多格式转换核心…");
+      const [{ FFmpeg }, util] = await Promise.all([
+        import("https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"),
+        import("https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js")
+      ]);
+      ffmpegApi = util;
+      ffmpeg = new FFmpeg();
+      ffmpeg.on("progress", ({ progress }) => toast(`正在转换 ${Math.max(0, Math.min(100, Math.round(progress * 100)))}%`));
+      await ffmpeg.load({
+        coreURL: await util.toBlobURL("https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", "text/javascript"),
+        wasmURL: await util.toBlobURL("https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm", "application/wasm")
+      });
+      return ffmpeg;
+    })().catch((error) => { ffmpegLoading = null; throw error; });
+    return ffmpegLoading;
+  }
+  const close = () => window.parent?.postMessage({ type: "audio-conversion:close" }, "*");
+  $("closeBtn")?.addEventListener("click", close);
+  pick.addEventListener("click", () => input.click());
+  ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (e) => { e.preventDefault(); dropzone.classList.add("dragover"); }));
+  ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, (e) => { e.preventDefault(); dropzone.classList.remove("dragover"); }));
+  dropzone.addEventListener("drop", (e) => loadFile(e.dataTransfer.files?.[0]));
+  input.addEventListener("change", () => loadFile(input.files?.[0]));
+  async function loadFile(next) {
+    if (!next) return;
+    previewRequestId += 1;
+    player.pause(); previewPlayer.pause();
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null; previewCacheKey = ""; previewPanel.hidden = true; previewPlayer.removeAttribute("src");
+    file = next; if (objectUrl) URL.revokeObjectURL(objectUrl); objectUrl = URL.createObjectURL(file);
+    player.src = objectUrl; $("fileName").textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`; panel.hidden = false;
+    $("nameInput").value = file.name.replace(/\.[^.]+$/, "") || "converted-audio";
+    player.onloadedmetadata = () => { sourceDuration = Number(player.duration) || sourceDuration; position.max = String(sourceDuration); end.value = "0"; };
+    try { audioBuffer = await decode(file); toast("音频已加载，可以播放、裁剪和预览"); } catch (e) { audioBuffer = null; toast("浏览器无法解码该格式，但仍可尝试在线播放"); }
+  }
+  async function decode(blob) { const ctx = new AudioContext(); const buffer = await ctx.decodeAudioData(await blob.arrayBuffer()); await ctx.close(); return buffer; }
+  player.addEventListener("timeupdate", () => { position.value = String(player.currentTime || 0); });
+  position.addEventListener("input", () => { player.currentTime = Number(position.value) || 0; });
+  function seekAudio(target, seconds) {
+    if (!target || !Number.isFinite(target.duration)) return;
+    const next = Math.max(0, Math.min(target.duration, (Number(target.currentTime) || 0) + seconds));
+    target.currentTime = next;
+  }
+  document.querySelectorAll(".seek-controls").forEach((controls) => {
+    controls.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-seek], [data-seek-custom]");
+      if (!button) return;
+      const target = $(controls.dataset.player);
+      let seconds = Number(button.dataset.seek);
+      if (button.dataset.seekCustom) {
+        const custom = Math.max(0.1, Number($("seekSeconds")?.value) || 5);
+        seconds = button.dataset.seekCustom === "back" ? -custom : custom;
+      }
+      seekAudio(target, seconds);
+    });
+  });
+  $("previewBtn").addEventListener("click", async () => {
+    if (!file) return toast("请先导入音频");
+    const requestId = ++previewRequestId;
+    player.pause();
+    previewPlayer.pause();
+    const button = $("previewBtn"), r = range();
+    const cacheKey = `${file.name}|${file.size}|${file.lastModified}|${r.from.toFixed(3)}|${r.to.toFixed(3)}`;
+    if (previewUrl && previewCacheKey === cacheKey) {
+      previewPanel.hidden = false; previewPlayer.currentTime = 0;
+      if (previewPlayer.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+        await new Promise((resolve) => previewPlayer.addEventListener("canplay", resolve, { once: true }));
+      }
+      if (requestId === previewRequestId) await previewPlayer.play().catch(() => {});
+      toast("正在播放已缓存的裁剪预览"); return;
+    }
+    button.loading = true; button.disabled = true; toast("正在生成裁剪预览…");
+    try {
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+      const blob = audioBuffer ? renderWav(audioBuffer, r) : await convertWithFFmpeg("wav");
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(blob); previewCacheKey = cacheKey;
+      if (requestId !== previewRequestId) { URL.revokeObjectURL(previewUrl); previewUrl = null; return; }
+      previewPlayer.src = previewUrl; previewPanel.hidden = false;
+      previewInfo.textContent = `保留 ${Math.max(0, r.to - r.from).toFixed(3)} 秒 · 移除开头 ${r.from.toFixed(3)} 秒 · 移除结尾 ${Math.max(0, sourceDuration - r.to).toFixed(3)} 秒`;
+      previewPlayer.currentTime = 0;
+      if (previewPlayer.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+        await new Promise((resolve) => previewPlayer.addEventListener("canplay", resolve, { once: true }));
+      }
+      if (requestId === previewRequestId) await previewPlayer.play().catch(() => {});
+      toast("正在播放裁剪预览");
+    } catch (error) { toast(`预览失败：${error?.message || "无法处理此音频"}`); }
+    finally { button.loading = false; button.disabled = false; }
+  });
+  $("exportBtn").addEventListener("click", async () => {
+    if (!file) return toast("请先导入音频");
+    const button = $("exportBtn"), format = $("formatSelect").value || "wav";
+    button.loading = true; button.disabled = true;
+    try {
+      const blob = format === "wav" && audioBuffer ? renderWav(audioBuffer, range()) : await convertWithFFmpeg(format);
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = `${$("nameInput").value || "converted-audio"}.${format}`; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500); toast(`${format.toUpperCase()} 音频已导出`);
+    } catch (error) { toast(`转换失败：${error?.message || "请检查网络或音频格式"}`); }
+    finally { button.loading = false; button.disabled = false; }
+  });
+  async function convertWithFFmpeg(format) {
+    const engine = await loadFFmpeg(), inputExt = (file.name.split(".").pop() || "audio").replace(/[^a-z0-9]/gi, "") || "audio";
+    const inputName = `input.${inputExt}`, outputName = `output.${format}`, r = range();
+    await engine.writeFile(inputName, await ffmpegApi.fetchFile(file));
+    const args = ["-i", inputName, "-ss", r.from.toFixed(3), "-t", Math.max(0.001, r.to - r.from).toFixed(3), "-vn"];
+    const codecs = { mp3: ["-c:a", "libmp3lame", "-b:a", "192k"], ogg: ["-c:a", "libvorbis", "-q:a", "5"], m4a: ["-c:a", "aac", "-b:a", "192k"], wav: ["-c:a", "pcm_s16le"] };
+    args.push(...(codecs[format] || codecs.wav), "-y", outputName);
+    await engine.exec(args);
+    const data = await engine.readFile(outputName);
+    await Promise.allSettled([engine.deleteFile(inputName), engine.deleteFile(outputName)]);
+    const mime = { mp3: "audio/mpeg", ogg: "audio/ogg", m4a: "audio/mp4", wav: "audio/wav" }[format] || "application/octet-stream";
+    return new Blob([data.buffer], { type: mime });
+  }
+  function range() { const total = audioBuffer?.duration || sourceDuration || 0; const from = Math.max(0, Math.min(total, Number(start.value) || 0)); const tail = Math.max(0, Number(end.value) || 0); return { from, to: Math.max(from, total - tail) }; }
+  function renderWav(buffer, r) { const rate = buffer.sampleRate, channels = buffer.numberOfChannels, length = Math.max(0, Math.floor((r.to - r.from) * rate)); const bytes = new ArrayBuffer(44 + length * channels * 2), view = new DataView(bytes); const write = (o, s) => [...s].forEach((c, i) => view.setUint8(o + i, c.charCodeAt(0))); write(0, "RIFF"); view.setUint32(4, 36 + length * channels * 2, true); write(8, "WAVEfmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, channels, true); view.setUint32(24, rate, true); view.setUint32(28, rate * channels * 2, true); view.setUint16(32, channels * 2, true); view.setUint16(34, 16, true); write(36, "data"); view.setUint32(40, length * channels * 2, true); let p = 44; for (let i = 0; i < length; i++) for (let c = 0; c < channels; c++) { const sample = Math.max(-1, Math.min(1, buffer.getChannelData(c)[Math.floor(r.from * rate) + i] || 0)); view.setInt16(p, sample < 0 ? sample * 32768 : sample * 32767, true); p += 2; } return new Blob([bytes], { type: "audio/wav" }); }
+  $("resetBtn").addEventListener("click", () => {
+    previewRequestId += 1;
+    player.pause();
+    previewPlayer.pause();
+    player.currentTime = 0;
+    previewPlayer.currentTime = 0;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    file = null; audioBuffer = null; sourceDuration = 0; objectUrl = null; previewUrl = null; previewCacheKey = "";
+    player.removeAttribute("src");
+    previewPlayer.removeAttribute("src");
+    player.load();
+    previewPlayer.load();
+    position.value = "0";
+    panel.hidden = true; previewPanel.hidden = true; input.value = "";
+    toast("已重置");
+  });
+})();
+</script>
+</body>
+</html>
