@@ -15,23 +15,29 @@
     <style>
       html, body { height: 100%; margin: 0; background: var(--mdui-color-surface); color: var(--mdui-color-on-surface); }
       .page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-      .course-appbar-wrap { position: relative; flex: 0 0 auto; min-width: 0; overflow: hidden; }
+      .course-appbar-wrap { position: relative; flex: 0 0 auto; min-width: 0; min-height: 72px; overflow: visible; }
       .course-appbar {
         position: relative;
         z-index: 10;
         gap: 8px;
+        min-height: 72px;
+        padding: 8px 12px;
+        box-sizing: border-box;
+        overflow: visible;
+        align-items: center;
+        --mdui-top-app-bar-height: 72px;
         background: var(--mdui-color-surface);
       }
       .course-scroll-target { flex: 1 1 auto; min-height: 0; overflow: auto; }
       .course-appbar-spacer { flex: 1 1 auto; min-width: 8px; }
-      .search-input { width: min(420px, 48vw); min-width: 0; box-sizing: border-box; }
+      .search-input { width: min(420px, 48vw); min-width: 0; min-height: 56px; box-sizing: border-box; }
       #favoritesBtnDesktop {
         flex: 0 0 48px;
         width: 48px;
         min-width: 48px;
         padding-inline: 0;
       }
-      .content { padding: 12px; box-sizing: border-box; max-width: 1000px; margin: 0 auto; width: 100%; padding-bottom: 48px; }
+      .content { padding: 12px; box-sizing: border-box; max-width: 1000px; margin: 0 auto; width: 100%; padding-bottom: calc(144px + env(safe-area-inset-bottom)); }
 
       @media (max-width: 720px) {
         .course-appbar-wrap {
@@ -59,7 +65,7 @@
           max-width: none;
           box-sizing: border-box;
         }
-        .content { padding: 8px; }
+        .content { padding: 8px; padding-bottom: calc(144px + env(safe-area-inset-bottom)); }
       }
       
       .grid { 
@@ -85,7 +91,7 @@
       .course-dialog::part(panel) { padding: 0; width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
       .course-doc-wrap { height: 100%; overflow-y: auto; background: var(--mdui-color-surface); scroll-behavior: smooth; }
       .course-hero { width: 100%; height: 220px; object-fit: cover; background: var(--mdui-color-surface-container-high); }
-      .course-doc { padding: 24px; max-width: 800px; margin: 0 auto; }
+      .course-doc { padding: 24px; padding-bottom: calc(144px + env(safe-area-inset-bottom)); max-width: 800px; margin: 0 auto; box-sizing: border-box; }
 
       .markdown-body { line-height: 1.8; font-size: 16px; color: var(--mdui-color-on-surface); }
       .markdown-body h1 { font-size: 2.2rem; margin-bottom: 1.5rem; border-bottom: 3px solid var(--mdui-color-primary-container); padding-bottom: 10px; }
@@ -184,6 +190,8 @@
 
 <script src="js/markdown_read.js"></script>
 
+<script src="js/content-data.js"></script>
+
     <script>
 let courses = [];
 
@@ -215,6 +223,14 @@ function parseFrontMatter(markdown, fileName) {
 }
 
 async function loadCourses() {
+  const bundledCourses = Array.isArray(window.XTDContentData?.tutorials) ? window.XTDContentData.tutorials : [];
+  const useBundledCourses = () => {
+    if (!bundledCourses.length) return false;
+    courses = bundledCourses.map((entry) => parseFrontMatter(entry.markdown, entry.file));
+    renderGrid(document.getElementById("searchInput")?.value || "");
+    return true;
+  };
+  if (window.location.protocol === "file:" && useBundledCourses()) return;
   try {
     const response = await fetch("tutorials/index.json", { cache: "no-store" });
     if (!response.ok) throw new Error("无法读取教程目录");
@@ -226,6 +242,7 @@ async function loadCourses() {
     }))).filter(Boolean);
     renderGrid(document.getElementById("searchInput")?.value || "");
   } catch (error) {
+    if (useBundledCourses()) return;
     const grid = document.getElementById("courseGrid");
     if (grid) grid.innerHTML = '<div class="empty-state">教程目录读取失败</div>';
   }

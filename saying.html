@@ -30,7 +30,7 @@
         max-width: 920px;
         margin: 0 auto;
         min-height: 100%;
-        padding-bottom: 24px;
+        padding-bottom: calc(144px + env(safe-area-inset-bottom));
       }
 
       .hero {
@@ -105,6 +105,27 @@
                   <span>爱发电主页</span>
                 </span>
               </mdui-button>
+            </div>
+          </div>
+        </div>
+      </mdui-card>
+
+      <mdui-card variant="filled" style="width: 100%; margin-top: 12px">
+        <div class="mdui-prose" style="padding: 16px">
+          <div style="display:grid;gap:12px">
+            <div style="height:42px;display:flex;align-items:center">
+              <span style="width:48px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:16px;background:var(--mdui-color-primary-container);color:var(--mdui-color-on-primary-container)">
+                <mdui-icon name="auto_awesome" style="font-size:28px"></mdui-icon>
+              </span>
+            </div>
+            <div>
+              <p class="hero-title" style="font-size:18px">关于这个网页</p>
+              <p class="hero-desc" style="margin-top:8px">
+                本网页是一个以 <strong>Vibe Coding</strong> 方式持续开发的个人项目。界面、工具和交互由创意需求驱动，并结合 AI 辅助完成代码编写、调试与迭代。
+              </p>
+              <p class="hero-desc" style="margin-top:8px">
+                项目采用 Material 3 与 MDUI 构建，功能仍在持续完善中，部分工具具有实验性质。遇到异常时欢迎反馈，后续会不断优化移动端适配、性能和使用体验。
+              </p>
             </div>
           </div>
         </div>

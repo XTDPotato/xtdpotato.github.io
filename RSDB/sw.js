@@ -1,9 +1,11 @@
 // sw.js - 简单高效的缓存策略（2025-2026 推荐 Cache-First + Network-Fallback）
 
-const CACHE_NAME = 'roundbar-app-v2.1-20260823-2';  // 改版本号会强制更新缓存
+const CACHE_NAME = 'roundbar-app-v2.1-20260824-32';  // 改版本号会强制更新缓存
 const urlsToCache = [
     './',
     './index.html',
+    './input-method-data.js?v=20260824-21',
+    './input-method-library.js?v=20260824-23',
     'https://unpkg.com/mdui@2/mdui.css',
     'https://unpkg.com/mdui@2.0.3/mdui.global.js',
     'https://unpkg.com/xlsx/dist/xlsx.full.min.js',

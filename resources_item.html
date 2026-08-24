@@ -36,7 +36,7 @@
         max-width: 980px;
         margin: 0 auto;
         width: 100%;
-        padding-bottom: 24px;
+        padding-bottom: calc(144px + env(safe-area-inset-bottom));
       }
 
       .grid {
@@ -60,8 +60,34 @@
         height: 140px;
         object-fit: cover;
         display: block;
-        background: #eee;
+        background: var(--mdui-color-surface-container);
       }
+
+      .tools-icon-cover {
+        width: 100%;
+        height: 140px;
+        display: grid;
+        grid-template-columns: repeat(2, 88px);
+        justify-content: center;
+        align-content: center;
+        column-gap: 22px;
+        background: var(--mdui-color-surface-container);
+      }
+
+      .tools-icon-cover .tool-cover-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        justify-self: center;
+        color: var(--mdui-color-on-primary-container);
+        background: var(--mdui-color-primary-container);
+      }
+
+      .tools-icon-cover .tool-cover-icon mdui-icon { font-size: 30px; }
+      .minecraft-cover { object-position: center; }
 
       .res-body {
         padding: 12px;
@@ -268,18 +294,15 @@
         morsSheetCloseBtn: document.getElementById("morsSheetCloseBtn"),
       };
 
-      function openImageCompressor() {
-        window.parent?.postMessage({ type: "app:open-tool", tool: "image-compress" }, "*");
-      }
-
       const resources = [
         {
-          id: "image-compress",
-          title: "图片压缩",
-          desc: "本地处理图片，支持批量压缩、格式转换和 ZIP 导出。",
-          cover: "icons/img_compress.svg",
+          id: "tools",
+          title: "工具",
+          desc: "图片与音频的本地处理工具。",
+          coverType: "tools-icons",
           links: [
-            { title: "打开图片压缩工具", icon: "open_in_full", action: "open-image-compress" },
+            { title: "图片压缩", description: "批量压缩、格式转换与下载", icon: "image", tool: "image-compress" },
+            { title: "音频转换", description: "转换格式、裁剪首尾与试听预览", icon: "audiotrack", tool: "audio-conversion" },
           ],
         },
         {
@@ -296,7 +319,9 @@
           id: "minecraft",
           title: "Minecraft",
           desc: "官方渠道下载与其他启动器的常用入口。",
-          cover: "icons/minecraft.svg",
+          cover: "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/key-art/Minecraft-300x300.jpg",
+          coverFallback: "icons/minecraft.svg",
+          coverClass: "minecraft-cover",
           links: [
             { title: "官网", icon: "public", href: "https://www.minecraft.net" },
             {
@@ -367,10 +392,37 @@
           card.className = "res-card";
           card.dataset.expanded = "1";
 
-          const img = document.createElement("img");
-          img.className = "res-cover";
-          img.alt = item.title;
-          img.src = item.cover;
+          let cover;
+          if (item.coverType === "tools-icons") {
+            cover = document.createElement("div");
+            cover.className = "tools-icon-cover";
+            cover.setAttribute("role", "img");
+            cover.setAttribute("aria-label", "图片与音频工具");
+            const toolIcons = [
+              { name: "image", label: "图片工具", className: "" },
+              { name: "audiotrack", label: "音频工具", className: "" },
+            ];
+            toolIcons.forEach(({ name, label, className }) => {
+              const iconBox = document.createElement("span");
+              iconBox.className = `tool-cover-icon ${className}`.trim();
+              iconBox.setAttribute("aria-label", label);
+              const icon = document.createElement("mdui-icon");
+              icon.setAttribute("name", name);
+              iconBox.appendChild(icon);
+              cover.appendChild(iconBox);
+            });
+          } else {
+            cover = document.createElement("img");
+            cover.className = `res-cover ${item.coverClass || ""}`.trim();
+            cover.alt = item.title;
+            cover.src = item.cover || item.coverFallback || "";
+            if (item.coverFallback) {
+              cover.addEventListener("error", () => {
+                if (cover.src.endsWith(item.coverFallback)) return;
+                cover.src = item.coverFallback;
+              });
+            }
+          }
 
           const body = document.createElement("div");
           body.className = "res-body";
@@ -391,6 +443,7 @@
             const li = document.createElement("mdui-list-item");
             li.setAttribute("rounded", "");
             li.setAttribute("headline", link.title);
+            if (link.description) li.setAttribute("description", link.description);
             const icon = document.createElement("mdui-icon");
             icon.setAttribute("slot", "icon");
             icon.setAttribute("name", link.icon || "link");
@@ -405,8 +458,8 @@
                 window.parent?.postMessage({ type: "resources:open-releases" }, "*");
                 return;
               }
-              if (link.action === "open-image-compress") {
-                openImageCompressor();
+              if (link.tool) {
+                window.parent?.postMessage({ type: "app:open-tool", tool: link.tool }, "*");
                 return;
               }
               showToast("暂未配置该入口");
@@ -416,7 +469,7 @@
           linksWrap.appendChild(list);
           expand.appendChild(linksWrap);
 
-          card.appendChild(img);
+          card.appendChild(cover);
           card.appendChild(body);
           card.appendChild(expand);
 

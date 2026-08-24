@@ -73,6 +73,7 @@ const alignCenterItem = document.getElementById("alignCenterItem");
 const alignRightItem = document.getElementById("alignRightItem");
 const insertBtn = document.getElementById("insertBtn");
 const searchInput = document.getElementById("searchInput");
+const desktopAddNoteBtn = document.getElementById("desktopAddNoteBtn");
 const lineNumbers = document.getElementById("lineNumbers");
 const editorFindInput = document.getElementById("editorFindInput");
 const editorReplaceInput = document.getElementById("editorReplaceInput");
@@ -1794,6 +1795,7 @@ searchInput?.addEventListener("input", () => {
   filterText = searchInput.value ?? "";
   renderList();
 });
+desktopAddNoteBtn?.addEventListener("click", () => openTitleDialog("create"));
 
 window.addEventListener("message", (event) => {
    if (!event?.data) return;

@@ -40,13 +40,31 @@
         display: flex;
         flex-direction: column;
       }
-
-      .topbar {
+.topbar {
         position: sticky;
         top: 0;
         z-index: 20;
         background: var(--mdui-color-surface, #fff);
         color: var(--mdui-color-on-surface, #1d1b20);
+        box-shadow: 0 1px 0 color-mix(in srgb, currentColor 14%, transparent);
+        opacity: 1;
+      }
+
+      .appbar-leading-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        margin-left: 4px;
+      }
+
+      .appbar-leading-icon mdui-icon {
+        display: block;
+        font-size: 24px;
+      }
         box-shadow: 0 1px 0 color-mix(in srgb, currentColor 14%, transparent);
         opacity: 1;
       }
@@ -422,6 +440,7 @@
   <body>
     <div class="page">
       <mdui-top-app-bar class="topbar">
+        <span class="appbar-leading-icon" aria-label="图片压缩"><mdui-icon name="image"></mdui-icon></span>
         <mdui-top-app-bar-title>在线压缩图片</mdui-top-app-bar-title>
         <div style="flex: 1"></div>
         <mdui-button-icon icon="checklist" id="toggleSelectionBtn" aria-label="进入多选"></mdui-button-icon>

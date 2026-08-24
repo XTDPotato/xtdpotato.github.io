@@ -57,6 +57,11 @@
         min-width: 180px;
       }
 
+      .desktop-add-note-btn {
+        display: inline-flex;
+        flex: 0 0 auto;
+      }
+
       .notes-content {
         flex: 1;
         min-height: 0;
@@ -68,6 +73,8 @@
         max-width: 40vw;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
         overflow: auto;
+        padding-bottom: calc(144px + env(safe-area-inset-bottom));
+        box-sizing: border-box;
       }
 
       .notes-main {
@@ -85,11 +92,8 @@
         display: block;
       }
 
-      #notesApp[data-view="detail"] > mdui-top-app-bar {
-        display: none !important;
-      }
-
       #notesApp[data-selection-mode="true"] #listMoreDropdown { display: inline-flex; }
+      #notesApp[data-selection-mode="true"] .desktop-add-note-btn { display: none; }
       #notesApp[data-selection-mode="true"] .notes-search { pointer-events: none; opacity: 0.65; }
       #noteList mdui-list-item { transition: transform 220ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease; }
       #noteList mdui-checkbox { animation: note-checkbox-in 220ms cubic-bezier(.2,.8,.2,1) both; }
@@ -375,6 +379,10 @@
           min-width: 0;
         }
 
+        .desktop-add-note-btn {
+          display: none;
+        }
+
         #notesApp[data-view="detail"] > mdui-top-app-bar {
           display: none !important;
         }
@@ -436,7 +444,13 @@
           placeholder="搜索笔记"
           aria-label="搜索笔记"
         ></mdui-text-field>
-        <div style="flex: 1"></div>
+        <mdui-button-icon
+          id="desktopAddNoteBtn"
+          class="desktop-add-note-btn"
+          icon="note_add--outlined"
+          aria-label="添加笔记"
+          title="添加笔记"
+        ></mdui-button-icon>
         <mdui-dropdown id="listMoreDropdown" placement="bottom-end">
           <mdui-button-icon id="listMoreBtn" slot="trigger" icon="more_vert" aria-label="更多列表操作"></mdui-button-icon>
           <mdui-menu>

@@ -17,6 +17,7 @@ const postsAppbarIcon = document.getElementById("posts_appbar_icon");
 const postDetail = document.getElementById("post_detail");
 const aboutSheet = document.getElementById("about_sheet");
 const imageCompressDialog = document.getElementById("image_compress_dialog");
+const audioConversionDialog = document.getElementById("audio_conversion_dialog");
 const imagePreviewDialog = document.getElementById("image_preview_dialog");
 const imagePreviewClose = document.getElementById("image_preview_close");
 const imagePreviewTitle = document.getElementById("image_preview_title");
@@ -305,6 +306,14 @@ async function loadPosts() {
     return;
   }
   if (postsList) postsList.innerHTML = '<div class="empty-state">正在读取帖子...</div>';
+  const bundledPosts = Array.isArray(window.XTDContentData?.posts) ? window.XTDContentData.posts : [];
+  const useBundledPosts = () => {
+    if (!bundledPosts.length) return false;
+    postsCache = bundledPosts.map((entry) => parsePostMarkdown(entry.file, entry.markdown));
+    renderPosts(postsSearch?.value || "");
+    return true;
+  };
+  if (window.location.protocol === "file:" && useBundledPosts()) return;
   try {
     const response = await fetch("posts/index.json", { cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -317,6 +326,7 @@ async function loadPosts() {
     postsCache = loaded;
     renderPosts(postsSearch?.value || "");
   } catch (error) {
+    if (useBundledPosts()) return;
     if (postsList) postsList.innerHTML = `<div class="empty-state">帖子读取失败<br><small>${escapeHtml(error.message)}</small></div>`;
   }
 }
@@ -982,7 +992,7 @@ function setTab(tab) {
     if (notesDetailActive && !notesSelectionActive) {
       [main_fab, main_fab_mobile].forEach((fab) => {
         if (!fab) return;
-        fab.icon = "add_box--outlined";
+        fab.icon = "add--outlined";
         fab.setAttribute("aria-label", "向当前笔记插入内容");
       });
     }
@@ -1061,12 +1071,26 @@ let notesInsertFollowFrame = 0;
 
 function positionNotesInsertMenu() {
   if (!notesInsertMenu?.hasAttribute("open") || !notesInsertMenuList || !notesInsertAnchor) return;
+  const isDesktop = window.matchMedia?.("(min-width: 901px)")?.matches ?? window.innerWidth > 900;
+  if (isDesktop) {
+    notesInsertMenuList.style.left = "50%";
+    notesInsertMenuList.style.top = "50%";
+    notesInsertMenuList.style.bottom = "auto";
+    notesInsertMenuList.style.transform = "translate(-50%, -50%)";
+    notesInsertMenuList.style.transformOrigin = "center";
+    notesInsertMenuList.style.maxHeight = "calc(100dvh - 48px)";
+    notesInsertFollowFrame = requestAnimationFrame(positionNotesInsertMenu);
+    return;
+  }
   const rect = notesInsertAnchor.getBoundingClientRect();
   const menuWidth = Math.min(220, window.innerWidth - 24);
   const left = Math.max(12, Math.min(window.innerWidth - menuWidth - 12, rect.right - menuWidth));
   const bottom = Math.max(12, window.innerHeight - rect.top + 8);
   notesInsertMenuList.style.left = `${left}px`;
+  notesInsertMenuList.style.top = "auto";
   notesInsertMenuList.style.bottom = `${bottom}px`;
+  notesInsertMenuList.style.transform = "none";
+  notesInsertMenuList.style.transformOrigin = "bottom right";
   notesInsertMenuList.style.maxHeight = `${Math.max(56, window.innerHeight - bottom - 12)}px`;
   notesInsertFollowFrame = requestAnimationFrame(positionNotesInsertMenu);
 }
@@ -1075,7 +1099,7 @@ function setNotesFabMenuState(open) {
     if (!fab) return;
     fab.classList.toggle("notes-fab-open", Boolean(open));
     if (open) fab.icon = "add";
-    else if (notesDetailActive) fab.icon = "add_box--outlined";
+    else if (notesDetailActive) fab.icon = "add--outlined";
   });
 }
 
@@ -1168,6 +1192,7 @@ drawer_btn2?.addEventListener("click", () => {
   loadPosts();
 });
 drawer_btn3?.addEventListener("click", () => openSheet(aboutSheet));
+// 音频转换入口由导航页的工具选择对话框提供。
 drawerSettings?.addEventListener("click", () => {
   syncFabSettings();
   openSheet(settingsSheet);
@@ -1549,7 +1574,7 @@ window.addEventListener("message", (event) => {
       if (activeTab === "notes" && !notesSelectionActive) {
         [main_fab, main_fab_mobile].forEach((fab) => {
           if (!fab) return;
-          fab.icon = notesDetailActive ? "add_box--outlined" : "add--outlined";
+          fab.icon = "add--outlined";
           fab.setAttribute("aria-label", notesDetailActive ? "向当前笔记插入内容" : "新建笔记");
         });
       }
@@ -1562,7 +1587,7 @@ window.addEventListener("message", (event) => {
     if (activeTab === "notes") {
       const icon = notesSelectionActive
         ? "delete--outlined"
-        : (notesDetailActive ? "add_box--outlined" : "add--outlined");
+        : "add--outlined";
       const label = notesSelectionActive
         ? `删除选中的笔记 (${notesSelectionCount})`
         : (notesDetailActive ? "向当前笔记插入内容" : "新建笔记");
@@ -1577,6 +1602,10 @@ window.addEventListener("message", (event) => {
   }
   if (data.type === "image-compress:close") {
     if (imageCompressDialog) imageCompressDialog.open = false;
+    return;
+  }
+  if (data.type === "audio-conversion:close") {
+    if (audioConversionDialog) audioConversionDialog.open = false;
     return;
   }
   if (data.type === "image-compress:preview") {
@@ -1612,9 +1641,10 @@ window.addEventListener("message", (event) => {
     openNotesPreview(data);
     return;
   }
-  if (data.type === "app:open-tool" && data.tool === "image-compress") {
+  if (data.type === "app:open-tool") {
     if (navigationDrawer) navigationDrawer.open = false;
-    if (imageCompressDialog) imageCompressDialog.open = true;
+    if (data.tool === "image-compress" && imageCompressDialog) imageCompressDialog.open = true;
+    if (data.tool === "audio-conversion" && audioConversionDialog) audioConversionDialog.open = true;
     return;
   }
   if (data.type === "app:topbar") {

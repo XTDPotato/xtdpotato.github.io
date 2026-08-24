@@ -434,6 +434,8 @@
         overflow: auto;
         overscroll-behavior: contain;
         box-sizing: border-box;
+        padding-bottom: calc(144px + env(safe-area-inset-bottom));
+        scroll-padding-bottom: calc(144px + env(safe-area-inset-bottom));
       }
 
       .post-detail {
@@ -574,6 +576,8 @@
         overscroll-behavior: contain;
         touch-action: pan-x pan-y;
         padding: 20px;
+        padding-bottom: calc(144px + env(safe-area-inset-bottom));
+        scroll-padding-bottom: calc(144px + env(safe-area-inset-bottom));
       }
 
       .notes-preview-canvas {
@@ -647,7 +651,13 @@
 
       .courses-favorites-header strong { flex: 0 0 auto; font-size: 1.1rem; }
       #courses_favorites_search { flex: 1 1 auto; min-width: 120px; }
-      #courses_favorites_list { padding: 10px 12px; height: calc(100dvh - 82px - env(safe-area-inset-bottom)); overflow: auto; box-sizing: border-box; }
+      #courses_favorites_list {
+        padding: 10px 12px calc(144px + env(safe-area-inset-bottom));
+        height: calc(100dvh - 82px - env(safe-area-inset-bottom));
+        overflow: auto;
+        box-sizing: border-box;
+        scroll-padding-bottom: calc(144px + env(safe-area-inset-bottom));
+      }
       #courses_favorites_list mdui-list-item,
       #noteList mdui-list-item {
         transition: transform 220ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease, opacity 180ms ease;
@@ -1101,6 +1111,7 @@
 
         <mdui-list-item rounded class="drawer_btn1" id="drawer_btn1" headline="主页" icon="home--outlined"></mdui-list-item>
         <mdui-list-item rounded class="drawer_btn2" id="drawer_btn2" headline="帖子" description="Markdown 动态内容" icon="article--outlined"></mdui-list-item>
+        <!-- 音频转换已移入“导航 → 工具”选择对话框。 -->
         <mdui-list-item rounded class="drawer_btn3" id="drawer_btn3" headline="关于" description="站点与功能说明" icon="info--outlined"></mdui-list-item>
 
         <mdui-divider></mdui-divider>
@@ -1268,10 +1279,11 @@
             <mdui-list-subheader>客户端（改版）</mdui-list-subheader>
             <mdui-list-item rounded icon="android" href="https://github.com/Axixi2233/moonlight-android/releases" target="_blank" headline="月光·阿西西 Android（改版）" description="Axixi2233 / moonlight-android"></mdui-list-item>
             <mdui-list-item rounded icon="computer" href="https://github.com/Axixi2233/moonlight-qt/releases/tag/250306" target="_blank" headline="月光·阿西西 PC（改版）" description="Axixi2233 / moonlight-qt"></mdui-list-item>
-            <mdui-list-item rounded icon="dns" href="https://github.com/ClassicOldSong/Apollo/releases" target="_blank" headline="Sunshine Apollo（改版）" description="ClassicOldSong / Apollo"></mdui-list-item>
             <mdui-list-subheader>客户端（原版）</mdui-list-subheader>
             <mdui-list-item rounded icon="android" href="https://github.com/moonlight-stream/moonlight-android/releases" target="_blank" headline="Moonlight Android（原版）" description="moonlight-stream / moonlight-android"></mdui-list-item>
             <mdui-list-item rounded icon="computer" href="https://github.com/moonlight-stream/moonlight-qt/releases" target="_blank" headline="Moonlight PC（原版）" description="moonlight-stream / moonlight-qt"></mdui-list-item>
+            <mdui-list-subheader>服务端（改版）</mdui-list-subheader>
+            <mdui-list-item rounded icon="dns" href="https://github.com/ClassicOldSong/Apollo/releases" target="_blank" headline="Sunshine Apollo（改版）" description="ClassicOldSong / Apollo"></mdui-list-item>
             <mdui-list-subheader>服务端（原版）</mdui-list-subheader>
             <mdui-list-item rounded icon="dns" href="https://github.com/LizardByte/Sunshine/releases" target="_blank" headline="Sunshine（原版）" description="LizardByte / Sunshine"></mdui-list-item>
           </mdui-list>
@@ -1444,6 +1456,12 @@
       </section>
     </mdui-dialog>
 
+    <mdui-dialog id="audio_conversion_dialog" class="tool-dialog audio-conversion-dialog" fullscreen close-on-esc>
+      <div class="tool-dialog-overlay-shell">
+        <iframe id="audio_conversion_frame" class="tool-dialog-frame" src="audio_conversion/index.html" title="音频转换"></iframe>
+      </div>
+    </mdui-dialog>
+
     <mdui-dialog id="image_compress_dialog" class="tool-dialog image-compress-dialog" fullscreen close-on-esc>
       <div class="tool-dialog-overlay-shell">
         <iframe id="image_compress_frame" class="tool-dialog-frame" src="img-compress/index.html" title="图片压缩工具"></iframe>
@@ -1471,6 +1489,7 @@
     <mdui-snackbar class="snackbar_no_action" closeable>提示</mdui-snackbar>
 
     <script src="js/markdown.js"></script>
+    <script src="js/content-data.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <script>
       const PRIMARY_KEY = "xtd_theme_primary";
