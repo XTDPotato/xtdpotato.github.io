@@ -294,61 +294,77 @@
 	    return results;
 	}
 
-	function splitInitialRun(value) {
-	    const output = [];
-	    let offset = 0;
-	    while (offset < value.length) {
-	        const pair = value.slice(offset, offset + 2);
-	        if (pair === 'zh' || pair === 'ch' || pair === 'sh') {
-	            output.push(pair);
-	            offset += 2;
-	        } else {
-	            output.push(value[offset]);
-	            offset += 1;
-	        }
-	    }
-	    return output;
-	}
-
-	function recoverInitialPrefixAndPinyinSuffix(value) {
-	    const raw = normalizeCode(value);
-	    if (raw.length < 2) return null;
-	    for (let splitAt = 1; splitAt < raw.length; splitAt++) {
-	        const initialPrefix = raw.slice(0, splitAt);
-	        if (!/^[bpmfdtnlgkhjqxrzcsyw]+$/.test(initialPrefix)) continue;
-	        const suffix = raw.slice(splitAt);
-	        const suffixSyllables = splitFullPinyin(suffix, 1)[0];
-	        if (!suffixSyllables?.length) continue;
-	        return [...splitInitialRun(initialPrefix), ...suffixSyllables];
-	    }
-	    return null;
-	}
-
 	function segmentPinyinPartForDisplay(value) {
 	    const raw = normalizeCode(value);
 	    if (!raw) return [];
+	    if (syllableSet.has(raw)) return [raw];
 	    const memo = new Map();
+	    const isBetter = (candidate, current) => {
+	        if (!current) return true;
+	        if (candidate.unknown !== current.unknown) return candidate.unknown < current.unknown;
+	        if (candidate.syllableScore !== current.syllableScore) return candidate.syllableScore > current.syllableScore;
+	        if (candidate.partialCount !== current.partialCount) return candidate.partialCount < current.partialCount;
+	        if (candidate.initialCount !== current.initialCount) return candidate.initialCount < current.initialCount;
+	        return candidate.tokens.length < current.tokens.length;
+	    };
 	    function walk(offset) {
+	        if (offset >= raw.length) {
+	            return { tokens: [], unknown: 0, syllableScore: 0, partialCount: 0, initialCount: 0 };
+	        }
 	        if (memo.has(offset)) return memo.get(offset);
-	        let best = { offset, syllables: [] };
+	        let best = null;
 	        for (const syllable of syllablesByFirstLetter[raw[offset]] || []) {
 	            if (!raw.startsWith(syllable, offset)) continue;
 	            const tail = walk(offset + syllable.length);
-	            const candidate = { offset: tail.offset, syllables: [syllable, ...tail.syllables] };
-	            if (candidate.offset > best.offset || (candidate.offset === best.offset && candidate.syllables.length < best.syllables.length)) {
-	                best = candidate;
-	            }
+	            const candidate = {
+	                tokens: [syllable, ...tail.tokens],
+	                unknown: tail.unknown,
+	                syllableScore: tail.syllableScore + syllable.length * syllable.length,
+	                partialCount: tail.partialCount,
+	                initialCount: tail.initialCount
+	            };
+	            if (isBetter(candidate, best)) best = candidate;
+	        }
+	        const pair = raw.slice(offset, offset + 2);
+	        const initial = pair === 'zh' || pair === 'ch' || pair === 'sh'
+	            ? pair
+	            : (/^[bpmfdtnlgkhjqxrzcsyw]$/.test(raw[offset]) ? raw[offset] : '');
+	        if (initial) {
+	            const tail = walk(offset + initial.length);
+	            const candidate = {
+	                tokens: [initial, ...tail.tokens],
+	                unknown: tail.unknown,
+	                syllableScore: tail.syllableScore,
+	                partialCount: tail.partialCount,
+	                initialCount: tail.initialCount + 1
+	            };
+	            if (isBetter(candidate, best)) best = candidate;
+	        }
+	        const remainder = raw.slice(offset);
+	        if (allSyllables.some(syllable => syllable.startsWith(remainder))) {
+	            const candidate = {
+	                tokens: [remainder],
+	                unknown: 0,
+	                syllableScore: Math.max(0, remainder.length * remainder.length - 1),
+	                partialCount: 1,
+	                initialCount: 0
+	            };
+	            if (isBetter(candidate, best)) best = candidate;
+	        }
+	        if (!best) {
+	            const tail = walk(offset + 1);
+	            best = {
+	                tokens: [raw[offset], ...tail.tokens],
+	                unknown: tail.unknown + 1,
+	                syllableScore: tail.syllableScore,
+	                partialCount: tail.partialCount,
+	                initialCount: tail.initialCount
+	            };
 	        }
 	        memo.set(offset, best);
 	        return best;
 	    }
-	    const best = walk(0);
-	    const remainder = raw.slice(best.offset);
-	    if (!remainder) return best.syllables;
-	    const recovered = recoverInitialPrefixAndPinyinSuffix(remainder);
-	    if (recovered) return [...best.syllables, ...recovered];
-	    const remainderParts = /^[bpmfdtnlgkhjqxrzcsyw]+$/.test(remainder) ? splitInitialRun(remainder) : [remainder];
-	    return [...best.syllables, ...remainderParts];
+	    return walk(0).tokens;
 	}
 
 	function formatPinyinComposition(value) {
@@ -470,13 +486,34 @@
 	}
 
 	function appendSegmentedCharacterCandidates(composition, output, seen, limit) {
-	    const formatted = formatPinyinComposition(composition);
+	    const normalized = normalizeComposition(composition);
+        const formatted = formatPinyinComposition(normalized);
 	    const parts = formatted.split("'").filter(Boolean);
-	    if (parts.length < 2) return;
+	    if (!parts.length) return;
+	    const expectedLength = parts.length;
+	    const pushLengthMatched = value => {
+	        if (Array.from(value || '').length === expectedLength) pushUnique(output, seen, value);
+	    };
+        const initialCode = parts.map(part => normalizeCode(part)[0] || '').join('');
+	    (pinyinAbbreviations[initialCode] || []).forEach(pushLengthMatched);
+        const groupedCodes = [];
+        for (const groupSize of [4, 2]) {
+            for (let offset = 0; offset + groupSize <= parts.length; offset += groupSize) {
+                groupedCodes.push(parts.slice(offset, offset + groupSize).map(part => normalizeCode(part)[0] || '').join(''));
+            }
+        }
+	    groupedCodes.forEach(code => (pinyinAbbreviations[code] || []).forEach(pushLengthMatched));
 	    let combinations = [''];
-	    const combinationLimit = Math.max(limit * 3, 48);
+	    const combinationLimit = Math.min(192, Math.max(limit * 2, 72));
+	    const charactersPerPart = parts.length >= 8 ? 3 : (parts.length >= 5 ? 4 : 6);
 	    for (const part of parts) {
-	        const characters = charactersForPinyinPart(part, 6);
+            const code = normalizeCode(part);
+            let characters = [];
+	        if (syllableSet.has(code)) characters = charactersForPinyinPart(code, charactersPerPart);
+	        else if (/^(zh|ch|sh|[a-z])$/.test(code)) characters = candidatesForSingleLetter(code[0], charactersPerPart);
+	        else characters = charactersForPinyinPart(code, charactersPerPart);
+	        if (!characters.length) characters = candidatesForSingleLetter(code[0], charactersPerPart);
+	        if (!characters.length) characters = Array.from(initialFallbackCharacters[code[0]] || '').slice(0, charactersPerPart);
 	        if (!characters.length) return;
 	        const next = [];
 	        for (const prefix of combinations) {
@@ -488,20 +525,40 @@
 	        }
 	        combinations = next;
 	    }
-	    combinations.forEach(value => pushUnique(output, seen, value));
+	    combinations.forEach(pushLengthMatched);
 	}
 
 	function getExpectedPinyinCandidateLength(composition) {
 	    const normalized = normalizeComposition(composition);
-	    const formatted = formatPinyinComposition(normalized);
+	    if (normalized.includes("'")) return normalized.split("'").filter(Boolean).length;
+        const formatted = formatPinyinComposition(normalized);
+        if (syllableSet.has(normalizeCode(normalized))) return 1;
 	    if (!formatted.includes("'")) return 0;
-	    if (!normalized.includes("'") && normalizeCode(normalized).length % 2 === 0) return 0;
-	    return formatted.split("'").filter(Boolean).length;
+        const parts = formatted.split("'").filter(Boolean);
+	    const allMatchable = parts.every(part => {
+	        const code = normalizeCode(part);
+	        return syllableSet.has(code) || /^(zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])$/.test(code);
+	    });
+	    if (allMatchable && (parts.length >= 5 || normalizeCode(normalized).length % 2 !== 0)) return parts.length;
+        if (!parts.every(part => syllableSet.has(normalizeCode(part)))) return 0;
+	    if (normalizeCode(normalized).length % 2 === 0) return 0;
+	    return parts.length;
 	}
+
+	const initialFallbackCharacters = {
+        b: '不把被', p: '怕跑陪', m: '吗没么', f: '发非分', d: '的到都', t: '他她它',
+        n: '你那呢', l: '了来里', g: '个给过', k: '可看开', h: '和好还', j: '就家见',
+        q: '去请前', x: '想下先', r: '人让如', z: '在这怎', c: '才从此', s: '是所三',
+        y: '一有也', w: '我为无', u: '无五我', v: '女绿语'
+    };
 
 	function candidatesForSingleLetter(letter, limit) {
 	    const output = [];
-	    const seen = new Set();
+        const preferred = initialFallbackCharacters[letter] || '';
+        Array.from(preferred).forEach(value => {
+            if (!output.includes(value)) output.push(value);
+        });
+	    const seen = new Set(output);
 	    const matchingCodes = sortedPinyinCodes.filter(code => code.startsWith(letter));
 	    matchingCodes.sort((left, right) => {
 	        if (left === letter) return -1;
@@ -558,8 +615,30 @@
 		if (raw.length === 1 && !composition.includes("'")) {
 		    return candidatesForSingleLetter(raw, limit);
 		}
+        if (!composition.includes("'") && syllableSet.has(raw)) {
+            return charactersForPinyinPart(raw, limit).filter(value => Array.from(value).length === 1).slice(0, limit);
+        }
         const scheme = options.scheme || 'smart';
         const output = [];
+	    const formattedParts = formatPinyinComposition(composition).split("'").filter(Boolean);
+	    const hasExplicitSeparators = composition.includes("'");
+	    const hasLongSegmentedComposition = formattedParts.length >= 5;
+        const isInitialSequence = !composition.includes("'") && raw.length >= 2 && /^[bpmfdtnlgkhjqxrzcsyw]+$/.test(raw);
+        if (scheme === 'smart' && isInitialSequence) {
+            const initialSeen = new Set();
+            (pinyinAbbreviations[raw] || []).forEach(value => pushUnique(output, initialSeen, value));
+            const choices = Array.from(raw).map(initial => Array.from(initialFallbackCharacters[initial] || initial).slice(0, 3));
+            let combinations = [''];
+            choices.forEach(chars => {
+                const next = [];
+                combinations.forEach(prefix => chars.forEach(char => {
+                    if (next.length < Math.max(24, limit)) next.push(prefix + char);
+                }));
+                combinations = next;
+            });
+            combinations.forEach(value => pushUnique(output, initialSeen, value));
+            return output.slice(0, limit);
+        }
         const seen = new Set();
 		const abbreviationCandidates = pinyinAbbreviations[raw] || [];
 		abbreviationCandidates.slice(0, Math.min(8, limit)).forEach(value => pushUnique(output, seen, value));
@@ -569,6 +648,7 @@
 		    candidatesForFullCode(composition, limit).forEach(value => pushUnique(output, seen, value));
 		};
 		const appendDoubleCandidates = () => {
+		    if (hasExplicitSeparators || hasLongSegmentedComposition) return;
 		    if (raw.length % 2 !== 0) return;
 		    const decodedCodes = [];
 		    const decodedSeen = new Set();
@@ -589,9 +669,12 @@
 
 		if (scheme === 'smart') {
 		    const isCompleteFullPinyin = splitCompositionPinyin(composition, 1).length > 0;
+            const hasCompleteFullPrefix = !composition.includes("'") && allSyllables.some(syllable => raw.startsWith(syllable) && syllable.length < raw.length);
 		    if (isCompleteFullPinyin) {
 		        appendFullCandidates();
 		        appendDoubleCandidates();
+		    } else if (hasCompleteFullPrefix) {
+                appendFullCandidates();
 		    } else {
 		        appendDoubleCandidates();
 		        appendFullCandidates();
@@ -728,6 +811,10 @@
         splitFullPinyin,
         encodeDoublePinyin,
         decodeDoublePinyin,
+        getPinyinInitials(value) {
+            const syllables = splitFullPinyin(value, 1)[0] || [];
+            return syllables.map(syllable => syllable[0]).join('');
+        },
         isPinyinSyllable(value) {
             return syllableSet.has(normalizeCode(value));
         }

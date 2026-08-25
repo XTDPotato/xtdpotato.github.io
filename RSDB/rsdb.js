@@ -41,7 +41,7 @@
     } catch (e) {}
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function initializeThemeBridge() {
     applyThemeColors(readThemeColors());
 
     document.querySelectorAll(".theme-option").forEach((item) => {
@@ -67,5 +67,11 @@
         applyThemeColors({ ...readThemeColors(), primary: data.color });
       }
     });
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeThemeBridge, { once: true });
+  } else {
+    initializeThemeBridge();
+  }
 })();

@@ -1,11 +1,28 @@
 // sw.js - 简单高效的缓存策略（2025-2026 推荐 Cache-First + Network-Fallback）
 
-const CACHE_NAME = 'roundbar-app-v2.1-20260824-32';  // 改版本号会强制更新缓存
+const CACHE_NAME = 'roundbar-app-v2.1-20260825-76';  // 改版本号会强制更新缓存
 const urlsToCache = [
     './',
     './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png',
+    './styles/rsdb-main.css?v=20260825-55',
+    './rsdb.css?v=20260824-42',
+	'./js/bootstrap.js?v=20260825-58',
+	'./rsdb.js?v=20260825-58',
+	'./js/core-state.js?v=20260825-58',
+	'./js/keyboard-appearance.js?v=20260825-58',
+	'./js/ui-events.js?v=20260825-58',
+	'./js/table-editing.js?v=20260825-58',
+	'./js/keyboard-input.js?v=20260825-58',
+	'./js/files-images.js?v=20260825-58',
+	'./js/startup.js?v=20260825-58',
+	'./ui/app-shell.html?v=20260825-58',
+	'./ui/editing-dialogs.html?v=20260825-58',
+	'./ui/settings-dialogs.html?v=20260825-58',
     './input-method-data.js?v=20260824-21',
-    './input-method-library.js?v=20260824-23',
+	'./input-method-library.js?v=20260825-47',
     'https://unpkg.com/mdui@2/mdui.css',
     'https://unpkg.com/mdui@2.0.3/mdui.global.js',
     'https://unpkg.com/xlsx/dist/xlsx.full.min.js',

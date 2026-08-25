@@ -236,20 +236,23 @@
 }
 
 /* RSDB polish: smoother cards, keyboard feedback, and variable manager readability */
-.keyboard-key::after {
+#virtualKeyboard .keyboard-key::after,
+.keyboard-appearance-preview .keyboard-key::after {
   content: "";
   position: absolute;
   inset: 2px;
   border-radius: inherit;
-  background: radial-gradient(circle, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0) 62%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--vk-press-glow-color, #fff) var(--vk-press-glow-opacity, 42%), transparent) 0%, transparent var(--vk-press-glow-size, 62%));
   opacity: 0;
   transform: scale(0.68);
   transition: opacity 160ms ease, transform 180ms ease;
   pointer-events: none;
 }
 
-.keyboard-key:active::after,
-.keyboard-key.swipe-active::after {
+#virtualKeyboard[data-press-glow="true"] .keyboard-key:active::after,
+#virtualKeyboard[data-press-glow="true"] .keyboard-key.swipe-active::after,
+.keyboard-appearance-preview[data-press-glow="true"] .keyboard-key:active::after,
+.keyboard-appearance-preview[data-press-glow="true"] .keyboard-key.swipe-active::after {
   opacity: 1;
   transform: scale(1);
 }
@@ -1094,21 +1097,21 @@ mdui-dialog textarea:focus,
 
 .data-edit-dialog-body {
   height: 100%;
-  padding: 20px clamp(14px, 3vw, 32px) 28px;
+  padding: var(--rsdb-data-form-padding, 12px) clamp(var(--rsdb-data-form-padding, 12px), 3vw, 28px) calc(var(--rsdb-data-form-padding, 12px) + 8px);
 }
 
 .material-data-form {
   width: min(100%, 980px);
   margin: 0 auto;
-  padding: 8px 0 20px;
+  padding: 4px 0 12px;
   overflow: visible;
 }
 
 .data-edit-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 22px;
-  margin-bottom: 22px;
+  gap: var(--rsdb-data-form-field-gap, 8px) 18px;
+  margin-bottom: calc(var(--rsdb-data-form-field-gap, 8px) + 6px);
 }
 
 .data-edit-field-row {
@@ -1140,7 +1143,7 @@ mdui-dialog textarea:focus,
   position: relative;
   display: block;
   min-width: 0;
-  margin-top: 8px;
+  margin-top: 4px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background: var(--surface-color);

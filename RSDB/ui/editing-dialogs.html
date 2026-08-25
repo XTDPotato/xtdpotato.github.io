@@ -1,0 +1,711 @@
+<!-- 添加/编辑数据弹窗 -->
+	<mdui-dialog id="dataSheetCustom" fullscreen class="material-fullscreen-dialog data-edit-dialog">
+		<mdui-top-app-bar slot="header" id="dataSheetHeader" class="material-dialog-appbar">
+			<mdui-top-app-bar-title id="modalTitle">添加数据</mdui-top-app-bar-title>
+			<mdui-tooltip content="撤销当前编辑"><mdui-button-icon icon="undo" id="dataEditUndoBtn" disabled></mdui-button-icon></mdui-tooltip>
+			<mdui-tooltip content="重做当前编辑"><mdui-button-icon icon="redo" id="dataEditRedoBtn" disabled></mdui-button-icon></mdui-tooltip>
+			<mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="closeDataModal"></mdui-button-icon></mdui-tooltip>
+		</mdui-top-app-bar>
+		<div id="dataSheetContent" class="material-dialog-body data-edit-dialog-body">
+			<form id="dataForm" class="data-form material-data-form">
+					<input type="hidden" id="editIndex" value="-1">
+					<div id="dataEditFields" class="data-edit-fields">
+						<div class="data-edit-field-row" data-field="steelType">
+							<label class="m3-outlined-field" for="steelType"><span class="m3-field-label">钢种</span><input type="text" id="steelType" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="steelType"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="steelType"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="productId">
+							<label class="m3-outlined-field" for="productId"><span class="m3-field-label">产品号</span><input type="text" id="productId" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="productId"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="productId"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="cardId">
+							<label class="m3-outlined-field" for="cardId"><span class="m3-field-label">卡片号</span><input type="text" id="cardId" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="cardId"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="cardId"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="furnaceId">
+							<label class="m3-outlined-field" for="furnaceId"><span class="m3-field-label">炉号</span><input type="text" id="furnaceId" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="furnaceId"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="furnaceId"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<mdui-divider class="data-edit-section-divider"></mdui-divider>
+						<div class="data-edit-field-row" data-field="actualDiameter">
+							<label class="m3-outlined-field" for="actualDiameter"><span class="m3-field-label">实际直径</span><input type="text" id="actualDiameter" class="numeric-input readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="actualDiameter"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="actualDiameter"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="diameter">
+							<label class="m3-outlined-field" for="diameter"><span class="m3-field-label">直径</span><input type="text" id="diameter" class="numeric-input readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="diameter"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="diameter"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="length">
+							<label class="m3-outlined-field" for="length"><span class="m3-field-label">长度</span><input type="text" id="length" class="numeric-input readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="length"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="length"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="weight">
+							<label class="m3-outlined-field" for="weight"><span class="m3-field-label">重量</span><input type="text" id="weight" class="numeric-input readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="weight"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="weight"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<mdui-divider class="data-edit-section-divider"></mdui-divider>
+						<div class="data-edit-field-row" data-field="status">
+							<label class="m3-outlined-field" for="status"><span class="m3-field-label">状态</span><input type="text" id="status" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="status"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="status"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="position">
+							<label class="m3-outlined-field" for="position"><span class="m3-field-label">位置</span><input type="text" id="position" class="readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="position"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="position"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row" data-field="hardness">
+							<label class="m3-outlined-field" for="hardness"><span class="m3-field-label">硬度</span><input type="text" id="hardness" class="numeric-input readonly-input"></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="hardness"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="hardness"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+						<div class="data-edit-field-row data-edit-field-row-textarea" data-field="remarks">
+							<label class="m3-outlined-field" for="remarks"><span class="m3-field-label">备注</span><textarea rows="5" id="remarks" class="readonly-input" readonly></textarea></label>
+							<div class="data-edit-field-actions"><mdui-tooltip class="edit-input-tooltip" content="切换到系统键盘"><mdui-button-icon icon="edit" class="edit-input-btn" data-target="remarks"></mdui-button-icon></mdui-tooltip><mdui-tooltip content="编辑属性"><mdui-button-icon icon="format_paint" class="edit-style-btn" data-target="remarks"></mdui-button-icon></mdui-tooltip></div>
+						</div>
+					</div>
+					<!-- 图片上传与管理区域 -->
+					<mdui-divider style="margin:8px 0 18px"></mdui-divider>
+					<div style="text-align:center;margin-bottom:16px;">
+						<label style="font-weight:500;color:var(--primary-color);font-size:1.1rem;">卡片图片（可选）</label>
+					</div>
+					<!-- 有图片时的预览 + 三个按钮 -->
+					<div id="cardImagePreview" style="text-align:center;margin-bottom:20px;display:none;">
+						<img id="previewImg" style="max-height:300px;max-width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);cursor:pointer;" onclick="showFullImage(this.src, document.getElementById('productId')?.value || '', (typeof currentEditIndex === 'number' ? currentEditIndex : -1))">
+						<div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+							<mdui-button type="button" variant="tonal" id="takePhotoInEditBtn">
+								<mdui-icon name="photo_camera"></mdui-icon> 拍照 </mdui-button>
+							<mdui-button type="button" variant="tonal" id="selectFromGalleryInEditBtn">
+								<mdui-icon name="photo_library"></mdui-icon> 从相册选择 </mdui-button>
+							<mdui-button type="button" variant="outlined" color="error" id="deleteImageInEditBtn">
+								<mdui-icon name="delete"></mdui-icon> 删除图片 </mdui-button>
+						</div>
+					</div>
+					<!-- 无图片时的上传区域（只有两个按钮） -->
+					<div id="noImageUploadArea" style="text-align:center;">
+						<input type="file" id="cardImageInput" accept="image/*" style="display:none;">
+						<div id="dragDropArea" style="border:2px dashed var(--border-color);border-radius:12px;padding:40px;margin:20px;background:var(--background-color);cursor:pointer;transition:background 0.3s;">
+							<mdui-icon name="cloud_upload" style="font-size:48px;color:var(--primary-color);opacity:0.6;display:block;margin-bottom:16px;"></mdui-icon>
+							<div style="font-size:1.1rem;color:var(--text-color);">点击下方按钮或拖拽图片到此处</div>
+							<div style="font-size:0.9rem;color:#757575;margin-top:8px;">支持拍照、相册选择、文件拖入</div>
+						</div>
+						<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+							<mdui-button type="button" variant="tonal" id="takePhotoBtn">
+								<mdui-icon name="photo_camera"></mdui-icon> 拍照 </mdui-button>
+							<mdui-button type="button" variant="tonal" id="selectFromGalleryBtn">
+								<mdui-icon name="photo_library"></mdui-icon> 从相册选择 </mdui-button>
+						</div>
+					</div>
+			</form>
+		</div>
+		<div slot="action" id="dataSheetFooter" class="material-dialog-actions">
+			<mdui-button variant="text" id="cancelBtn">取消</mdui-button>
+			<mdui-button variant="filled" id="saveBtn">保存</mdui-button>
+		</div>
+	</mdui-dialog>
+	<mdui-dialog id="dataCellStyleDialog" fullscreen class="material-fullscreen-dialog data-cell-style-dialog">
+		<mdui-top-app-bar slot="header" class="material-dialog-appbar">
+			<mdui-top-app-bar-title id="dataCellStyleDialogTitle">编辑属性</mdui-top-app-bar-title>
+			<mdui-tooltip content="撤销属性修改"><mdui-button-icon icon="undo" id="dataCellStyleUndoBtn" disabled></mdui-button-icon></mdui-tooltip>
+			<mdui-tooltip content="重做属性修改"><mdui-button-icon icon="redo" id="dataCellStyleRedoBtn" disabled></mdui-button-icon></mdui-tooltip>
+			<mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="closeDataCellStyleDialog"></mdui-button-icon></mdui-tooltip>
+		</mdui-top-app-bar>
+		<div class="material-dialog-body data-cell-style-body">
+			<div id="dataCellStylePanelHost"></div>
+		</div>
+	</mdui-dialog>
+	<!-- 快速编辑底部抽屉 -->
+	<mdui-dialog id="quickEditDialog" close-on-esc close-on-overlay-click class="quick-edit-bottomsheet">
+		
+        <mdui-top-app-bar slot="header" style="padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top));">
+            <mdui-top-app-bar-title id="quickEditLabel" style="color:var(--primary-color);"></mdui-top-app-bar-title>
+            <div class="quick-edit-header-actions">
+                <mdui-tooltip content="撤销当前编辑"><mdui-button-icon icon="undo" id="quickEditUndoBtn" disabled></mdui-button-icon></mdui-tooltip>
+                <mdui-tooltip content="重做当前编辑"><mdui-button-icon icon="redo" id="quickEditRedoBtn" disabled></mdui-button-icon></mdui-tooltip>
+                <mdui-tooltip content="取消修改"><mdui-button-icon icon="close" id="closeQuickEdit"></mdui-button-icon></mdui-tooltip>
+                <mdui-tooltip content="保存修改"><mdui-button-icon icon="save" id="saveQuickEditBtn"></mdui-button-icon></mdui-tooltip>
+            </div>
+        </mdui-top-app-bar>
+	
+		
+		<div class="quick-edit-editor-content" style="padding: 16px;">
+			
+			<div class="quick-edit-input-row">
+				<div id="quickEditInputPreview" class="quick-edit-input-preview" aria-label="当前颜色预览"></div>
+				<textarea id="quickEditInput" style="padding:12px; font-size:1.2rem; border:2px solid var(--primary-color); border-radius:12px; box-sizing:border-box; background:var(--surface-color); color:var(--text-color); flex:1; min-height:56px; height:56px; resize:none;"></textarea>
+				<mdui-tooltip id="quickEditKeyboardToggleTooltip" content="切换到系统键盘">
+					<mdui-button-icon id="quickEditKeyboardToggleBtn" icon="edit" aria-label="切换到系统键盘"></mdui-button-icon>
+				</mdui-tooltip>
+			</div>
+			<input type="hidden" id="quickEditIndex">
+			<input type="hidden" id="quickEditField">
+			<div id="quickEditStylePanelAnchor" aria-hidden="true"></div>
+			<div id="quickEditStylePanel" class="quick-edit-format-panel">
+				<div id="cellStyleTargetText" style="font-weight:600;margin-bottom:10px;">单元格格式</div>
+				<div class="quick-edit-format-grid">
+					<div class="cell-font-controls">
+                        <label class="cell-font-picker-trigger-wrap" for="cellStyleFontNameInput">
+                            <span class="cell-font-picker-label">字体</span>
+                            <input id="cellStyleFontNameInput" class="cell-font-picker-trigger" type="text" placeholder="默认字体" readonly autocomplete="off">
+                        </label>
+                        <mdui-tooltip content="导入本地字体"><mdui-button-icon icon="font_download" id="cellStyleImportFontBtn"></mdui-button-icon></mdui-tooltip>
+                        <input type="file" id="cellStyleFontFileInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none">
+                    </div>
+					<mdui-text-field id="cellStyleFontSizeInput" label="字号（px）" type="number" min="8" max="72" variant="outlined"></mdui-text-field>
+					<div class="color-field-with-palette">
+						<mdui-text-field id="cellStyleTextColorInput" label="字体颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+						<button type="button" class="color-preview-button" id="cellStyleTextColorPreview" aria-label="选择字体颜色"></button>
+					</div>
+					<div class="color-field-with-palette">
+						<mdui-text-field id="cellStyleBgColorInput" label="填充颜色（#RRGGBB）" variant="outlined"></mdui-text-field>
+						<button type="button" class="color-preview-button" id="cellStyleBgColorPreview" aria-label="选择填充颜色"></button>
+					</div>
+					<input type="hidden" id="cellStyleAlignInput" value="general">
+					<button type="button" id="cellStyleAlignTrigger" class="cell-align-picker-trigger" aria-haspopup="dialog">
+						<span class="cell-align-picker-label">水平对齐</span>
+						<span class="cell-align-picker-value"><mdui-icon id="cellStyleAlignTriggerIcon" name="format_align_left"></mdui-icon><span id="cellStyleAlignTriggerText">常规</span></span>
+						<mdui-icon name="arrow_drop_down"></mdui-icon>
+					</button>
+					<mdui-text-field id="cellStyleNumberFormatInput" label="数字格式（如 0.00）" variant="outlined"></mdui-text-field>
+				</div>
+				<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;">
+					<mdui-checkbox id="cellStyleBoldInput">粗体</mdui-checkbox>
+					<mdui-checkbox id="cellStyleItalicInput">斜体</mdui-checkbox>
+					<mdui-checkbox id="cellStyleUnderlineInput">下划线</mdui-checkbox>
+					<mdui-checkbox id="cellStyleWrapInput">自动换行</mdui-checkbox>
+				</div>
+				<mdui-button variant="text" id="cellStyleResetBtn" style="margin-top:10px;">重置当前格格式</mdui-button>
+			</div>
+		</div>
+		<div slot="action">
+			<mdui-button variant="text" id="openFullEditBtn">完整编辑</mdui-button>
+		</div>
+	</mdui-dialog>
+	<mdui-dialog id="cellFontPickerDialog" headline="选择字体" close-on-esc>
+		<div id="cellFontPickerPanel" class="cell-font-picker-panel">
+			<input id="cellFontSearchInput" class="cell-font-search-input" type="search" placeholder="搜索字体" autocomplete="off">
+			<div id="cellFontList" class="cell-font-list" role="listbox" aria-label="字体列表"></div>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellFontPicker">关闭</mdui-button>
+	</mdui-dialog>
+	<mdui-dialog id="cellAlignPickerDialog" headline="选择对齐方式" close-on-esc>
+		<div id="cellAlignOptionList" class="cell-align-option-list" role="listbox" aria-label="对齐方式">
+			<button type="button" class="cell-align-option" data-align-value="general" role="option"><mdui-icon name="format_align_left"></mdui-icon><span>常规</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="left" role="option"><mdui-icon name="format_align_left"></mdui-icon><span>左对齐</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="center" role="option"><mdui-icon name="format_align_center"></mdui-icon><span>居中</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+			<button type="button" class="cell-align-option" data-align-value="right" role="option"><mdui-icon name="format_align_right"></mdui-icon><span>右对齐</span><mdui-icon class="cell-align-option-check" name="check"></mdui-icon></button>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellAlignPicker">关闭</mdui-button>
+	</mdui-dialog>
+	<mdui-dialog id="cellColorPaletteDialog" fullscreen headline="选择颜色" close-on-esc close-on-overlay-click>
+		<div id="cellColorPalette" class="cell-color-palette">
+			<div class="cell-color-section-title">最近使用</div>
+			<div id="recentCellColors" class="cell-color-grid"></div>
+			<div class="cell-color-section-title">默认颜色</div>
+			<div id="defaultCellColors" class="cell-color-grid"></div>
+			<div class="cell-color-custom-row"><input type="color" id="customCellColorInput" value="#00796b"><mdui-button variant="text" id="applyCustomCellColorBtn">使用自定义颜色</mdui-button></div>
+		</div>
+		<mdui-button slot="action" variant="text" id="closeCellColorPalette">关闭</mdui-button>
+	</mdui-dialog>
+	<!-- 虚拟键盘 -->
+	<div id="virtualKeyboard">
+		<div id="shortcutArea">
+			<div id="shortcutToolbarWrap">
+				<div id="shortcutToolbar">
+					<mdui-button-icon icon="add" id="shortcutQuickAddBtn" data-toolbar-control="add"></mdui-button-icon>
+					<mdui-button-icon icon="edit" id="shortcutEditToggleBtn" data-toolbar-control="edit"></mdui-button-icon>
+					<mdui-button-icon icon="keyboard_arrow_up" id="shortcutPrevInputBtn" data-toolbar-control="previous" title="上一个编辑框"></mdui-button-icon>
+					<mdui-button-icon icon="keyboard_arrow_down" id="shortcutNextInputBtn" data-toolbar-control="next" title="下一个编辑框"></mdui-button-icon>
+					<button type="button" id="imeLanguageToggleBtn" data-toolbar-control="language" class="shortcut-toolbar-text-btn" title="切换中英文">英</button>
+					<button type="button" id="imeSchemeBtn" data-toolbar-control="scheme" class="shortcut-toolbar-text-btn" title="智能匹配全拼、简拼和双拼">拼音</button>
+					<button type="button" id="imeSeparatorBtn" data-toolbar-control="separator" class="shortcut-toolbar-text-btn" title="插入拼音分词符">分词</button>
+					<mdui-button-icon icon="close" id="shortcutClearInputBtn" data-toolbar-control="close" title="关闭键盘"></mdui-button-icon>
+					<mdui-button-icon icon="close" id="shortcutEditCancelBtn" style="display:none"></mdui-button-icon>
+				</div>
+			</div>
+			<div id="shortcutContainer">
+				<div id="shortcutKeysContainer"></div>
+			</div>
+		</div>
+		<div id="imeCandidateBar" class="ime-candidate-bar" hidden>
+			<div class="ime-composition-row">
+				<div id="imeCompositionText" class="ime-composition" role="textbox" tabindex="0" aria-label="编辑当前拼音" aria-live="polite" title="点击编辑拼音，左右滑动键盘移动光标"></div>
+			</div>
+			<div class="ime-candidate-row">
+				<div id="imeCandidateList" class="ime-candidate-list" aria-label="输入法候选词"></div>
+			</div>
+		</div>
+		<div id="keyboardRows"></div>
+	</div>
+	<!-- 确认弹窗 -->
+	<div id="confirmModalCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">操作确认</h2>
+				<mdui-button-icon icon="close" id="closeConfirmModal"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<div id="confirmMessage"></div>
+			</div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="cancelConfirmBtn">取消</mdui-button>
+				<mdui-button variant="filled" color="error" id="confirmActionBtn">确定</mdui-button>
+			</div>
+		</div>
+	</div>
+	<mdui-dialog id="clearInputConfirmDialog" headline="确认清空" close-on-esc close-on-overlay-click>
+		<p>文字超过 50 个，确定清空当前编辑框吗？</p>
+		<mdui-button slot="action" variant="text" id="cancelClearInputBtn">取消</mdui-button>
+		<mdui-button slot="action" variant="filled" color="error" id="confirmClearInputBtn">确定清空</mdui-button>
+	</mdui-dialog>
+	<!-- 重量计算弹窗 -->
+	<mdui-dialog id="calculatorModalCustom" fullscreen close-on-esc close-on-overlay-click class="material-fullscreen-dialog calculator-material-dialog">
+		<mdui-top-app-bar slot="header" class="material-dialog-appbar calculator-dialog-appbar">
+			<mdui-top-app-bar-title>圆棒重量计算</mdui-top-app-bar-title>
+			<mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="closeCalculatorModal"></mdui-button-icon></mdui-tooltip>
+		</mdui-top-app-bar>
+		<div id="calculatorContent" class="material-dialog-body calculator-dialog-body">
+			<form id="calculatorForm" class="calculator-material-form">
+				<label class="m3-outlined-field" for="calcDiameter1"><span class="m3-field-label">直径 1 (mm)</span><input type="text" id="calcDiameter1" class="numeric-input readonly-input"></label>
+				<label class="m3-outlined-field" for="calcDiameter2"><span class="m3-field-label">直径 2 (mm)</span><input type="text" id="calcDiameter2" class="numeric-input readonly-input"></label>
+				<label class="m3-outlined-field" for="calcLength"><span class="m3-field-label">长度 (mm)</span><input type="text" id="calcLength" class="numeric-input readonly-input"></label>
+				<label class="m3-outlined-field m3-result-field" for="calcResult"><span class="m3-field-label">计算结果 (kg)</span><input type="text" id="calcResult" readonly></label>
+				<label class="m3-outlined-field" for="calcDensity"><span class="m3-field-label">密度 (kg/mm³)</span><input type="number" id="calcDensity" inputmode="decimal" step="any" autocomplete="off"></label>
+				<div class="formula-editor-section">
+					<div class="formula-editor-label">计算公式</div>
+					<div id="calcFormulaEditor" class="formula-token-editor" contenteditable="true" role="textbox" aria-label="计算公式" spellcheck="false"></div>
+					<input type="hidden" id="calcFormula">
+					<div class="formula-token-toolbar" aria-label="插入公式变量">
+						<mdui-button type="button" variant="tonal" class="formula-token-insert" data-token="diameter1"><mdui-icon name="add"></mdui-icon>直径 1</mdui-button>
+						<mdui-button type="button" variant="tonal" class="formula-token-insert" data-token="diameter2"><mdui-icon name="add"></mdui-icon>直径 2</mdui-button>
+						<mdui-button type="button" variant="tonal" class="formula-token-insert" data-token="length"><mdui-icon name="add"></mdui-icon>长度</mdui-button>
+						<mdui-button type="button" variant="tonal" class="formula-token-insert" data-token="density"><mdui-icon name="add"></mdui-icon>密度</mdui-button>
+					</div>
+					<div id="calcFormulaStatus" class="calculator-formula-status" hidden></div>
+				</div>
+			</form>
+		</div>
+		<div slot="action" class="material-dialog-actions calculator-dialog-actions">
+			<mdui-button variant="text" id="clearCalcBtn" color="error">清空参数</mdui-button>
+			<span class="dialog-action-spacer"></span>
+			<mdui-button variant="text" id="cancelCalcBtn">取消</mdui-button>
+			<mdui-button variant="filled" id="calculateAndAddBtn">计算并填充</mdui-button>
+		</div>
+	</mdui-dialog>
+	<!-- 重复数据确认弹窗 -->
+	<div id="duplicateConfirmationModalCustom" class="modal-custom full-height-custom">
+		<div class="modal-content-custom">
+			<div class="modal-header-custom">
+				<h2 class="modal-title">导入重复数据确认</h2>
+				<mdui-button-icon icon="close" id="closeDuplicateModal"></mdui-button-icon>
+			</div>
+			<div class="modal-body-custom">
+				<p>总共导入 <span id="modal-total-count" style="font-weight: bold;">0</span> 条记录。其中：</p>
+				<ul>
+					<li>新数据 <span id="modal-new-count" style="font-weight: bold; color: var(--primary-color);">0</span> 条（将直接添加）</li>
+					<li>重复数据 <span id="modal-duplicate-count" style="font-weight: bold; color: #f44336;">0</span> 条（请选择处理方式）</li>
+				</ul>
+				<div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+					<mdui-button variant="outlined" id="modal-btn-select-all-skip">全部跳过 (保留现有)</mdui-button>
+					<mdui-button variant="outlined" id="modal-btn-select-all-override">全部覆盖 (使用新值)</mdui-button>
+				</div>
+				<div id="modal-duplicate-list"></div>
+			</div>
+			
+		<!-- 固定页码区域（sticky） -->
+<div id="duplicatePagination" style="position: sticky; top: 0; background: var(--surface-color); padding: 12px 0; border-bottom: 1px solid var(--border-color); z-index: 10; display: flex; align-items: center; justify-content: center; gap: 16px;">
+  <mdui-button-icon id="duplicatePrevPage" icon="navigate_before"></mdui-button-icon>
+  <span id="duplicatePageInfo">第 1 / 1 页（共 0 条有差异重复）</span>
+  <input type="number" id="duplicatePageJump" min="1" style="width:60px; padding:4px; text-align:center;" placeholder="跳转">
+  <mdui-button-icon id="duplicateNextPage" icon="navigate_next"></mdui-button-icon>
+</div>
+
+<!-- 原有重复列表容器 -->
+<div id="modal-duplicate-list" style="max-height: calc(60vh - 60px); overflow-y: auto;"></div>
+			<div class="modal-footer-custom">
+				<mdui-button variant="text" id="modal-btn-cancel-import">取消导入</mdui-button>
+				<mdui-button variant="filled" id="modal-btn-confirm">确认处理并完成导入</mdui-button>
+			</div>
+			
+			
+		</div>
+	</div>
+	<!-- 数据排序弹窗 -->
+	<mdui-dialog id="sortModalCustom" fullscreen close-on-esc class="material-fullscreen-dialog sort-material-dialog">
+		<mdui-top-app-bar slot="header" class="material-dialog-appbar sort-dialog-appbar">
+			<mdui-top-app-bar-title>数据排序</mdui-top-app-bar-title>
+			<mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="closeSortModal"></mdui-button-icon></mdui-tooltip>
+		</mdui-top-app-bar>
+		<div class="material-dialog-body sort-dialog-body">
+			<div class="sort-dialog-intro">
+				<div>
+					<p class="sort-dialog-intro-title">多级排序规则</p>
+					<p class="sort-dialog-intro-text">规则从上到下依次执行，可通过箭头调整优先级，最多添加 5 条。</p>
+				</div>
+				<div id="sortRuleCount" class="sort-rule-count" aria-live="polite">共 0 条</div>
+			</div>
+			<div id="sortRulesContainer" aria-label="排序规则"></div>
+			<div id="sortRulesEmptyState" class="sort-empty-state" hidden>
+				<mdui-icon name="sort"></mdui-icon>
+				<div>还没有排序规则</div>
+				<small>添加一条规则后即可应用排序</small>
+			</div>
+			<mdui-button variant="outlined" id="addSortRuleBtn" class="sort-add-rule-button">
+				<mdui-icon slot="icon" name="add"></mdui-icon>添加排序规则
+			</mdui-button>
+		</div>
+		<div slot="action" class="material-dialog-actions sort-dialog-actions">
+			<mdui-button variant="text" id="resetSortRulesBtn">恢复默认</mdui-button>
+			<span class="dialog-action-spacer"></span>
+			<mdui-button variant="text" id="cancelSortBtn">取消</mdui-button>
+			<mdui-button variant="filled" id="applySortBtn">应用排序</mdui-button>
+		</div>
+	</mdui-dialog>
+	<!-- 底部添加按钮 -->
+	<mdui-fab icon="add" id="mainFab"></mdui-fab>
+	<!-- 重复数据项模板 -->
+	<script type="text/template" id="duplicate-item-template"> <div class="duplicate-item">
+        <h4>产品号：PRODUCT_ID</h4>
+        <div class="duplicate-differences">
+            <table>
+                <thead>
+                    <tr>
+                        <th>字段</th>
+                        <th>现有值</th>
+                        <th>新值</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="duplicate-actions">
+            <label><input type="radio" name="action-ITEM_INDEX" value="skip" checked> 跳过 (保留现有值)</label>
+            <label><input type="radio" name="action-ITEM_INDEX" value="override"> 覆盖 (使用新值)</label>
+        </div>
+    </div>
+</script>
+	<!-- 差异行模板 -->
+	<script type="text/template" id="difference-row-template"> <tr>
+        <th>FIELD_NAME</th>
+        <td>OLD_VALUE</td>
+        <td style="color: #f44336; font-weight: bold;">NEW_VALUE</td>
+    </tr>
+</script>
+	<!-- 关于弹窗 -->
+
+<!-- 关于弹窗（极致紧凑版：无多余边距+完善所有功能+版本更新+修正描述） -->
+<mdui-dialog id="aboutDialog" fullscreen headline="关于 & 操作指南" close-on-overlay-click class="full-height-custom">
+  <div style="padding: 16px 20px; font-size: 15px; line-height: 1.65; color: var(--mdui-color-on-surface, #212121);">
+    <!-- 标题 + 版本（紧贴顶部，版本更新为今日） -->
+    <div style="text-align: center; margin: 0 0 12px 0;">
+      <div style="font-size: 1.45rem; font-weight: 600; color: var(--mdui-color-primary, #00796b);">
+        圆棒入库数据管理
+      </div>
+      <div style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); margin-top: 4px;">
+        当前版本：<span id="aboutCurrentVersion">-</span>
+      </div>
+    </div>
+
+    <!-- 制作者信息（极简） -->
+    <div style="text-align: center; font-size: 0.85rem; color: var(--mdui-color-on-surface-variant, #757575); margin: 0 0 16px 0;">
+      制作方式：vibe coding | 模型：GPT5.6Sol | 功能全覆盖·双端适配
+    </div>
+
+    <div style="margin: 0 0 16px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--mdui-color-primary, #00796b) 35%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--mdui-color-primary, #00796b) 9%, transparent); color: var(--mdui-color-on-surface, #212121);">
+      <strong style="color: var(--mdui-color-primary, #00796b);">维护状态</strong><br>
+      当前网页已永久停止功能更新，仅进行 Bug 修复与必要的兼容性维护。
+    </div>
+
+    <mdui-divider style="margin: 12px 0;"></mdui-divider>
+
+    <div style="margin: 0 0 16px 0;">
+      <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px; text-align:center;">
+        更新日志
+      </div>
+      <div id="aboutChangelog" style="display: grid; gap: 10px;"></div>
+    </div>
+
+    <!-- 操作指南（极致紧凑，补齐所有功能+修正错误描述，间距不变） -->
+    <div class="guide-visual-grid">
+      <!-- 基础操作 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          基础操作
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">添加/编辑：右下 + 按钮，或点击表格行快速编辑</li>
+          <li style="margin-bottom: 4px;">单元格直编：点击表格单元格，修改内容与格式，右上角保存或取消</li>
+          <li>批量删除：右上 ⋮ → 开启多选模式 → 勾选删除 → 底部批量删除</li>
+        </ul>
+      </div>
+
+      <!-- 数据处理（最全，补齐搜索替换/导入导出/计算排序所有细节） -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          数据处理
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">导入导出：抽屉菜单 → 一键导入/导出 Excel 表格</li>
+          <li style="margin-bottom: 4px;">全局搜索：顶部搜索框，匹配项与对应整行会同步高亮</li>
+          <li style="margin-bottom: 4px;">搜索替换：点击顶部搜索按钮 → 打开替换面板，支持单条/全部替换</li>
+          <li style="margin-bottom: 4px;">重量计算：抽屉菜单 → 计算重量 → 自动填充单支/总重数据</li>
+          <li>数据排序：抽屉菜单 → 数据排序 → 自定义规则一键应用</li>
+        </ul>
+      </div>
+
+      <!-- 行序移动（重中之重✅ 补齐你最新的【短按+长按】移动行功能，手机/电脑双端完整说明，修正原错误描述） -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          行序移动 【核心功能】
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">电脑端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">单击</strong> = 上/下移一行</li>
+          <li style="margin-bottom: 4px;">点击表格首列的移动按钮，在弹窗中选择目标项目及其上方或下方</li>
+          <li style="margin-bottom: 4px;">手机端：表格首列 ↑↓ 按钮，<strong style="color:var(--mdui-color-primary);">轻触</strong> = 上/下移一行</li>
+          <li style="margin-bottom: 4px;">勾选多个项目可保持原顺序批量移动，支持搜索和分页</li>
+          <li>移动兼容：支持分页/搜索过滤，移动后自动跳转对应页码，行序永久保存</li>
+        </ul>
+      </div>
+
+      <!-- 手势与显示（优化描述，补充双端适配细节） -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          手势与显示适配
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">表格缩放：手机双指捏合/张开，自由缩放且表头保持冻结</li>
+          <li>适配显示：自动兼容电脑/手机屏幕，表格自适应排版无遮挡</li>
+        </ul>
+      </div>
+
+      <!-- 虚拟键盘（补齐所有快捷键细节，最完整） -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          虚拟键盘 【快捷录入】
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">自动唤出：点击编辑框/编辑按钮进入输入状态，虚拟键盘自动弹出</li>
+          <li style="margin-bottom: 4px;">自动定位：键盘弹出时自动滚动到当前编辑框，避免被遮挡</li>
+          <li style="margin-bottom: 4px;">光标重置：切换/点击字段后，光标默认定位到内容末尾，继续追加输入</li>
+          <li style="margin-bottom: 4px;">光标同步：窗口/弹窗打开、滚动、尺寸变化后延迟刷新光标位置，避免错位</li>
+          <li style="margin-bottom: 4px;">字段跳转：轻触右下 ▼ 键，跳转下一个输入项并自动定位</li>
+          <li style="margin-bottom: 4px;">关闭方式：按住右下 ▼ 键向上滑动后松开 = 关闭虚拟键盘（会显示“关闭”提示）</li>
+          <li style="margin-bottom: 4px;">快编模式：右下键显示 ✔，轻触即可关闭虚拟键盘</li>
+          <li style="margin-bottom: 4px;">删除键：按住 ← 连续删除；向上滑动后松开可清空，超过 50 个字符会先确认</li>
+          <li style="margin-bottom: 4px;">输入法：中英文、拼音与分词位于快捷工具栏；拼音/英文在上层，待选词在下层，鼠标滚轮可平滑翻页</li>
+          <li style="margin-bottom: 4px;">智能建议：当某字段值或前缀累计出现达到阈值，显示“+ 值/前缀”；点击输入到编辑框，长按添加为快捷短语</li>
+          <li style="margin-bottom: 4px;">模糊匹配：输入如“25D0”，会智能建议此前频繁使用的“25D0”前缀</li>
+          <li>开关控制：设置 → 智能建议可控制建议与 inputStats 记录，也可按字段调整</li>
+          <li>字符滑动：部分字符键支持“轻触输入字母/数字，向上滑动松开输入符号”</li>
+        </ul>
+      </div>
+
+      <!-- 桌面模式 -->
+      <div>
+        <div style="font-size: 1.18rem; font-weight: 600; color: var(--mdui-color-primary, #00796b); margin-bottom: 6px;">
+          桌面模式
+        </div>
+        <ul style="margin: 0; padding-left: 18px; list-style: none; color: var(--mdui-color-on-surface, #212121);">
+          <li style="margin-bottom: 4px;">桌面端默认使用系统键盘，不自动弹出虚拟键盘</li>
+          <li style="margin-bottom: 4px;">快捷短语显示在页面底部，工具栏可长按拖动；拖动时左右晃动可循环完整、加号和输入导航布局</li>
+          <li style="margin-bottom: 4px;">设置 → 快捷短语 → 桌面模式，可随时开启或关闭</li>
+          <li>设置 → 编辑框键盘模式（按字段）可以覆盖桌面模式的默认键盘</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 结尾语（紧凑，补充温馨提示） -->
+    <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575);">
+      所有操作自动本地保存，数据永不丢失 | 当前仅接受 Bug 反馈与兼容性问题 · 感谢使用！
+    </div>
+  </div>
+
+  <!-- 关闭按钮 -->
+  <mdui-button slot="action" variant="text" onclick="document.getElementById('aboutDialog').open = false;">
+    关闭
+  </mdui-button>
+</mdui-dialog>
+
+	<!-- 删除图片确认对话框 -->
+	<mdui-dialog id="deleteImageConfirmDialog" headline="确认删除" close-on-overlay-click close-on-esc>
+		<div id="deleteImageConfirmMessage" style="padding:16px 0;font-size:1rem;">确定要删除这张卡片图片吗？删除后不可恢复。</div>
+		<mdui-button slot="action" variant="text" id="cancelDeleteImageBtn">取消</mdui-button>
+		<mdui-button slot="action" variant="filled" color="error" id="confirmDeleteImageBtn">删除</mdui-button>
+	</mdui-dialog>
+	<!-- 取消编辑确认对话框 -->
+	<mdui-dialog id="cancelEditConfirmDialog" headline="确认取消" close-on-overlay-click close-on-esc>
+		<div style="padding:16px 0;font-size:1rem;">确定要取消操作吗？取消后当前输入的内容可能会丢失。</div>
+		<mdui-button slot="action" variant="filled" id="cancelCancelBtn">返回继续编辑</mdui-button>
+		<mdui-button slot="action" variant="outlined" color="error" id="confirmCancelBtn">确认取消</mdui-button>
+	</mdui-dialog>
+	<!-- 从快速编辑切换到完整编辑时的保存确认 -->
+	<mdui-dialog id="quickEditFullEditConfirmDialog" headline="是否保存" close-on-overlay-click close-on-esc>
+		<div style="padding:16px 0;font-size:1rem;">是否保存当前快速编辑的内容和格式后，再打开完整编辑？</div>
+		<mdui-button slot="action" variant="text" id="quickEditFullEditCancelBtn">继续快速编辑</mdui-button>
+		<mdui-button slot="action" variant="outlined" id="quickEditFullEditDiscardBtn">不保存</mdui-button>
+		<mdui-button slot="action" variant="filled" id="quickEditFullEditSaveBtn">保存并继续</mdui-button>
+	</mdui-dialog>
+	
+	
+	<!-- 重复产品号警告弹窗（mdui-dialog） -->
+<mdui-dialog id="duplicateWarnDialog" fullscreen headline="检测到重复产品号" close-on-overlay-click close-on-esc>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p id="duplicateWarnMessage" style="margin-bottom: 16px;"></p>
+    <p style="color: #f44336; font-weight: 500;">
+      是否要<strong>覆盖现有数据</strong>？<br>
+      （覆盖后原数据将被替换，不可恢复）
+    </p>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="duplicateWarnCancelBtn">取消添加</mdui-button>
+  <mdui-button slot="action" variant="filled" color="error" id="duplicateWarnOverrideBtn">覆盖保存</mdui-button>
+</mdui-dialog>
+	
+	
+	
+	<!-- 图片过大提示弹窗 -->
+<mdui-dialog id="largeImageWarnDialog" headline="图片过大" close-on-overlay-click close-on-esc fullscreen>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p>当前图片大小超过 <strong><span id="largeImageThresholdText">5MB</span></strong>，可能导致加载缓慢或存储空间占用过多。</p>
+    <p>建议<strong>压缩</strong>后上传（质量损失较小，体积大幅减小）。</p>
+    <div style="margin-top: 12px;">
+      <mdui-checkbox id="largeImageAlwaysCompress">以后都压缩</mdui-checkbox>
+      <mdui-checkbox id="largeImageAlwaysForce" style="margin-left: 12px;">以后都原图</mdui-checkbox>
+    </div>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="largeImageCancelBtn">取消上传</mdui-button>
+  <mdui-button slot="action" variant="outlined" id="largeImageForceBtn">直接上传（不压缩）</mdui-button>
+  <mdui-button slot="action" variant="filled" id="largeImageCompressBtn">压缩后上传</mdui-button>
+</mdui-dialog>
+	
+	
+	<!-- 单条添加时的重复警告弹窗（简单提示） -->
+<mdui-dialog id="singleDuplicateWarnDialog" headline="检测到重复产品号" close-on-overlay-click close-on-esc>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p id="singleDuplicateMessage"></p>
+    <p style="color: #f44336; font-weight: 500; margin-top: 16px;">
+      可以覆盖现有数据，也可以继续添加为一条新数据。覆盖后原数据将被替换，不可恢复。
+    </p>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="singleDuplicateCancelBtn">取消添加</mdui-button>
+  <mdui-button slot="action" variant="outlined" id="singleDuplicateContinueBtn">继续添加数据</mdui-button>
+  <mdui-button slot="action" variant="filled" color="error" id="singleDuplicateOverrideBtn">覆盖保存</mdui-button>
+</mdui-dialog>
+
+<!-- 删除所有数据确认对话框 -->
+<mdui-dialog id="deleteAllDataConfirmDialog" headline="确认删除所有数据" close-on-overlay-click close-on-esc>
+    <div style="padding:16px 0;font-size:1rem;color:var(--mdui-color-error,#ba1a1a);">确定要删除表格中的所有数据吗？删除后可以通过撤销恢复。</div>
+    <mdui-button slot="action" variant="text" id="cancelDeleteAllDataBtn">取消</mdui-button>
+    <mdui-button slot="action" variant="filled" color="error" id="confirmDeleteAllDataBtn" disabled>确认删除 (1)</mdui-button>
+</mdui-dialog>
+
+<!-- 删除单行确认对话框 -->
+<mdui-dialog id="deleteRowConfirmDialog" fullscreen close-on-esc class="material-fullscreen-dialog delete-row-confirm-dialog">
+    <mdui-top-app-bar slot="header" class="material-dialog-appbar delete-row-dialog-appbar">
+        <mdui-top-app-bar-title>删除当前行</mdui-top-app-bar-title>
+        <mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="closeDeleteRowDialogBtn"></mdui-button-icon></mdui-tooltip>
+    </mdui-top-app-bar>
+    <div class="material-dialog-body delete-row-dialog-body">
+        <div class="delete-row-warning">
+            <mdui-icon name="warning"></mdui-icon>
+            <div>
+                <p class="delete-row-warning-title">是否删除当前行？</p>
+                <p class="delete-row-warning-text">确认后会从表格中删除下面这条数据，删除后可以使用顶部撤销或提示中的“撤销”恢复。</p>
+            </div>
+        </div>
+        <div class="delete-row-data-heading">
+            <span>数据列表</span>
+            <span id="deleteRowDataIndex" class="delete-row-data-index"></span>
+        </div>
+        <div id="deleteRowDataList" class="delete-row-data-list"></div>
+    </div>
+    <div slot="action" class="material-dialog-actions delete-row-dialog-actions">
+        <span class="dialog-action-spacer"></span>
+        <mdui-button variant="text" id="cancelDeleteRowDialogBtn">取消</mdui-button>
+        <mdui-button variant="filled" color="error" id="confirmDeleteRowDialogBtn">
+            <mdui-icon slot="icon" name="delete"></mdui-icon>删除当前行
+        </mdui-button>
+    </div>
+</mdui-dialog>
+
+<mdui-dialog id="operationHistoryDialog" fullscreen close-on-esc close-on-overlay-click>
+  <mdui-top-app-bar slot="header">
+    <mdui-top-app-bar-title>操作详细列表</mdui-top-app-bar-title>
+    <div style="flex:1"></div>
+    <mdui-button-icon icon="close" id="closeOperationHistoryBtn"></mdui-button-icon>
+  </mdui-top-app-bar>
+  <div style="padding:16px; box-sizing:border-box; height:100%; display:grid; grid-template-rows:auto 1fr; gap:12px;">
+    <mdui-text-field id="operationSearchInput" label="搜索操作（按描述/类型）" variant="outlined" clearable></mdui-text-field>
+    <div id="operationHistoryList" style="overflow:auto; display:grid; gap:8px;"></div>
+  </div>
+</mdui-dialog>
+
+<mdui-dialog id="operationPreviewDialog" headline="操作预览" close-on-esc close-on-overlay-click>
+  <div id="operationPreviewContent" style="padding:0 24px 16px;"></div>
+  <mdui-button slot="action" variant="text" id="closeOperationPreviewBtn">关闭</mdui-button>
+</mdui-dialog>
+
+<!-- 批量导入时的重复确认弹窗（完整列表 + 差异对比） -->
+<mdui-dialog id="bulkDuplicateConfirmDialog" headline="检测到重复产品号" close-on-overlay-click close-on-esc>
+  <div style="padding: 0 24px 24px; font-size: 0.95rem; line-height: 1.6;">
+    <p>总共导入 <span id="modal-total-count">0</span> 条记录。其中：</p>
+    <ul>
+      <li>新数据 <span id="modal-new-count">0</span> 条（将直接添加）</li>
+      <li>重复数据 <span id="modal-duplicate-count">0</span> 条（请处理）</li>
+    </ul>
+    
+    <div style="margin: 16px 0;">
+      <mdui-button variant="outlined" id="modal-btn-select-all-skip">全部跳过</mdui-button>
+      <mdui-button variant="outlined" id="modal-btn-select-all-override">全部覆盖</mdui-button>
+    </div>
+    
+    <div id="modal-duplicate-list" style="max-height: 50vh; overflow-y: auto;"></div>
+  </div>
+  
+  <mdui-button slot="action" variant="text" id="modal-btn-cancel-import">取消导入</mdui-button>
+  <mdui-button slot="action" variant="filled" id="modal-btn-confirm">确认处理并完成</mdui-button>
+</mdui-dialog>
+	
+	
+	<mdui-snackbar id="general-snackbar" placement="bottom-center" closeable></mdui-snackbar>
+	<!-- 新增：开关显隐逻辑 JS -->
+	
+	
+<!-- 第二步：新增 - 产品号不匹配提示对话框 -->
+<mdui-dialog id="productIdMismatchDialog" headline="产品号不匹配" close-on-overlay-click>
+  <div id="mismatchMessage" style="padding:16px 0; line-height:1.6; font-size:0.95rem;"></div>
+  <mdui-button slot="action" variant="text" id="keepCurrentProductBtn">保持当前值</mdui-button>
+  <mdui-button slot="action" variant="filled" color="primary" id="useRecognizedProductBtn">
+    使用图片识别的产品号
+  </mdui-button>
+</mdui-dialog>
+
+<!-- 第二步：新增 - 新旧数据对比编辑对话框（全屏） -->
+<mdui-dialog id="compareEditDialog" fullscreen headline="新旧数据对比编辑" close-on-overlay-click>
+  <div style="padding:16px 16px 100px; font-size:0.95rem;">
+    <p style="color:#757575; margin:0 0 16px 0; line-height:1.5;">
+      左侧：您当前填写的数据（只读参考）<br>
+      右侧：图片智能识别建议（可直接编辑，最终以此保存）
+    </p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <!-- 左侧 - 当前数据（只读） -->
+      <div>
+        <div style="font-weight:500; color:#757575; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e0e0e0;">
+          当前数据（只读）
+        </div>
+        <div id="oldDataContainer" class="data-form"></div>
+      </div>
+
+      <!-- 右侧 - 识别建议（可编辑） -->
+      <div>
+        <div style="font-weight:500; color:var(--primary-color); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--primary-color);">
+          图片识别建议（可编辑）
+        </div>
+        <div id="newDataContainer" class="data-form"></div>
+      </div>
+    </div>
+  </div>
+
+  <mdui-button slot="action" variant="text" id="cancelCompareEditBtn">取消</mdui-button>
+  <mdui-button slot="action" variant="filled" id="confirmCompareEditBtn">使用右侧数据保存</mdui-button>
+</mdui-dialog>
