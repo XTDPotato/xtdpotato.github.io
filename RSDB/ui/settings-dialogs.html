@@ -1,0 +1,1118 @@
+<!-- 虚拟键盘设置模态框 (Fullscreen) -->
+  <mdui-dialog id="keyboardSettingsModal" fullscreen close-on-esc close-on-overlay-click>
+  <mdui-top-app-bar slot="header">
+    <mdui-icon name="keyboard" class="settings-child-appbar-icon"></mdui-icon>
+    <mdui-top-app-bar-title>虚拟键盘和快捷短语设置</mdui-top-app-bar-title>
+    <mdui-button-icon icon="close" id="closeKeyboardSettingsModal"></mdui-button-icon>
+  </mdui-top-app-bar>
+
+  <div class="keyboard-settings-editor">
+    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:16px;">
+      在此编辑快捷短语。每行一个。<br>
+      内置可用变量：<code>${year}</code> (如24), <code>${lastYear}</code> (如23)
+    </p>
+
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">可视化编辑器</label>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0;">
+        自定义变量、键盘键位（添加/移动/尺寸/键值）已整合到可视化编辑器。
+      </p>
+      <mdui-button variant="tonal" id="openKeyboardVisualEditorBtn" icon="grid_view" style="width:100%;">
+        打开虚拟键盘可视化编辑器
+      </mdui-button>
+    </div>
+
+    <!-- 炉号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        炉号 (Furnace ID)
+      </label>
+      <mdui-text-field
+        id="furnaceIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 产品号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        产品号 (Product ID)
+      </label>
+      <mdui-text-field
+        id="productIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 卡片号 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        卡片号 (Card ID)
+      </label>
+      <mdui-text-field
+        id="cardIdConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 钢种 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        钢种 (Steel Type)
+      </label>
+      <mdui-text-field
+        id="steelTypeConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 状态 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        状态 (Status)
+      </label>
+      <mdui-text-field
+        id="statusConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <!-- 位置 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        位置 (Position)
+      </label>
+      <mdui-text-field
+        id="positionConfigInput"
+        type="textarea"
+        rows="8"
+        style="width:100%; min-height:120px;"
+      ></mdui-text-field>
+    </div>
+
+    <mdui-divider style="margin:16px 0;"></mdui-divider>
+
+    <!-- 高级配置 -->
+    <div class="input-group" style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        高级配置 (Advanced JSON)
+      </label>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0;">
+        在此完全自定义键盘布局、键位大小、符号映射等。点击打开完整编辑进行编辑。
+      </p>
+
+      <mdui-text-field
+        id="advancedJsonConfigInput"
+        type="textarea"
+        rows="6"
+        readonly
+        style="
+          width:100%;
+          min-height:280px;
+          font-family:monospace;
+          font-size:12px;
+          background:rgba(0,0,0,0.05);
+        "
+      ></mdui-text-field>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <mdui-button
+          variant="tonal"
+          id="openAdvancedJsonEditorBtn"
+          icon="edit"
+          style="flex:1"
+        >
+          打开完整编辑器
+        </mdui-button>
+      </div>
+    </div>
+  </div>
+
+  <div slot="action">
+    <input type="file" id="importKeyboardConfigInput" accept=".json" style="display:none">
+    <mdui-button variant="outlined" id="exportKeyboardConfigBtn" style="margin-right:auto">
+      导出JSON
+    </mdui-button>
+    <mdui-button variant="outlined" id="importKeyboardConfigBtn" style="margin-right:8px">
+      导入JSON
+    </mdui-button>
+
+    <mdui-button variant="tonal" id="cancelKeyboardConfigBtn">取消</mdui-button>
+    <mdui-button variant="text" id="resetKeyboardConfigBtn">恢复默认</mdui-button>
+    <mdui-button variant="filled" id="saveKeyboardConfigBtn">保存</mdui-button>
+  </div>
+</mdui-dialog>
+
+    <mdui-dialog id="settingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header" style="">
+            <mdui-top-app-bar-title>设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSettingsDialogBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+<div style="
+  padding: 12px 0 12px;
+  padding-top: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+">
+            <mdui-text-field id="settingsSearchInput" label="搜索设置" variant="outlined" clearable style="width:calc(100% - 24px);margin:0 12px 10px;"></mdui-text-field>
+            <mdui-list>
+                <mdui-list-subheader>主题</mdui-list-subheader>
+                <mdui-list-item id="settingsPrimaryColorItem" icon="palette" headline="主题主色" description=""></mdui-list-item>
+                <mdui-list-item id="settingsSearchHighlightItem" icon="highlight" headline="搜索高亮颜色" description="匹配单元格、结果行和当前项目边框"></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>快捷短语</mdui-list-subheader>
+                <mdui-list-item id="settingsKeyboardItem" icon="keyboard" headline="虚拟键盘和快捷短语设置" description="编辑虚拟键盘、各字段快捷短语与布局"></mdui-list-item>
+                <mdui-list-item id="settingsKeyboardModeByFieldItem" icon="keyboard_alt" headline="编辑框键盘模式（按字段）" description="备注默认使用系统键盘"></mdui-list-item>
+                <mdui-list-item headline="桌面模式" description="桌面端默认使用系统键盘，快捷短语显示在底部">
+                    <mdui-switch slot="end-icon" id="settingsDesktopModeSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsKeyboardVisualEditorItem" icon="view_quilt" headline="虚拟键盘可视化编辑器" description="编辑键位/大小与位置"></mdui-list-item>
+				<mdui-list-item id="settingsKeyboardAppearanceItem" icon="animation" headline="键盘外观与点击效果" description="Material 3 水波纹"></mdui-list-item>
+                <mdui-list-item id="settingsDynamicVariablesItem" icon="data_object" headline="自定义变量（可编程）" description="搜索、测试、编辑和批量删除变量"></mdui-list-item>
+                <mdui-list-item id="settingsShortcutRowsItem" icon="view_stream" headline="快捷短语显示行数" description=""></mdui-list-item>
+                <mdui-list-item id="settingsToolbarShakeItem" icon="vibration" headline="快捷工具栏晃动切换" description=""></mdui-list-item>
+                <mdui-list-item id="settingsShortcutToolbarResetItem" icon="restart_alt" headline="重置快捷短语工具栏位置" description="拖到屏幕外点不到时，可用此项重置"></mdui-list-item>
+                <mdui-list-item id="settingsFabPositionItem" icon="open_with" headline="自定义FAB位置" description="X/Y滑块实时预览"></mdui-list-item>
+                <mdui-list-item id="settingsFabResetItem" icon="my_location" headline="重置FAB位置" description="恢复到默认右下角"></mdui-list-item>
+                <mdui-list-item headline="快捷短语文本换行（最多3行）" description="关闭则单行显示">
+                    <mdui-switch slot="end-icon" id="settingsShortcutWrapSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item headline="快捷短语自动补全" description="根据当前输入过滤匹配">
+                    <mdui-switch slot="end-icon" id="settingsShortcutAutoCompleteSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsShortcutAutoCompleteByFieldItem" icon="tune" headline="自动补全（按字段）" description=""></mdui-list-item>
+                <mdui-list-item id="settingsShortcutAddPositionItem" icon="vertical_align_top" headline="快捷短语新增位置" description=""></mdui-list-item>
+                <mdui-list-item headline="快捷短语推荐按点击排序" description="开启后按点击频率排序显示">
+                    <mdui-switch slot="end-icon" id="settingsShortcutRankByClicksSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>智能建议</mdui-list-subheader>
+                <mdui-list-item headline="启用建议加入快捷短语" description="添加数据后统计常用输入">
+                    <mdui-switch slot="end-icon" id="settingsSuggestSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item headline="记录输入统计" description="关闭后不再写入 inputStats，已有记录保留">
+                    <mdui-switch slot="end-icon" id="settingsInputStatsSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsSuggestByFieldItem" icon="tune" headline="智能建议（按字段）" description=""></mdui-list-item>
+                <mdui-list-item id="settingsSuggestThresholdItem" icon="tune" headline="建议阈值" description=""></mdui-list-item>
+                <mdui-list-item id="settingsDictionaryItem" icon="menu_book" headline="词库" description="搜索系统词库和管理词语使用习惯"></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>图片压缩</mdui-list-subheader>
+                <mdui-list-item id="settingsAlwaysCompressItem" headline="大图总是压缩" description="">
+                    <mdui-switch slot="end-icon" id="settingsAlwaysCompressSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsAlwaysForceItem" headline="大图总是原图" description="">
+                    <mdui-switch slot="end-icon" id="settingsAlwaysForceSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsImageCompressItem" icon="photo_size_select_large" headline="图片压缩设置" description=""></mdui-list-item>
+                <mdui-list-item headline="切换图片时保留缩放和位置" description="关闭后切换图片会重置视图">
+                    <mdui-switch slot="end-icon" id="settingsImageKeepTransformSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>界面</mdui-list-subheader>
+                <mdui-list-item id="settingsDialogPositionItem" icon="vertical_align_top" headline="对话框默认位置" description=""></mdui-list-item>
+                <mdui-list-item id="settingsKeyboardSizeItem" icon="height" headline="虚拟键盘高度/底部留空" description=""></mdui-list-item>
+                <mdui-list-item id="settingsTableViewItem" icon="table_chart" headline="表格视图参数" description=""></mdui-list-item>
+                <mdui-list-item id="settingsCursorHandleItem" icon="text_fields" headline="光标水滴显示时长" description=""></mdui-list-item>
+                <mdui-list-item id="settingsSnackbarItem" icon="notifications" headline="Snackbar 设置" description=""></mdui-list-item>
+                <mdui-list-item headline="动画效果" description="关闭部分动画（含自定义弹窗过渡）">
+                    <mdui-switch slot="end-icon" id="settingsAnimationsSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>历史记录</mdui-list-subheader>
+                <mdui-list-item headline="启用历史记录存储" description="关闭后不再保存操作历史">
+                    <mdui-switch slot="end-icon" id="settingsHistoryStorageSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsHistoryMaxCountItem" icon="history" headline="历史记录保留条数" description=""></mdui-list-item>
+                <mdui-list-item headline="启用撤销/重做记录" description="关闭后不再记录可撤销步骤">
+                    <mdui-switch slot="end-icon" id="settingsUndoRedoEnabledSwitch"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item id="settingsUndoRedoMaxStepsItem" icon="redo" headline="撤销/重做步数上限" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>信息</mdui-list-subheader>
+                <mdui-list-item id="settingsAboutItem" icon="info" headline="关于 & 操作指南" description=""></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>导入导出</mdui-list-subheader>
+                <mdui-list-item id="settingsExportAllXmlItem" icon="download" headline="导出全部配置（XML）" description="键盘 / 快捷短语 / 设置"></mdui-list-item>
+                <mdui-list-item id="settingsImportAllXmlItem" icon="upload" headline="导入全部配置（XML）" description="会覆盖当前配置"></mdui-list-item>
+                <mdui-divider></mdui-divider>
+                <mdui-list-subheader>维护</mdui-list-subheader>
+                <mdui-list-item id="settingsResetItem" icon="restart_alt" headline="重置设置" description="选择项目恢复默认，不删除表格数据"></mdui-list-item>
+            </mdui-list>
+            <input type="file" id="importAllXmlInput" accept=".xml" style="display:none">
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="settingsResetDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>重置设置</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="settingsResetCloseBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding:16px;overflow:auto;box-sizing:border-box;height:100%;">
+            <div style="color:var(--text-secondary);line-height:1.6;margin-bottom:12px;">
+                选择要恢复默认值的设置项目。默认全选；不会删除表格数据、图片或已保存的表格文件。
+            </div>
+            <mdui-checkbox id="settingsResetSelectAll" checked>全选</mdui-checkbox>
+            <mdui-divider style="margin:12px 0;"></mdui-divider>
+            <div id="settingsResetGroups" style="display:grid;gap:4px;">
+                <mdui-checkbox data-reset-group="theme" checked>主题与搜索高亮</mdui-checkbox>
+                <mdui-checkbox data-reset-group="keyboard" checked>键盘与快捷短语</mdui-checkbox>
+                <mdui-checkbox data-reset-group="interface" checked>界面显示与交互</mdui-checkbox>
+                <mdui-checkbox data-reset-group="suggest" checked>智能建议与输入统计</mdui-checkbox>
+                <mdui-checkbox data-reset-group="imageCalculator" checked>图片与重量计算</mdui-checkbox>
+                <mdui-checkbox data-reset-group="history" checked>历史记录与撤销重做</mdui-checkbox>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="settingsResetCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" color="error" id="settingsResetConfirmBtn">重置所选设置</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="primaryColorDialog" fullscreen close-on-esc class="material-fullscreen-dialog">
+        <mdui-top-app-bar slot="header" class="material-dialog-appbar">
+            <mdui-top-app-bar-title>主题主色</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="primaryColorDialogCloseBtn" aria-label="关闭主题主色"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div class="material-dialog-body" style="padding:20px max(20px, calc((100vw - 840px) / 2));box-sizing:border-box;overflow:auto;height:100%;">
+            <div style="display:grid;gap:14px;">
+                <div style="display:flex;justify-content:space-between;gap:12px;color:var(--mdui-color-on-surface-variant);">
+                    <span>主题色</span><span>应用到整个站点</span>
+                </div>
+                <div id="primaryColorPresetGrid" class="theme-palette" aria-label="选择主题色"></div>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="primaryCustomColorDialog" class="color-picker-dialog" fullscreen close-on-esc close-on-overlay-click>
+        <span slot="headline">自定义主题颜色</span>
+        <div class="color-picker-grid">
+            <mdui-segmented-button-group id="primaryCustomColorRole" selects="single" value="primary" style="width:100%">
+                <mdui-segmented-button value="primary">主色</mdui-segmented-button>
+                <mdui-segmented-button value="control">控件色</mdui-segmented-button>
+                <mdui-segmented-button value="highlight">高亮色</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <div id="primaryMaterialColorField" class="material-color-field">
+                <span id="primaryMaterialColorThumb" class="material-color-thumb"></span>
+            </div>
+            <input id="primaryMaterialHueSlider" class="material-hue-slider" type="range" min="0" max="360" step="1" value="260" aria-label="色相">
+            <div class="color-picker-footer">
+                <div id="primaryMaterialColorPreview" class="color-preview-chip"></div>
+                <mdui-text-field id="primaryCustomColorHex" label="HEX 颜色" helper="格式：#RRGGBB，例如 #ffffff" variant="outlined" value="#7e57c2"></mdui-text-field>
+            </div>
+        </div>
+        <mdui-button id="primaryCustomColorCancel" slot="action" variant="text">取消</mdui-button>
+        <mdui-button id="primaryCustomColorReset" slot="action" variant="outlined">恢复默认</mdui-button>
+        <mdui-button id="primaryCustomColorSave" slot="action" variant="filled">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="primaryCustomColorActionDialog" close-on-esc close-on-overlay-click headline="自定义颜色">
+        <div style="padding:12px 0;">请选择要执行的操作。</div>
+        <mdui-button id="primaryCustomColorActionEdit" slot="action" variant="text">修改</mdui-button>
+        <mdui-button id="primaryCustomColorActionDelete" slot="action" variant="text" color="error">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="primaryDeleteCustomColorDialog" close-on-esc close-on-overlay-click headline="删除自定义颜色？">
+        <div>确定要删除当前保存的自定义颜色吗？删除后将恢复默认主题色。</div>
+        <mdui-button id="primaryDeleteCustomColorCancel" slot="action" variant="text">取消</mdui-button>
+        <mdui-button id="primaryDeleteCustomColorConfirm" slot="action" variant="filled" color="error">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="snackbarSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>Snackbar 设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSnackbarSettingsBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div style="display: grid; gap: 12px;">
+                <mdui-select id="snackbarPlacementSelect" variant="outlined" placement="bottom" value="bottom-center" label="位置"></mdui-select>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+                    <mdui-text-field id="snackbarOffsetXInput" type="number" variant="outlined" label="X 偏移（px）" value="0"></mdui-text-field>
+                    <mdui-text-field id="snackbarOffsetYInput" type="number" variant="outlined" label="Y 偏移（px）" value="-32"></mdui-text-field>
+                </div>
+                <mdui-segmented-button-group id="snackbarDismissGroup" selects="single" value="swipe">
+                    <mdui-segmented-button value="swipe">右滑关闭</mdui-segmented-button>
+                    <mdui-segmented-button value="button">按钮关闭</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div style="margin-top: 14px;">
+                <mdui-button variant="filled" id="saveSnackbarSettingsBtn">保存</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutActionDialog" close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title id="shortcutActionTitle">快捷短语</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="add" id="shortcutActionAddBtn"></mdui-button-icon>
+            <mdui-button-icon icon="close" id="shortcutActionCloseBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <mdui-text-field id="shortcutEditValue" label="快捷短语内容" variant="outlined"></mdui-text-field>
+            <mdui-list class="shortcut-action-settings-list">
+                <mdui-list-item headline="置顶快捷短语" description="置顶后优先显示并使用高亮背景">
+                    <mdui-switch id="shortcutPinnedSwitch" slot="end-icon"></mdui-switch>
+                </mdui-list-item>
+                <mdui-list-item headline="点击后增加点击次数" description="关闭后点击仍会输入，但不累计次数">
+                    <mdui-switch id="shortcutIncrementClickSwitch" slot="end-icon" checked></mdui-switch>
+                </mdui-list-item>
+            </mdui-list>
+            <mdui-text-field id="shortcutClickCountInput" label="点击次数" variant="outlined" type="number" min="0" max="999999999"></mdui-text-field>
+            <div class="shortcut-move-controls">
+                <mdui-select id="shortcutMoveTarget" label="移动到预览中的位置" variant="outlined"></mdui-select>
+                <div class="shortcut-move-actions">
+                    <mdui-button variant="tonal" icon="vertical_align_top" id="shortcutMoveBeforeBtn">移到所选项前</mdui-button>
+                    <mdui-button variant="tonal" icon="vertical_align_bottom" id="shortcutMoveAfterBtn">移到所选项后</mdui-button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+                <mdui-button variant="filled" id="shortcutSaveBtn">保存修改</mdui-button>
+                <mdui-button variant="outlined" color="error" id="shortcutDeleteBtn">删除</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutAddDialog" close-on-esc fullscreen headline="添加快捷短语">
+        <mdui-dropdown id="shortcutAddAutocompleteDropdown" placement="bottom-start" trigger="manual">
+            <mdui-text-field id="shortcutAddValue" slot="trigger" label="快捷短语内容" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+            <mdui-menu id="shortcutAddAutocompleteMenu"></mdui-menu>
+        </mdui-dropdown>
+        <div style="margin-top: 12px; font-size: 0.9rem; color: var(--text-secondary);">当前已有：</div>
+        <div id="shortcutAddExistingList" style="margin-top: 8px; max-height: 40vh; overflow: auto; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        <mdui-button slot="action" variant="text" id="shortcutAddCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutAddOkBtn">添加</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="duplicateShortcutConfirmDialog" close-on-esc headline="检测到相同快捷短语">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            已存在相同内容的快捷短语，是否继续添加？
+        </div>
+        <mdui-button slot="action" variant="text" id="duplicateShortcutCancelBtn">取消并定位</mdui-button>
+        <mdui-button slot="action" variant="filled" id="duplicateShortcutOkBtn">继续添加</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="suggestThresholdDialog" close-on-esc close-on-overlay-click headline="建议阈值">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            当某个输入值在“添加数据”时累计出现达到阈值，就会提示加入快捷短语。
+        </div>
+        <mdui-text-field id="suggestThresholdInput" label="次数" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="suggestThresholdCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="suggestThresholdOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="historyMaxCountDialog" close-on-esc close-on-overlay-click headline="历史记录保留条数">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            仅保留最近的若干条历史记录，以减少卡顿。
+        </div>
+        <mdui-text-field id="historyMaxCountInput" label="条数（最近）" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="historyMaxCountCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="historyMaxCountOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="undoRedoMaxStepsDialog" close-on-esc close-on-overlay-click headline="撤销/重做步数上限">
+        <div style="padding: 8px 0; color: #757575; line-height: 1.6;">
+            限制可撤销/重做的最大步数，超出则移除更早的步骤。
+        </div>
+        <mdui-text-field id="undoRedoMaxStepsInput" label="步数（最多）" variant="outlined" type="number"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="undoRedoMaxStepsCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="undoRedoMaxStepsOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutRowsDialog" close-on-esc close-on-overlay-click headline="快捷短语显示行数">
+        <div style="display: grid; gap: 14px; padding: 8px 0;">
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">默认</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup" selects="single" value="2">
+                    <mdui-segmented-button value="1">1 行</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2 行</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3 行</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">钢种</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_steelType" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">产品号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_productId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">卡片号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_cardId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">炉号</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_furnaceId" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">状态</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_status" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+            <div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px;">位置</div>
+                <mdui-segmented-button-group id="shortcutRowsGroup_position" selects="single" value="2">
+                    <mdui-segmented-button value="1">1</mdui-segmented-button>
+                    <mdui-segmented-button value="2">2</mdui-segmented-button>
+                    <mdui-segmented-button value="3">3</mdui-segmented-button>
+                </mdui-segmented-button-group>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="shortcutRowsCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutRowsOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutAddPositionDialog" close-on-esc close-on-overlay-click headline="快捷短语新增位置">
+        <mdui-segmented-button-group id="shortcutAddPositionGroup" selects="single" value="first">
+            <mdui-segmented-button value="first">第一个</mdui-segmented-button>
+            <mdui-segmented-button value="last">最后一个</mdui-segmented-button>
+        </mdui-segmented-button-group>
+        <mdui-button slot="action" variant="text" id="shortcutAddPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="shortcutAddPositionOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="shortcutAutoCompleteByFieldDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>自动补全（按字段）</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeShortcutAutoCompleteByFieldBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="shortcutAutoCompleteByFieldList" style="display:grid; gap: 10px;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="suggestByFieldDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>智能建议（按字段）</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeSuggestByFieldBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="suggestByFieldList" style="display:grid; gap: 10px;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="dialogPositionDialog" close-on-esc close-on-overlay-click headline="对话框默认位置（可多选）">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; padding: 8px 0;">
+            <mdui-checkbox id="dialogPosTop">顶部</mdui-checkbox>
+            <mdui-checkbox id="dialogPosCenter">居中</mdui-checkbox>
+        </div>
+        <mdui-button slot="action" variant="text" id="dialogPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="dialogPositionOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="keyboardSizeDialog" close-on-esc close-on-overlay-click headline="虚拟键盘高度/底部留空">
+        <div style="display: grid; gap: 16px; padding: 8px 0;">
+            <div style="display: grid; gap: 8px;">
+                <div style="font-weight: 500;">键盘高度(px)</div>
+                <mdui-slider id="vkHeightSlider" min="120" max="1200" step="10" value="420"></mdui-slider>
+                <mdui-text-field id="vkHeightInput" label="键盘高度(px)（留空=自动）" variant="outlined" type="number"></mdui-text-field>
+            </div>
+            <div style="display: grid; gap: 8px;">
+                <div style="font-weight: 500;">底部留空(px)</div>
+                <mdui-slider id="vkBottomOffsetSlider" min="0" max="400" step="5" value="0"></mdui-slider>
+                <mdui-text-field id="vkBottomOffsetInput" label="底部留空(px)（留空=0）" variant="outlined" type="number"></mdui-text-field>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="keyboardSizeCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="keyboardSizeOkBtn">确定</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="fabPositionDialog" close-on-esc close-on-overlay-click headline="自定义FAB位置">
+        <div style="display:grid; gap: 10px; padding: 8px 0;">
+            <div id="fabPositionPreviewText" style="font-size:0.9rem;color:#757575;">实时预览中…</div>
+            <mdui-slider id="fabPosXSlider" min="0" max="100" step="1"></mdui-slider>
+            <mdui-text-field id="fabPosXInput" label="X（距右侧，px）" type="number" variant="outlined"></mdui-text-field>
+            <mdui-slider id="fabPosYSlider" min="0" max="100" step="1"></mdui-slider>
+            <mdui-text-field id="fabPosYInput" label="Y（距底部，px）" type="number" variant="outlined"></mdui-text-field>
+        </div>
+        <mdui-button slot="action" variant="text" id="fabPositionCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="fabPositionOkBtn">保存</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="tableViewDialog" close-on-esc close-on-overlay-click headline="表格视图参数">
+        <mdui-text-field id="tableScaleDefaultInput" label="默认表格缩放（0.25-2.0）" type="number" step="0.05" min="0.25" max="2" variant="outlined"></mdui-text-field>
+        <mdui-text-field id="tableCellWidthInput" label="单元格最小宽度（px）" type="number" min="48" max="320" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tableCellHeightInput" label="单元格高度（px）" type="number" min="30" max="160" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tableCellFontSizeInput" label="单元格字体大小（px）" type="number" min="10" max="40" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="tablePageSizeInput" label="每页数据量（10-200）" type="number" min="10" max="200" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="dataFormFieldGapInput" label="编辑/添加数据编辑框间距（px）" type="number" min="0" max="32" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-text-field id="dataFormPaddingInput" label="编辑/添加数据页面边距（px）" type="number" min="0" max="40" variant="outlined" style="margin-top: 12px;"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="tableViewCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="tableViewOkBtn">确定</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="cursorHandleSettingsDialog" close-on-esc close-on-overlay-click headline="光标水滴显示时长">
+        <mdui-text-field id="cursorHandleDurationInput" label="点击编辑框后显示（毫秒）" type="number" min="0" max="10000" step="100" variant="outlined"></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="cursorHandleDurationCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="cursorHandleDurationOkBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="toolbarShakeSettingsDialog" fullscreen close-on-esc close-on-overlay-click class="material-fullscreen-dialog">
+        <mdui-top-app-bar slot="header" class="material-dialog-appbar">
+            <mdui-icon name="vibration" class="settings-child-appbar-icon"></mdui-icon>
+            <mdui-top-app-bar-title>快捷工具栏晃动切换</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="toolbarShakeSettingsCloseBtn" aria-label="关闭快捷工具栏晃动切换设置"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div class="toolbar-shake-dialog-body">
+            <div class="toolbar-shake-settings-content">
+                <mdui-list>
+                    <mdui-list-item headline="启用晃动切换" description="拖动快捷工具栏时左右或上下晃动可切换布局">
+                        <mdui-switch slot="end-icon" id="toolbarShakeEnabledSwitch"></mdui-switch>
+                    </mdui-list-item>
+                    <mdui-list-item headline="布局切换动画" description="切换时保留平滑过渡动画">
+                        <mdui-switch slot="end-icon" id="toolbarShakeAnimationSwitch"></mdui-switch>
+                    </mdui-list-item>
+                </mdui-list>
+                <div class="toolbar-shake-slider-control">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                        <span>工具栏大小</span><span id="toolbarScaleValue" style="color:var(--text-secondary)">100%</span>
+                    </div>
+                    <mdui-slider id="toolbarScaleSlider" min="50" max="150" step="5" value="100"></mdui-slider>
+                    <div style="font-size:.86rem;color:var(--text-secondary)">可缩小到 50%，或放大到 150%。</div>
+                </div>
+                <div class="toolbar-shake-slider-control">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                        <span>晃动幅度</span><span id="toolbarShakeAmplitudeValue" style="color:var(--text-secondary)">50%</span>
+                    </div>
+                    <mdui-slider id="toolbarShakeAmplitudeSlider" min="10" max="100" step="1" value="50"></mdui-slider>
+                    <div style="font-size:.86rem;color:var(--text-secondary)">百分比越大，所需晃动距离越小。</div>
+                </div>
+                <div class="toolbar-shake-slider-control">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><span>快捷短语文字大小</span><span id="shortcutFontSizeValue" style="color:var(--text-secondary)">16px</span></div>
+                    <mdui-slider id="shortcutFontSizeSlider" min="12" max="28" step="1" value="16"></mdui-slider>
+                </div>
+                <div class="toolbar-shake-slider-control">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><span>快捷短语词段大小</span><span id="shortcutChipScaleValue" style="color:var(--text-secondary)">100%</span></div>
+                    <mdui-slider id="shortcutChipScaleSlider" min="70" max="160" step="5" value="100"></mdui-slider>
+                </div>
+                <section class="settings-mobile-section toolbar-shake-effect-section">
+                    <div class="settings-mobile-section-title"><mdui-icon name="celebration"></mdui-icon><span>晃动效果</span><div style="flex:1"></div><mdui-button-icon id="toolbarShakeEffectTestBtn" icon="play_arrow" aria-label="测试晃动效果"></mdui-button-icon></div>
+                    <div class="toolbar-shake-effect-controls">
+                        <mdui-select id="toolbarShakeEffectSelect" label="效果类型" variant="outlined" value="confetti">
+                            <mdui-menu-item value="confetti">爆炸烟花与落底彩带</mdui-menu-item>
+                            <mdui-menu-item value="custom">自定义 HTML + CSS + JavaScript</mdui-menu-item>
+                            <mdui-menu-item value="none">关闭效果</mdui-menu-item>
+                        </mdui-select>
+                        <mdui-text-field id="toolbarShakeEffectDurationInput" label="效果时长（毫秒）" type="number" min="300" max="20000" step="100" variant="outlined"></mdui-text-field>
+                    </div>
+                    <div id="toolbarShakeCustomEffectFields" class="toolbar-shake-custom-fields" hidden>
+                        <div class="keyboard-appearance-section-heading"><strong>自定义效果代码</strong><mdui-button id="toolbarShakeEffectExampleBtn" variant="tonal"><mdui-icon slot="icon" name="code"></mdui-icon>载入示例</mdui-button></div>
+                        <mdui-text-field id="toolbarShakeEffectHtmlInput" label="HTML" type="textarea" rows="4" variant="outlined"></mdui-text-field>
+                        <mdui-text-field id="toolbarShakeEffectCssInput" label="CSS" type="textarea" rows="7" variant="outlined"></mdui-text-field>
+                        <mdui-text-field id="toolbarShakeEffectJsInput" label="JavaScript（detail、root）" type="textarea" rows="8" variant="outlined"></mdui-text-field>
+                    </div>
+                </section>
+                <mdui-divider></mdui-divider>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div>
+                        <div style="font-weight:600">晃动布局</div>
+                        <div id="toolbarLayoutCount" style="font-size:.86rem;color:var(--text-secondary)"></div>
+                    </div>
+                    <mdui-button variant="tonal" icon="add" id="addToolbarLayoutBtn">新增布局</mdui-button>
+                </div>
+                <div id="toolbarLayoutList" style="display:grid;gap:10px"></div>
+                <div style="font-size:.86rem;color:var(--text-secondary)">列表按顺序循环切换，最多保存 10 个布局。点击布局编辑多选内容；右侧按钮可上移、下移或删除。</div>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="toolbarLayoutEditDialog" fullscreen close-on-esc close-on-overlay-click class="material-fullscreen-dialog">
+        <mdui-top-app-bar slot="header" class="material-dialog-appbar">
+            <mdui-icon name="vibration" class="settings-child-appbar-icon"></mdui-icon>
+            <mdui-top-app-bar-title id="toolbarLayoutEditTitle">编辑晃动布局</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="toolbarLayoutEditCloseBtn" aria-label="关闭布局编辑"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding:16px;overflow:auto;box-sizing:border-box;height:100%;">
+            <div style="display:grid;gap:16px;max-width:760px;margin:0 auto;">
+                <mdui-text-field id="toolbarLayoutNameInput" label="布局名称" variant="outlined"></mdui-text-field>
+                <div style="font-weight:600">选择显示项目</div>
+                <div id="toolbarLayoutControlsList" style="display:grid;gap:4px"></div>
+                <div style="font-size:.86rem;color:var(--text-secondary)">至少选择一个项目。输入法按钮仅在候选栏/输入法工具出现时显示。</div>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="toolbarLayoutEditCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="toolbarLayoutEditSaveBtn">保存布局</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="searchHighlightSettingsDialog" close-on-esc close-on-overlay-click headline="搜索高亮颜色">
+        <div style="padding: 0 24px 16px; display: grid; gap: 14px;">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:10px;align-items:center;">
+                <mdui-text-field id="searchMatchHighlightColorInput" label="匹配单元格高亮色" variant="outlined" placeholder="#F3E8C7"></mdui-text-field>
+                <button type="button" id="searchMatchHighlightColorPicker" class="material-color-picker-trigger" value="#F3E8C7" aria-label="匹配单元格高亮色"></button>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:10px;align-items:center;">
+                <mdui-text-field id="searchRowHighlightColorInput" label="搜索结果行高亮色" variant="outlined" placeholder="#B08B2D"></mdui-text-field>
+                <button type="button" id="searchRowHighlightColorPicker" class="material-color-picker-trigger" value="#B08B2D" aria-label="搜索结果行高亮色"></button>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:10px;align-items:center;">
+                <mdui-text-field id="searchCurrentBorderColorInput" label="当前匹配项目边框色" variant="outlined" placeholder="#00796B"></mdui-text-field>
+                <button type="button" id="searchCurrentBorderColorPicker" class="material-color-picker-trigger" value="#00796B" aria-label="当前匹配项目边框色"></button>
+            </div>
+            <div style="font-size:0.86rem;color:var(--text-secondary);line-height:1.45;">建议使用低饱和颜色，夜间模式会自动保持文字可读。当前匹配项目始终保留边框高亮。</div>
+        </div>
+        <mdui-button slot="action" variant="text" id="searchHighlightResetBtn">恢复默认</mdui-button>
+        <mdui-button slot="action" variant="text" id="searchHighlightCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="searchHighlightSaveBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="keyboardModeByFieldDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>编辑框键盘模式（按字段）</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeKeyboardModeByFieldBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div class="move-row-dialog-body" style="padding: 24px 16px 32px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <p style="margin:0 0 16px; color:var(--text-secondary); line-height:1.5;">可为每个编辑框单独选择键盘。单独设置优先；未单独设置时，桌面模式默认使用系统键盘，移动端备注默认系统键盘、其他字段默认虚拟键盘。</p>
+            <div id="keyboardModeByFieldList" style="display:grid; gap:10px;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="imageCompressSettingsDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>图片压缩设置</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeImageCompressSettingsBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <mdui-segmented-button-group id="imageCompressPolicyGroup" selects="single" value="ask">
+                <mdui-segmented-button value="ask">每次询问</mdui-segmented-button>
+                <mdui-segmented-button value="compress">总是压缩</mdui-segmented-button>
+                <mdui-segmented-button value="force">总是原图</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <div style="margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
+                <mdui-checkbox id="imageCompressUseMaxWidth">限制宽度</mdui-checkbox>
+                <mdui-checkbox id="imageCompressUseMaxHeight">限制高度</mdui-checkbox>
+            </div>
+            <div style="margin-top: 16px; display: grid; gap: 12px;">
+                <mdui-text-field id="largeImageThresholdMB" label="大图阈值(MB)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressMaxWidth" label="最大宽度(px)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressMaxHeight" label="最大高度(px)" variant="outlined" type="number"></mdui-text-field>
+                <mdui-text-field id="imageCompressQuality" label="质量(0-1)" variant="outlined" type="number"></mdui-text-field>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <mdui-button variant="filled" id="saveImageCompressSettingsBtn">保存</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="exportChoiceDialog" close-on-esc close-on-overlay-click headline="导出方式">
+        <div style="display:grid;gap:14px;min-width:min(440px, 82vw);padding-top:4px;">
+            <mdui-text-field id="exportFileNameInput" label="导出文件名称" placeholder="请输入文件名称" variant="outlined" clearable></mdui-text-field>
+            <mdui-segmented-button-group id="exportTypeGroup" selects="single" value="excel_images">
+                <mdui-segmented-button value="excel_images">Excel（含图片）</mdui-segmented-button>
+                <mdui-segmented-button value="zip_images">ZIP（图片外放）</mdui-segmented-button>
+            </mdui-segmented-button-group>
+        </div>
+        <mdui-button slot="action" variant="text" id="exportChoiceCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="exportChoiceOkBtn">导出</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentNameDialog" close-on-esc close-on-overlay-click headline="保存表格">
+        <div style="display:grid;gap:12px;min-width:min(420px, 80vw);">
+            <mdui-text-field id="documentNameInput" label="文件名称" placeholder="请输入文件名称" variant="outlined" clearable></mdui-text-field>
+        </div>
+        <mdui-button slot="action" variant="text" id="documentNameCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentNameConfirmBtn">保存</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentNameConflictDialog" close-on-esc close-on-overlay-click headline="检测到相同文件名称">
+        <div id="documentNameConflictMessage" style="line-height:1.6;min-width:min(420px, 80vw);"></div>
+        <mdui-button slot="action" variant="text" id="documentNameConflictCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="tonal" id="documentNameConflictCopyBtn">复制新的</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentNameConflictOverwriteBtn">覆盖</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="openDocumentDialog" fullscreen close-on-esc>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>打开表格</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="openDocumentCancelBtn"></mdui-button-icon></mdui-tooltip>
+        </mdui-top-app-bar>
+        <div class="open-document-layout">
+            <div class="open-document-search">
+                <div class="open-document-search-row">
+                    <mdui-text-field id="documentSearchInput" label="搜索表格" placeholder="输入文件名称" variant="outlined" clearable></mdui-text-field>
+                    <mdui-tooltip id="documentMultiSelectTooltip" content="多选">
+                        <mdui-button-icon icon="checklist" id="documentMultiSelectBtn" aria-label="多选" aria-pressed="false"></mdui-button-icon>
+                    </mdui-tooltip>
+                    <mdui-tooltip id="documentBulkDeleteTooltip" content="删除选中" hidden>
+                        <mdui-button-icon icon="delete" id="documentBulkDeleteBtn" aria-label="删除选中" disabled></mdui-button-icon>
+                    </mdui-tooltip>
+                </div>
+                <div id="documentSearchCount" class="open-document-count"></div>
+            </div>
+            <div class="open-document-list-scroll">
+                <div id="documentList" class="open-document-list"></div>
+                <div id="documentListEmpty" class="open-document-empty" style="display:none;">暂无已保存的表格</div>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentDeleteConfirmDialog" headline="确认删除" close-on-esc close-on-overlay-click>
+        <div id="documentDeleteConfirmMessage" style="line-height:1.6;"></div>
+        <mdui-button slot="action" variant="text" id="documentDeleteCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" color="error" id="documentDeleteConfirmBtn">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="configExportDialog" close-on-esc close-on-overlay-click headline="选择导出的配置">
+        <div style="display:grid;gap:10px;padding:4px 0;">
+            <mdui-checkbox id="configExportTheme" checked>主题与主色</mdui-checkbox>
+            <mdui-checkbox id="configExportAppSettings" checked>应用设置</mdui-checkbox>
+            <mdui-checkbox id="configExportKeyboard" checked>键盘与快捷短语</mdui-checkbox>
+            <mdui-checkbox id="configExportPersonalDictionary" checked>个人词库与词语使用习惯</mdui-checkbox>
+            <mdui-checkbox id="configExportInputStats">inputStats</mdui-checkbox>
+            <mdui-checkbox id="configExportShortcutStats">shortcutClickStats</mdui-checkbox>
+        </div>
+        <mdui-button slot="action" variant="text" id="configExportCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="configExportOkBtn">导出</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="dictionaryDialog" fullscreen close-on-esc>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title>词库</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-tooltip content="关闭"><mdui-button-icon icon="close" id="dictionaryCloseBtn"></mdui-button-icon></mdui-tooltip>
+        </mdui-top-app-bar>
+        <div class="dictionary-dialog-body">
+            <mdui-segmented-button-group id="dictionaryModeGroup" selects="single" value="system" style="width:100%;flex:none;">
+                <mdui-segmented-button value="system" selected>系统词库</mdui-segmented-button>
+                <mdui-segmented-button value="personal">词语使用习惯</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <mdui-text-field id="dictionarySearchInput" label="搜索词语、汉字、拼音或英文" variant="outlined" clearable style="width:100%;flex:none;"></mdui-text-field>
+            <mdui-segmented-button-group id="dictionaryCategoryGroup" selects="single" value="all" style="width:100%;flex:none;">
+                <mdui-segmented-button value="all" selected>全部</mdui-segmented-button>
+                <mdui-segmented-button value="chinese">中文</mdui-segmented-button>
+                <mdui-segmented-button value="english">英文</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <section id="remoteDictionaryStatusPanel" class="remote-dictionary-status-panel">
+                <div style="display:flex;align-items:center;gap:10px;padding:0 4px 8px;">
+                    <mdui-icon name="cloud_sync" style="color:var(--mdui-color-primary);"></mdui-icon>
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:600;">网络大型词库</div>
+                        <div id="remoteDictionarySourceSummary" style="font-size:.82rem;color:var(--mdui-color-on-surface-variant);">自动加载一次，之后优先读取本地缓存</div>
+                    </div>
+                    <mdui-tooltip content="强制重新下载"><mdui-button-icon id="remoteDictionaryReloadBtn" icon="refresh"></mdui-button-icon></mdui-tooltip>
+                </div>
+                <div style="display:grid;gap:8px;padding:0 4px 8px;">
+                    <mdui-select id="remoteDictionarySourceSelect" label="词库来源" variant="outlined" placement="auto" value="auto" style="width:100%;">
+                        <mdui-menu-item value="auto">镜像优先（自动回退）</mdui-menu-item>
+                        <mdui-menu-item value="gcore">jsDelivr Gcore 镜像</mdui-menu-item>
+                        <mdui-menu-item value="fastly">jsDelivr Fastly 镜像</mdui-menu-item>
+                        <mdui-menu-item value="jsdelivr">jsDelivr 全球 CDN</mdui-menu-item>
+                        <mdui-menu-item value="github">GitHub 原始地址</mdui-menu-item>
+                        <mdui-menu-item value="custom">自定义地址</mdui-menu-item>
+                    </mdui-select>
+                    <div id="remoteDictionaryCustomSourceFields" hidden style="display:grid;gap:8px;">
+                        <mdui-text-field id="remoteChineseDictionaryUrl" label="中文大型词组地址" variant="outlined" type="url"></mdui-text-field>
+                        <mdui-text-field id="remoteEnglishFrequencyUrl" label="英文高频词库地址" variant="outlined" type="url"></mdui-text-field>
+                        <mdui-text-field id="remoteEnglishComprehensiveUrl" label="英文完整词典地址" variant="outlined" type="url"></mdui-text-field>
+                        <mdui-button id="remoteDictionaryApplyCustomSourceBtn" variant="tonal" icon="save">应用自定义来源</mdui-button>
+                    </div>
+                </div>
+                <mdui-list style="padding:0;">
+                    <mdui-list-item id="remoteChineseDictionaryStatus" icon="translate" headline="中文大型词组" description="尚未加载"></mdui-list-item>
+                    <mdui-list-item id="remoteEnglishFrequencyStatus" icon="trending_up" headline="英文高频排序" description="尚未加载"></mdui-list-item>
+                    <mdui-list-item id="remoteEnglishComprehensiveStatus" icon="spellcheck" headline="英文完整词典" description="尚未加载"></mdui-list-item>
+                </mdui-list>
+            </section>
+            <div id="personalDictionaryActions" class="personal-dictionary-actions">
+                <mdui-button id="personalDictionaryImportBtn" variant="tonal" icon="upload">导入</mdui-button>
+                <mdui-button id="personalDictionaryExportBtn" variant="outlined" icon="download">导出</mdui-button>
+                <mdui-button id="personalDictionaryClearBtn" variant="outlined" color="error" icon="delete_sweep">清空个人词库</mdui-button>
+                <span id="personalDictionarySummary" class="personal-dictionary-summary"></span>
+                <input type="file" id="personalDictionaryImportInput" accept=".json,application/json" style="display:none;">
+            </div>
+            <div id="dictionaryResultList" class="dictionary-result-list"></div>
+            <div id="dictionaryEmptyState" class="dictionary-empty-state">没有匹配的词条</div>
+            <div class="dictionary-pagination">
+                <mdui-tooltip content="上一页"><mdui-button-icon id="dictionaryPrevBtn" icon="navigate_before"></mdui-button-icon></mdui-tooltip>
+                <span id="dictionaryPageInfo" style="min-width:92px;text-align:center;color:var(--mdui-color-on-surface-variant);">第 1 页</span>
+                <mdui-tooltip content="下一页"><mdui-button-icon id="dictionaryNextBtn" icon="navigate_next"></mdui-button-icon></mdui-tooltip>
+            </div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="personalDictionaryDeleteDialog" headline="删除这条个人习惯？" close-on-esc close-on-overlay-click>
+        <div id="personalDictionaryDeleteMessage">删除后，这条词语的个人排序记录将被移除。</div>
+        <mdui-button slot="action" variant="text" id="personalDictionaryDeleteCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" color="error" id="personalDictionaryDeleteConfirmBtn">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="personalDictionaryClearDialog" headline="清空个人词库？" close-on-esc close-on-overlay-click>
+        <div>这会清除全部中文和英文词语使用习惯，系统词库及网络词库不会受到影响。</div>
+        <mdui-button slot="action" variant="text" id="personalDictionaryClearCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" color="error" id="personalDictionaryClearConfirmBtn">确认清空</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="exportProgressDialog" headline="正在导出" close-on-esc>
+        <div style="padding: 0 24px 24px; display: grid; gap: 12px;">
+            <div id="exportProgressText" style="font-size: 0.95rem; color: var(--mdui-color-on-surface-variant, #757575);"></div>
+            <mdui-linear-progress id="exportProgressBar" value="0"></mdui-linear-progress>
+            <div id="exportProgressPercent" style="font-size: 0.9rem; color: var(--mdui-color-on-surface-variant, #757575); text-align: right;"></div>
+        </div>
+    </mdui-dialog>
+
+    <mdui-dialog id="moveRowDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-top-app-bar-title id="moveRowDialogTitle">移动到指定行</mdui-top-app-bar-title>
+            <div style="flex: 1"></div>
+            <mdui-button-icon icon="close" id="closeMoveRowDialogBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div style="padding: 16px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="moveRowSourceSummary" style="font-weight:600;margin-bottom:10px;"></div>
+            <mdui-segmented-button-group id="moveRowPlacementGroup" selects="single" value="before" style="width:100%;">
+                <mdui-segmented-button value="before">移动到目标上方</mdui-segmented-button>
+                <mdui-segmented-button value="after">移动到目标下方</mdui-segmented-button>
+            </mdui-segmented-button-group>
+            <mdui-text-field id="moveRowSearchInput" class="move-row-search" label="搜索（产品号/卡片号/钢种/行号）" variant="outlined" clearable></mdui-text-field>
+            <mdui-list id="moveRowList" style="margin-top: 14px;"></mdui-list>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px;">
+                <div id="moveRowPageInfo" style="color: var(--mdui-color-on-surface-variant, #757575); font-size: 0.9rem;"></div>
+                <div style="display:flex; gap: 8px; align-items: center;">
+                    <mdui-button-icon icon="navigate_before" id="moveRowPrevBtn"></mdui-button-icon>
+                    <input type="number" id="moveRowPageInput" min="1" value="1" style="width: 70px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; background: var(--surface-color); color: var(--text-color);">
+                    <mdui-button-icon icon="navigate_next" id="moveRowNextBtn"></mdui-button-icon>
+                </div>
+            </div>
+        </div>
+        <mdui-button slot="action" variant="text" id="moveRowCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="moveRowOkBtn">确定</mdui-button>
+    </mdui-dialog>
+
+    <!-- Advanced JSON Editor Dialog -->
+    <mdui-dialog id="advancedJsonEditorDialog" fullscreen>
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <span style="font-size: 1.25rem; font-weight: 500;">编辑 JSON 配置</span>
+                <mdui-button-icon icon="close" id="closeAdvancedJsonEditorBtn"></mdui-button-icon>
+            </div>
+            <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 8px 8px;">
+                 <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 8px;">
+                    请确保 JSON 格式正确。支持自定义 layouts (布局), symbolMap (符号映射), templates (模板)。
+                </p>
+                <mdui-text-field id="fullJsonEditorInput" 
+                type="textarea" 
+                rows="16"
+                style="width:100%;
+                min-height:120px;
+                font-family: monospace; font-size: 13px;"></mdui-text-field>
+            </div>
+            <div style="padding: 16px 24px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <mdui-button variant="text" id="cancelJsonEditorBtn">取消</mdui-button>
+                <mdui-button variant="filled" id="applyJsonEditorBtn">应用并关闭</mdui-button>
+            </div>
+        </div>
+    </mdui-dialog>
+    <mdui-dialog id="keyboardVisualEditorDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header">
+            <mdui-icon name="view_quilt" class="settings-child-appbar-icon"></mdui-icon>
+            <mdui-top-app-bar-title>虚拟键盘可视化编辑器</mdui-top-app-bar-title>
+            <div style="flex:1"></div>
+            <mdui-button-icon icon="close" id="closeKeyboardVisualEditorBtn"></mdui-button-icon>
+        </mdui-top-app-bar>
+        <div class="vk-visual-editor-body">
+            <div id="vkVisualSelectedInfo" class="vk-visual-selected-info" style="max-width:none;margin:0 0 8px 0;">未选择</div>
+            <mdui-select id="vkVisualLayoutSelect" variant="outlined" label="编辑布局" style="width:100%;">
+                <mdui-menu-item value="text">文本键盘</mdui-menu-item>
+                <mdui-menu-item value="textShift">大写键盘</mdui-menu-item>
+                <mdui-menu-item value="number">数字键盘</mdui-menu-item>
+                <mdui-menu-item value="status">状态键盘</mdui-menu-item>
+                <mdui-menu-item value="position">位置键盘</mdui-menu-item>
+                <mdui-menu-item value="symbol">符号键盘</mdui-menu-item>
+            </mdui-select>
+            <div id="vkVisualPreview" class="vk-visual-panel"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddKeyBtn">＋ 新增按键</button>
+                <button type="button" class="vk-visual-tool-btn primary" id="vkVisualAddRowBtn">＋ 新增一行</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteKeyBtn">删除选中键</button>
+                <button type="button" class="vk-visual-tool-btn danger" id="vkVisualDeleteRowBtn">删除选中行</button>
+            </div>
+            <div style="margin-top:10px;display:grid;gap:8px;">
+                <mdui-text-field id="vkVisualKeyValueInput" label="键值(key)" variant="outlined"></mdui-text-field>
+                <mdui-text-field id="vkVisualKeyLabelInput" label="显示文本(label，可空)" variant="outlined"></mdui-text-field>
+                <mdui-text-field id="vkVisualKeyFlexInput" label="键宽 flex（不改变长宽时可编辑）" variant="outlined" type="number" min="0.2" max="12" step="0.1"></mdui-text-field>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeySwipeInput" label="上滑输入符号(swipe)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeLabelInput" label="上滑显示文本(可空)" variant="outlined"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeySwipeColorInput" label="上滑颜色(可空)" variant="outlined" placeholder="#4caf50"></mdui-text-field>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+                    <mdui-text-field id="vkVisualKeyWidthInput" label="宽度百分比(%)" variant="outlined" type="number" min="1" max="100"></mdui-text-field>
+                    <mdui-text-field id="vkVisualKeyHeightInput" label="高度百分比(%)" variant="outlined" type="number" min="1" max="300"></mdui-text-field>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.95rem;">
+                    <input type="checkbox" id="vkVisualKeyKeepSizeInput">
+                    不改变长宽（跟随虚拟键盘默认尺寸）
+                </label>
+                <div style="font-size:0.85rem;color:#757575;">选中行会显示外框高亮；选中按键会显示主色高亮。宽高百分比会写入按键 style。</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveLeftBtn">左移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveRightBtn">右移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveUpBtn">上移</button>
+                    <button type="button" class="vk-visual-tool-btn" id="vkVisualMoveDownBtn">下移</button>
+                </div>
+            </div>
+            <div id="dynamicVarListVisual" style="display:none;"></div>
+        </div>
+        <mdui-button slot="action" variant="text" id="vkVisualResetCurrentBtn" color="error">重置当前键盘为默认</mdui-button>
+        <mdui-button slot="action" variant="tonal" id="vkVisualToggleKeyboardBtn">关闭键盘</mdui-button>
+        <mdui-button slot="action" variant="text" id="keyboardVisualCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="keyboardVisualSaveBtn">保存并应用</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="dynamicVariablesDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header"><mdui-icon name="data_object" class="settings-child-appbar-icon"></mdui-icon><mdui-top-app-bar-title>自定义变量（可编程）</mdui-top-app-bar-title><div style="flex:1"></div><mdui-tooltip content="使用教程"><mdui-button-icon icon="help_outline" id="dynamicVariablesHelpBtn" aria-label="打开自定义变量使用教程"></mdui-button-icon></mdui-tooltip><mdui-button-icon icon="close" id="closeDynamicVariablesBtn"></mdui-button-icon></mdui-top-app-bar>
+        <div class="dynamic-variable-manager">
+            <mdui-text-field id="dynamicVarSearchInput" label="搜索变量" variant="outlined" clearable><mdui-icon slot="icon" name="search"></mdui-icon></mdui-text-field>
+            <div class="dynamic-variable-manager-actions">
+                <mdui-checkbox id="dynamicVarSelectAllCheckbox">全选</mdui-checkbox>
+                <span class="dynamic-variable-action-spacer"></span>
+                <mdui-button variant="tonal" id="dynamicVarDeleteSelectedBtn"><mdui-icon slot="icon" name="delete"></mdui-icon>删除选中</mdui-button>
+                <mdui-button variant="filled" id="dynamicVarAddBtn"><mdui-icon slot="icon" name="add"></mdui-icon>新增变量</mdui-button>
+            </div>
+            <mdui-list id="dynamicVarManageList" class="dynamic-variable-list"></mdui-list>
+        </div>
+        <mdui-button slot="action" variant="text" id="dynamicVariablesCancelBtn">关闭</mdui-button><mdui-button slot="action" variant="filled" id="dynamicVariablesSaveBtn">保存并应用</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="dynamicVariablesHelpDialog" close-on-esc close-on-overlay-click headline="自定义变量使用教程">
+        <div class="dynamic-variable-tutorial">
+            <mdui-list>
+                <mdui-list-item icon="edit_note" rounded headline="1. 创建变量" description="填写变量名称和程序，程序通过 return 返回要插入的内容。"></mdui-list-item>
+                <mdui-list-item icon="keyboard" rounded headline="2. 在快捷短语中引用" description="打开虚拟键盘和快捷短语设置，使用 ${变量名称} 引用变量。"></mdui-list-item>
+                <mdui-list-item icon="touch_app" rounded headline="3. 点击快捷短语" description="点击该快捷短语时，变量会即时运行并将结果插入当前编辑框。"></mdui-list-item>
+            </mdui-list>
+            <div class="dynamic-variable-example"><span>写法</span><code>${变量名称}</code></div>
+            <div class="dynamic-variable-example"><span>示例</span><code>批次-${递增编号}</code></div>
+            <p>例如变量名为“递增编号”，快捷短语填写 <code>批次-${递增编号}</code>。每次点击快捷短语时都会使用变量最新的返回值，并立即刷新快捷短语上显示的下一次结果。</p>
+        </div>
+        <mdui-button slot="action" variant="filled" id="dynamicVariablesHelpCloseBtn">知道了</mdui-button>
+    </mdui-dialog>
+    <mdui-dialog id="dynamicVarEditDialog" fullscreen close-on-esc close-on-overlay-click>
+        <mdui-top-app-bar slot="header"><mdui-icon name="data_object" class="settings-child-appbar-icon"></mdui-icon><mdui-top-app-bar-title id="dynamicVarEditTitle">编辑变量</mdui-top-app-bar-title><div style="flex:1"></div><mdui-button-icon icon="close" id="dynamicVarEditCloseBtn"></mdui-button-icon></mdui-top-app-bar>
+        <div class="dynamic-variable-editor"><mdui-text-field id="dynamicVarEditName" label="变量名" variant="outlined"><mdui-icon slot="icon" name="label"></mdui-icon></mdui-text-field><div class="dynamic-variable-code-editor"><div id="dynamicVarCodeLineNumbers" class="dynamic-variable-line-numbers" aria-hidden="true">1</div><mdui-text-field id="dynamicVarEditCode" label="变量程序" variant="outlined" type="textarea" rows="14"></mdui-text-field></div><mdui-list><mdui-list-item icon="info" rounded headline="变量状态全局保存" description="可使用 getVar(name)、setVar(name, value) 和 incVar(name, step, start)；旧式 int i = 0; i++; return i; 也会连续递增。"></mdui-list-item><mdui-list-item id="dynamicVarTestResult" icon="science" rounded headline="测试结果" description="点击测试校验后显示结果"></mdui-list-item></mdui-list></div>
+        <mdui-button slot="action" variant="text" id="dynamicVarEditCancelBtn">取消</mdui-button><mdui-button slot="action" variant="tonal" id="dynamicVarTestBtn">测试校验</mdui-button><mdui-button slot="action" variant="filled" id="dynamicVarEditSaveBtn">保存变量</mdui-button>
+    </mdui-dialog>
+
+	<mdui-dialog id="keyboardAppearanceDialog" fullscreen close-on-esc close-on-overlay-click>
+		<mdui-top-app-bar slot="header">
+			<mdui-icon name="animation" class="settings-child-appbar-icon"></mdui-icon>
+			<mdui-top-app-bar-title>键盘外观与点击效果</mdui-top-app-bar-title>
+			<div style="flex:1"></div>
+			<mdui-button-icon icon="close" id="keyboardAppearanceCloseBtn"></mdui-button-icon>
+		</mdui-top-app-bar>
+		<div class="keyboard-appearance-editor">
+			<div id="keyboardAppearancePreview" class="keyboard-appearance-preview" aria-label="键盘样式预览">
+				<div class="keyboard-appearance-preview-row"><button type="button" class="keyboard-key"><span class="key-inner">Q</span></button><button type="button" class="keyboard-key"><span class="key-inner">W</span></button><button type="button" class="keyboard-key"><span class="key-inner">E</span></button><button type="button" class="keyboard-key special"><mdui-icon name="backspace"></mdui-icon></button></div>
+				<div class="keyboard-appearance-preview-row"><button type="button" class="keyboard-key"><span class="key-inner">A</span></button><button type="button" class="keyboard-key"><span class="key-inner">S</span></button><button type="button" class="keyboard-key"><span class="key-inner">D</span></button><button type="button" class="keyboard-key special"><mdui-icon name="keyboard_return"></mdui-icon></button></div>
+			</div>
+
+			<section class="keyboard-appearance-section">
+				<h3>点击效果</h3>
+				<mdui-segmented-button-group id="keyboardPressEffectGroup" selects="single" value="material3" data-keyboard-appearance-control>
+					<mdui-segmented-button value="material3">水波纹</mdui-segmented-button>
+					<mdui-segmented-button value="bounce">弹性</mdui-segmented-button>
+					<mdui-segmented-button value="custom">自定义</mdui-segmented-button>
+				</mdui-segmented-button-group>
+				<mdui-list-item rounded headline="原有中心光圈" description="旧版按键白色高光，默认关闭">
+					<mdui-switch id="keyboardPressGlowEnabledSwitch" slot="end-icon" data-keyboard-appearance-control></mdui-switch>
+				</mdui-list-item>
+			</section>
+
+			<section class="keyboard-appearance-section keyboard-appearance-grid">
+				<div><h3>键盘表面</h3><mdui-segmented-button-group id="keyboardSurfaceStyleGroup" selects="single" value="material3" data-keyboard-appearance-control><mdui-segmented-button value="material3">Material 3</mdui-segmented-button><mdui-segmented-button value="flat">平面</mdui-segmented-button></mdui-segmented-button-group></div>
+				<div><h3>按键形状</h3><mdui-segmented-button-group id="keyboardKeyShapeGroup" selects="single" value="rounded" data-keyboard-appearance-control><mdui-segmented-button value="rounded">圆角</mdui-segmented-button><mdui-segmented-button value="pill">胶囊</mdui-segmented-button><mdui-segmented-button value="square">直角</mdui-segmented-button></mdui-segmented-button-group></div>
+			</section>
+
+			<section class="keyboard-appearance-section keyboard-appearance-slider-grid">
+				<label><span>按键高度 <output id="keyboardKeyHeightValue">42px</output></span><mdui-slider id="keyboardKeyHeightSlider" min="32" max="72" step="1" value="42" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>按键间距 <output id="keyboardKeyGapValue">0px</output></span><mdui-slider id="keyboardKeyGapSlider" min="0" max="12" step="1" value="0" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>圆角大小 <output id="keyboardKeyRadiusValue">12px</output></span><mdui-slider id="keyboardKeyRadiusSlider" min="0" max="28" step="1" value="12" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>按键文字 <output id="keyboardKeyFontSizeValue">18px</output></span><mdui-slider id="keyboardKeyFontSizeSlider" min="12" max="28" step="1" value="18" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>水波纹强度 <output id="keyboardRippleOpacityValue">12%</output></span><mdui-slider id="keyboardRippleOpacitySlider" min="4" max="32" step="1" value="12" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>中心光圈透明度 <output id="keyboardPressGlowOpacityValue">42%</output></span><mdui-slider id="keyboardPressGlowOpacitySlider" min="0" max="100" step="1" value="42" data-keyboard-appearance-control></mdui-slider></label>
+				<label><span>中心光圈范围 <output id="keyboardPressGlowSizeValue">62%</output></span><mdui-slider id="keyboardPressGlowSizeSlider" min="20" max="100" step="1" value="62" data-keyboard-appearance-control></mdui-slider></label>
+			</section>
+
+			<section class="keyboard-appearance-section">
+				<h3>颜色</h3>
+				<div class="keyboard-color-list">
+					<div class="keyboard-color-item"><strong>键盘</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardSurfaceColorInput" class="material-color-picker-trigger" value="#F7F2FA" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardSurfaceColorAuto" data-keyboard-appearance-control aria-label="白天键盘颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardSurfaceColorDarkInput" class="material-color-picker-trigger" value="#1C1B1F" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardSurfaceColorDarkAuto" data-keyboard-appearance-control aria-label="夜间键盘颜色跟随主题">跟随</mdui-checkbox></label></div>
+					<div class="keyboard-color-item"><strong>按键</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardKeyColorInput" class="material-color-picker-trigger" value="#F3EDF7" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardKeyColorAuto" data-keyboard-appearance-control aria-label="白天按键颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardKeyColorDarkInput" class="material-color-picker-trigger" value="#211F26" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardKeyColorDarkAuto" data-keyboard-appearance-control aria-label="夜间按键颜色跟随主题">跟随</mdui-checkbox></label></div>
+					<div class="keyboard-color-item"><strong>功能键</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardSpecialKeyColorInput" class="material-color-picker-trigger" value="#E8DEF8" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardSpecialKeyColorAuto" data-keyboard-appearance-control aria-label="白天功能键颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardSpecialKeyColorDarkInput" class="material-color-picker-trigger" value="#36323E" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardSpecialKeyColorDarkAuto" data-keyboard-appearance-control aria-label="夜间功能键颜色跟随主题">跟随</mdui-checkbox></label></div>
+					<div class="keyboard-color-item"><strong>文字</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardKeyTextColorInput" class="material-color-picker-trigger" value="#1D1B20" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardKeyTextColorAuto" data-keyboard-appearance-control aria-label="白天文字颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardKeyTextColorDarkInput" class="material-color-picker-trigger" value="#E6E1E5" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardKeyTextColorDarkAuto" data-keyboard-appearance-control aria-label="夜间文字颜色跟随主题">跟随</mdui-checkbox></label></div>
+					<div class="keyboard-color-item"><strong>水波纹</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardRippleColorInput" class="material-color-picker-trigger" value="#6750A4" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardRippleColorAuto" data-keyboard-appearance-control aria-label="白天水波纹颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardRippleColorDarkInput" class="material-color-picker-trigger" value="#D0BCFF" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardRippleColorDarkAuto" data-keyboard-appearance-control aria-label="夜间水波纹颜色跟随主题">跟随</mdui-checkbox></label></div>
+					<div class="keyboard-color-item"><strong>中心光圈</strong><label><span><mdui-icon name="light_mode"></mdui-icon>白天</span><button type="button" id="keyboardPressGlowColorInput" class="material-color-picker-trigger" value="#FFFFFF" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardPressGlowColorAuto" data-keyboard-appearance-control aria-label="白天中心光圈颜色跟随主题">跟随</mdui-checkbox></label><label><span><mdui-icon name="dark_mode"></mdui-icon>夜间</span><button type="button" id="keyboardPressGlowColorDarkInput" class="material-color-picker-trigger" value="#FFFFFF" data-keyboard-appearance-control></button><mdui-checkbox id="keyboardPressGlowColorDarkAuto" data-keyboard-appearance-control aria-label="夜间中心光圈颜色跟随主题">跟随</mdui-checkbox></label></div>
+				</div>
+			</section>
+
+			<section class="keyboard-appearance-section">
+				<div class="keyboard-appearance-section-heading">
+					<h3>键盘自定义 CSS</h3>
+					<mdui-button id="keyboardCustomStyleExampleBtn" variant="tonal"><mdui-icon slot="icon" name="code"></mdui-icon>载入示例</mdui-button>
+				</div>
+				<mdui-text-field id="keyboardCustomStyleCssInput" variant="outlined" type="textarea" rows="6" label="限定在 #virtualKeyboard 内" data-keyboard-appearance-control></mdui-text-field>
+			</section>
+
+			<section id="keyboardCustomEffectSection" class="keyboard-appearance-section">
+				<div class="keyboard-appearance-section-heading"><h3>自定义点击效果</h3><mdui-button-icon icon="play_arrow" id="keyboardCustomEffectTestBtn" title="测试效果"></mdui-button-icon></div>
+				<mdui-text-field id="keyboardCustomEffectHtmlInput" variant="outlined" type="textarea" rows="5" label="HTML" data-keyboard-appearance-control></mdui-text-field>
+				<mdui-text-field id="keyboardCustomEffectCssInput" variant="outlined" type="textarea" rows="9" label="CSS" data-keyboard-appearance-control></mdui-text-field>
+				<mdui-text-field id="keyboardCustomEffectJsInput" variant="outlined" type="textarea" rows="10" label="JavaScript（detail、root）" data-keyboard-appearance-control></mdui-text-field>
+			</section>
+		</div>
+		<mdui-button slot="action" variant="text" id="keyboardAppearanceResetBtn">恢复默认</mdui-button>
+		<mdui-button slot="action" variant="text" id="keyboardAppearanceCancelBtn">取消</mdui-button>
+		<mdui-button slot="action" variant="filled" id="keyboardAppearanceSaveBtn">保存并应用</mdui-button>
+	</mdui-dialog>
+
+	<mdui-dialog id="materialColorPickerDialog" fullscreen close-on-esc close-on-overlay-click class="color-picker-dialog">
+		<mdui-top-app-bar slot="header">
+			<mdui-icon name="palette" class="settings-child-appbar-icon"></mdui-icon>
+			<mdui-top-app-bar-title id="materialColorPickerTitle">选择颜色</mdui-top-app-bar-title>
+			<div style="flex:1"></div>
+			<mdui-button-icon icon="close" id="materialColorPickerCloseBtn" aria-label="关闭取色器"></mdui-button-icon>
+		</mdui-top-app-bar>
+		<div class="generic-material-color-picker">
+			<div id="materialColorPickerField" class="material-color-field"><span id="materialColorPickerThumb" class="material-color-thumb"></span></div>
+			<input id="materialColorPickerHue" class="material-hue-slider" type="range" min="0" max="360" step="1" value="260" aria-label="色相">
+			<div class="color-picker-footer">
+				<div id="materialColorPickerPreview" class="color-preview-chip"></div>
+				<mdui-text-field id="materialColorPickerHex" label="HEX 颜色" variant="outlined" value="#6750A4"></mdui-text-field>
+			</div>
+		</div>
+		<mdui-button slot="action" variant="text" id="materialColorPickerCancelBtn">取消</mdui-button>
+		<mdui-button slot="action" variant="filled" id="materialColorPickerApplyBtn">使用颜色</mdui-button>
+	</mdui-dialog>
