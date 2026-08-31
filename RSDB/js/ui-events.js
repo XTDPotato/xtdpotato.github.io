@@ -718,6 +718,22 @@ function initEventListeners() {
 
     dom.openDrawerBtn.addEventListener('click', () => { dom.drawer.open = true; });
 
+    // Some desktop Chromium builds route wheel input through MDUI's slotted
+    // drawer content to the page. Keep the background table still and scroll
+    // the drawer panel that actually owns the overflow instead.
+    dom.drawer.addEventListener('wheel', event => {
+        const panel = dom.drawer.shadowRoot?.querySelector('.panel');
+        if (!panel || panel.scrollHeight <= panel.clientHeight) return;
+
+        const maxScrollTop = panel.scrollHeight - panel.clientHeight;
+        const nextScrollTop = Math.max(0, Math.min(maxScrollTop, panel.scrollTop + event.deltaY));
+        if (nextScrollTop === panel.scrollTop) return;
+
+        panel.scrollTop = nextScrollTop;
+        event.preventDefault();
+        event.stopPropagation();
+    }, { passive: false });
+
     dom.themeCollapseContent.querySelectorAll('.theme-option').forEach(item => {
         item.addEventListener('click', (e) => {
             const theme = e.currentTarget.getAttribute('data-theme');

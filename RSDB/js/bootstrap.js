@@ -1,5 +1,5 @@
 (async () => {
-  const assetVersion = '20260830-52';
+  const assetVersion = '20260831-56';
   const app = document.getElementById('rsdbApp');
   const fragments = [
     'ui/app-shell.html',
