@@ -15,12 +15,13 @@
 				</mdui-collapse-item>
 			</mdui-collapse>
 			<mdui-divider></mdui-divider>
-			<mdui-list-item id="importItem" icon="file_upload" rounded headline="导入 Excel"></mdui-list-item>
-			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出"></mdui-list-item>
-			<mdui-list-item id="manualSaveItem" icon="save" rounded headline="手动保存"></mdui-list-item>
-			<mdui-list-item id="saveAsItem" icon="save_as" rounded headline="另存为"></mdui-list-item>
 			<mdui-list-item id="newDocumentItem" icon="note_add" rounded headline="新建文件"></mdui-list-item>
 			<mdui-list-item id="openDocumentItem" icon="folder_open" rounded headline="打开项目"></mdui-list-item>
+			<mdui-list-item id="manualSaveItem" icon="save" rounded headline="手动保存"></mdui-list-item>
+			<mdui-list-item id="saveAsItem" icon="save_as" rounded headline="另存为"></mdui-list-item>
+			<mdui-list-item id="clearImportItem" icon="upload_file" rounded headline="清空导入表格"></mdui-list-item>
+			<mdui-list-item id="insertImportItem" icon="playlist_add" rounded headline="插入导入表格"></mdui-list-item>
+			<mdui-list-item id="exportItem" icon="file_download" rounded headline="导出"></mdui-list-item>
 			<mdui-list-item id="calculatorBtn" icon="calculate" rounded headline="计算重量"></mdui-list-item>
 		
 			<mdui-list-item id="sortItem" icon="sort" rounded headline="数据排序"></mdui-list-item>
@@ -115,7 +116,7 @@
 						<th data-field="position">位置</th>
 						<th data-field="hardness">硬度</th>
 						<th class="remark-col" data-field="remarks">备注</th>
-						<th class="image-col">卡片图片</th>
+						<th class="image-col" data-field="cardImage">卡片图片</th>
 						<th class="action-col">操作</th>
 					</tr>
 				</thead>

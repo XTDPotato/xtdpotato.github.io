@@ -1574,10 +1574,11 @@
 
 .keyboard-swipe-hint {
     position: fixed;
-    z-index: 10020;
+    z-index: 2147483647;
     min-width: 56px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     color: var(--text-color);
     background: var(--surface-color);
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
@@ -1590,6 +1591,22 @@
     opacity: 0;
     transform: translate(-50%, -100%) translateY(6px) scale(.96);
     transition: opacity 120ms ease, transform 120ms ease;
+}
+
+#drawer {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+}
+
+#drawerList {
+    box-sizing: border-box;
+    width: 100%;
+    height: calc(100dvh - 64px);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 .keyboard-swipe-hint.visible {
@@ -1672,6 +1689,8 @@ mdui-top-app-bar mdui-button-icon {
 }
 .settings-mobile-section-title { font-weight: 600; }
 .toolbar-shake-dialog-body {
+    width: 100%;
+    min-width: 0;
     height: 100%;
     padding: 16px;
     overflow: auto;
@@ -1681,9 +1700,26 @@ mdui-top-app-bar mdui-button-icon {
 .toolbar-shake-settings-content {
     display: grid;
     gap: 16px;
-    width: min(900px, 100%);
+    width: 100%;
+    max-width: none;
     min-width: 0;
-    margin: 0 auto;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+#toolbarShakeSettingsDialog::part(body) {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+#toolbarLayoutList,
+.toolbar-layout-setting-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .toolbar-shake-slider-control {
     display: grid;
@@ -2314,6 +2350,11 @@ mdui-top-app-bar mdui-button-icon {
 
 #shortcutToolbarWrap[data-keyboard-snapped="1"] {
     transition: top .18s cubic-bezier(.2,.8,.2,1), right .18s cubic-bezier(.2,.8,.2,1);
+}
+
+/* 键盘进场时工具栏逐帧跟随，避免被键盘动画遮住。 */
+#shortcutToolbarWrap[data-keyboard-following="1"] {
+    transition: none !important;
 }
 
 /* 快捷短语容器：核心滚动修复 */

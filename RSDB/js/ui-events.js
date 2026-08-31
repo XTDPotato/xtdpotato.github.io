@@ -697,8 +697,8 @@ function initEventListeners() {
         };
     }
 
-    // 编辑框失去焦点后，虚拟键盘不应继续悬浮在页面上。
-    // 使用 focusout + 下一帧判断，兼容字段之间的正常切换。
+    // 虚拟键盘编辑目标由明确的字段切换或关闭操作管理。点击键盘、
+    // 工具栏或页面空白处造成的短暂失焦不能取消当前字段。
     if (!document.documentElement.dataset.rsdbEditorFocusCleanupBound) {
         document.documentElement.dataset.rsdbEditorFocusCleanupBound = '1';
         document.addEventListener('pointerdown', event => {
@@ -708,32 +708,6 @@ function initEventListeners() {
                     currentInput = window.__rsdbDesktopShortcutInput;
                 }
             }
-        }, true);
-        document.addEventListener('focusout', event => {
-            const blurredInput = event.target?.matches?.('input, textarea, [contenteditable="true"]')
-                ? event.target : null;
-            if (!blurredInput || !isInputUsingVirtualKeyboard(blurredInput)) return;
-            requestAnimationFrame(() => {
-                // 点击虚拟键盘或快捷短语会让输入框短暂失焦，但输入目标仍应保留。
-                const interactionTarget = window.__rsdbLastKeyboardInteractionTarget;
-                const interactingWithKeyboard = interactionTarget?.isConnected
-                    && interactionTarget.closest?.('#virtualKeyboard, #shortcutToolbarWrap');
-                window.__rsdbLastKeyboardInteractionTarget = null;
-                if (interactingWithKeyboard) return;
-                const active = document.activeElement;
-                const activeEditor = active?.matches?.('input, textarea, [contenteditable="true"]')
-                    && isInputUsingVirtualKeyboard(active);
-                if (activeEditor) return;
-                if (currentInput === blurredInput || !currentInput) {
-                    currentInput = null;
-                    setVirtualKeyboardVisible(false);
-                    desktopShortcutPanelActive = false;
-                    const cursor = document.getElementById('virtualCursor');
-                    const handle = document.getElementById('virtualCursorHandle');
-                    if (cursor) cursor.style.display = 'none';
-                    if (handle) handle.style.display = 'none';
-                }
-            });
         }, true);
     }
 
@@ -764,6 +738,8 @@ function initEventListeners() {
         } else {
             const dialog = document.getElementById('cancelEditConfirmDialog');
             if (dialog) {
+                const suspendBtn = document.getElementById('suspendDataEditBtn');
+                if (suspendBtn) suspendBtn.hidden = currentEditIndex !== -1;
                 document.body.appendChild(dialog);
                 dialog.style.zIndex = '22000';
                 dialog.open = true;
@@ -807,7 +783,11 @@ function initEventListeners() {
         } else {
             // Show confirmation
             const dialog = document.getElementById('cancelEditConfirmDialog');
-            if (dialog) dialog.open = true;
+            if (dialog) {
+                const suspendBtn = document.getElementById('suspendDataEditBtn');
+                if (suspendBtn) suspendBtn.hidden = currentEditIndex !== -1;
+                dialog.open = true;
+            }
         }
     });
 
@@ -827,6 +807,25 @@ function initEventListeners() {
     document.getElementById('cancelCancelBtn')?.addEventListener('click', () => {
         const dialog = document.getElementById('cancelEditConfirmDialog');
         if (dialog) dialog.open = false;
+    });
+
+    document.getElementById('suspendDataEditBtn')?.addEventListener('click', () => {
+        if (currentEditIndex !== -1) {
+            showSnackbar('编辑已有数据时不能挂起，请保存或取消', 'warning');
+            return;
+        }
+        if (!suspendCurrentDataEditSession()) {
+            showSnackbar('挂起失败，请重试', 'error');
+            return;
+        }
+        document.getElementById('cancelEditConfirmDialog').open = false;
+        closeCustomModal(dom.dataSheet);
+        if (currentInput?.closest('#dataSheetCustom')) currentInput = null;
+        discardImageDraft();
+        discardDataEditStyleDraft();
+        setVirtualKeyboardVisible(false);
+        document.getElementById('virtualCursor')?.style.setProperty('display', 'none');
+        showSnackbar('添加数据已挂起，点击加号可继续编辑', 'success');
     });
 
     dom.closeQuickEdit.addEventListener('click', () => { 
@@ -1248,7 +1247,15 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
 
     async function saveCurrentTableBeforeOpen() {
         // 打开其他表格前先落盘当前快照；已有文件名时同步更新对应文件记录。
-        if (currentDocumentName) await saveDocumentRecord(currentDocumentName);
+        if (currentDocumentName) {
+            await saveDocumentRecord(currentDocumentName);
+        } else if (tableData.length) {
+            const dateName = getCurrentDateFileName();
+            const targetName = await documentNameExists(dateName)
+                ? await createAvailableDocumentCopyName(dateName)
+                : dateName;
+            await saveDocumentRecord(targetName);
+        }
         await saveDataToIndexedDB();
     }
 
@@ -1258,7 +1265,12 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
         selectedDocumentNames.forEach(name => {
             if (!availableNames.has(name)) selectedDocumentNames.delete(name);
         });
+        const availableFolders = new Set(listDocumentFolders(documentListRecords));
+        selectedDocumentFolders.forEach(folder => {
+            if (!availableFolders.has(folder)) selectedDocumentFolders.delete(folder);
+        });
         const selectedCount = selectedDocumentNames.size;
+        const selectedFolderCount = selectedDocumentFolders.size;
         if (dom.documentMultiSelectBtn) {
             dom.documentMultiSelectBtn.setAttribute('icon', documentMultiSelectMode ? 'close' : 'checklist');
             dom.documentMultiSelectBtn.setAttribute('aria-label', documentMultiSelectMode ? '退出多选' : '多选');
@@ -1268,15 +1280,21 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
             dom.documentMultiSelectTooltip.setAttribute('content', documentMultiSelectMode ? '退出多选' : '多选');
         }
         if (dom.documentBulkDeleteBtn) {
-            dom.documentBulkDeleteBtn.disabled = selectedCount === 0;
+            dom.documentBulkDeleteBtn.disabled = selectedCount === 0 && selectedFolderCount === 0;
         }
         if (dom.documentBulkDeleteTooltip) dom.documentBulkDeleteTooltip.hidden = !documentMultiSelectMode;
-        return selectedCount;
+        if (dom.documentMergeBtn) dom.documentMergeBtn.disabled = selectedCount < 2;
+        if (dom.documentMergeTooltip) dom.documentMergeTooltip.hidden = !documentMultiSelectMode;
+        if (dom.documentSelectionActions) dom.documentSelectionActions.hidden = !documentMultiSelectMode;
+        return selectedCount + selectedFolderCount;
     }
 
     function setDocumentMultiSelectMode(enabled) {
         documentMultiSelectMode = Boolean(enabled);
-        if (!documentMultiSelectMode) selectedDocumentNames.clear();
+        if (!documentMultiSelectMode) {
+            selectedDocumentNames.clear();
+            selectedDocumentFolders.clear();
+        }
         updateDocumentSelectionControls();
         renderDocumentList(dom.documentSearchInput?.value || '');
     }
@@ -1290,27 +1308,209 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
         renderDocumentList(dom.documentSearchInput?.value || '');
     }
 
-    function requestDocumentDelete(names) {
+    function toggleDocumentFolderSelection(folder) {
+        const normalized = String(folder || '').trim();
+        if (!normalized) return;
+        if (selectedDocumentFolders.has(normalized)) selectedDocumentFolders.delete(normalized);
+        else selectedDocumentFolders.add(normalized);
+        updateDocumentSelectionControls();
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    }
+
+    function getVisibleDocumentRecords(query = '') {
+        const normalizedQuery = String(query || '').trim().toLowerCase();
+        return documentListRecords.filter(record => {
+            const folder = String(record.folder || '');
+            if (currentDocumentFolderFilter === '__root__' && folder) return false;
+            if (currentDocumentFolderFilter && currentDocumentFolderFilter !== '__root__' && folder !== currentDocumentFolderFilter) return false;
+            return recordMatchesDocumentQuery(record, normalizedQuery);
+        });
+    }
+
+    function selectAllVisibleDocuments() {
+        getVisibleDocumentRecords(dom.documentSearchInput?.value || '').forEach(record => selectedDocumentNames.add(record.name));
+        listDocumentFolders(documentListRecords).forEach(folder => selectedDocumentFolders.add(folder));
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    }
+
+    function invertVisibleDocumentSelection() {
+        getVisibleDocumentRecords(dom.documentSearchInput?.value || '').forEach(record => {
+            if (selectedDocumentNames.has(record.name)) selectedDocumentNames.delete(record.name);
+            else selectedDocumentNames.add(record.name);
+        });
+        listDocumentFolders(documentListRecords).forEach(folder => {
+            if (selectedDocumentFolders.has(folder)) selectedDocumentFolders.delete(folder);
+            else selectedDocumentFolders.add(folder);
+        });
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    }
+
+    function requestDocumentDelete(names, folders = []) {
         pendingDocumentDeleteNames = [...new Set((names || []).map(normalizeDocumentName).filter(Boolean))]
             .filter(name => documentListRecords.some(record => record.name === name));
-        if (!pendingDocumentDeleteNames.length || !dom.documentDeleteConfirmDialog) return;
+        const availableFolders = new Set(listDocumentFolders(documentListRecords));
+        pendingDocumentDeleteFolders = [...new Set((folders || []).map(folder => String(folder || '').trim()).filter(Boolean))]
+            .filter(folder => availableFolders.has(folder));
+        const folderRecords = documentListRecords.filter(record => pendingDocumentDeleteFolders.includes(String(record.folder || '')));
+        const allDeleteNames = [...new Set([...pendingDocumentDeleteNames, ...folderRecords.map(record => record.name)])];
+        pendingDocumentDeleteNames = allDeleteNames;
+        if ((!pendingDocumentDeleteNames.length && !pendingDocumentDeleteFolders.length) || !dom.documentDeleteConfirmDialog) return;
         if (dom.documentDeleteConfirmMessage) {
-            dom.documentDeleteConfirmMessage.textContent = pendingDocumentDeleteNames.length === 1
-                ? `确定删除表格“${pendingDocumentDeleteNames[0]}”吗？此操作无法撤销。`
-                : `确定删除选中的 ${pendingDocumentDeleteNames.length} 个表格吗？此操作无法撤销。`;
+            dom.documentDeleteConfirmMessage.innerHTML = '';
+            const summary = document.createElement('div');
+            summary.className = 'document-delete-summary';
+            summary.textContent = pendingDocumentDeleteFolders.length
+                ? `确定删除选中的 ${pendingDocumentDeleteFolders.length} 个文件夹及 ${pendingDocumentDeleteNames.length} 个表格吗？此操作无法撤销。`
+                : (pendingDocumentDeleteNames.length === 1
+                    ? `确定删除表格“${pendingDocumentDeleteNames[0]}”吗？此操作无法撤销。`
+                    : `确定删除选中的 ${pendingDocumentDeleteNames.length} 个表格吗？此操作无法撤销。`);
+            dom.documentDeleteConfirmMessage.appendChild(summary);
+
+            pendingDocumentDeleteFolders.forEach(folder => {
+                const section = document.createElement('section');
+                section.className = 'document-delete-folder-preview';
+                const title = document.createElement('strong');
+                const records = documentListRecords.filter(record => String(record.folder || '') === folder);
+                title.textContent = `${folder}（${records.length} 个表格）`;
+                const list = document.createElement('div');
+                list.className = 'document-delete-file-list';
+                if (records.length) {
+                    records.forEach(record => {
+                        const item = document.createElement('div');
+                        item.textContent = record.name;
+                        list.appendChild(item);
+                    });
+                } else {
+                    const empty = document.createElement('div');
+                    empty.className = 'is-empty';
+                    empty.textContent = '空文件夹';
+                    list.appendChild(empty);
+                }
+                section.append(title, list);
+                dom.documentDeleteConfirmMessage.appendChild(section);
+            });
+
+            const folderFileNames = new Set(folderRecords.map(record => record.name));
+            const directNames = pendingDocumentDeleteNames.filter(name => !folderFileNames.has(name));
+            if (directNames.length && pendingDocumentDeleteFolders.length) {
+                const section = document.createElement('section');
+                section.className = 'document-delete-folder-preview';
+                const title = document.createElement('strong');
+                title.textContent = `单独选择的表格（${directNames.length} 个）`;
+                const list = document.createElement('div');
+                list.className = 'document-delete-file-list';
+                directNames.forEach(name => {
+                    const item = document.createElement('div');
+                    item.textContent = name;
+                    list.appendChild(item);
+                });
+                section.append(title, list);
+                dom.documentDeleteConfirmMessage.appendChild(section);
+            }
         }
 		openDialogOnTop(dom.documentDeleteConfirmDialog);
+    }
+
+    function renderDocumentFolderChips() {
+        if (!dom.documentFolderChips) return;
+        dom.documentFolderChips.innerHTML = '';
+        const folders = listDocumentFolders(documentListRecords);
+        const options = [{ value: '', label: '全部' }, { value: '__root__', label: '未分类' }, ...folders.map(folder => ({ value: folder, label: folder }))];
+        options.forEach(option => {
+            const button = document.createElement('mdui-button');
+            const isRealFolder = option.value && option.value !== '__root__';
+            const isSelectedFolder = isRealFolder && selectedDocumentFolders.has(option.value);
+            button.setAttribute('variant', isSelectedFolder || (!documentMultiSelectMode && currentDocumentFolderFilter === option.value) ? 'tonal' : 'text');
+            button.setAttribute('icon', isSelectedFolder ? 'check_circle' : (option.value === '' ? 'folder_open' : (option.value === '__root__' ? 'description' : 'folder')));
+            button.classList.toggle('is-multi-selected', isSelectedFolder);
+            if (isRealFolder) button.setAttribute('aria-pressed', isSelectedFolder ? 'true' : 'false');
+            button.textContent = option.label;
+            button.addEventListener('click', () => {
+                if (documentMultiSelectMode && isRealFolder) {
+                    toggleDocumentFolderSelection(option.value);
+                    return;
+                }
+                currentDocumentFolderFilter = option.value;
+                renderDocumentList(dom.documentSearchInput?.value || '');
+            });
+            dom.documentFolderChips.appendChild(button);
+        });
+    }
+
+    function findDocumentContentMatchRow(record, normalizedQuery) {
+        if (!normalizedQuery || !documentAdvancedSearchEnabled) return -1;
+        return (record.rows || []).findIndex(row => Object.entries(row || {})
+            .filter(([key]) => !key.startsWith('__') && key !== 'cardImage')
+            .some(([, value]) => String(value ?? '').toLowerCase().includes(normalizedQuery)));
+    }
+
+    function recordMatchesDocumentQuery(record, normalizedQuery) {
+        if (!normalizedQuery) return true;
+        const dateText = new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN');
+        const baseText = `${record.name} ${record.folder || ''} ${dateText}`.toLowerCase();
+        if (baseText.includes(normalizedQuery)) return true;
+        return findDocumentContentMatchRow(record, normalizedQuery) >= 0;
+    }
+
+    function jumpToLoadedDocumentRow(rowIndex, normalizedQuery) {
+        if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= tableData.length) return;
+        searchTerm = '';
+        isSearchActive = false;
+        isFilterMatchRows = false;
+        if (dom.searchInput) dom.searchInput.value = '';
+        currentPage = Math.floor(rowIndex / PAGE_SIZE) + 1;
+        updateTable();
+        updateSummary();
+        setTimeout(() => {
+            const row = document.querySelector(`#dataTable tbody tr[data-index="${rowIndex}"]`);
+            if (!row) return;
+            row.classList.add('document-search-jump-highlight');
+            row.querySelectorAll('td[data-field]').forEach(cell => {
+                const field = cell.getAttribute('data-field');
+                const value = String(getSearchFieldValue(tableData[rowIndex], field) ?? '').toLowerCase();
+                if (normalizedQuery && value.includes(normalizedQuery)) cell.classList.add('document-search-jump-cell');
+            });
+            row.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            setTimeout(() => {
+                row.classList.remove('document-search-jump-highlight');
+                row.querySelectorAll('.document-search-jump-cell').forEach(cell => cell.classList.remove('document-search-jump-cell'));
+            }, 2600);
+        }, 180);
+    }
+
+    function renderDocumentMoveFolderList(selectedFolder = '') {
+        if (!dom.documentMoveFolderList) return;
+        pendingDocumentMoveFolder = String(selectedFolder || '');
+        dom.documentMoveFolderList.innerHTML = '';
+        const options = [
+            { value: '', label: '未分类', icon: 'description' },
+            ...listDocumentFolders(documentListRecords).map(folder => ({ value: folder, label: folder, icon: 'folder' }))
+        ];
+        options.forEach(option => {
+            const item = document.createElement('mdui-list-item');
+            const selected = option.value === pendingDocumentMoveFolder;
+            item.setAttribute('headline', option.label);
+            item.setAttribute('icon', option.icon);
+            item.setAttribute('rounded', '');
+            item.setAttribute('role', 'option');
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.classList.toggle('is-selected', selected);
+            if (selected) {
+                const check = document.createElement('mdui-icon');
+                check.setAttribute('slot', 'end-icon');
+                check.setAttribute('name', 'check');
+                item.appendChild(check);
+            }
+            item.addEventListener('click', () => renderDocumentMoveFolderList(option.value));
+            dom.documentMoveFolderList.appendChild(item);
+        });
     }
 
     function renderDocumentList(query = '') {
         if (!dom.documentList || !dom.documentListEmpty) return;
         dom.documentList.innerHTML = '';
         const normalizedQuery = String(query || '').trim().toLowerCase();
-        const records = documentListRecords.filter(record => {
-            if (!normalizedQuery) return true;
-            const dateText = new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN');
-            return `${record.name} ${dateText}`.toLowerCase().includes(normalizedQuery);
-        });
+        const records = getVisibleDocumentRecords(query);
         dom.documentListEmpty.textContent = documentListRecords.length && !records.length
             ? '没有匹配的表格'
             : '暂无已保存的表格';
@@ -1318,17 +1518,21 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
         if (dom.documentSearchCount) {
             const resultText = normalizedQuery ? `找到 ${records.length} 个表格` : `共 ${records.length} 个表格`;
             dom.documentSearchCount.textContent = documentMultiSelectMode
-                ? `已选择 ${selectedDocumentNames.size} 个 · ${resultText}`
+                ? `已选择 ${selectedDocumentNames.size} 个表格、${selectedDocumentFolders.size} 个文件夹 · ${resultText}`
                 : resultText;
         }
         records.forEach(record => {
             const row = document.createElement('div');
             row.className = 'open-document-row';
-            const isSelected = selectedDocumentNames.has(record.name);
+            const isSelected = selectedDocumentNames.has(record.name) || selectedDocumentFolders.has(String(record.folder || ''));
             row.classList.toggle('is-selected', isSelected);
             const item = document.createElement('mdui-list-item');
             item.setAttribute('headline', record.name);
-            item.setAttribute('description', new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN'));
+            const dateText = new Date(record.updatedAt || record.savedAt || Date.now()).toLocaleString('zh-CN');
+            const rowCountText = `${Array.isArray(record.rows) ? record.rows.length : 0} 条数据`;
+            const matchingRowIndex = findDocumentContentMatchRow(record, normalizedQuery);
+            const matchText = matchingRowIndex >= 0 ? `匹配第 ${matchingRowIndex + 1} 行 · ` : '';
+            item.setAttribute('description', `${matchText}${record.folder ? `文件夹：${record.folder} · ` : ''}${rowCountText} · ${dateText}`);
             item.setAttribute('icon', isSelected ? 'check_circle' : (record.name === currentDocumentName ? 'check_circle' : 'description'));
             item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
             item.setAttribute('rounded', '');
@@ -1340,6 +1544,7 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
                 try {
                     if (await loadDocument(record.name)) {
                         dom.openDocumentDialog.open = false;
+                        if (matchingRowIndex >= 0) jumpToLoadedDocumentRow(matchingRowIndex, normalizedQuery);
                         showSnackbar(`已打开“${record.name}”`, 'success');
                     }
                 } catch (error) {
@@ -1360,6 +1565,26 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
                 openDocumentNameDialog('rename', record.name);
             });
             editTooltip.appendChild(editBtn);
+            const folderTooltip = document.createElement('mdui-tooltip');
+            folderTooltip.setAttribute('content', '移动到文件夹');
+            const folderBtn = document.createElement('mdui-button-icon');
+            folderBtn.setAttribute('icon', 'drive_file_move');
+            folderBtn.setAttribute('aria-label', `移动${record.name}到文件夹`);
+            folderBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                pendingDocumentMoveName = record.name;
+                renderDocumentMoveFolderList(record.folder || '');
+                documentMoveFolderReturnToList = true;
+                if (dom.openDocumentDialog?.open) {
+                    dom.openDocumentDialog.addEventListener('closed', () => {
+                        openDialogOnTop(dom.documentMoveFolderDialog);
+                    }, { once: true });
+                    dom.openDocumentDialog.open = false;
+                } else {
+                    openDialogOnTop(dom.documentMoveFolderDialog);
+                }
+            });
+            folderTooltip.appendChild(folderBtn);
             const removeTooltip = document.createElement('mdui-tooltip');
             removeTooltip.setAttribute('content', '删除');
             const removeBtn = document.createElement('mdui-button-icon');
@@ -1370,10 +1595,11 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
                 requestDocumentDelete([record.name]);
             });
             removeTooltip.appendChild(removeBtn);
-            actions.append(editTooltip, removeTooltip);
+            actions.append(editTooltip, folderTooltip, removeTooltip);
             row.append(item, actions);
             dom.documentList.appendChild(row);
         });
+        renderDocumentFolderChips();
         updateDocumentSelectionControls();
     }
 
@@ -1513,25 +1739,126 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
         dom.openDocumentDialog.open = false;
     });
     dom.documentSearchInput?.addEventListener('input', (event) => renderDocumentList(event.target.value || ''));
+    dom.documentAdvancedSearchBtn?.addEventListener('click', () => {
+        const panel = dom.documentAdvancedSearchPanel;
+        if (!panel) return;
+        panel.hidden = !panel.hidden;
+        dom.documentAdvancedSearchBtn.setAttribute('aria-pressed', panel.hidden ? 'false' : 'true');
+    });
+    dom.documentSearchContentCheckbox?.addEventListener('change', () => {
+        documentAdvancedSearchEnabled = Boolean(dom.documentSearchContentCheckbox.checked);
+        renderDocumentList(dom.documentSearchInput?.value || '');
+    });
     dom.documentMultiSelectBtn?.addEventListener('click', () => setDocumentMultiSelectMode(!documentMultiSelectMode));
-    dom.documentBulkDeleteBtn?.addEventListener('click', () => requestDocumentDelete([...selectedDocumentNames]));
+    dom.documentSelectAllBtn?.addEventListener('click', selectAllVisibleDocuments);
+    dom.documentInvertSelectionBtn?.addEventListener('click', invertVisibleDocumentSelection);
+    dom.documentBulkDeleteBtn?.addEventListener('click', () => requestDocumentDelete([...selectedDocumentNames], [...selectedDocumentFolders]));
+    dom.documentAddFolderBtn?.addEventListener('click', () => {
+        if (dom.documentFolderNameInput) dom.documentFolderNameInput.value = '';
+        openDialogOnTop(dom.documentFolderDialog);
+        setTimeout(() => dom.documentFolderNameInput?.focus(), 80);
+    });
+    dom.documentFolderCancelBtn?.addEventListener('click', () => { dom.documentFolderDialog.open = false; });
+    dom.documentFolderConfirmBtn?.addEventListener('click', () => {
+        const folder = addDocumentFolder(dom.documentFolderNameInput?.value || '');
+        if (!folder) {
+            showSnackbar('请输入文件夹名称', 'warning');
+            return;
+        }
+        dom.documentFolderDialog.open = false;
+        currentDocumentFolderFilter = folder;
+        renderDocumentList(dom.documentSearchInput?.value || '');
+        showSnackbar(`已添加文件夹“${folder}”`, 'success');
+    });
+    dom.documentMoveFolderCancelBtn?.addEventListener('click', () => {
+        pendingDocumentMoveName = '';
+        pendingDocumentMoveFolder = '';
+        dom.documentMoveFolderDialog.open = false;
+    });
+    dom.documentMoveFolderDialog?.addEventListener('closed', () => {
+        pendingDocumentMoveName = '';
+        pendingDocumentMoveFolder = '';
+        if (!documentMoveFolderReturnToList) return;
+        documentMoveFolderReturnToList = false;
+        renderDocumentList(dom.documentSearchInput?.value || '');
+        openDialogOnTop(dom.openDocumentDialog);
+    });
+    dom.documentMoveFolderConfirmBtn?.addEventListener('click', async () => {
+        if (!pendingDocumentMoveName) return;
+        dom.documentMoveFolderConfirmBtn.disabled = true;
+        try {
+            await assignDocumentFolder(pendingDocumentMoveName, pendingDocumentMoveFolder);
+            documentListRecords = await listDocuments();
+            dom.documentMoveFolderDialog.open = false;
+            pendingDocumentMoveName = '';
+            pendingDocumentMoveFolder = '';
+            renderDocumentList(dom.documentSearchInput?.value || '');
+            showSnackbar('已移动到指定文件夹', 'success');
+        } catch (error) {
+            console.error('移动项目文件夹失败', error);
+            showSnackbar('移动失败', 'error');
+        } finally {
+            dom.documentMoveFolderConfirmBtn.disabled = false;
+        }
+    });
+    dom.documentMergeBtn?.addEventListener('click', () => {
+        if (selectedDocumentNames.size < 2) return;
+        if (dom.documentMergeMessage) dom.documentMergeMessage.textContent = `将选中的 ${selectedDocumentNames.size} 个项目按列表顺序合并，原项目会保留。`;
+        if (dom.documentMergeNameInput) dom.documentMergeNameInput.value = `合并项目-${getCurrentDateFileName()}`;
+        openDialogOnTop(dom.documentMergeDialog);
+    });
+    dom.documentMergeCancelBtn?.addEventListener('click', () => { dom.documentMergeDialog.open = false; });
+    dom.documentMergeConfirmBtn?.addEventListener('click', async () => {
+        const requestedName = normalizeDocumentName(dom.documentMergeNameInput?.value || '');
+        if (!requestedName || selectedDocumentNames.size < 2) {
+            showSnackbar('请输入名称并至少选择两个项目', 'warning');
+            return;
+        }
+        dom.documentMergeConfirmBtn.disabled = true;
+        try {
+            const selected = documentListRecords.filter(record => selectedDocumentNames.has(record.name));
+            const rows = selected.flatMap(record => cloneRowsForPersistence(record.rows || []));
+            const targetName = await documentNameExists(requestedName)
+                ? await createAvailableDocumentCopyName(requestedName)
+                : requestedName;
+            await saveDocumentRowsRecord(targetName, rows, { folder: currentDocumentFolderFilter && currentDocumentFolderFilter !== '__root__' ? currentDocumentFolderFilter : '' });
+            documentListRecords = await listDocuments();
+            dom.documentMergeDialog.open = false;
+            setDocumentMultiSelectMode(false);
+            renderDocumentList(dom.documentSearchInput?.value || '');
+            showSnackbar(`已合并为“${targetName}”，共 ${rows.length} 条数据`, 'success');
+        } catch (error) {
+            console.error('合并项目失败', error);
+            showSnackbar('合并项目失败', 'error');
+        } finally {
+            dom.documentMergeConfirmBtn.disabled = false;
+        }
+    });
     dom.documentDeleteCancelBtn?.addEventListener('click', () => {
         pendingDocumentDeleteNames = [];
+        pendingDocumentDeleteFolders = [];
         dom.documentDeleteConfirmDialog.open = false;
     });
     dom.documentDeleteConfirmBtn?.addEventListener('click', async () => {
         const names = [...pendingDocumentDeleteNames];
-        if (!names.length) return;
+        const folders = [...pendingDocumentDeleteFolders];
+        if (!names.length && !folders.length) return;
         dom.documentDeleteConfirmBtn.disabled = true;
         try {
             const deletedNames = await deleteDocuments(names);
+            const deletedFolders = deleteDocumentFolders(folders);
             const deletedSet = new Set(deletedNames);
             documentListRecords = documentListRecords.filter(record => !deletedSet.has(record.name));
             deletedNames.forEach(name => selectedDocumentNames.delete(name));
+            deletedFolders.forEach(folder => selectedDocumentFolders.delete(folder));
             pendingDocumentDeleteNames = [];
+            pendingDocumentDeleteFolders = [];
+            if (deletedFolders.includes(currentDocumentFolderFilter)) currentDocumentFolderFilter = '';
             dom.documentDeleteConfirmDialog.open = false;
             renderDocumentList(dom.documentSearchInput?.value || '');
-            showSnackbar(deletedNames.length === 1
+            showSnackbar(deletedFolders.length
+                ? `已删除 ${deletedFolders.length} 个文件夹及 ${deletedNames.length} 个表格`
+                : deletedNames.length === 1
                 ? `已删除“${deletedNames[0]}”`
                 : `已删除 ${deletedNames.length} 个表格`, 'success');
         } catch (error) {
@@ -1559,6 +1886,9 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
             await saveCurrentTableBeforeOpen();
             documentListRecords = await listDocuments();
             if (dom.documentSearchInput) dom.documentSearchInput.value = '';
+            currentDocumentFolderFilter = '';
+            documentAdvancedSearchEnabled = false;
+            if (dom.documentSearchContentCheckbox) dom.documentSearchContentCheckbox.checked = false;
             documentMultiSelectMode = false;
             selectedDocumentNames.clear();
             updateDocumentSelectionControls();
@@ -1573,7 +1903,23 @@ dom.filterMatchRowsCheckbox?.addEventListener('change', (e) => {
 
     // Removed input click listeners as per user request (only edit button triggers edit mode)
 
-    dom.importItem.addEventListener('click', () => { dom.drawer.open = false; dom.fileInput.click(); });
+    dom.clearImportItem?.addEventListener('click', () => {
+        pendingImportMode = 'replace';
+        pendingImportContext = null;
+        dom.drawer.open = false;
+        dom.fileInput.click();
+    });
+    dom.insertImportItem?.addEventListener('click', () => {
+        pendingImportMode = 'insert';
+        pendingImportContext = null;
+        dom.drawer.open = false;
+        dom.fileInput.click();
+    });
+    dom.clearImportCancelBtn?.addEventListener('click', () => {
+        dom.clearImportNameDialog.open = false;
+        pendingImportContext = null;
+    });
+    dom.clearImportOpenBtn?.addEventListener('click', () => confirmClearImportedDocumentName());
     dom.exportItem.addEventListener('click', () => {
         dom.drawer.open = false;
         updateSettingsUI();
@@ -2868,29 +3214,13 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     document.addEventListener('pointerdown', (event) => {
         const insideEditingSurface = event.target.closest?.('input, textarea, [contenteditable="true"], #virtualKeyboard, #shortcutToolbarWrap, #virtualCursor, #virtualCursorHandle');
         if (insideEditingSurface) return;
-        // 点击编辑区域外表示取消当前虚拟键盘编辑状态。
-        if (currentInput && isInputUsingVirtualKeyboard(currentInput)) {
-            currentInput = null;
-            setVirtualKeyboardVisible(false);
-            desktopShortcutPanelActive = false;
-            const cursor = document.getElementById('virtualCursor');
-            const handle = document.getElementById('virtualCursorHandle');
-            if (cursor) cursor.style.display = 'none';
-            if (handle) handle.style.display = 'none';
-        }
+        // 页面空白、按钮或其他非编辑区域不再取消当前编辑目标，也不关闭键盘。
+        // 选择其他编辑框时，该编辑框自己的监听会更新 currentInput。
         const previewState = imagePreviewEditState;
         if (previewState?.active && previewState.previewInput && event.target.closest?.('.image-preview-overlay') === previewState.overlay) {
             currentInput = previewState.previewInput;
             return;
         }
-        requestAnimationFrame(() => {
-            const active = document.activeElement;
-            if (!active?.matches?.('input, textarea, [contenteditable="true"]')) {
-                currentInput = null;
-                desktopShortcutPanelActive = false;
-                syncShortcutToolbarVisibility();
-            }
-        });
     }, true);
     const shortcutToolbar = document.getElementById('shortcutToolbar');
     shortcutToolbar?.addEventListener('click', (event) => {
@@ -3668,7 +3998,9 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         setTimeout(() => highlightShortcutInKeyboard(value), 60);
         closeShortcutInlineAdd({ restoreKeyboard: true });
     });
-    dom.addBtn.addEventListener('click', openAddModal);
+    dom.addBtn.addEventListener('click', () => {
+        if (!resumeSuspendedDataEditSession()) openAddModal();
+    });
     dom.fileInput.addEventListener('change', handleFileImport);
     dom.selectAllCheckbox.addEventListener('change', handleSelectAll);
     dom.deleteSelectedBtn.addEventListener('click', confirmDeleteSelected);
@@ -3687,7 +4019,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
         if (suppressNextCellClick) { suppressNextCellClick = false; return; }
         const cell = e.target.closest('td');
         const row = e.target.closest('tr');
-        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox,.image-col')) return;
+        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox')) return;
         const rowIndex = Number(row.dataset.index);
         const field = cell.classList.contains('seq-col') ? 'seq' : cell.dataset.field;
         if (!Number.isInteger(rowIndex) || !field) return;
@@ -3727,7 +4059,7 @@ document.getElementById('importAllXmlInput')?.addEventListener('change', async (
     dom.tableBody.addEventListener('pointerdown', (e) => {
         if (!isCellMultiSelectMode || e.pointerType === 'mouse') return;
         const cell = e.target.closest('td'); const row = e.target.closest('tr');
-        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox,.image-col')) return;
+        if (!cell || !row || e.target.closest('button,mdui-button-icon,mdui-checkbox')) return;
         const field = cell.classList.contains('seq-col') ? 'seq' : cell.dataset.field;
         const rowIndex = Number(row.dataset.index);
         if (!field || !Number.isInteger(rowIndex)) return;
@@ -3922,10 +4254,14 @@ function bindEditImageButtons() {
 function toggleSearchReplaceVisibility(forceState) {
     isSearchReplaceVisible = typeof forceState === 'boolean' ? forceState : !isSearchReplaceVisible;
     const container = document.getElementById('searchReplaceContainer');
+    const searchTooltip = dom.topSearchBtn?.closest('mdui-tooltip');
 
     if (isSearchReplaceVisible) {
         container.style.display = 'block';
         dom.searchMenuItem?.setAttribute('icon', 'search_off');
+        dom.topSearchBtn?.setAttribute('icon', 'close');
+        dom.topSearchBtn?.setAttribute('aria-label', '关闭搜索');
+        searchTooltip?.setAttribute('content', '关闭搜索');
 
         const savedFilter = localStorage.getItem('filterMatchRows') === 'true';
         isFilterMatchRows = savedFilter;
@@ -3939,6 +4275,9 @@ function toggleSearchReplaceVisibility(forceState) {
     } else {
         container.style.display = 'none';
         dom.searchMenuItem?.setAttribute('icon', 'search');
+        dom.topSearchBtn?.setAttribute('icon', 'search');
+        dom.topSearchBtn?.setAttribute('aria-label', '搜索');
+        searchTooltip?.setAttribute('content', '搜索');
 
         updateTable();   
     }

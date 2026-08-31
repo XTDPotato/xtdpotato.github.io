@@ -13,11 +13,23 @@
 		let pendingPrimaryCustomColorIndex = null;
 		let primaryCustomColorCommitted = true;
 		const themeFlash = document.getElementById("themeFlash");
-		const RSDB_VERSION = '2026.08.27';
+		const RSDB_VERSION = '2026.08.30';
 		const RSDB_CHANGELOG = [
 		    {
-		        version: '2026.08.27',
+		        version: '2026.08.30',
 		        notes: [
+		            '添加数据：关闭未保存的新增界面时可挂起草稿，之后点击加号继续原来的文字、图片与属性编辑',
+		            '项目管理：抽屉调整文件操作顺序，Excel 导入拆分为清空导入和插入导入；打开项目新增文件夹、内容高级搜索与多项目合并',
+		            '文件夹多选：打开项目进入多选后可直接选择文件夹，删除确认会列出文件夹内包含的全部表格',
+		            '移动文件夹：目标文件夹改为可滚动列表选择，不再使用会溢出对话框的下拉菜单',
+		            '虚拟键盘：退格长按更快连续删除并提示上滑清空，完成键长按提示上滑关闭键盘',
+		            '表格多选：卡片图片格现在可以与其他格子一起选择，宽屏抽屉和项目列表滚动区域已修复'
+		        ]
+		    },
+		    {
+		        version: '2026.08.28',
+		        notes: [
+		            '快捷工具栏吸附：修复虚拟键盘刚弹出时只按初始位置计算的问题，键盘滑入动画期间逐帧跟随键盘上沿，避免工具栏被遮挡',
 		            '项目结构：拆分原先接近 1MB 的单体 index.html，界面、样式与业务函数改为按职责加载的独立文件，便于后续维护和故障定位',
 		            '对话框层级：新增统一顶层管理，新打开的主题色、字体、对齐、选色、文件确认和设置子对话框始终显示在旧对话框之上，关闭后可继续操作原对话框',
 		            '编辑属性：移除依赖定时的对话框恢复逻辑，修复选色返回或鼠标经过顶部撤销/关闭区域后白屏、遮罩残留和按钮失效的问题',
@@ -42,6 +54,7 @@
 		            '中文词库：修复 Unicode 码位解码，合并常用词、IT 网络词、成语及 RSDB 本地新词，并保留用户词频学习排序',
 		            '输入习惯：单字母拼音也显示候选，并根据个人使用次数和最近使用时间优先显示常用词语',
 		            '拼音匹配：补充裸元音和长显式分词的候选回退，修复输入 fanshu 时“番薯”无法出现或长组合候选栏变空的问题',
+		            '虚拟键盘：取消点击页面其他区域和编辑框失焦时自动关闭的行为，大小写、工具栏及页面按钮操作后继续保留当前编辑框和键盘',
 		            '虚拟键盘：清空键改为中英文切换；候选区支持横向滚动且翻页按钮固定在右侧',
 		            '虚拟键盘：退格键上滑松开可清空当前编辑框，超过 50 个字符时先显示 Material 3 确认提示',
 		            '输入法：候选字数严格匹配拼音分段，残缺声母分段也会逐段补全；英文候选同步单次大写和大写锁定状态',
@@ -275,8 +288,17 @@
 		let pendingDocumentRenameSource = '';
 		let pendingDocumentConflictName = '';
 		let pendingDocumentDeleteNames = [];
+		let pendingDocumentDeleteFolders = [];
 		let documentMultiSelectMode = false;
 		const selectedDocumentNames = new Set();
+		const selectedDocumentFolders = new Set();
+		let documentAdvancedSearchEnabled = false;
+		let currentDocumentFolderFilter = '';
+		let pendingDocumentMoveName = '';
+		let pendingDocumentMoveFolder = '';
+		let documentMoveFolderReturnToList = false;
+		let pendingImportMode = 'insert';
+		let pendingImportContext = null;
 		let quickEditHistory = {
 		    past: [],
 		    future: [],
@@ -1724,7 +1746,7 @@ let dataEditStyleDraft = null;
 		    layouts.forEach((layout, index) => {
 		        const row = document.createElement('div');
 		        row.className = 'toolbar-layout-setting-row';
-		        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--surface-container-low);';
+		        row.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;min-width:0;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--surface-container-low);box-sizing:border-box;';
 		        const body = document.createElement('button');
 		        body.type = 'button';
 		        body.style.cssText = 'flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;min-width:0;';
@@ -1732,7 +1754,7 @@ let dataEditStyleDraft = null;
 		        title.style.cssText = 'font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
 		        title.textContent = (index + 1) + '. ' + layout.name;
 		        const summary = document.createElement('div');
-		        summary.style.cssText = 'font-size:.84rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;';
+		        summary.style.cssText = 'font-size:.84rem;color:var(--text-secondary);white-space:normal;overflow-wrap:anywhere;line-height:1.45;margin-top:3px;';
 		        summary.textContent = layout.controls.map(key => TOOLBAR_CONTROL_LABELS[key] || key).join('、');
 		        body.append(title, summary);
 		        body.addEventListener('click', () => openToolbarLayoutEditor(index));
@@ -2294,7 +2316,8 @@ let dataEditStyleDraft = null;
 		  emptyState: document.getElementById('emptyState'),
 		  itemCount: document.getElementById('itemCount'),
 		  addBtn: document.getElementById('mainFab'), 
-		  importItem: document.getElementById('importItem'),
+		  clearImportItem: document.getElementById('clearImportItem'),
+		  insertImportItem: document.getElementById('insertImportItem'),
 		  exportItem: document.getElementById('exportItem'),
 		  manualSaveItem: document.getElementById('manualSaveItem'),
 		  saveAsItem: document.getElementById('saveAsItem'),
@@ -2312,17 +2335,45 @@ let dataEditStyleDraft = null;
 		  openDocumentDialog: document.getElementById('openDocumentDialog'),
 		  documentSearchInput: document.getElementById('documentSearchInput'),
 		  documentSearchCount: document.getElementById('documentSearchCount'),
+		  documentAdvancedSearchBtn: document.getElementById('documentAdvancedSearchBtn'),
+		  documentAdvancedSearchPanel: document.getElementById('documentAdvancedSearchPanel'),
+		  documentSearchContentCheckbox: document.getElementById('documentSearchContentCheckbox'),
+		  documentFolderChips: document.getElementById('documentFolderChips'),
+		  documentAddFolderBtn: document.getElementById('documentAddFolderBtn'),
 		  documentList: document.getElementById('documentList'),
 		  documentListEmpty: document.getElementById('documentListEmpty'),
 		  openDocumentCancelBtn: document.getElementById('openDocumentCancelBtn'),
 		  documentMultiSelectBtn: document.getElementById('documentMultiSelectBtn'),
 		  documentMultiSelectTooltip: document.getElementById('documentMultiSelectTooltip'),
+		  documentSelectionActions: document.getElementById('documentSelectionActions'),
+		  documentSelectAllBtn: document.getElementById('documentSelectAllBtn'),
+		  documentInvertSelectionBtn: document.getElementById('documentInvertSelectionBtn'),
 		  documentBulkDeleteBtn: document.getElementById('documentBulkDeleteBtn'),
 		  documentBulkDeleteTooltip: document.getElementById('documentBulkDeleteTooltip'),
+		  documentMergeBtn: document.getElementById('documentMergeBtn'),
+		  documentMergeTooltip: document.getElementById('documentMergeTooltip'),
 		  documentDeleteConfirmDialog: document.getElementById('documentDeleteConfirmDialog'),
 		  documentDeleteConfirmMessage: document.getElementById('documentDeleteConfirmMessage'),
 		  documentDeleteCancelBtn: document.getElementById('documentDeleteCancelBtn'),
 		  documentDeleteConfirmBtn: document.getElementById('documentDeleteConfirmBtn'),
+		  documentFolderDialog: document.getElementById('documentFolderDialog'),
+		  documentFolderNameInput: document.getElementById('documentFolderNameInput'),
+		  documentFolderCancelBtn: document.getElementById('documentFolderCancelBtn'),
+		  documentFolderConfirmBtn: document.getElementById('documentFolderConfirmBtn'),
+		  documentMoveFolderDialog: document.getElementById('documentMoveFolderDialog'),
+		  documentMoveFolderList: document.getElementById('documentMoveFolderList'),
+		  documentMoveFolderCancelBtn: document.getElementById('documentMoveFolderCancelBtn'),
+		  documentMoveFolderConfirmBtn: document.getElementById('documentMoveFolderConfirmBtn'),
+		  documentMergeDialog: document.getElementById('documentMergeDialog'),
+		  documentMergeMessage: document.getElementById('documentMergeMessage'),
+		  documentMergeNameInput: document.getElementById('documentMergeNameInput'),
+		  documentMergeCancelBtn: document.getElementById('documentMergeCancelBtn'),
+		  documentMergeConfirmBtn: document.getElementById('documentMergeConfirmBtn'),
+		  clearImportNameDialog: document.getElementById('clearImportNameDialog'),
+		  clearImportNameMessage: document.getElementById('clearImportNameMessage'),
+		  clearImportNameInput: document.getElementById('clearImportNameInput'),
+		  clearImportCancelBtn: document.getElementById('clearImportCancelBtn'),
+		  clearImportOpenBtn: document.getElementById('clearImportOpenBtn'),
 		  fileInput: document.getElementById('fileInput'),
 		  deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
 		  editSelectedCellsBtn: document.getElementById('editSelectedCellsBtn'),

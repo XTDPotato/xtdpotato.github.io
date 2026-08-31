@@ -553,8 +553,9 @@
 	</mdui-dialog>
 	<!-- 取消编辑确认对话框 -->
 	<mdui-dialog id="cancelEditConfirmDialog" headline="确认取消" close-on-overlay-click close-on-esc>
-		<div style="padding:16px 0;font-size:1rem;">确定要取消操作吗？取消后当前输入的内容可能会丢失。</div>
+		<div style="padding:16px 0;font-size:1rem;">当前内容尚未保存。可以挂起并在下次点击加号时继续编辑，也可以直接取消。</div>
 		<mdui-button slot="action" variant="filled" id="cancelCancelBtn">返回继续编辑</mdui-button>
+		<mdui-button slot="action" variant="tonal" id="suspendDataEditBtn">挂起</mdui-button>
 		<mdui-button slot="action" variant="outlined" color="error" id="confirmCancelBtn">确认取消</mdui-button>
 	</mdui-dialog>
 	<!-- 从快速编辑切换到完整编辑时的保存确认 -->

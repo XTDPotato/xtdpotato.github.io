@@ -764,15 +764,32 @@
         <div class="open-document-layout">
             <div class="open-document-search">
                 <div class="open-document-search-row">
-                    <mdui-text-field id="documentSearchInput" label="搜索表格" placeholder="输入文件名称" variant="outlined" clearable></mdui-text-field>
+                    <mdui-text-field id="documentSearchInput" label="搜索项目" placeholder="输入名称或表格数据" variant="outlined" clearable></mdui-text-field>
+                    <mdui-tooltip content="高级搜索">
+                        <mdui-button-icon icon="manage_search" id="documentAdvancedSearchBtn" aria-label="高级搜索" aria-pressed="false"></mdui-button-icon>
+                    </mdui-tooltip>
                     <mdui-tooltip id="documentMultiSelectTooltip" content="多选">
                         <mdui-button-icon icon="checklist" id="documentMultiSelectBtn" aria-label="多选" aria-pressed="false"></mdui-button-icon>
+                    </mdui-tooltip>
+                    <mdui-tooltip id="documentMergeTooltip" content="合并选中" hidden>
+                        <mdui-button-icon icon="merge" id="documentMergeBtn" aria-label="合并选中" disabled></mdui-button-icon>
                     </mdui-tooltip>
                     <mdui-tooltip id="documentBulkDeleteTooltip" content="删除选中" hidden>
                         <mdui-button-icon icon="delete" id="documentBulkDeleteBtn" aria-label="删除选中" disabled></mdui-button-icon>
                     </mdui-tooltip>
                 </div>
-                <div id="documentSearchCount" class="open-document-count"></div>
+                <div id="documentAdvancedSearchPanel" class="open-document-advanced" hidden>
+                    <mdui-checkbox id="documentSearchContentCheckbox">搜索表格内包含的数据</mdui-checkbox>
+                </div>
+                <div class="open-document-count-row">
+                    <div id="documentSearchCount" class="open-document-count"></div>
+                    <mdui-tooltip content="添加文件夹"><mdui-button-icon icon="create_new_folder" id="documentAddFolderBtn" aria-label="添加文件夹"></mdui-button-icon></mdui-tooltip>
+                </div>
+                <div id="documentSelectionActions" class="open-document-selection-actions" hidden>
+                    <mdui-button id="documentSelectAllBtn" variant="tonal" icon="select_all">全选</mdui-button>
+                    <mdui-button id="documentInvertSelectionBtn" variant="text" icon="flip_to_back">反选</mdui-button>
+                </div>
+                <div id="documentFolderChips" class="open-document-folders" aria-label="项目文件夹"></div>
             </div>
             <div class="open-document-list-scroll">
                 <div id="documentList" class="open-document-list"></div>
@@ -785,6 +802,32 @@
         <div id="documentDeleteConfirmMessage" style="line-height:1.6;"></div>
         <mdui-button slot="action" variant="text" id="documentDeleteCancelBtn">取消</mdui-button>
         <mdui-button slot="action" variant="filled" color="error" id="documentDeleteConfirmBtn">删除</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentFolderDialog" headline="添加文件夹" close-on-esc close-on-overlay-click>
+        <mdui-text-field id="documentFolderNameInput" label="文件夹名称" variant="outlined" clearable></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="documentFolderCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentFolderConfirmBtn">添加</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentMoveFolderDialog" headline="移动到文件夹" close-on-esc close-on-overlay-click>
+        <div id="documentMoveFolderList" class="document-move-folder-list" role="listbox" aria-label="选择目标文件夹"></div>
+        <mdui-button slot="action" variant="text" id="documentMoveFolderCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentMoveFolderConfirmBtn">移动</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="documentMergeDialog" headline="合并项目" close-on-esc close-on-overlay-click>
+        <div id="documentMergeMessage" style="line-height:1.6;margin-bottom:14px;"></div>
+        <mdui-text-field id="documentMergeNameInput" label="合并后的项目名称" variant="outlined" clearable></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="documentMergeCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="documentMergeConfirmBtn">合并</mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="clearImportNameDialog" headline="导入完成" close-on-esc>
+        <div id="clearImportNameMessage" style="line-height:1.6;margin-bottom:14px;"></div>
+        <mdui-text-field id="clearImportNameInput" label="新导入表格项目名称" variant="outlined" clearable></mdui-text-field>
+        <mdui-button slot="action" variant="text" id="clearImportCancelBtn">取消</mdui-button>
+        <mdui-button slot="action" variant="filled" id="clearImportOpenBtn">打开</mdui-button>
     </mdui-dialog>
 
     <mdui-dialog id="configExportDialog" close-on-esc close-on-overlay-click headline="选择导出的配置">

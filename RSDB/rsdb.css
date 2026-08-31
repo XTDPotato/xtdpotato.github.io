@@ -658,7 +658,7 @@ body.quick-edit-vk-visible #quickEditDialog::part(panel) {
 }
 
 #openDocumentDialog[fullscreen]::part(body) {
-  height: auto;
+  height: calc(100dvh - 64px);
   min-height: 0;
   overflow: hidden;
   padding: 0;
@@ -683,7 +683,7 @@ body.quick-edit-vk-visible #quickEditDialog::part(panel) {
 
 .open-document-search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) repeat(4, auto);
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -696,12 +696,149 @@ body.quick-edit-vk-visible #quickEditDialog::part(panel) {
 }
 
 #documentMultiSelectBtn,
-#documentBulkDeleteBtn {
+#documentBulkDeleteBtn,
+#documentMergeBtn,
+#documentAdvancedSearchBtn {
   flex: 0 0 auto;
 }
 
 #documentBulkDeleteTooltip[hidden] {
   display: none;
+}
+
+#documentMergeTooltip[hidden],
+.open-document-advanced[hidden] {
+  display: none;
+}
+
+.open-document-advanced {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-color) 88%, var(--primary-color) 12%);
+}
+
+.open-document-count-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.open-document-count-row .open-document-count {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.open-document-folders {
+  display: flex;
+  gap: 6px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.open-document-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.open-document-selection-actions[hidden] {
+  display: none;
+}
+
+.open-document-folders mdui-button {
+  flex: 0 0 auto;
+}
+
+.open-document-folders mdui-button.is-multi-selected {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.document-delete-summary {
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.document-delete-folder-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-color) 92%, var(--primary-color) 8%);
+}
+
+.document-delete-file-list {
+  display: grid;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  color: var(--mdui-color-on-surface-variant, #757575);
+  font-size: 14px;
+}
+
+.document-delete-file-list > div::before {
+  content: '• ';
+}
+
+.document-delete-file-list > .is-empty::before {
+  content: '';
+}
+
+.document-move-folder-list {
+  display: grid;
+  gap: 4px;
+  width: min(460px, calc(100vw - 72px));
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.document-move-folder-list mdui-list-item {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.document-move-folder-list mdui-list-item.is-selected {
+  background: rgba(var(--primary-color-rgb), .14);
+  color: var(--primary-color);
+}
+
+@media (max-width: 420px) {
+  .document-move-folder-list {
+    width: calc(100vw - 56px);
+    min-width: 0;
+    max-height: 48vh;
+  }
+}
+
+.document-search-jump-highlight > td {
+  animation: documentSearchJumpRow 2.6s ease-out both;
+}
+
+.document-search-jump-highlight > td.document-search-jump-cell {
+  outline: 2px solid var(--rsdb-search-current-border);
+  outline-offset: -2px;
+}
+
+@keyframes documentSearchJumpRow {
+  0%, 28% { background-color: var(--rsdb-search-row-bg); }
+  100% { background-color: transparent; }
 }
 
 .open-document-count {
@@ -769,6 +906,15 @@ body.quick-edit-vk-visible #quickEditDialog::part(panel) {
   .open-document-list-scroll {
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  .open-document-search-row {
+    grid-template-columns: minmax(0, 1fr) repeat(2, auto);
+  }
+
+  #documentMergeTooltip:not([hidden]),
+  #documentBulkDeleteTooltip:not([hidden]) {
+    grid-row: 2;
   }
 }
 

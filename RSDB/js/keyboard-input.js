@@ -1174,8 +1174,10 @@ function processKeyboardTemplates(templates, options = {}) {
 
 		    let deleteDelayTimer = null;
 		    let deleteRepeatTimer = null;
-		    const DELETE_DELAY = 500;
+		    let deleteHintTimer = null;
+		    const DELETE_DELAY = 250;
 		    const DELETE_SPEED = 80;
+		    const SWIPE_CLEAR_DISTANCE = 28;
             let startY = 0;
             let pointerId = null;
             let isClearGesture = false;
@@ -1187,9 +1189,13 @@ function processKeyboardTemplates(templates, options = {}) {
               startY = e.clientY;
 		      isClearGesture = false;
 		      didRepeatDelete = false;
+		      deleteHintTimer = setTimeout(() => {
+		        if (pointerId === e.pointerId) showKeyboardSwipeHint(keyElement, '上滑清空');
+		      }, 180);
 		      deleteDelayTimer = setTimeout(() => {
 		        if (isClearGesture) return;
 		        didRepeatDelete = true;
+		        showKeyboardSwipeHint(keyElement, '上滑清空');
 		        handleImeBackspace();
 		        deleteRepeatTimer = setInterval(() => {
 		           if (!isClearGesture) handleImeBackspace();
@@ -1200,14 +1206,15 @@ function processKeyboardTemplates(templates, options = {}) {
             
             keyElement.addEventListener('pointermove', (e) => {
 		        if (pointerId !== e.pointerId) return;
-		        const shouldClear = startY - e.clientY > 50;
+		        const shouldClear = startY - e.clientY > SWIPE_CLEAR_DISTANCE;
 		        if (shouldClear === isClearGesture) return;
 		        isClearGesture = shouldClear;
 		        keyElement.classList.toggle('swipe-close', isClearGesture);
-		        if (isClearGesture) showKeyboardSwipeHint(keyElement, '清空');
+		        if (isClearGesture) showKeyboardSwipeHint(keyElement, '上滑清空');
 		        else hideKeyboardSwipeHint();
 		        if (isClearGesture) {
 		            clearTimeout(deleteDelayTimer);
+		            clearTimeout(deleteHintTimer);
 		            clearInterval(deleteRepeatTimer);
 		            deleteDelayTimer = null;
 		            deleteRepeatTimer = null;
@@ -1216,15 +1223,17 @@ function processKeyboardTemplates(templates, options = {}) {
 
 		    const stopDeleting = (e) => {
 		      if (pointerId !== e?.pointerId) return;
-		      const shouldClear = e.type === 'pointerup' && (isClearGesture || startY - Number(e.clientY || 0) > 50);
+		      const shouldClear = e.type === 'pointerup' && (isClearGesture || startY - Number(e.clientY || 0) > SWIPE_CLEAR_DISTANCE);
 		      const shouldDeleteOnce = e.type === 'pointerup' && !shouldClear && !didRepeatDelete;
 		      pointerId = null;
 		      isClearGesture = false;
 		      keyElement.classList.remove('swipe-close');
 		      hideKeyboardSwipeHint();
 		      clearTimeout(deleteDelayTimer);
+		      clearTimeout(deleteHintTimer);
 		      clearInterval(deleteRepeatTimer);
 		      deleteDelayTimer = null;
+		      deleteHintTimer = null;
 		      deleteRepeatTimer = null;
 		      if (e && e.pointerId && keyElement.hasPointerCapture(e.pointerId)) keyElement.releasePointerCapture(e.pointerId);
 		      if (shouldClear) requestClearCurrentInput();
@@ -1262,7 +1271,8 @@ function processKeyboardTemplates(templates, options = {}) {
 
             let startY = 0;
             let isSwipe = false;
-            let touchStartTime = 0;
+            let doneHintTimer = null;
+            const SWIPE_CLOSE_DISTANCE = 28;
 
             keyElement.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
@@ -1270,8 +1280,10 @@ function processKeyboardTemplates(templates, options = {}) {
                 
                 startY = e.clientY;
                 isSwipe = false;
-                touchStartTime = Date.now();
                 keyElement.classList.add('active');
+                doneHintTimer = setTimeout(() => {
+                    if (keyElement.hasPointerCapture(e.pointerId)) showKeyboardSwipeHint(keyElement, '上滑关闭键盘');
+                }, 180);
             });
 
             keyElement.addEventListener('pointermove', (e) => {
@@ -1280,11 +1292,11 @@ function processKeyboardTemplates(templates, options = {}) {
                 const currentY = e.clientY;
                 
                 // Visual Feedback for Swipe Up
-                if (startY - currentY > 30) {
+                if (startY - currentY > SWIPE_CLOSE_DISTANCE) {
 					if (!isSwipe) {
 						isSwipe = true;
 						keyElement.classList.add('swipe-close'); // Yellow warning style
-						showKeyboardSwipeHint(keyElement, '关闭');
+						showKeyboardSwipeHint(keyElement, '上滑关闭键盘');
 					}
 				} else {
 					if (isSwipe) {
@@ -1297,15 +1309,17 @@ function processKeyboardTemplates(templates, options = {}) {
             });
 
 			const handlePointerUp = (e) => {
+				clearTimeout(doneHintTimer);
+				doneHintTimer = null;
 				keyElement.classList.remove('active');
 				keyElement.classList.remove('swipe-close');
 				hideKeyboardSwipeHint();
-                keyElement.releasePointerCapture(e.pointerId);
+                if (keyElement.hasPointerCapture(e.pointerId)) keyElement.releasePointerCapture(e.pointerId);
                 
                 const endY = e.clientY;
                 
                 // Swipe Up -> Close
-                if (isSwipe || (startY - endY > 30)) { 
+                if (isSwipe || (startY - endY > SWIPE_CLOSE_DISTANCE)) { 
                     closeVirtualKeyboardAndKeepReadOnly();
                     return;
                 }
@@ -1327,7 +1341,13 @@ function processKeyboardTemplates(templates, options = {}) {
             };
 
             keyElement.addEventListener('pointerup', handlePointerUp);
-            keyElement.addEventListener('pointercancel', handlePointerUp);
+            keyElement.addEventListener('pointercancel', (e) => {
+                clearTimeout(doneHintTimer);
+                doneHintTimer = null;
+                keyElement.classList.remove('active', 'swipe-close');
+                hideKeyboardSwipeHint();
+                if (keyElement.hasPointerCapture(e.pointerId)) keyElement.releasePointerCapture(e.pointerId);
+            });
 
             keyElement.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1912,6 +1932,38 @@ async function flushDataToIndexedDB() {
 		        : JSON.parse(JSON.stringify(rows || []));
 		}
 
+		const DOCUMENT_FOLDERS_KEY = 'rsdb_document_folders_v1';
+
+		function listDocumentFolders(records = []) {
+		    let stored = [];
+		    try { stored = JSON.parse(localStorage.getItem(DOCUMENT_FOLDERS_KEY) || '[]'); } catch (error) {}
+		    return [...new Set([
+		        ...(Array.isArray(stored) ? stored : []),
+		        ...(records || []).map(record => String(record?.folder || '').trim())
+		    ].map(name => String(name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+		}
+
+		function saveDocumentFolders(folders) {
+		    const normalized = [...new Set((folders || []).map(name => String(name || '').trim()).filter(Boolean))];
+		    localStorage.setItem(DOCUMENT_FOLDERS_KEY, JSON.stringify(normalized));
+		    return normalized;
+		}
+
+		function addDocumentFolder(name) {
+		    const normalized = String(name || '').trim().slice(0, 60);
+		    if (!normalized) return false;
+		    saveDocumentFolders([...listDocumentFolders(), normalized]);
+		    return normalized;
+		}
+
+		function deleteDocumentFolders(names) {
+		    const deleting = new Set((names || []).map(name => String(name || '').trim()).filter(Boolean));
+		    if (!deleting.size) return [];
+		    const remaining = listDocumentFolders().filter(folder => !deleting.has(folder));
+		    saveDocumentFolders(remaining);
+		    return [...deleting];
+		}
+
 		function normalizeDocumentName(name) {
 		    return sanitizeFileName(String(name || '').replace(/\.(xlsx|xls|zip)$/i, '').trim()).slice(0, 120);
 		}
@@ -1955,21 +2007,50 @@ async function flushDataToIndexedDB() {
 		    return candidate;
 		}
 
-		async function saveDocumentRecord(name) {
+		async function getDocumentRecord(name) {
+		    const normalized = normalizeDocumentName(name);
+		    if (!normalized) return null;
+		    const database = await openDB();
+		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readonly');
+		    const request = tx.objectStore(DOCUMENT_STORE_NAME).get(normalized);
+		    return new Promise((resolve, reject) => {
+		        request.onsuccess = () => resolve(request.result || null);
+		        request.onerror = () => reject(request.error);
+		    });
+		}
+
+		async function saveDocumentRowsRecord(name, rows, options = {}) {
 		    const normalized = normalizeDocumentName(name);
 		    if (!normalized) return false;
+		    const existing = await getDocumentRecord(normalized);
 		    const database = await openDB();
 		    const now = Date.now();
 		    const tx = database.transaction(DOCUMENT_STORE_NAME, 'readwrite');
 		    tx.objectStore(DOCUMENT_STORE_NAME).put({
+		        ...(existing || {}),
 		        name: normalized,
-		        rows: cloneRowsForPersistence(tableData),
-		        savedAt: now,
+		        rows: cloneRowsForPersistence(rows),
+		        folder: options.folder !== undefined ? String(options.folder || '') : String(existing?.folder || ''),
+		        savedAt: Number(existing?.savedAt) || now,
 		        updatedAt: now
 		    });
 		    await waitForTransaction(tx);
+		    return true;
+		}
+
+		async function saveDocumentRecord(name, options = {}) {
+		    const normalized = normalizeDocumentName(name);
+		    if (!normalized) return false;
+		    await saveDocumentRowsRecord(normalized, tableData, options);
 		    currentDocumentName = normalized;
 		    localStorage.setItem('rsdb_current_document_name', normalized);
+		    return true;
+		}
+
+		async function assignDocumentFolder(name, folder) {
+		    const record = await getDocumentRecord(name);
+		    if (!record) return false;
+		    await saveDocumentRowsRecord(record.name, record.rows || [], { folder: String(folder || '') });
 		    return true;
 		}
 
@@ -2659,6 +2740,9 @@ function showDuplicateConfirmationModal(duplicateEntries, newData = [], totalImp
     if (cancelBtn) {
         cancelBtn.onclick = () => {
             closeCustomModal(modal);
+            pendingImportContext = null;
+            pendingImportMode = 'insert';
+            if (dom.fileInput) dom.fileInput.value = '';
             showSnackbar('导入已取消', 'info');
         };
     }
@@ -2765,10 +2849,25 @@ async function saveData(options = {}) {
     }
 }
 
-function finalizeImport(newData, duplicateEntries, totalImported) {
+async function finalizeImport(newData, duplicateEntries, totalImported) {
+    const importMode = pendingImportContext?.mode === 'replace' ? 'replace' : 'insert';
     let actuallyAdded = newData.length;
     let actuallyOverridden = 0;
     let actuallySkipped = 0;
+
+    beginOperation('import', importMode === 'replace' ? '清空导入表格' : '插入导入表格', {
+        mode: importMode,
+        added: actuallyAdded,
+        total: totalImported
+    });
+
+    if (importMode === 'replace') {
+        tableData = [];
+        selectedRows.clear();
+        selectedCells.clear();
+        currentDocumentName = '';
+        localStorage.removeItem('rsdb_current_document_name');
+    }
 
     const indexByProductId = new Map(
         tableData.map((item, index) => [item?.productId?.trim?.() || '', index]).filter(([key]) => key)
@@ -2793,20 +2892,20 @@ function finalizeImport(newData, duplicateEntries, totalImported) {
     }
 
     if (actuallyAdded > 0 || actuallyOverridden > 0 || actuallySkipped > 0 || totalImported > 0) {
-        beginOperation('import', '导入数据', { added: actuallyAdded, overridden: actuallyOverridden, skipped: actuallySkipped, total: totalImported });
         console.log('【导入】开始持久化保存到 IndexedDB...');
-        saveDataToIndexedDB()
-            .then(() => {
+        try {
+            await saveDataToIndexedDB();
                 console.log('【导入】数据保存成功，开始刷新表格');
                 currentPage = 1;  // 重置到第一页
                 updateTable();    // 强制刷新，确保图片显示
+                updateSummary();
                 commitOperation();
                 console.log('【导入】表格已刷新，图片应正常显示');
-            })
-            .catch(err => {
+        } catch (err) {
                 console.error('【导入】保存到 IndexedDB 失败：', err);
                 showSnackbar('导入数据保存失败，请重试', 'error');
-            });
+                return;
+        }
     } else {
         console.log('【导入】无任何变更，无需保存');
     }
@@ -2817,6 +2916,13 @@ function finalizeImport(newData, duplicateEntries, totalImported) {
     if (actuallySkipped > 0) resultMessage += ` 跳过 ${actuallySkipped} 条重复数据。`;
     if (totalImported === 0) resultMessage = `导入完成！文件未包含有效数据。`;
     showSnackbar(resultMessage, 'success');
+    if (dom.fileInput) dom.fileInput.value = '';
+    if (importMode === 'replace') {
+        showClearImportNamingDialog();
+    } else {
+        pendingImportContext = null;
+        pendingImportMode = 'insert';
+    }
 }
 
 /**

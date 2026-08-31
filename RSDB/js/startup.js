@@ -252,6 +252,30 @@ function initShortcutToolbarDrag() {
         }
     };
 
+    // 键盘通过 transform 滑入时不会触发 ResizeObserver。进场期间逐帧跟随，
+    // 避免工具栏停在初始位置并在键盘完成动画后被遮挡。
+    let toolbarFollowRaf = 0;
+    let toolbarFollowUntil = 0;
+    let toolbarFollowActive = false;
+    const scheduleToolbarFollow = (duration = 420) => {
+        toolbarFollowUntil = Math.max(toolbarFollowUntil, Date.now() + duration);
+        if (toolbarFollowActive) return;
+        toolbarFollowActive = true;
+        wrap.dataset.keyboardFollowing = '1';
+        const tick = () => {
+            followSnappedToolbar();
+            if (Date.now() < toolbarFollowUntil) {
+                toolbarFollowRaf = requestAnimationFrame(tick);
+                return;
+            }
+            toolbarFollowRaf = 0;
+            toolbarFollowActive = false;
+            delete wrap.dataset.keyboardFollowing;
+            followSnappedToolbar();
+        };
+        toolbarFollowRaf = requestAnimationFrame(tick);
+    };
+
     let pointerId = null;
     let isDragging = false;
     let startX = 0, startY = 0;
@@ -429,15 +453,18 @@ function initShortcutToolbarDrag() {
     window.addEventListener('resize', followSnappedToolbar, { passive: true });
     const keyboardElement = document.getElementById('virtualKeyboard');
     if (keyboardElement) {
-        const observer = new MutationObserver(followSnappedToolbar);
+        const observer = new MutationObserver(() => scheduleToolbarFollow());
         observer.observe(keyboardElement, { attributes: true, attributeFilter: ['class', 'style'] });
         if (typeof ResizeObserver === 'function') {
-            const resizeObserver = new ResizeObserver(() => requestAnimationFrame(followSnappedToolbar));
+            const resizeObserver = new ResizeObserver(() => scheduleToolbarFollow(260));
             resizeObserver.observe(keyboardElement);
             resizeObserver.observe(wrap);
         }
-        requestAnimationFrame(followSnappedToolbar);
-        window.setTimeout(followSnappedToolbar, 220);
+        ['transitionrun', 'transitionstart', 'transitionend', 'transitioncancel'].forEach(type => {
+            keyboardElement.addEventListener(type, () => scheduleToolbarFollow(type === 'transitionend' ? 120 : 420), { passive: true });
+        });
+        scheduleToolbarFollow(180);
+        window.setTimeout(() => scheduleToolbarFollow(220), 220);
     }
 
     const onPointerUp = (e) => {

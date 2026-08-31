@@ -115,12 +115,12 @@ function updateTable() {
             <td data-field="position">${displayCellValue('position')}</td>
             <td data-field="hardness">${displayCellValue('hardness')}</td>
             <td class="remark-col" data-field="remarks">${displayCellValue('remarks')}</td>
-            <td class="image-col" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
+            <td class="image-col" data-field="cardImage" style="text-align:center;padding:0;height:80px;width:100px;cursor:pointer;">
                 ${item.cardImage ? 
-                  `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="showImagePreviewByIndex(${originalIndex});event.stopPropagation();">
+                  `<div style="width:100%;height:100%;overflow:hidden;border-radius:4px;" onclick="if (!isCellMultiSelectMode) { showImagePreviewByIndex(${originalIndex}); event.stopPropagation(); }">
                      <img src="${cardImageSrc}" style="width:100%;height:100%;object-fit:cover;" alt="卡片图片">
                    </div>`
-                  : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" onclick="startDirectTakePhoto(${originalIndex});event.stopPropagation();">
+                  : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--background-color);border:2px dashed var(--border-color);border-radius:4px;" onclick="if (!isCellMultiSelectMode) { startDirectTakePhoto(${originalIndex}); event.stopPropagation(); }">
                        <mdui-icon name="add_a_photo" style="font-size:36px;color:var(--primary-color);opacity:0.6;"></mdui-icon>
                      </div>`
                 }
@@ -272,7 +272,7 @@ function updateSummary() {
 		        currentCell.classList.add('current-match-highlight');
 
 		        // 平滑滚动到单元格
-		        const container = document.querySelector('.data-table-container');
+		        const container = document.querySelector('.data-table-container-div');
 		        if (container) {
 		            const cellRect = currentCell.getBoundingClientRect();
 		            const containerRect = container.getBoundingClientRect();
@@ -367,12 +367,17 @@ function highlightCurrentMatchCell() {
         currentCell.classList.add('current-match-highlight');
 
         // 平滑滚动到当前单元格
-        const container = document.querySelector('.data-table-container');
+        const container = document.querySelector('.data-table-container-div');
         if (container) {
             const cellRect = currentCell.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
-            const offset = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
-            container.scrollTo({ top: offset, behavior: 'smooth' });
+            const offsetTop = container.scrollTop + cellRect.top - containerRect.top - (containerRect.height / 2) + (cellRect.height / 2);
+            const offsetLeft = container.scrollLeft + cellRect.left - containerRect.left - (containerRect.width / 2) + (cellRect.width / 2);
+            container.scrollTo({
+                top: Math.max(0, offsetTop),
+                left: Math.max(0, offsetLeft),
+                behavior: 'smooth'
+            });
         }
     }
 }
@@ -1261,14 +1266,16 @@ function clearDataEditSessionDraft() {
             try { localStorage.removeItem(DATA_EDIT_SESSION_KEY); } catch (error) {}
         }
 
-        function persistDataEditSessionDraft() {
-            if (!dom.dataSheet || !(dom.dataSheet.open === true || dom.dataSheet.hasAttribute('open'))) return;
+        function persistDataEditSessionDraft(options = {}) {
+            const force = Boolean(options.force);
+            if (!force && (!dom.dataSheet || !(dom.dataSheet.open === true || dom.dataSheet.hasAttribute('open')))) return false;
             const content = document.getElementById('dataSheetContent');
             const activeId = document.activeElement && inputFieldOrder.includes(document.activeElement.id)
                 ? document.activeElement.id
                 : (currentInput && inputFieldOrder.includes(currentInput.id) ? currentInput.id : '');
             const payload = {
                 version: 1,
+                suspended: Boolean(options.suspended),
                 documentName: currentDocumentName || '',
                 mode: currentEditIndex >= 0 ? 'edit' : 'add',
                 index: currentEditIndex,
@@ -1286,13 +1293,16 @@ function clearDataEditSessionDraft() {
             };
             try {
                 localStorage.setItem(DATA_EDIT_SESSION_KEY, JSON.stringify(payload));
+                return true;
             } catch (error) {
                 try {
                     payload.state.image = '';
                     payload.imageOmitted = true;
                     localStorage.setItem(DATA_EDIT_SESSION_KEY, JSON.stringify(payload));
+                    return true;
                 } catch (fallbackError) {}
             }
+            return false;
         }
 
         function scheduleDataEditSessionSave() {
@@ -1300,10 +1310,16 @@ function clearDataEditSessionDraft() {
             dataEditSessionSaveTimer = setTimeout(persistDataEditSessionDraft, 120);
         }
 
-        function restorePersistedDataEditSession() {
+        function getPersistedDataEditSession() {
             let draft = null;
             try { draft = JSON.parse(localStorage.getItem(DATA_EDIT_SESSION_KEY) || 'null'); } catch (error) {}
-            if (!draft || draft.version !== 1 || draft.documentName !== (currentDocumentName || '')) return false;
+            if (!draft || draft.version !== 1 || draft.documentName !== (currentDocumentName || '')) return null;
+            return draft;
+        }
+
+        function restorePersistedDataEditSession(options = {}) {
+            const draft = getPersistedDataEditSession();
+            if (!draft || (draft.suspended && !options.includeSuspended)) return false;
             const isEdit = draft.mode === 'edit';
             let index = Number(draft.index);
             if (isEdit) {
@@ -1353,6 +1369,17 @@ function clearDataEditSessionDraft() {
                 persistDataEditSessionDraft();
             }));
             return true;
+        }
+
+        function suspendCurrentDataEditSession() {
+            if (currentEditIndex !== -1) return false;
+            return persistDataEditSessionDraft({ suspended: true, force: true });
+        }
+
+        function resumeSuspendedDataEditSession() {
+            const draft = getPersistedDataEditSession();
+            if (!draft?.suspended || draft.mode !== 'add') return false;
+            return restorePersistedDataEditSession({ includeSuspended: true });
         }
 
 		function getDataEditState() {

@@ -1,4 +1,10 @@
-function handleFileImport(e) {
+function resetPendingImportState() {
+    pendingImportContext = null;
+    pendingImportMode = 'insert';
+    if (dom.fileInput) dom.fileInput.value = '';
+}
+
+async function handleFileImport(e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -11,11 +17,40 @@ function handleFileImport(e) {
     }
 
     const fileName = file.name.toLowerCase();
-    if (fileName.endsWith('.zip') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        const importedDocumentName = normalizeDocumentName(file.name);
-        if (importedDocumentName) {
-            currentDocumentName = importedDocumentName;
-            localStorage.setItem('rsdb_current_document_name', importedDocumentName);
+    const isSupported = fileName.endsWith('.zip') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    if (!isSupported) {
+        showSnackbar('仅支持 .xlsx、.xls 或 .zip 文件', 'warning');
+        dom.fileInput.value = '';
+        return;
+    }
+
+    const importMode = pendingImportMode === 'replace' ? 'replace' : 'insert';
+    pendingImportContext = {
+        mode: importMode,
+        importedDocumentName: normalizeDocumentName(file.name) || getCurrentDateFileName(),
+        previousDocumentName: currentDocumentName || '',
+        startedAt: Date.now()
+    };
+
+    if (importMode === 'replace') {
+        try {
+            let previousName = currentDocumentName;
+            if (!previousName) {
+                const dateName = getCurrentDateFileName();
+                previousName = await documentNameExists(dateName)
+                    ? await createAvailableDocumentCopyName(dateName)
+                    : dateName;
+            }
+            await saveDocumentRecord(previousName);
+            await saveDataToIndexedDB();
+            pendingImportContext.previousDocumentName = previousName;
+        } catch (error) {
+            console.error('清空导入前保存当前项目失败', error);
+            showSnackbar('当前项目保存失败，已取消导入', 'error');
+            pendingImportContext = null;
+            pendingImportMode = 'insert';
+            dom.fileInput.value = '';
+            return;
         }
     }
 
@@ -42,7 +77,7 @@ function handleFileImport(e) {
 
                 if (!excelEntry) {
                     showSnackbar('ZIP 中未找到 Excel 文件', 'error');
-                    dom.fileInput.value = '';
+                    resetPendingImportState();
                     return;
                 }
 
@@ -52,12 +87,13 @@ function handleFileImport(e) {
                 }).catch(err => {
                     console.error('【导入 ZIP】Excel 读取失败：', err);
                     showSnackbar('ZIP 内 Excel 读取失败', 'error');
+                    resetPendingImportState();
                 });
             })
             .catch(err => {
                 console.error('【导入 ZIP】解析失败：', err);
                 showSnackbar('ZIP 文件解析失败', 'error');
-                dom.fileInput.value = '';
+                resetPendingImportState();
             });
     } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
         showSnackbar('正在读取 Excel 文件（含嵌入图片）...', 'info');
@@ -84,13 +120,10 @@ function handleFileImport(e) {
             } catch (err) {
                 console.error('【导入】Excel + 嵌入图片解析失败：', err);
                 showSnackbar('文件解析失败，请检查是否包含图片', 'error');
-                dom.fileInput.value = '';
+                resetPendingImportState();
             }
         };
         reader.readAsArrayBuffer(file);
-    } else {
-        showSnackbar('仅支持 .xlsx、.xls 或 .zip 文件', 'warning');
-        dom.fileInput.value = '';
     }
 }
 
@@ -101,6 +134,7 @@ function handleFileImport(e) {
     if (!workbook || !workbook.SheetNames) {
         console.error('【批量导入】工作簿无效或为空！');
         showSnackbar('导入文件无效，请检查格式', 'error');
+        resetPendingImportState();
         return;
     }
 
@@ -161,7 +195,7 @@ function handleFileImport(e) {
 
 		        if (headerRowIndex === -1) {
 		            showSnackbar('未能找到表头行', 'error');
-		            dom.fileInput.value = '';
+		            resetPendingImportState();
 		            return;
 		        }
 
@@ -231,15 +265,16 @@ function handleFileImport(e) {
 
 		        if (formattedData.length === 0) {
 		            showSnackbar('未找到有效数据行', 'warning');
-		            dom.fileInput.value = '';
+		            resetPendingImportState();
 		            return;
 		        }
 
 		        const totalImported = formattedData.length;
 		        const newData = [];
 		        const duplicateEntries = [];
+		        const comparisonData = pendingImportContext?.mode === 'replace' ? [] : tableData;
 		        const existingByProductId = new Map(
-		            tableData
+		            comparisonData
 		                .filter(item => item?.productId)
 		                .map(item => [item.productId.trim(), item])
 		        );
@@ -294,13 +329,52 @@ function handleFileImport(e) {
 
 		        dom.cancelConfirmBtn.onclick = () => {
 		            closeCustomModal(dom.confirmModal);
-
-		            dom.fileInput.value = '';
+		            resetPendingImportState();
 		        };
 		    } else {
 		        proceedWithSheet(sheetNames[0]);
 		    }
 		}
+
+function showClearImportNamingDialog() {
+    if (!pendingImportContext || pendingImportContext.mode !== 'replace') return;
+    const previousName = pendingImportContext.previousDocumentName || '未命名项目';
+    if (dom.clearImportNameMessage) {
+        dom.clearImportNameMessage.textContent = `输入新导入表格项目名称，之前的文件已保存到项目“${previousName}”。`;
+    }
+    if (dom.clearImportNameInput) {
+        dom.clearImportNameInput.value = pendingImportContext.importedDocumentName || getCurrentDateFileName();
+    }
+    openDialogOnTop(dom.clearImportNameDialog);
+    setTimeout(() => dom.clearImportNameInput?.focus(), 80);
+}
+
+async function confirmClearImportedDocumentName() {
+    const name = normalizeDocumentName(dom.clearImportNameInput?.value || '');
+    if (!name) {
+        showSnackbar('请输入新导入表格项目名称', 'warning');
+        return false;
+    }
+    dom.clearImportOpenBtn.disabled = true;
+    try {
+        const targetName = await documentNameExists(name)
+            ? await createAvailableDocumentCopyName(name)
+            : name;
+        await saveDocumentRecord(targetName);
+        await saveDataToIndexedDB();
+        dom.clearImportNameDialog.open = false;
+        pendingImportContext = null;
+        pendingImportMode = 'insert';
+        showSnackbar(targetName === name ? `已打开“${targetName}”` : `名称已存在，已打开“${targetName}”`, 'success');
+        return true;
+    } catch (error) {
+        console.error('保存新导入项目失败', error);
+        showSnackbar('保存新导入项目失败', 'error');
+        return false;
+    } finally {
+        dom.clearImportOpenBtn.disabled = false;
+    }
+}
 
 		async function exportToExcel(exportBaseName = getExportBaseName()) {
 		    const exportData = getFilteredData();
